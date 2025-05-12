@@ -5,23 +5,23 @@ flowchart TD
 
     %% ── 2. CLASSIFICATION ──────────────────────────────
     B --> C{Is task clear<br/>or needs clarification?}
-    C -->|Unclear| C1[Ask user follow‑up<br/>(blocking)]
+    C -->|Unclear| C1[Ask user follow-up<br/>(blocking)]
     C1 --> B
     C -->|Clear| D[Determine domain<br/>(code / sysadmin / data etc.)]
 
     %% ── 3. PLANNING ────────────────────────────────────
-    D --> E[Generate plan & sub‑tasks<br/>(chain‑of‑thought+tool)]
+    D --> E[Generate plan & sub-tasks<br/>(chain-of-thought+tool)]
     E --> F{Need elevated<br/>privileges?}
     F -->|Yes| F1[Request sudo token<br/>or abort]
     F1 --> G
     F -->|No| G
 
     %% ── 4. ENV PREP ───────────────────────────────────
-    G[Prepare workspace<br/>(git init, deps, venv, apt)] --> H[Execute sub‑task loop]
+    G[Prepare workspace<br/>(git init, deps, venv, apt)] --> H[Execute sub-task loop]
 
     %% ── 5. EXECUTION LOOP ─────────────────────────────
     H --> I{Run command; success?}
-    I -->|Fail| I1[Capture error, self‑repair<br/>(LLM explain & patch)]
+    I -->|Fail| I1[Capture error, self-repair<br/>(LLM explain & patch)]
     I1 --> H
     I -->|Success| I2[Validate output<br/>(tests, lint, static checks)]
     I2 --> J{Validation OK?}
