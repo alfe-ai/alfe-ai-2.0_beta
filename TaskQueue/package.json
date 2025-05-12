@@ -1,0 +1,17 @@
+{
+  "name": "task-queue",
+  "version": "0.1.0",
+  "description": "Simple queue that tracks GitHub tasks for Alfe AI",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "lint": "echo \"(no linter configured)\""
+  },
+  "author": "Alfe AI",
+  "license": "MIT",
+  "dependencies": {
+    "@octokit/rest": "^20.1.0",
+    "dotenv": "^16.4.1"
+  }
+}
