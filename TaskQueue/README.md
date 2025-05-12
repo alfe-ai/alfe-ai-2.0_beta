@@ -3,7 +3,6 @@
 Small Node.js utility that pulls open GitHub issues (labelled `task` by default) into an in-memory queue.
 
 ## Quick start
-
 ```bash
 cd TaskQueue
 cp .env.example .env   # add your GitHub details
@@ -21,3 +20,9 @@ npm start
 | `GITHUB_LABEL` | (Optional) Issue label to filter on, default `task`.  |
 
 The script prints out all matching open issues and the current queue size.
+
+### Obtaining a GitHub token
+1. Sign in to GitHub and open **Settings → Developer settings → Personal access tokens → Tokens (classic)**.  
+2. Click **Generate new token**, give it a name/expiry and tick the **repo** scope (read-only is enough).  
+3. Create the token, copy the value, and paste it into your `.env` file as `GITHUB_TOKEN=<your-token>`.
+
