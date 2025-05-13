@@ -1,19 +1,47 @@
 import dotenv from "dotenv";
+import fs from "fs";
+import path from "path";
 import GitHubClient from "./githubClient.js";
 import TaskQueue from "./taskQueue.js";
 import TaskDB from "./taskDb.js";
 
 dotenv.config();
 
+/**
+ * Create a timestamped backup of issues.sqlite (if it exists).
+ */
+function backupDb() {
+  const dbPath = path.resolve("issues.sqlite");
+  if (!fs.existsSync(dbPath)) {
+    console.log("[TaskQueue] No existing DB to backup (first run).");
+    return;
+  }
+
+  const backupsDir = path.resolve("backups");
+  fs.mkdirSync(backupsDir, { recursive: true });
+
+  // ISO string is filesystem-friendly after removing colon/period characters.
+  const ts = new Date().toISOString().replace(/[:.]/g, "-");
+  const backupPath = path.join(backupsDir, `issues-${ts}.sqlite`);
+
+  fs.copyFileSync(dbPath, backupPath);
+  console.log(`[TaskQueue] Backup created: ${backupPath}`);
+}
+
 async function main() {
   try {
+    // ------------------------------------------------------------------
+    // 0. Safety first – create backup
+    // ------------------------------------------------------------------
+    backupDb();
+
     const client = new GitHubClient({
       token: process.env.GITHUB_TOKEN,
       owner: process.env.GITHUB_OWNER,
       repo: process.env.GITHUB_REPO
     });
 
-    const db = new TaskDB(); // creates issues.sqlite in cwd
+    const db = new TaskDB(); // creates/open issues.sqlite in cwd
     const queue = new TaskQueue();
 
     const label = process.env.GITHUB_LABEL;
@@ -51,4 +79,3 @@ async function main() {
 }
 
 main();
-
