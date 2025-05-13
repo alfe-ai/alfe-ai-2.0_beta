@@ -193,26 +193,34 @@
   async function loadSettings(){
     {
       const r = await fetch("/api/settings/visible_columns");
-      if(r.ok){ const { value } = await r.json(); if(Array.isArray(value)){ visibleCols = new Set(value); }}
+      if(r.ok){
+        const { value } = await r.json();
+        if(Array.isArray(value)){ visibleCols = new Set(value); }
+      }
     }
     {
       const r = await fetch("/api/settings/columns_order");
-      if(r.ok){ const { value } = await r.json(); if(Array.isArray(value)){
-        const map = Object.fromEntries(columnsOrder.map(c=>[c.key,c]));
-        const newOrd = [];
-        value.forEach(k => { if(map[k]){ newOrd.push(map[k]); delete map[k]; }});
-        Object.values(map).forEach(c => newOrd.push(c));
-        columnsOrder = newOrd;
-      }}
+      if(r.ok){
+        const { value } = await r.json();
+        if(Array.isArray(value)){
+          const map = Object.fromEntries(columnsOrder.map(c=>[c.key,c]));
+          const newOrd = [];
+          value.forEach(k => { if(map[k]){ newOrd.push(map[k]); delete map[k]; }});
+          Object.values(map).forEach(c => newOrd.push(c));
+          columnsOrder = newOrd;
+        }
+      }
     }
   }
   async function saveSettings(){
     await fetch("/api/settings",{
-      method:"POST", headers:{"Content-Type":"application/json"},
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
       body:JSON.stringify({ key:"visible_columns", value:[...visibleCols] })
     });
     await fetch("/api/settings",{
-      method:"POST", headers:{"Content-Type":"application/json"},
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
       body:JSON.stringify({ key:"columns_order", value:columnsOrder.map(c=>c.key) })
     });
   }
@@ -221,10 +229,12 @@
    * Column rendering
    * ------------------------------------------------------------------ */
   function renderHeader(){
-    const tr = $("#headerRow"); tr.innerHTML = "";
+    const tr = $("#headerRow");
+    tr.innerHTML = "";
     columnsOrder.forEach(col => {
       if(!visibleCols.has(col.key)) return;
-      const th = document.createElement("th"); th.textContent = col.label;
+      const th = document.createElement("th");
+      th.textContent = col.label;
       tr.appendChild(th);
     });
   }
@@ -232,16 +242,23 @@
   /* ------------------------------------------------------------------
    * Drag & drop reordering
    * ------------------------------------------------------------------ */
-  function handleDragStart(e){ dragSrcRow = e.target.closest("tr"); e.dataTransfer.effectAllowed = "move"; }
+  function handleDragStart(e){
+    dragSrcRow = e.target.closest("tr");
+    e.dataTransfer.effectAllowed = "move";
+  }
   function handleDragOver(e){
     if(dragSrcRow && e.currentTarget !== dragSrcRow){
-      e.preventDefault(); e.dataTransfer.dropEffect = "move";
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
       e.currentTarget.classList.add("drag-over");
     }
   }
-  function handleDragLeave(e){ e.currentTarget.classList.remove("drag-over"); }
+  function handleDragLeave(e){
+    e.currentTarget.classList.remove("drag-over");
+  }
   function handleDrop(e){
-    e.preventDefault(); const target = e.currentTarget;
+    e.preventDefault();
+    const target = e.currentTarget;
     target.classList.remove("drag-over");
     if(dragSrcRow && dragSrcRow !== target){
       const tbody = target.parentNode;
@@ -262,7 +279,8 @@
   async function saveNewOrderToServer(){
     const ids = $$("#tasks tbody tr").map(r=>+r.dataset.taskId);
     await fetch("/api/tasks/reorderAll",{
-      method:"POST", headers:{"Content-Type":"application/json"},
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
       body:JSON.stringify({ orderedIds: ids })
     });
   }
@@ -276,75 +294,134 @@
     return res.json();
   }
   function renderBody(){
-    const tbody = $("#tasks tbody"); tbody.innerHTML = "";
+    const tbody = $("#tasks tbody");
+    tbody.innerHTML = "";
     const pj = $("#projectFilter").value;
     const sp = $("#sprintFilter").value;
-    allTasks.filter(t=>{ if(pj&&t.project!==pj) return false; if(sp&&t.sprint!==sp) return false; return true; })
-            .forEach(t=>{
-              const tr = document.createElement("tr");
-              tr.dataset.taskId = t.id;
-              if(t.hidden) tr.classList.add("hidden");
-              ["drag","order","reorder","visibility","priority","status",
-                "dependencies","blocking","slug","repo","number","title",
-                "project","sprint","points","assignee","created"].forEach(key=>{
-                if(!visibleCols.has(key)) return;
-                const td = document.createElement("td");
-                switch(key){
-                  case "drag":
-                    td.innerHTML = `<span class=\"drag-handle\" draggable=\"true\">⠿</span>`;
-                    td.querySelector(".drag-handle").addEventListener("dragstart", handleDragStart);
-                    break;
-                  case "order": td.textContent = t.priority_number; break;
-                  case "reorder":
-                    td.innerHTML = `<button class=\"arrow\" data-id=\"${t.id}\" data-dir=\"up\">⬆️</button>`+
-                            `<button class=\"arrow\" data-id=\"${t.id}\" data-dir=\"down\">⬇️</button>`;
-                    break;
-                  case "visibility": td.innerHTML = `<button class=\"eye\" data-id=\"${t.id}\">${t.hidden?"🙈":"👁️"}</button>`; break;
-                  case "priority": td.textContent = t.priority; td.className="priority-cell"; break;
-                  case "status": td.textContent = t.status; td.className="status-cell"; break;
-                  case "dependencies": td.textContent = t.dependencies; td.className="dependencies-cell"; break;
-                  case "blocking": td.textContent = t.blocking; td.className="blocking-cell"; break;
-                  case "slug": td.innerHTML = `<a href=\"${t.html_url}\" target=\"_blank\">${t.task_id_slug}</a>`; break;
-                  case "repo": td.textContent = t.repository; break;
-                  case "number": td.innerHTML = `<a href=\"${t.html_url}\" target=\"_blank\">#${t.number}</a>`; break;
-                  case "title": td.textContent = t.title; td.className="title-cell"; break;
-                  case "project": td.textContent = t.project; td.className="project-cell"; break;
-                  case "sprint": td.textContent = t.sprint; td.className="sprint-cell"; break;
-                  case "points": td.textContent = t.fib_points||""; break;
-                  case "assignee": td.textContent = t.assignee||""; break;
-                  case "created": td.textContent = isoDate(t.created_at); break;
-                  default: td.textContent = t[key]||"";
-                }
-                tr.appendChild(td);
-              });
-              ["dragover","dragleave","drop","dragend"].forEach(evt=>{
-                tr.addEventListener(evt, {"dragover":handleDragOver,"dragleave":handleDragLeave,"drop":handleDrop,"dragend":handleDragEnd}[evt]);
-              });
-              tbody.appendChild(tr);
-            });
+    allTasks
+      .filter(t=>{
+        if(pj && t.project!==pj) return false;
+        if(sp && t.sprint!==sp) return false;
+        return true;
+      })
+      .forEach(t=>{
+        const tr = document.createElement("tr");
+        tr.dataset.taskId = t.id;
+        if(t.hidden) tr.classList.add("hidden");
+        [
+          "drag","order","reorder","visibility","priority","status",
+          "dependencies","blocking","slug","repo","number","title",
+          "project","sprint","points","assignee","created"
+        ].forEach(key=>{
+          if(!visibleCols.has(key)) return;
+          const td = document.createElement("td");
+          switch(key){
+            case "drag":
+              td.innerHTML = `<span class="drag-handle" draggable="true">⠿</span>`;
+              td.querySelector(".drag-handle").addEventListener("dragstart", handleDragStart);
+              break;
+            case "order":
+              td.textContent = t.priority_number;
+              break;
+            case "reorder":
+              td.innerHTML = `<button class="arrow" data-id="${t.id}" data-dir="up">⬆️</button>` +
+                             `<button class="arrow" data-id="${t.id}" data-dir="down">⬇️</button>`;
+              break;
+            case "visibility":
+              td.innerHTML = `<button class="eye" data-id="${t.id}">${t.hidden?"🙈":"👁️"}</button>`;
+              break;
+            case "priority":
+              td.textContent = t.priority;
+              td.className="priority-cell";
+              break;
+            case "status":
+              td.textContent = t.status;
+              td.className="status-cell";
+              break;
+            case "dependencies":
+              td.textContent = t.dependencies;
+              td.className="dependencies-cell";
+              break;
+            case "blocking":
+              td.textContent = t.blocking;
+              td.className="blocking-cell";
+              break;
+            case "slug":
+              td.innerHTML = `<a href="${t.html_url}" target="_blank">${t.task_id_slug}</a>`;
+              break;
+            case "repo":
+              td.textContent = t.repository;
+              break;
+            case "number":
+              td.innerHTML = `<a href="${t.html_url}" target="_blank">#${t.number}</a>`;
+              break;
+            case "title":
+              td.textContent = t.title;
+              td.className="title-cell";
+              break;
+            case "project":
+              td.textContent = t.project;
+              td.className="project-cell";
+              break;
+            case "sprint":
+              td.textContent = t.sprint;
+              td.className="sprint-cell";
+              break;
+            case "points":
+              td.textContent = t.fib_points||"";
+              break;
+            case "assignee":
+              td.textContent = t.assignee||"";
+              break;
+            case "created":
+              td.textContent = isoDate(t.created_at);
+              break;
+            default:
+              td.textContent = t[key]||"";
+          }
+          tr.appendChild(td);
+        });
+        ["dragover","dragleave","drop","dragend"].forEach(evt=>{
+          tr.addEventListener(evt, {
+            "dragover":handleDragOver,
+            "dragleave":handleDragLeave,
+            "drop":handleDrop,
+            "dragend":handleDragEnd
+          }[evt]);
+        });
+        tbody.appendChild(tr);
+      });
   }
-  async function loadTasks(){ allTasks = await fetchTasks(); renderHeader(); renderBody(); }
+  async function loadTasks(){
+    allTasks = await fetchTasks();
+    renderHeader();
+    renderBody();
+  }
 
   /* ------------------------------------------------------------------
    * Filters
    * ------------------------------------------------------------------ */
   async function populateFilters(){
     const pj = await (await fetch("/api/projects")).json();
-    $("#projectFilter").innerHTML = '<option value="">All projects</option>'+pj.map(p=>`<option value=\"${p.project}\">${p.project}</option>`).join("");
+    $("#projectFilter").innerHTML = '<option value="">All projects</option>' +
+      pj.map(p=>`<option value="${p.project}">${p.project}</option>`).join("");
     const sp = await (await fetch("/api/sprints")).json();
-    $("#sprintFilter").innerHTML = '<option value="">All sprints</option>'+sp.map(s=>`<option value=\"${s.sprint}\">${s.sprint}</option>`).join("");
+    $("#sprintFilter").innerHTML = '<option value="">All sprints</option>' +
+      sp.map(s=>`<option value="${s.sprint}">${s.sprint}</option>`).join("");
   }
 
   /* ------------------------------------------------------------------
    * Column picker logic
    * ------------------------------------------------------------------ */
   function openColModal(){
-    const cnt = $("#colList"); cnt.innerHTML="";
+    const cnt = $("#colList");
+    cnt.innerHTML="";
     columnsOrder.forEach((c,i)=>{
-      const div = document.createElement("div"); div.className="col-item";
-      div.innerHTML = `<button class=\"col-move\" data-idx=\"${i}\" data-dir=\"up\">⬆️</button>`+
-              `<button class=\"col-move\" data-idx=\"${i}\" data-dir=\"down\">⬇️</button>`+
-              `<label><input type=\"checkbox\" value=\"${c.key}\" ${visibleCols.has(c.key)?"checked":""}/> ${c.label||c.key}</label>`;
+      const div = document.createElement("div");
+      div.className="col-item";
+      div.innerHTML = `<button class="col-move" data-idx="${i}" data-dir="up">⬆️</button>` +
+        `<button class="col-move" data-idx="${i}" data-dir="down">⬇️</button>` +
+        `<label><input type="checkbox" value="${c.key}" ${visibleCols.has(c.key)?"checked":""}/> ${c.label||c.key}</label>`;
       cnt.appendChild(div);
     });
     showModal($("#colModal"));
@@ -360,8 +437,12 @@
   });
   $("#colSaveBtn").addEventListener("click", async ()=>{
     visibleCols.clear();
-    $$("#colList input[type=checkbox]").forEach(cb=>{ if(cb.checked) visibleCols.add(cb.value); });
-    await saveSettings(); hideModal($("#colModal")); await loadTasks();
+    $$("#colList input[type=checkbox]").forEach(cb=>{
+      if(cb.checked) visibleCols.add(cb.value);
+    });
+    await saveSettings();
+    hideModal($("#colModal"));
+    await loadTasks();
   });
   $("#colCancelBtn").addEventListener("click", ()=>hideModal($("#colModal")));
 
@@ -374,53 +455,117 @@
       if(btn.classList.contains("eye")){
         const id=+btn.dataset.id;
         const hideNow=btn.textContent==="👁️";
-        await fetch("/api/tasks/hidden",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,hidden:hideNow})});
+        await fetch("/api/tasks/hidden",{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({id,hidden:hideNow})
+        });
         return loadTasks();
       }
       if(btn.classList.contains("arrow")){
         const id=+btn.dataset.id, dir=btn.dataset.dir;
-        await fetch("/api/tasks/reorder",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,direction:dir})});
+        await fetch("/api/tasks/reorder",{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({id,direction:dir})
+        });
         return loadTasks();
       }
     }
     const cell = e.target;
-    const row = cell.closest("tr"); if(!row) return;
+    const row = cell.closest("tr");
+    if(!row) return;
     const taskId=+row.dataset.taskId;
 
     /* helper to inline edit */
     function inlineEdit(newEl, saveCb){
-      cell.textContent=""; cell.appendChild(newEl); newEl.focus();
-      newEl.addEventListener("change", async ()=>{ await saveCb(newEl.value); await loadTasks(); });
+      cell.textContent="";
+      cell.appendChild(newEl);
+      newEl.focus();
+      newEl.addEventListener("change", async ()=>{
+        await saveCb(newEl.value);
+        await loadTasks();
+      });
       newEl.addEventListener("blur", ()=>loadTasks());
     }
 
     if(cell.classList.contains("priority-cell")){
-      const sel = document.createElement("select");["Low","Medium","High"].forEach(v=>{ const o=document.createElement("option");o.value=v;o.textContent=v;if(v===cell.textContent) o.selected=true;sel.appendChild(o); });
-      return inlineEdit(sel,v=>fetch("/api/tasks/priority",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:taskId,priority:v})}));
+      const sel = document.createElement("select");
+      ["Low","Medium","High"].forEach(v=>{
+        const o=document.createElement("option");
+        o.value=v; o.textContent=v;
+        if(v===cell.textContent) o.selected=true;
+        sel.appendChild(o);
+      });
+      return inlineEdit(sel,v=>fetch("/api/tasks/priority",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({id:taskId,priority:v})
+      }));
     }
     if(cell.classList.contains("status-cell")){
-      const sel=document.createElement("select");["Not Started","In Progress","Done"].forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v;if(v===cell.textContent) o.selected=true;sel.appendChild(o);});
-      return inlineEdit(sel,v=>fetch("/api/tasks/status",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:taskId,status:v})}));
+      const sel=document.createElement("select");
+      ["Not Started","In Progress","Done"].forEach(v=>{
+        const o=document.createElement("option");
+        o.value=v; o.textContent=v;
+        if(v===cell.textContent) o.selected=true;
+        sel.appendChild(o);
+      });
+      return inlineEdit(sel,v=>fetch("/api/tasks/status",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({id:taskId,status:v})
+      }));
     }
     if(cell.classList.contains("project-cell")){
-      const inp=document.createElement("input"); inp.type="text"; inp.value=cell.textContent;
-      return inlineEdit(inp,v=>fetch("/api/tasks/project",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:taskId,project:v})}));
+      const inp=document.createElement("input");
+      inp.type="text";
+      inp.value=cell.textContent;
+      return inlineEdit(inp,v=>fetch("/api/tasks/project",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({id:taskId,project:v})
+      }));
     }
     if(cell.classList.contains("sprint-cell")){
-      const inp=document.createElement("input"); inp.type="text"; inp.value=cell.textContent;
-      return inlineEdit(inp,v=>fetch("/api/tasks/sprint",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:taskId,sprint:v})}));
+      const inp=document.createElement("input");
+      inp.type="text";
+      inp.value=cell.textContent;
+      return inlineEdit(inp,v=>fetch("/api/tasks/sprint",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({id:taskId,sprint:v})
+      }));
     }
     if(cell.classList.contains("dependencies-cell")){
-      const inp=document.createElement("input"); inp.type="text"; inp.value=cell.textContent;
-      return inlineEdit(inp,v=>fetch("/api/tasks/dependencies",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:taskId,dependencies:v})}));
+      const inp=document.createElement("input");
+      inp.type="text";
+      inp.value=cell.textContent;
+      return inlineEdit(inp,v=>fetch("/api/tasks/dependencies",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({id:taskId,dependencies:v})
+      }));
     }
     if(cell.classList.contains("blocking-cell")){
-      const inp=document.createElement("input"); inp.type="text"; inp.value=cell.textContent;
-      return inlineEdit(inp,v=>fetch("/api/tasks/blocking",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:taskId,blocking:v})}));
+      const inp=document.createElement("input");
+      inp.type="text";
+      inp.value=cell.textContent;
+      return inlineEdit(inp,v=>fetch("/api/tasks/blocking",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({id:taskId,blocking:v})
+      }));
     }
     if(cell.classList.contains("title-cell")){
-      const inp=document.createElement("input"); inp.type="text"; inp.value=cell.textContent;
-      return inlineEdit(inp,v=>fetch("/api/tasks/rename",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:taskId,newTitle:v})}));
+      const inp=document.createElement("input");
+      inp.type="text";
+      inp.value=cell.textContent;
+      return inlineEdit(inp,v=>fetch("/api/tasks/rename",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({id:taskId,newTitle:v})
+      }));
     }
   });
 
@@ -431,20 +576,94 @@
   /* ------------------------------------------------------------------
    * Modal hooking for instructions, repo, defaults, new task
    * ------------------------------------------------------------------ */
-  $("#instrBtn").addEventListener("click", async ()=>{ const r=await fetch("/api/settings/agent_instructions"); if(r.ok){const {value}=await r.json();$("#instrText").value=value||"";} showModal($("#instrModal"));});
-  $("#instrSaveBtn").addEventListener("click", async ()=>{await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:"agent_instructions",value:$("#instrText").value})}); hideModal($("#instrModal"));});
+  $("#instrBtn").addEventListener("click", async ()=>{
+    const r=await fetch("/api/settings/agent_instructions");
+    if(r.ok){
+      const {value}=await r.json();
+      $("#instrText").value=value||"";
+    }
+    showModal($("#instrModal"));
+  });
+  $("#instrSaveBtn").addEventListener("click", async ()=>{
+    await fetch("/api/settings",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({key:"agent_instructions",value:$("#instrText").value})
+    });
+    hideModal($("#instrModal"));
+  });
   $("#instrCancelBtn").addEventListener("click",()=>hideModal($("#instrModal")));
 
-  $("#repoBtn").addEventListener("click", async ()=>{ const r=await fetch("/api/settings/github_repo"); if(r.ok){const{value}=await r.json();$("#repoInput").value=value||"";} showModal($("#repoModal"));});
-  $("#repoSaveBtn").addEventListener("click", async ()=>{await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:"github_repo",value:$("#repoInput").value})}); hideModal($("#repoModal"));});
+  $("#repoBtn").addEventListener("click", async ()=>{
+    const r=await fetch("/api/settings/github_repo");
+    if(r.ok){
+      const {value}=await r.json();
+      $("#repoInput").value=value||"";
+    }
+    showModal($("#repoModal"));
+  });
+  $("#repoSaveBtn").addEventListener("click", async ()=>{
+    await fetch("/api/settings",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({key:"github_repo",value:$("#repoInput").value})
+    });
+    hideModal($("#repoModal"));
+  });
   $("#repoCancelBtn").addEventListener("click",()=>hideModal($("#repoModal")));
 
-  $("#defaultsBtn").addEventListener("click", async ()=>{ let r=await fetch("/api/settings/default_project"); if(r.ok){const{value}=await r.json();$("#defProjectInput").value=value||"";} r=await fetch("/api/settings/default_sprint"); if(r.ok){const{value}=await r.json();$("#defSprintInput").value=value||"";} showModal($("#defaultsModal"));});
-  $("#defSaveBtn").addEventListener("click", async ()=>{await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:"default_project",value:$("#defProjectInput").value})}); await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:"default_sprint",value:$("#defSprintInput").value})}); hideModal($("#defaultsModal"));});
+  $("#defaultsBtn").addEventListener("click", async ()=>{
+    let r=await fetch("/api/settings/default_project");
+    if(r.ok){
+      const{value}=await r.json();
+      $("#defProjectInput").value=value||"";
+    }
+    r=await fetch("/api/settings/default_sprint");
+    if(r.ok){
+      const{value}=await r.json();
+      $("#defSprintInput").value=value||"";
+    }
+    showModal($("#defaultsModal"));
+  });
+  $("#defSaveBtn").addEventListener("click", async ()=>{
+    await fetch("/api/settings",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({key:"default_project",value:$("#defProjectInput").value})
+    });
+    await fetch("/api/settings",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({key:"default_sprint",value:$("#defSprintInput").value})
+    });
+    hideModal($("#defaultsModal"));
+  });
   $("#defCancelBtn").addEventListener("click",()=>hideModal($("#defaultsModal")));
 
-  $("#addTaskBtn").addEventListener("click",()=>{ $("#newTaskTitle").value=""; $("#newTaskBody").value=""; showModal($("#newTaskModal")); });
-  $("#createTaskBtn").addEventListener("click", async ()=>{ const title=$("#newTaskTitle").value.trim(), body=$("#newTaskBody").value.trim(); if(!title){alert("Please enter a title for the new task."); return;} const res=await fetch("/api/tasks/new",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({title,body})}); if(!res.ok){alert("Error creating task. Check console/logs."); return;} hideModal($("#newTaskModal")); await loadTasks(); });
+  $("#addTaskBtn").addEventListener("click",()=>{
+    $("#newTaskTitle").value="";
+    $("#newTaskBody").value="";
+    showModal($("#newTaskModal"));
+  });
+  $("#createTaskBtn").addEventListener("click", async ()=>{
+    const title=$("#newTaskTitle").value.trim(),
+          body=$("#newTaskBody").value.trim();
+    if(!title){
+      alert("Please enter a title for the new task.");
+      return;
+    }
+    const res=await fetch("/api/tasks/new",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({title,body})
+    });
+    if(!res.ok){
+      alert("Error creating task. Check console/logs.");
+      return;
+    }
+    hideModal($("#newTaskModal"));
+    await loadTasks();
+  });
   $("#cancelTaskBtn").addEventListener("click",()=>hideModal($("#newTaskModal")));
 
   /* ------------------------------------------------------------------
@@ -455,34 +674,71 @@
   const chatInputEl = document.getElementById("chatInput");
   const chatSendBtnEl = document.getElementById("chatSendBtn");
 
-  chatSendBtnEl.addEventListener("click", async () => {
-    const userMessage = chatInputEl.value.trim(); if(!userMessage) return;
+  // Press Enter to submit chat
+  chatInputEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      chatSendBtnEl.click();
+    }
+  });
 
-    // container
-    const seqDiv = document.createElement("div"); seqDiv.className = "chat-sequence";
-    const userDiv = document.createElement("div"); userDiv.className = "chat-user"; userDiv.textContent = "You: " + userMessage; seqDiv.appendChild(userDiv);
+  chatSendBtnEl.addEventListener("click", async () => {
+    const userMessage = chatInputEl.value.trim();
+    if(!userMessage) return;
+
+    const seqDiv = document.createElement("div");
+    seqDiv.className = "chat-sequence";
+    const userDiv = document.createElement("div");
+    userDiv.className = "chat-user";
+    userDiv.textContent = "You: " + userMessage;
+    seqDiv.appendChild(userDiv);
     chatInputEl.value = "";
 
-    const waitingElem = document.getElementById("waitingCounter"); let waitTime=0; waitingElem.textContent = "Waiting: 0.0s";
-    const waitInterval = setInterval(()=>{ waitTime+=0.1; waitingElem.textContent = `Waiting: ${waitTime.toFixed(1)}s`; }, 100);
+    const waitingElem = document.getElementById("waitingCounter");
+    let waitTime=0;
+    waitingElem.textContent = "Waiting: 0.0s";
+    const waitInterval = setInterval(()=>{
+      waitTime+=0.1;
+      waitingElem.textContent = `Waiting: ${waitTime.toFixed(1)}s`;
+    }, 100);
 
     try {
-      const resp = await fetch("/api/chat",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({message:userMessage}) });
-      clearInterval(waitInterval); waitingElem.textContent = "";
-      const botDiv = document.createElement("div"); botDiv.className = "chat-bot";
-      if(!resp.ok){ botDiv.textContent = `AI (${AI_MODEL}): Error contacting AI.`; }
-      else { const data = await resp.json(); botDiv.textContent = `AI (${AI_MODEL}): ${data.reply||""}`; }
+      const resp = await fetch("/api/chat",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({message:userMessage})
+      });
+      clearInterval(waitInterval);
+      waitingElem.textContent = "";
+      const botDiv = document.createElement("div");
+      botDiv.className = "chat-bot";
+      if(!resp.ok){
+        botDiv.textContent = `AI (${AI_MODEL}): Error contacting AI.`;
+      } else {
+        const data = await resp.json();
+        botDiv.textContent = `AI (${AI_MODEL}): ${data.reply||""}`;
+      }
       seqDiv.appendChild(botDiv);
     } catch(e) {
-      clearInterval(waitInterval); waitingElem.textContent = ""; const botDiv = document.createElement("div"); botDiv.className = "chat-bot"; botDiv.textContent = `AI (${AI_MODEL}): Error occurred.`; seqDiv.appendChild(botDiv);
+      clearInterval(waitInterval);
+      waitingElem.textContent = "";
+      const botDiv = document.createElement("div");
+      botDiv.className = "chat-bot";
+      botDiv.textContent = `AI (${AI_MODEL}): Error occurred.`;
+      seqDiv.appendChild(botDiv);
     }
-    chatMessagesEl.appendChild(seqDiv); chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+    chatMessagesEl.appendChild(seqDiv);
+    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
   });
 
   /* ------------------------------------------------------------------
    * Init sequence
    * ------------------------------------------------------------------ */
-  (async function init(){ await loadSettings(); await populateFilters(); await loadTasks(); })();
+  (async function init(){
+    await loadSettings();
+    await populateFilters();
+    await loadTasks();
+  })();
 </script>
 </body>
 </html>
