@@ -20,8 +20,8 @@
     #addTaskBtn{margin-left:1rem;font-size:1.1rem;}
     #gearBtn,#instrBtn,#repoBtn,#defaultsBtn{margin-left:.6rem;font-size:1.2rem;}
     tr.hidden{opacity:.4;}
-    .project-cell,.sprint-cell,.priority-cell{cursor:pointer;color:#333;}
-    .project-cell:hover,.sprint-cell:hover,.priority-cell:hover{text-decoration:underline dotted;}
+    .project-cell,.sprint-cell,.priority-cell,.status-cell{cursor:pointer;color:#333;}
+    .project-cell:hover,.sprint-cell:hover,.priority-cell:hover,.status-cell:hover{text-decoration:underline dotted;}
     .inline-input{width:100%;box-sizing:border-box;font:inherit;padding:4px;}
     #controls{margin-bottom:1rem;}
 
@@ -143,6 +143,7 @@ const columns = [
   { key: "reorder",    label: "↕"     },
   { key: "visibility", label: ""       },
   { key: "priority",   label: "Prio"   },
+  { key: "status",     label: "Status" },
   { key: "slug",       label: "Slug"   },
   { key: "repo",       label: "Repo"   },
   { key: "number",     label: "#"      },
@@ -231,6 +232,10 @@ function renderBody(){
           td.textContent = t.priority;
           td.className="priority-cell";
           break;
+        case "status":
+          td.textContent = t.status;
+          td.className="status-cell";
+          break;
         case "slug":    td.textContent = t.task_id_slug; break;
         case "repo":    td.textContent = t.repository; break;
         case "reorder":
@@ -318,7 +323,7 @@ $("#colSaveBtn").addEventListener("click", async ()=>{
 $("#colCancelBtn").addEventListener("click", ()=>hideModal($("#colModal")));
 
 /* ------------------------------------------------------------------
- * Visibility / reorder buttons; priority editing
+ * Row interactions (visibility / reorder / priority / status)
  * ------------------------------------------------------------------ */
 $("#tasks").addEventListener("click", async (e)=>{
   const btn = e.target.closest("button");
@@ -370,8 +375,40 @@ $("#tasks").addEventListener("click", async (e)=>{
       await loadTasks();
     });
 
-    /* revert if user clicks away without picking */
     select.addEventListener("blur", async ()=>{
+      await loadTasks();
+    });
+  }
+
+  /* Status cell click */
+  if(e.target.classList.contains("status-cell")){
+    const row = e.target.closest("tr");
+    const taskId = +row.dataset.taskId;
+    const currentStatus = e.target.textContent.trim();
+
+    const statusSelect = document.createElement("select");
+    ["Not Started","In Progress","Done"].forEach(optVal=>{
+      const o = document.createElement("option");
+      o.value=optVal; o.textContent=optVal;
+      if(optVal===currentStatus) o.selected=true;
+      statusSelect.appendChild(o);
+    });
+
+    e.target.textContent="";
+    e.target.appendChild(statusSelect);
+    statusSelect.focus();
+
+    statusSelect.addEventListener("change", async ()=>{
+      const chosen = statusSelect.value;
+      await fetch("/api/tasks/status", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({id:taskId, status:chosen})
+      });
+      await loadTasks();
+    });
+
+    statusSelect.addEventListener("blur", async ()=>{
       await loadTasks();
     });
   }
@@ -505,3 +542,4 @@ $("#cancelTaskBtn").addEventListener("click", ()=>{
 </script>
 </body>
 </html>
+

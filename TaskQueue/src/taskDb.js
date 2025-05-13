@@ -43,6 +43,9 @@ export default class TaskDB {
         `ALTER TABLE issues ADD COLUMN priority TEXT DEFAULT 'Medium';`
       );
     } catch {}
+    try {
+      this.db.exec(`ALTER TABLE issues ADD COLUMN status TEXT DEFAULT 'Not Started';`);
+    } catch {}
 
     /* simple key/value store */
     this.db.exec(`
@@ -67,10 +70,10 @@ export default class TaskDB {
   /*  Upsert / sync helpers                                             */
   /* ------------------------------------------------------------------ */
   upsertIssue(issue, repositorySlug) {
-    /* detect existing row (keep its priority fields / project / sprint) */
+    /* detect existing row (keep its priority fields / project / sprint / status) */
     const existing = this.db
       .prepare(
-        "SELECT priority_number, priority, project, sprint FROM issues WHERE github_id = ?"
+        "SELECT priority_number, priority, project, sprint, status FROM issues WHERE github_id = ?"
       )
       .get(issue.id);
 
@@ -86,11 +89,13 @@ export default class TaskDB {
     /* textual priority ------------------------------------------------ */
     const textualPriority = existing?.priority ?? "Medium";
 
-    /* defaults for NEW tasks ---------------------------------------- */
+    /* defaults for NEW tasks ------------------------------------------ */
     const defaultProject =
       existing?.project ?? this.getSetting("default_project") ?? "";
     const defaultSprint =
       existing?.sprint ?? this.getSetting("default_sprint") ?? "";
+    const currentStatus =
+      existing?.status ?? "Not Started";
 
     const row = {
       github_id: issue.id,
@@ -107,18 +112,19 @@ export default class TaskDB {
       fib_points: null,
       assignee: issue.assignee?.login || null,
       created_at: issue.created_at,
-      closed: 0
+      closed: 0,
+      status: currentStatus
     };
 
     const stmt = this.db.prepare(`
       INSERT INTO issues (
         github_id, repository, number, title, html_url,
         task_id_slug, priority_number, priority, hidden,
-        project, sprint, fib_points, assignee, created_at, closed
+        project, sprint, fib_points, assignee, created_at, closed, status
       ) VALUES (
         @github_id, @repository, @number, @title, @html_url,
         @task_id_slug, @priority_number, @priority, @hidden,
-        @project, @sprint, @fib_points, @assignee, @created_at, @closed
+        @project, @sprint, @fib_points, @assignee, @created_at, @closed, @status
       )
       ON CONFLICT(github_id) DO UPDATE SET
         repository      = excluded.repository,
@@ -130,7 +136,8 @@ export default class TaskDB {
         priority        = excluded.priority,
         assignee        = excluded.assignee,
         created_at      = excluded.created_at,
-        closed          = 0
+        closed          = 0,
+        status          = excluded.status
     `);
 
     stmt.run(row);
@@ -220,6 +227,13 @@ export default class TaskDB {
   setPriority(id, priority) {
     this.db.prepare("UPDATE issues SET priority = ? WHERE id = ?").run(
       priority,
+      id
+    );
+  }
+
+  setStatus(id, status) {
+    this.db.prepare("UPDATE issues SET status = ? WHERE id = ?").run(
+      status,
       id
     );
   }

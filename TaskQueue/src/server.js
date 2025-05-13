@@ -122,7 +122,19 @@ app.post("/api/tasks/priority", (req, res) => {
   }
 });
 
-// --- NEW: Create new GitHub issue and upsert ---
+// NEW: POST /api/tasks/status
+app.post("/api/tasks/status", (req, res) => {
+  try {
+    const { id, status } = req.body;
+    db.setStatus(id, status);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[TaskQueue] /api/tasks/status failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// --- Create new GitHub issue and upsert ---
 app.post("/api/tasks/new", async (req, res) => {
   try {
     const { title, body } = req.body;
@@ -189,3 +201,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
+
