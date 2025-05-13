@@ -63,12 +63,14 @@ export default class TaskDB {
   /*  Upsert / sync helpers                                             */
   /* ------------------------------------------------------------------ */
   upsertIssue(issue, repositorySlug) {
-    /* current row? */
+    /* detect existing row (keep its priority / project / sprint) */
     const existing = this.db
-      .prepare("SELECT priority_number FROM issues WHERE github_id = ?")
+      .prepare(
+        "SELECT priority_number, project, sprint FROM issues WHERE github_id = ?"
+      )
       .get(issue.id);
 
-    /* keep old priority, otherwise append to bottom */
+    /* priority ------------------------------------------------------- */
     let priority = existing?.priority_number;
     if (!priority) {
       const max =
@@ -76,6 +78,12 @@ export default class TaskDB {
           .m || 0;
       priority = max + 1;
     }
+
+    /* defaults for NEW tasks ---------------------------------------- */
+    const defaultProject =
+      existing?.project ?? this.getSetting("default_project") ?? "";
+    const defaultSprint =
+      existing?.sprint ?? this.getSetting("default_sprint") ?? "";
 
     const row = {
       github_id: issue.id,
@@ -86,8 +94,8 @@ export default class TaskDB {
       task_id_slug: `${repositorySlug}#${issue.number}`,
       priority_number: priority,
       hidden: 0,
-      project: "",
-      sprint: "",
+      project: defaultProject,
+      sprint: defaultSprint,
       fib_points: null,
       assignee: issue.assignee?.login || null,
       created_at: issue.created_at,
@@ -113,7 +121,7 @@ export default class TaskDB {
         priority_number = excluded.priority_number,
         assignee        = excluded.assignee,
         created_at      = excluded.created_at,
-        closed          = 0               /* reopen if it re-appeared */
+        closed          = 0
     `);
 
     stmt.run(row);
@@ -198,6 +206,19 @@ export default class TaskDB {
       sprint,
       id
     );
+  }
+
+  /* NEW: helpers by GitHub ID (for freshly created tasks) ------------ */
+  setProjectByGithubId(githubId, project) {
+    this.db
+      .prepare("UPDATE issues SET project = ? WHERE github_id = ?")
+      .run(project, githubId);
+  }
+
+  setSprintByGithubId(githubId, sprint) {
+    this.db
+      .prepare("UPDATE issues SET sprint = ? WHERE github_id = ?")
+      .run(sprint, githubId);
   }
 
   /* ---------------- Settings table ---------------- */
