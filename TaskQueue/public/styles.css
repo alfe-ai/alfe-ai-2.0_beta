@@ -97,7 +97,6 @@ body {
 /* Chat panel */
 #chatPanel {
   margin-top: 2rem;
-  /* Removed max-width to allow horizontal resizing */
 }
 
 #chatMessages {
@@ -118,7 +117,7 @@ body {
   margin-bottom: 0.5rem;
 }
 
-/* Chat bubble styling */
+/* Chat bubbles */
 .chat-sequence {
   border: 1px solid #ccc;
   border-radius: 8px;
@@ -138,4 +137,14 @@ body {
   padding: 6px 8px;
   border-radius: 4px;
   color: #009900;
+}
+
+.chat-system {
+  background: #eee;
+  padding: 6px 8px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  color: #333;
+  font-size: 0.875rem;
+  white-space: pre-wrap;
 }

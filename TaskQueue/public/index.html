@@ -102,19 +102,6 @@
   </div>
 </div>
 
-<!-- System context text section -->
-<div id="systemContext" style="background: #eee; margin-bottom:8px; padding:5px; white-space:pre-wrap;">
-Agent Instructions (Alfe.TaskAgent.Thinking beta-0.70):
-
-1. You are a programming assistant AI based off of "Thinking" LLM Models (OpenAI o1 & OpenAI o3 & DeepSeek R1 & Perplexity Sonar Reasoning) named "Alfe", "Alfe.TaskAgent.Thinking".
-2. The user prefers minimal detail.
-2.a. You are an AI assistant designed to provide clear, concise, and friendly responses.
-
-   - Describe your internal thought process in a concise, approachable way.
-   - Provide the final answer in a helpful tone.
-
-</div>
-
 <!-- Chat tabs area -->
 <div id="chatTabs" style="display:flex; gap:0.5rem; align-items:center; margin-bottom:8px;">
   <div id="tabsContainer" style="flex-wrap: wrap; display: flex; gap: 0.5rem;"></div>
@@ -157,6 +144,8 @@ Agent Instructions (Alfe.TaskAgent.Thinking beta-0.70):
   let dragSrcRow = null;
   let modelName = "unknown";
   let tasksVisible = true;
+  let chatTabs = [];
+  let currentTabId = 1;
 
   const $  = (sel, ctx=document) => ctx.querySelector(sel);
   const $$ = (sel, ctx=document) => [...ctx.querySelectorAll(sel)];
@@ -765,9 +754,16 @@ Agent Instructions (Alfe.TaskAgent.Thinking beta-0.70):
   const chatSendBtnEl = document.getElementById("chatSendBtn");
   const waitingElem = document.getElementById("waitingCounter");
 
-  function addChatMessage(pairId, userText, userTs, aiText, aiTs, model) {
+  function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemContext) {
     const seqDiv = document.createElement("div");
     seqDiv.className = "chat-sequence";
+
+    if (systemContext) {
+      const sysDiv = document.createElement("div");
+      sysDiv.className = "chat-system";
+      sysDiv.textContent = systemContext;
+      seqDiv.appendChild(sysDiv);
+    }
 
     const userDiv = document.createElement("div");
     userDiv.className = "chat-user";
@@ -788,7 +784,15 @@ Agent Instructions (Alfe.TaskAgent.Thinking beta-0.70):
     try {
       const pairs = await fetch(`/api/chat/history?tabId=${tabId}`).then(r => r.json());
       for (const p of pairs) {
-        addChatMessage(p.id, p.user_text, p.timestamp, p.ai_text, p.ai_timestamp, p.model);
+        addChatMessage(
+          p.id,
+          p.user_text,
+          p.timestamp,
+          p.ai_text,
+          p.ai_timestamp,
+          p.model,
+          p.system_context
+        );
       }
     } catch (err) {
       console.error("Error loading chat history:", err);
