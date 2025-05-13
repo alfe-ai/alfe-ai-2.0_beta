@@ -15,7 +15,6 @@
     <p><a href="/activity" target="_blank">Activity timeline</a></p>
     <p><a href="/test_projects" target="_blank">API test page</a></p>
 
-    <!-- Collapsible toolbar, so it doesn't clutter the top row constantly -->
     <details id="toolbarCollapsible" open>
       <summary>Toolbar & Filters</summary>
       <div id="controls">
@@ -41,17 +40,14 @@
     </table>
   </aside>
 
-  <!-- Draggable divider -->
   <div id="divider" class="divider"></div>
 
   <main class="chat-panel">
-    <!-- Chat tabs area -->
     <div id="chatTabs" style="display:flex; gap:0.5rem; align-items:center; margin-bottom:8px;">
       <div id="tabsContainer" style="flex-wrap: wrap; display: flex; gap: 0.5rem;"></div>
       <button id="newTabBtn">➕ Tab</button>
     </div>
 
-    <!-- Collapsible section to display agent instructions (collapsed by default) -->
     <div style="margin: 8px 0;">
       <details style="max-width: 600px;" id="instructionsCollapse">
         <summary>Agent Instructions (click to expand)</summary>
@@ -61,14 +57,11 @@
 
     <div id="chatPanel" style="position: relative;">
       <div style="display: flex; align-items: center; gap: 0.5rem;">
-        <!-- Model HUD -->
         <div id="modelHud" style="font-size:0.9rem; color:#aaa; margin-bottom:4px;"></div>
-        <!-- Chat Settings gear -->
         <button id="chatSettingsBtn" title="Chat Settings">⚙️</button>
       </div>
 
       <div id="chatMessages"></div>
-      <!-- Scroll down button -->
       <button id="scrollDownBtn">Scroll to Bottom</button>
 
       <div id="waitingCounter"></div>
@@ -86,7 +79,6 @@
   </main>
 </div>
 
-<!-- Column picker modal -->
 <div id="colModal" class="modal">
   <div class="modal-content">
     <h2>Columns</h2>
@@ -98,7 +90,6 @@
   </div>
 </div>
 
-<!-- Agent instructions modal (for editing) -->
 <div id="instrModal" class="modal">
   <div class="modal-content">
     <h2>Agent Instructions</h2>
@@ -116,7 +107,6 @@
   </div>
 </div>
 
-<!-- Git repo modal -->
 <div id="repoModal" class="modal">
   <div class="modal-content">
     <h2>Edit Git repository</h2>
@@ -130,7 +120,6 @@
   </div>
 </div>
 
-<!-- Defaults modal -->
 <div id="defaultsModal" class="modal">
   <div class="modal-content">
     <h2>Default project / sprint</h2>
@@ -147,7 +136,6 @@
   </div>
 </div>
 
-<!-- New Task modal -->
 <div id="newTaskModal" class="modal">
   <div class="modal-content">
     <h2>Create New Task</h2>
@@ -164,7 +152,6 @@
   </div>
 </div>
 
-<!-- Chat Settings Modal -->
 <div id="chatSettingsModal" class="modal">
   <div class="modal-content">
     <h2>Chat Settings</h2>
@@ -177,7 +164,6 @@
 </div>
 
 <script>
-  /* ---------------- default column definitions ---------------- */
   let columnsOrder = [
     { key: "drag",         label: "⠿"          },
     { key: "priority",     label: "Prio"       },
@@ -196,7 +182,7 @@
   let chatTabs = [];
   let currentTabId = 1;
   let chatHideMetadata = false;
-  window.agentName = "Alfe"; // default, replaced by DB setting if found
+  window.agentName = "Alfe";
 
   const $  = (sel, ctx=document) => ctx.querySelector(sel);
   const $$ = (sel, ctx=document) => [...ctx.querySelectorAll(sel)];
@@ -224,14 +210,10 @@
   function hideModal(m){ m.style.display = "none"; }
   $$(".modal").forEach(m => m.addEventListener("click", e => { if(e.target===m) hideModal(m); }));
 
-  /* ------------------------------------------------------------------
-   * Toggling the task table
-   * ------------------------------------------------------------------ */
   async function toggleTasks(){
     tasksVisible = !tasksVisible;
     $("#tasks").style.display = tasksVisible ? "" : "none";
     $("#toggleTasksBtn").textContent = tasksVisible ? "Hide tasks" : "Show tasks";
-    // Save the setting
     await fetch("/api/settings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -240,9 +222,6 @@
   }
   $("#toggleTasksBtn").addEventListener("click", toggleTasks);
 
-  /* ------------------------------------------------------------------
-   * Load & save column config
-   * ------------------------------------------------------------------ */
   async function loadSettings(){
     {
       const r = await fetch("/api/settings/visible_columns");
@@ -300,9 +279,6 @@
     });
   }
 
-  /* ------------------------------------------------------------------
-   * Drag & drop reordering
-   * ------------------------------------------------------------------ */
   function handleDragStart(e){
     dragSrcRow = e.target.closest("tr");
     e.dataTransfer.effectAllowed = "move";
@@ -427,7 +403,6 @@
     renderBody();
   }
 
-  /* Filter logic */
   async function populateFilters(){
     const pj = await (await fetch("/api/projects")).json();
     $("#projectFilter").innerHTML = '<option value="">All projects</option>' +
@@ -677,9 +652,6 @@
   });
   $("#cancelTaskBtn").addEventListener("click",()=>hideModal($("#newTaskModal")));
 
-  /* ------------------------------------------------------------------
-   * Chat tab logic
-   * ------------------------------------------------------------------ */
   async function loadTabs(){
     const res = await fetch("/api/chat/tabs");
     chatTabs = await res.json();
@@ -737,11 +709,19 @@
       const tabBtn = document.createElement("div");
       tabBtn.style.display="flex";
       tabBtn.style.alignItems="center";
-      tabBtn.style.border="1px solid #444";
-      tabBtn.style.padding="4px 6px";
       tabBtn.style.cursor="pointer";
-      tabBtn.style.backgroundColor = (tab.id===currentTabId) ? "#444" : "#333";
-      tabBtn.style.color = "#ddd";
+
+      if (tab.id === currentTabId) {
+        tabBtn.style.backgroundColor = "#555";
+        tabBtn.style.border = "2px solid #aaa";
+        tabBtn.style.color = "#fff";
+      } else {
+        tabBtn.style.backgroundColor = "#333";
+        tabBtn.style.border = "1px solid #444";
+        tabBtn.style.color = "#ddd";
+      }
+
+      tabBtn.style.padding="4px 6px";
       tabBtn.textContent = tab.name;
       tabBtn.addEventListener("click", ()=>selectTab(tab.id));
 
@@ -756,14 +736,10 @@
   }
   $("#newTabBtn").addEventListener("click", addNewTab);
 
-  /* ------------------------------------------------------------------
-   * Add chat messages
-   * ------------------------------------------------------------------ */
   function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemContext, fullHistory) {
     const seqDiv = document.createElement("div");
     seqDiv.className = "chat-sequence";
 
-    /* User bubble */
     const userDiv = document.createElement("div");
     userDiv.className = "chat-user";
     {
@@ -781,7 +757,6 @@
     }
     seqDiv.appendChild(userDiv);
 
-    /* AI bubble */
     const botDiv = document.createElement("div");
     botDiv.className = "chat-bot";
     {
@@ -853,9 +828,6 @@
     chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
   }
 
-  /* ------------------------------------------------------------------
-   * Get and render entire chat history for a tab
-   * ------------------------------------------------------------------ */
   async function loadChatHistory(tabId = 1) {
     chatMessagesEl.innerHTML="";
     try {
@@ -879,9 +851,6 @@
     }
   }
 
-  /* ------------------------------------------------------------------
-   * Chat input + streaming
-   * ------------------------------------------------------------------ */
   const chatMessagesEl = document.getElementById("chatMessages");
   const chatInputEl = document.getElementById("chatInput");
   const chatSendBtnEl = document.getElementById("chatSendBtn");
@@ -917,7 +886,6 @@
     const seqDiv = document.createElement("div");
     seqDiv.className = "chat-sequence";
 
-    /* User bubble quick placeholder */
     const userDiv = document.createElement("div");
     userDiv.className = "chat-user";
     {
@@ -935,7 +903,6 @@
     }
     seqDiv.appendChild(userDiv);
 
-    /* Bot placeholder bubble */
     const botDiv = document.createElement("div");
     botDiv.className = "chat-bot";
     {
@@ -997,7 +964,6 @@
     chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
   });
 
-  /* Chat Settings gear logic */
   $("#chatSettingsBtn").addEventListener("click", async () => {
     const r = await fetch("/api/settings/chat_hide_metadata");
     if(r.ok){
@@ -1023,7 +989,6 @@
     hideModal($("#chatSettingsModal"));
   });
 
-  /* Draggable divider */
   (function installDividerDrag(){
     const divider = $("#divider");
     let isDragging = false;
@@ -1100,10 +1065,10 @@
       const r4 = await fetch("/api/settings/agent_name");
       if(r4.ok){
         const { value } = await r4.json();
-        window.agentName = value || "Alfe";  // changed default to "Alfe"
+        window.agentName = value || "Alfe";
       }
     } catch(e){
-      window.agentName = "Alfe";            // changed default to "Alfe"
+      window.agentName = "Alfe";
     }
 
     try {
