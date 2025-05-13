@@ -762,14 +762,13 @@
   const chatSendBtnEl = document.getElementById("chatSendBtn");
   const waitingElem = document.getElementById("waitingCounter");
 
-  function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemContext) {
+  function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemContext, fullHistory) {
     const seqDiv = document.createElement("div");
     seqDiv.className = "chat-sequence";
 
     let agentInstructions = "";
     let systemInfoText = "";
     if (systemContext) {
-      // Attempt to parse the system context
       const re = /System Context:\n([\s\S]*?)\n\nModel:\s*([^]+)\nUserTime:\s*([^]+)/;
       const match = re.exec(systemContext);
       if (match) {
@@ -822,6 +821,21 @@
     botDiv.innerHTML = `AI (model: ${model}, ${formatTimestamp(aiTs)}): ${aiText || ""} <a href="/pair/${pairId}" target="_blank">[details]</a>`;
     seqDiv.appendChild(botDiv);
 
+    if (fullHistory) {
+      const detailsHistEl = document.createElement("details");
+      detailsHistEl.open = false;
+      detailsHistEl.className = "chat-system";
+      const sumHist = document.createElement("summary");
+      sumHist.textContent = "View Full History JSON (collapsed)";
+      detailsHistEl.appendChild(sumHist);
+
+      const preHist = document.createElement("pre");
+      preHist.textContent = JSON.stringify(fullHistory, null, 2);
+      detailsHistEl.appendChild(preHist);
+
+      seqDiv.appendChild(detailsHistEl);
+    }
+
     chatMessagesEl.appendChild(seqDiv);
     chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
   }
@@ -831,14 +845,19 @@
     try {
       const pairs = await fetch(`/api/chat/history?tabId=${tabId}`).then(r => r.json());
       for (const p of pairs) {
+        // Fetch the full JSON from /pair/:id
+        const pairDetail = await fetch(`/pair/${p.id}`).then(r=>r.json());
+        p._history = pairDetail;
+
         addChatMessage(
-                p.id,
-                p.user_text,
-                p.timestamp,
-                p.ai_text,
-                p.ai_timestamp,
-                p.model,
-                p.system_context
+          p.id,
+          p.user_text,
+          p.timestamp,
+          p.ai_text,
+          p.ai_timestamp,
+          p.model,
+          p.system_context,
+          p._history
         );
       }
     } catch (err) {
@@ -860,14 +879,11 @@
     const userTime = new Date().toISOString();
     let partialText = "";
 
-    // Construct system context now so that we can display it immediately
     const sc = `System Context:\n${(window.agentInstructions || "").trim()}\n\nModel: ${modelName}\nUserTime: ${userTime}\nTimeZone: Central`;
 
-    // Create a container for the new sequence (with instructions + user + AI partial)
     const seqDiv = document.createElement("div");
     seqDiv.className = "chat-sequence";
 
-    // Agent instructions + system info
     if (window.agentInstructions) {
       const detailsEl = document.createElement("details");
       detailsEl.open = false;
@@ -898,13 +914,11 @@
       seqDiv.appendChild(detailsSysEl);
     }
 
-    // User bubble
     const userDiv = document.createElement("div");
     userDiv.className = "chat-user";
     userDiv.innerHTML = `You (pending ID, ${formatTimestamp(userTime)}): ${userMessage}`;
     seqDiv.appendChild(userDiv);
 
-    // AI bubble for partial streaming
     const botDiv = document.createElement("div");
     botDiv.className = "chat-bot";
     botDiv.textContent = `AI (model: ${modelName}, ...): `;
@@ -942,7 +956,6 @@
           chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
         }
       }
-      // Once streaming completes, reload to show final content (with real ID, final instructions, etc.)
       await loadChatHistory(currentTabId);
 
     } catch(e) {
@@ -953,14 +966,10 @@
     chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
   });
 
-  /* ------------------------------------------------------------------
-   * Init sequence
-   * ------------------------------------------------------------------ */
   (async function init(){
     await loadSettings();
     await populateFilters();
     await loadTasks();
-    // Fetch the model name for the HUD
     try {
       const r = await fetch("/api/model");
       if(r.ok){
@@ -972,12 +981,10 @@
     }
     $("#modelHud").textContent = "Model: " + modelName;
 
-    // Load chat tabs
     await loadTabs();
     if(chatTabs.length>0){
       currentTabId = chatTabs[0].id;
     } else {
-      // Ensure at least one default tab
       await fetch("/api/chat/tabs/new", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -989,7 +996,6 @@
     renderTabs();
     await loadChatHistory(currentTabId);
 
-    // Populate collapsible instructions & store globally
     try {
       const r2 = await fetch("/api/settings/agent_instructions");
       if(r2.ok){
