@@ -37,7 +37,8 @@
       #addTaskBtn,
       #gearBtn,
       #instrBtn,
-      #repoBtn {
+      #repoBtn,
+      #defaultsBtn {
         border: none;
         background: none;
         cursor: pointer;
@@ -51,7 +52,8 @@
       }
       #gearBtn,
       #instrBtn,
-      #repoBtn {
+      #repoBtn,
+      #defaultsBtn {
         margin-left: 0.6rem;
         font-size: 1.2rem;
       }
@@ -145,6 +147,7 @@
       <button id="addTaskBtn">➕ New Task</button>
       <button id="instrBtn" title="Agent instructions">📝</button>
       <button id="gearBtn" title="Configure columns">⚙️</button>
+      <button id="defaultsBtn" title="Default project/sprint">⭐</button>
       <button id="repoBtn" title="Edit Git repository">🔀</button>
     </div>
 
@@ -194,6 +197,25 @@
       </div>
     </div>
 
+    <!-- Defaults modal -->
+    <div id="defaultsModal" class="modal">
+      <div class="modal-content">
+        <h2>Default project / sprint</h2>
+        <label>
+          Default project:
+          <input type="text" id="defProjectInput" style="width:100%;" />
+        </label>
+        <label>
+          Default sprint:
+          <input type="text" id="defSprintInput" style="width:100%;" />
+        </label>
+        <div class="modal-buttons">
+          <button id="defSaveBtn">Save</button>
+          <button id="defCancelBtn">Cancel</button>
+        </div>
+      </div>
+    </div>
+
     <script>
       /* ---------------- constants ---------------- */
       const columns = [
@@ -238,6 +260,38 @@
             value: [...visibleCols]
           })
         });
+      }
+
+      /* ------------------------------------------------------------------
+       * Default project / sprint helpers
+       * ------------------------------------------------------------------ */
+      async function loadDefaults() {
+        let project = "";
+        let sprint = "";
+        try {
+          const p = await fetch("/api/settings/default_project");
+          if (p.ok) ({ value: project } = await p.json());
+        } catch {}
+        try {
+          const s = await fetch("/api/settings/default_sprint");
+          if (s.ok) ({ value: sprint } = await s.json());
+        } catch {}
+        return { project, sprint };
+      }
+
+      async function saveDefaults(project, sprint) {
+        await Promise.all([
+          fetch("/api/settings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ key: "default_project", value: project })
+          }),
+          fetch("/api/settings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ key: "default_sprint", value: sprint })
+          })
+        ]);
       }
 
       /* ------------------------------------------------------------------
@@ -617,6 +671,32 @@
       );
       repoModal.addEventListener("click", (e) => {
         if (e.target === repoModal) repoModal.style.display = "none";
+      });
+
+      /* ------------------------------------------------------------------
+       * Default project/sprint modal logic
+       * ------------------------------------------------------------------ */
+      const defaultsModal = $("#defaultsModal");
+      $("#defaultsBtn").addEventListener("click", async () => {
+        const { project, sprint } = await loadDefaults();
+        $("#defProjectInput").value = project;
+        $("#defSprintInput").value = sprint;
+        defaultsModal.style.display = "flex";
+        $("#defProjectInput").focus();
+      });
+      $("#defSaveBtn").addEventListener("click", async () => {
+        const project = $("#defProjectInput").value.trim();
+        const sprint = $("#defSprintInput").value.trim();
+        await saveDefaults(project, sprint);
+        defaultsModal.style.display = "none";
+        alert("Defaults updated.");
+      });
+      $("#defCancelBtn").addEventListener(
+        "click",
+        () => (defaultsModal.style.display = "none")
+      );
+      defaultsModal.addEventListener("click", (e) => {
+        if (e.target === defaultsModal) defaultsModal.style.display = "none";
       });
 
       /* ------------------------------------------------------------------
