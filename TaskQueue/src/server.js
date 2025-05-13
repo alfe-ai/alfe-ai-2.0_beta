@@ -348,7 +348,7 @@ app.post("/api/chat", async (req, res) => {
 
     const model = process.env.OPENAI_MODEL || "o3-mini";
     const savedInstructions = db.getSetting("agent_instructions") || "";
-    const systemContext = `System Context:\n${savedInstructions}\n\nModel: ${model}\nUserTime: ${userTime}`;
+    const systemContext = `System Context:\n${savedInstructions}\n\nModel: ${model}\nUserTime: ${userTime}\nTimeZone: Central`;
 
     // Insert user message into chat_pairs table with system context
     const chatPairId = db.createChatPair(userMessage, chatTabId, systemContext);
