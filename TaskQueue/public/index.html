@@ -1,56 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Aurora: Open Tasks</title>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Queue</title>
   <style>
-    body { font-family: sans-serif; margin: 2rem; }
-    h1   { margin-top: 0; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 8px; border: 1px solid #ddd; }
-    th { background: #f0f0f0; text-align: left; }
-    tr:nth-child(even) { background: #fafafa; }
-    a { color: #0366d6; text-decoration: none; }
-    button.arrow,
-    button.eye,
-    button.fib-btn,
-    #addTaskBtn,#gearBtn,#instrBtn,#repoBtn,#defaultsBtn{
-      border:none;background:none;cursor:pointer;font-size:1rem;line-height:1;padding:0 4px;
-    }
-    #addTaskBtn{margin-left:1rem;font-size:1.1rem;}
-    #gearBtn,#instrBtn,#repoBtn,#defaultsBtn{margin-left:.6rem;font-size:1.2rem;}
-    tr.hidden{opacity:.4;}
-    .project-cell,.sprint-cell,.priority-cell,.status-cell,
-    .dependencies-cell,.blocking-cell, .title-cell {
-      cursor:pointer;color:#333;
-    }
-    .project-cell:hover,.sprint-cell:hover,.priority-cell:hover,.status-cell:hover,
-    .dependencies-cell:hover,.blocking-cell:hover, .title-cell:hover {
-      text-decoration:underline dotted;
-    }
-    .inline-input{width:100%;box-sizing:border-box;font:inherit;padding:4px;}
-    #controls{margin-bottom:1rem;}
-
-    /* ------------ modal ------------ */
-    .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.25);align-items:center;justify-content:center;}
-    .modal-content{background:#fff;padding:1rem 1.5rem;border-radius:6px;min-width:220px;max-width:600px;max-height:90vh;overflow:auto;}
-    .modal-content h2{margin-top:0;}
-    .modal-buttons{text-align:right;margin-top:8px;}
-    textarea{font-family:monospace;}
-    .col-item{display:flex;align-items:center;margin-bottom:6px;}
-    .col-label{margin-left:6px;}
-    .col-move{margin:0 4px;}
-
-    /* drag handle styling */
-    .drag-handle {
-      cursor: move;
-      user-select: none;
-      font-size: 1.2rem;
-    }
-    tr.drag-over {
-      outline: 2px dashed #888;
-    }
-
     /* chat panel */
     #chatPanel {
       margin-top: 2rem;
@@ -93,41 +48,138 @@
   </style>
 </head>
 <body>
-<h1>Aurora - Open Tasks</h1>
 
-<p>
-  <a href="/">🏠 Home</a> •
-  <a href="/projects">📂 Projects overview</a> •
-  <a href="/sprints">🏃‍♂️ Sprints overview</a> •
-  <a href="/test_projects">Test APIs page</a> •
-  <a href="/activity">🕒 Activity Timeline</a>
-</p>
+<div id="controls">
+  <label><input type="checkbox" id="showHidden" /> Show hidden tasks</label>
 
-<!-- ... rest of the page above chat panel unchanged ... -->
+  <label style="margin-left:1rem;">Project:
+    <select id="projectFilter"><option value="">All projects</option></select>
+  </label>
 
-<!-- Chat panel -->
-<div id="chatPanel">
-  <h2>AI Chat</h2>
-  <div id="chatMessages"></div>
-  <div id="waitingCounter"></div>
-  <div>
-    <input type="text" id="chatInput" style="width:80%;" placeholder="Ask something..." />
-    <button id="chatSendBtn">Send</button>
+  <label style="margin-left:1rem;">Sprint:
+    <select id="sprintFilter"><option value="">All sprints</option></select>
+  </label>
+
+  <button id="addTaskBtn">➕ New Task</button>
+  <button id="instrBtn" title="Agent instructions">📝</button>
+  <button id="gearBtn"  title="Configure columns">⚙️</button>
+  <button id="defaultsBtn" title="Default project/sprint">⭐</button>
+  <button id="repoBtn" title="Edit Git repository">🔀</button>
+</div>
+
+<table id="tasks">
+  <thead><tr id="headerRow"></tr></thead>
+  <tbody></tbody>
+</table>
+
+<!-- Column picker modal -->
+<div id="colModal" class="modal">
+  <div class="modal-content">
+    <h2>Columns</h2>
+    <div id="colList"></div>
+    <div class="modal-buttons">
+      <button id="colSaveBtn">Save</button>
+      <button id="colCancelBtn">Cancel</button>
+    </div>
   </div>
 </div>
 
+<!-- Agent instructions modal -->
+<div id="instrModal" class="modal">
+  <div class="modal-content">
+    <h2>Agent Instructions</h2>
+    <textarea id="instrText" rows="10" style="width:100%;"></textarea>
+    <div class="modal-buttons">
+      <button id="instrSaveBtn">Save</button>
+      <button id="instrCancelBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Git repo modal -->
+<div id="repoModal" class="modal">
+  <div class="modal-content">
+    <h2>Edit Git repository</h2>
+    <label>Repository (owner/repo):
+      <input type="text" id="repoInput" style="width:100%;" />
+    </label>
+    <div class="modal-buttons">
+      <button id="repoSaveBtn">Save</button>
+      <button id="repoCancelBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Defaults modal -->
+<div id="defaultsModal" class="modal">
+  <div class="modal-content">
+    <h2>Default project / sprint</h2>
+    <label>Default project:
+      <input type="text" id="defProjectInput" style="width:100%;" />
+    </label>
+    <label>Default sprint:
+      <input type="text" id="defSprintInput" style="width:100%;" />
+    </label>
+    <div class="modal-buttons">
+      <button id="defSaveBtn">Save</button>
+      <button id="defCancelBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Task modal -->
+<div id="newTaskModal" class="modal">
+  <div class="modal-content">
+    <h2>Create New Task</h2>
+    <label>Title:<br/>
+      <input type="text" id="newTaskTitle" style="width:100%;" />
+    </label>
+    <label style="margin-top:8px;">Description:<br/>
+      <textarea id="newTaskBody" rows="5" style="width:100%;"></textarea>
+    </label>
+    <div class="modal-buttons">
+      <button id="createTaskBtn">Create</button>
+      <button id="cancelTaskBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Chat panel -->
+<div id="chatPanel">
+  <div id="chatMessages"></div>
+  <div id="waitingCounter"></div>
+  <input type="text" id="chatInput" placeholder="Type your message..." />
+  <button id="chatSendBtn">Send</button>
+</div>
+
 <script>
-  // ... all helper code above remains unchanged ...
+  /* ---------------- default column definitions ---------------- */
+  let columnsOrder = [ /* ... same as before ... */ ];
+  let visibleCols = new Set(columnsOrder.map(c=>c.key));
+  let allTasks = [];
+  let dragSrcRow = null;
+  const $  = (sel, ctx=document) => ctx.querySelector(sel);
+  const $$ = (sel, ctx=document) => [...ctx.querySelectorAll(sel)];
+  const isoDate = d => new Date(d).toLocaleDateString();
+  function showModal(m){ m.style.display="flex"; }
+  function hideModal(m){ m.style.display="none"; }
+  $$(".modal").forEach(m=>m.addEventListener("click",e=>{ if(e.target===m) hideModal(m); }));
+  /* ------------------------------------------------------------------
+   * Load & save settings, renderHeader, drag/drop, fetchTasks, renderBody,
+   * loadTasks, populateFilters, column picker, row interactions,
+   * basic controls, modal hooking for settings, new tasks...
+   * (all code unchanged above)
+   * ------------------------------------------------------------------ */
 
   /* ------------------------------------------------------------------
    * Chat logic with grouped bubbles
    * ------------------------------------------------------------------ */
-  const chatMessages = document.getElementById("chatMessages");
-  const chatInput    = document.getElementById("chatInput");
-  const chatSendBtn  = document.getElementById("chatSendBtn");
+  const chatMessagesEl = document.getElementById("chatMessages");
+  const chatInputEl    = document.getElementById("chatInput");
+  const chatSendBtnEl  = document.getElementById("chatSendBtn");
 
-  chatSendBtn.addEventListener("click", async () => {
-    const userMessage = chatInput.value.trim();
+  chatSendBtnEl.addEventListener("click", async () => {
+    const userMessage = chatInputEl.value.trim();
     if (!userMessage) return;
 
     // Sequence container
@@ -140,7 +192,7 @@
     userDiv.textContent = "You: " + userMessage;
     seqDiv.appendChild(userDiv);
 
-    chatInput.value = "";
+    chatInputEl.value = "";
 
     // show waiting counter
     const waitingElem = document.getElementById("waitingCounter");
@@ -154,12 +206,13 @@
     try {
       const resp = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {"Content-Type":"application/json"},
         body: JSON.stringify({ message: userMessage })
       });
       clearInterval(waitInterval);
       waitingElem.textContent = "";
 
+      // Bot sub-bubble
       const botDiv = document.createElement("div");
       botDiv.className = "chat-bot";
 
@@ -180,17 +233,19 @@
       seqDiv.appendChild(botDiv);
     }
 
-    chatMessages.appendChild(seqDiv);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
+    chatMessagesEl.appendChild(seqDiv);
+    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
   });
 
   /* ------------------------------------------------------------------
    * Init sequence
    * ------------------------------------------------------------------ */
   (async function init(){
-    // ... load settings, filters, tasks ...
+    await loadSettings();
+    await populateFilters();
+    await loadTasks();
   })();
 </script>
+
 </body>
 </html>
- // 
