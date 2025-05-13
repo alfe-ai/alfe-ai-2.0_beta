@@ -351,5 +351,26 @@ export default class TaskDB {
       return val;
     }
   }
+
+  /* ------------------------------------------------------------------ */
+  /*  New retrieval methods for this commit                             */
+  /* ------------------------------------------------------------------ */
+  getTaskById(id) {
+    return this.db
+      .prepare("SELECT * FROM issues WHERE id=?")
+      .get(id);
+  }
+
+  listTasksByProject(project) {
+    return this.db
+      .prepare("SELECT * FROM issues WHERE project=? AND closed=0 ORDER BY priority_number")
+      .all(project);
+  }
+
+  listTasksBySprint(sprint) {
+    return this.db
+      .prepare("SELECT * FROM issues WHERE sprint=? AND closed=0 ORDER BY priority_number")
+      .all(sprint);
+  }
 }
 

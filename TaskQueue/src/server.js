@@ -216,6 +216,48 @@ app.post("/api/settings", (req, res) => {
   }
 });
 
+// NEW: Get single task by ID
+app.get("/api/tasks/:id", (req, res) => {
+  try {
+    const taskId = parseInt(req.params.id, 10);
+    if (Number.isNaN(taskId)) {
+      return res.status(400).json({ error: "Invalid task ID" });
+    }
+    const t = db.getTaskById(taskId);
+    if (!t) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+    return res.json(t);
+  } catch (err) {
+    console.error("[TaskQueue] /api/tasks/:id failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// NEW: get tasks in a specified project
+app.get("/api/projects/:project", (req, res) => {
+  try {
+    const p = req.params.project;
+    const tasks = db.listTasksByProject(p);
+    return res.json(tasks);
+  } catch (err) {
+    console.error("[TaskQueue] /api/projects/:project failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// NEW: get tasks in a specified sprint
+app.get("/api/sprints/:sprint", (req, res) => {
+  try {
+    const s = req.params.sprint;
+    const tasks = db.listTasksBySprint(s);
+    return res.json(tasks);
+  } catch (err) {
+    console.error("[TaskQueue]! /api/sprints/:sprint failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // Serve static files
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 app.use(express.static(path.join(__dirname, "../public")));
