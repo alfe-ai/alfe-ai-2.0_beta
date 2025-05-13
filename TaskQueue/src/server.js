@@ -13,19 +13,38 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const db = new TaskDB();
 
-/* GitHub client (used for creating new tasks) */
+/* ------------------------------------------------------------- */
+/*  GitHub client bootstrap & hot-reload helper                  */
+/* ------------------------------------------------------------- */
+let ghOwner = process.env.GITHUB_OWNER;
+let ghRepo = process.env.GITHUB_REPO;
+const loadGitConfigFromDb = () => {
+  ghOwner = db.getSetting("github_owner") || ghOwner;
+  ghRepo = db.getSetting("github_repo") || ghRepo;
+};
+loadGitConfigFromDb();
+
 let ghClient = null;
-try {
+function refreshGitHubClient() {
+  if (!ghOwner || !ghRepo || !process.env.GITHUB_TOKEN) {
+    ghClient = null;
+    console.warn(
+      "[TaskQueue] GitHub client disabled – missing token/owner/repo."
+    );
+    return;
+  }
   ghClient = new GitHubClient({
     token: process.env.GITHUB_TOKEN,
-    owner: process.env.GITHUB_OWNER,
-    repo: process.env.GITHUB_REPO
+    owner: ghOwner,
+    repo: ghRepo
   });
-} catch (err) {
-  console.warn("[TaskQueue] GitHub client disabled:", err.message);
+  console.log(`[TaskQueue] GitHub client ready for ${ghOwner}/${ghRepo}`);
 }
+refreshGitHubClient();
 
-const repositorySlug = `${process.env.GITHUB_OWNER}/${process.env.GITHUB_REPO}`;
+/* Helper to obtain up-to-date repository slug */
+const repositorySlug = () => `${ghOwner}/${ghRepo}`;
+
 const INSTR_FILE = path.resolve("agent_instructions.txt");
 
 app.use(cors());
@@ -51,6 +70,37 @@ app.post("/api/instructions", (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     console.error("[TaskQueue] write instructions failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/* ------------------------------------------------------------------ */
+/*  GitHub repository configuration                                   */
+/* ------------------------------------------------------------------ */
+app.get("/api/github", (_req, res) => {
+  res.json({ owner: ghOwner, repo: ghRepo });
+});
+
+app.post("/api/github", (req, res) => {
+  try {
+    let { slug = "" } = req.body ?? {};
+    slug = slug.trim();
+    const [owner, repo] = slug.split("/");
+    if (!owner || !repo) {
+      return res
+        .status(400)
+        .json({ error: "Invalid slug – expected owner/repo" });
+    }
+
+    db.setSetting("github_owner", owner);
+    db.setSetting("github_repo", repo);
+
+    /* update in-memory vars & client */
+    loadGitConfigFromDb();
+    refreshGitHubClient();
+    res.json({ ok: true, owner, repo });
+  } catch (err) {
+    console.error("[TaskQueue] update github config failed:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -101,7 +151,7 @@ app.post("/api/tasks", async (req, res) => {
     if (!ghClient) return res.status(503).json({ error: "GitHub client not configured" });
 
     const issue = await ghClient.createIssue(title, body);
-    db.upsertIssue(issue, repositorySlug);
+    db.upsertIssue(issue, repositorySlug());
     res.json({ ok: true, id: issue.id });
   } catch (err) {
     console.error("[TaskQueue] create task failed:", err);

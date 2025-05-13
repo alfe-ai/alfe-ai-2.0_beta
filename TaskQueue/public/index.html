@@ -36,7 +36,8 @@
       button.fib-btn,
       #addTaskBtn,
       #gearBtn,
-      #instrBtn {
+      #instrBtn,
+      #repoBtn {
         border: none;
         background: none;
         cursor: pointer;
@@ -49,7 +50,8 @@
         font-size: 1.1rem;
       }
       #gearBtn,
-      #instrBtn {
+      #instrBtn,
+      #repoBtn {
         margin-left: 0.6rem;
         font-size: 1.2rem;
       }
@@ -143,6 +145,7 @@
       <button id="addTaskBtn">➕ New Task</button>
       <button id="instrBtn" title="Agent instructions">📝</button>
       <button id="gearBtn" title="Configure columns">⚙️</button>
+      <button id="repoBtn" title="Edit Git repository">🔀</button>
     </div>
 
     <table id="tasks">
@@ -172,6 +175,21 @@
         <div class="modal-buttons">
           <button id="instrSaveBtn">Save</button>
           <button id="instrCancelBtn">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Git repo modal -->
+    <div id="repoModal" class="modal">
+      <div class="modal-content">
+        <h2>Edit Git repository</h2>
+        <label>
+          Repository (owner/repo):
+          <input type="text" id="repoInput" style="width:100%;" />
+        </label>
+        <div class="modal-buttons">
+          <button id="repoSaveBtn">Save</button>
+          <button id="repoCancelBtn">Cancel</button>
         </div>
       </div>
     </div>
@@ -237,6 +255,24 @@
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ instructions: text })
+        });
+      }
+
+      /* ------------------------------------------------------------------
+       * Git repo helpers
+       * ------------------------------------------------------------------ */
+      async function loadGitRepo() {
+        const res = await fetch("/api/github");
+        if (!res.ok) return "";
+        const { owner, repo } = await res.json();
+        return owner && repo ? `${owner}/${repo}` : "";
+      }
+
+      async function saveGitRepo(slug) {
+        await fetch("/api/github", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ slug })
         });
       }
 
@@ -553,6 +589,34 @@
       );
       instrModal.addEventListener("click", (e) => {
         if (e.target === instrModal) instrModal.style.display = "none";
+      });
+
+      /* ------------------------------------------------------------------
+       * Git repo modal logic
+       * ------------------------------------------------------------------ */
+      const repoModal = $("#repoModal");
+      $("#repoBtn").addEventListener("click", async () => {
+        $("#repoInput").value = await loadGitRepo();
+        repoModal.style.display = "flex";
+        $("#repoInput").focus();
+      });
+      $("#repoSaveBtn").addEventListener("click", async () => {
+        const slug = $("#repoInput").value.trim();
+        if (!slug.includes("/")) {
+          alert("Please enter in owner/repo format.");
+          return;
+        }
+        await saveGitRepo(slug);
+        repoModal.style.display = "none";
+        alert("Repository updated – page will reload.");
+        location.reload();
+      });
+      $("#repoCancelBtn").addEventListener(
+        "click",
+        () => (repoModal.style.display = "none")
+      );
+      repoModal.addEventListener("click", (e) => {
+        if (e.target === repoModal) repoModal.style.display = "none";
       });
 
       /* ------------------------------------------------------------------
