@@ -30,7 +30,7 @@ app.use(cors());
 app.use(express.json());
 
 /* ------------------------------------------------------------------ */
-/*  Tasks routes (NEW)                                                */
+/*  Tasks routes                                                      */
 /* ------------------------------------------------------------------ */
 
 /* GET /api/tasks */
@@ -119,8 +119,22 @@ app.post("/api/tasks/project", (req, res) => {
   }
 });
 
+/* POST /api/tasks/sprint  body:{ id, sprint } */
+app.post("/api/tasks/sprint", (req, res) => {
+  try {
+    const { id, sprint } = req.body ?? {};
+    if (!id || sprint === undefined)
+      return res.status(400).json({ error: "Invalid payload" });
+    db.setSprint(id, sprint);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("[TaskQueue] set sprint failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 /* ------------------------------------------------------------------ */
-/*  Settings routes (unchanged)                                       */
+/*  Settings routes                                                   */
 /* ------------------------------------------------------------------ */
 app.get("/api/settings", (req, res) => {
   try {
@@ -155,7 +169,7 @@ app.post("/api/settings", (req, res) => {
 });
 
 /* ------------------------------------------------------------------ */
-/*  Projects routes (unchanged)                                       */
+/*  Projects & Sprints overview routes                                */
 /* ------------------------------------------------------------------ */
 app.get("/api/projects", (req, res) => {
   try {
@@ -166,8 +180,21 @@ app.get("/api/projects", (req, res) => {
   }
 });
 
+app.get("/api/sprints", (req, res) => {
+  try {
+    res.json(db.listSprints());
+  } catch (err) {
+    console.error("[TaskQueue] /api/sprints failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.get("/projects", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "public", "projects.html"));
+});
+
+app.get("/sprints", (req, res) => {
+  res.sendFile(path.join(__dirname, "..", "public", "sprints.html"));
 });
 
 /* ------------------------------------------------------------------ */

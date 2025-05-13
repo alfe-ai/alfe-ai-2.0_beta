@@ -25,12 +25,20 @@ export default class TaskDB {
         priority_number INTEGER UNIQUE,
         hidden          INTEGER DEFAULT 0,
         project         TEXT DEFAULT '',
+        sprint          TEXT DEFAULT '',
         fib_points      INTEGER,
         assignee        TEXT,
         created_at      TEXT,
         closed          INTEGER DEFAULT 0
       );
     `);
+
+    /* add sprint column if DB existed before this migration */
+    try {
+      this.db.exec(`ALTER TABLE issues ADD COLUMN sprint TEXT DEFAULT '';`);
+    } catch {
+      /* column exists – ignore */
+    }
 
     /* simple key/value store */
     this.db.exec(`
@@ -79,6 +87,7 @@ export default class TaskDB {
       priority_number: priority,
       hidden: 0,
       project: "",
+      sprint: "",
       fib_points: null,
       assignee: issue.assignee?.login || null,
       created_at: issue.created_at,
@@ -88,11 +97,11 @@ export default class TaskDB {
     const stmt = this.db.prepare(`
       INSERT INTO issues (
         github_id, repository, number, title, html_url,
-        task_id_slug, priority_number, hidden, project,
+        task_id_slug, priority_number, hidden, project, sprint,
         fib_points, assignee, created_at, closed
       ) VALUES (
         @github_id, @repository, @number, @title, @html_url,
-        @task_id_slug, @priority_number, @hidden, @project,
+        @task_id_slug, @priority_number, @hidden, @project, @sprint,
         @fib_points, @assignee, @created_at, @closed
       )
       ON CONFLICT(github_id) DO UPDATE SET
@@ -184,6 +193,13 @@ export default class TaskDB {
     );
   }
 
+  setSprint(id, sprint) {
+    this.db.prepare("UPDATE issues SET sprint = ? WHERE id = ?").run(
+      sprint,
+      id
+    );
+  }
+
   /* ---------------- Settings table ---------------- */
   allSettings() {
     return this.db
@@ -211,7 +227,7 @@ export default class TaskDB {
       .run(key, val);
   }
 
-  /* ---------------- Project helper --------------- */
+  /* ---------------- Project / Sprint helper --------------- */
   listProjects() {
     return this.db
       .prepare(
@@ -222,6 +238,21 @@ export default class TaskDB {
          WHERE closed = 0 AND hidden = 0
          GROUP BY project
          HAVING project <> ''
+         ORDER BY count DESC;`
+      )
+      .all();
+  }
+
+  listSprints() {
+    return this.db
+      .prepare(
+        `SELECT
+           sprint,
+           COUNT(*) AS count
+         FROM issues
+         WHERE closed = 0 AND hidden = 0
+         GROUP BY sprint
+         HAVING sprint <> ''
          ORDER BY count DESC;`
       )
       .all();
@@ -242,3 +273,4 @@ export default class TaskDB {
     }
   }
 }
+

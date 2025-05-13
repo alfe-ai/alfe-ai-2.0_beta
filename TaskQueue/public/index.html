@@ -54,14 +54,16 @@
       tr.hidden {
         opacity: 0.4;
       }
-      .project-cell {
+      .project-cell,
+      .sprint-cell {
         cursor: pointer;
         color: #333;
       }
-      .project-cell:hover {
+      .project-cell:hover,
+      .sprint-cell:hover {
         text-decoration: underline dotted;
       }
-      .project-input {
+      .inline-input {
         width: 100%;
         box-sizing: border-box;
         font: inherit;
@@ -102,8 +104,11 @@
   <body>
     <h1>Open Tasks</h1>
 
-    <!-- navigation link to projects page -->
-    <p><a href="/projects">📂 Projects overview</a></p>
+    <!-- navigation links -->
+    <p>
+      <a href="/projects">📂 Projects overview</a> •
+      <a href="/sprints">🏃‍♂️ Sprints overview</a>
+    </p>
 
     <div id="controls">
       <label>
@@ -116,6 +121,14 @@
         Project:
         <select id="projectFilter">
           <option value="">All projects</option>
+        </select>
+      </label>
+
+      <!-- sprint filter dropdown -->
+      <label style="margin-left:1rem;">
+        Sprint:
+        <select id="sprintFilter">
+          <option value="">All sprints</option>
         </select>
       </label>
 
@@ -153,6 +166,7 @@
         { key: "number", label: "#" },
         { key: "title", label: "Title" },
         { key: "project", label: "Project" },
+        { key: "sprint", label: "Sprint" },
         { key: "points", label: "Pts" },
         { key: "assignee", label: "Assignee" },
         { key: "created", label: "Created" }
@@ -188,7 +202,7 @@
       }
 
       /* ------------------------------------------------------------------
-       * Load & populate projects dropdown
+       * Load & populate projects / sprints dropdown
        * ------------------------------------------------------------------ */
       async function loadProjects() {
         const res = await fetch("/api/projects");
@@ -204,6 +218,24 @@
                   '"',
                   "&quot;"
                 )}">${p.project}</option>`
+            )
+            .join("");
+      }
+
+      async function loadSprints() {
+        const res = await fetch("/api/sprints");
+        if (!res.ok) return;
+        const sprints = await res.json();
+        const sel = $("#sprintFilter");
+        sel.innerHTML =
+          '<option value="">All sprints</option>' +
+          sprints
+            .map(
+              (p) =>
+                `<option value="${p.sprint.replaceAll(
+                  '"',
+                  "&quot;"
+                )}">${p.sprint}</option>`
             )
             .join("");
       }
@@ -229,11 +261,14 @@
         );
         const tasks = await res.json();
 
-        /* filter by selected project */
+        /* filter by selected project/sprint */
         const selectedProject = $("#projectFilter").value;
-        const displayTasks = selectedProject
-          ? tasks.filter((t) => t.project === selectedProject)
-          : tasks;
+        const selectedSprint = $("#sprintFilter").value;
+        let displayTasks = tasks;
+        if (selectedProject)
+          displayTasks = displayTasks.filter((t) => t.project === selectedProject);
+        if (selectedSprint)
+          displayTasks = displayTasks.filter((t) => t.sprint === selectedSprint);
 
         renderHeader();
         const tbody = $("#tasks tbody");
@@ -283,6 +318,12 @@
             `<td class="project-cell" data-id="${t.id}" data-project="${encodeURIComponent(
               t.project ?? ""
             )}">${t.project || "-"}</td>`
+          );
+          push(
+            "sprint",
+            `<td class="sprint-cell" data-id="${t.id}" data-sprint="${encodeURIComponent(
+              t.sprint ?? ""
+            )}">${t.sprint || "-"}</td>`
           );
           push(
             "points",
@@ -352,23 +393,23 @@
           body: JSON.stringify({ title, body })
         });
         await loadTasks();
-        await loadProjects(); // refresh project list in case new project added
+        await loadProjects();
+        await loadSprints();
       });
 
       /* ------------------------------------------------------------------
-       * Inline project editor (unchanged)
+       * Inline project / sprint editor
        * ------------------------------------------------------------------ */
-      function startInlineProjectEdit(cell) {
+      function startInlineEdit(cell, kind) {
         if (cell.querySelector("input")) return;
 
         const id = cell.dataset.id;
-        const current = decodeURIComponent(cell.dataset.project || "");
+        const current = decodeURIComponent(cell.dataset[kind] || "");
         const input = document.createElement("input");
         input.type = "text";
         input.value = current;
-        input.className = "project-input";
+        input.className = "inline-input";
 
-        const originalContent = cell.textContent;
         cell.textContent = "";
         cell.appendChild(input);
         input.focus();
@@ -379,14 +420,15 @@
           input.removeEventListener("blur", onBlur);
           const newVal = input.value.trim();
           if (save && newVal !== current) {
-            await fetch("/api/tasks/project", {
+            await fetch(`/api/tasks/${kind}`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ id, project: newVal })
+              body: JSON.stringify({ id, [kind]: newVal })
             });
           }
           await loadTasks();
-          await loadProjects(); // update dropdown if needed
+          await loadProjects();
+          await loadSprints();
         };
 
         const onKeyDown = (e) => {
@@ -401,12 +443,15 @@
 
       document.addEventListener("click", (e) => {
         if (e.target.classList.contains("project-cell")) {
-          startInlineProjectEdit(e.target);
+          startInlineEdit(e.target, "project");
+        } else if (e.target.classList.contains("sprint-cell")) {
+          startInlineEdit(e.target, "sprint");
         }
       });
 
       $("#showHidden").addEventListener("change", () => loadTasks());
       $("#projectFilter").addEventListener("change", () => loadTasks());
+      $("#sprintFilter").addEventListener("change", () => loadTasks());
 
       /* ------------------------------------------------------------------
        * Column picker modal logic
@@ -452,6 +497,7 @@
        * ------------------------------------------------------------------ */
       (async () => {
         await loadProjects();
+        await loadSprints();
         await loadSettings();
         await loadTasks();
         setInterval(loadTasks, 30_000);
