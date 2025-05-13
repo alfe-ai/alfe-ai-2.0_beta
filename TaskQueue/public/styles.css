@@ -216,19 +216,20 @@ body {
   font-size: 0.9rem;
 }
 
-/* User bubble: display block so it sits on its own line */
+/* User bubble: displayed on the right side now */
 .chat-user {
   background: #3b3b3b;
   padding: 6px 8px;
   border-radius: 12px;
   margin-bottom: 6px;
-  display: block;
+  align-self: flex-end;
+  text-align: right;
   max-width: 70%;
   word-wrap: break-word;
   color: #ddd;
 }
 
-/* AI bubble: display block so it sits below the user bubble */
+/* AI bubble: displayed on the left side */
 .chat-bot {
   background: #2a2a2a;
   padding: 6px 8px;

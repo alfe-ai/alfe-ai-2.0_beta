@@ -846,42 +846,47 @@
     }
     seqDiv.appendChild(botDiv);
 
-    /* Unified metadata block at bottom if not hidden */
+    /* Metadata block: multiple collapsible sections, collapsed by default */
     if(!chatHideMetadata){
       const metaContainer = document.createElement("div");
       metaContainer.style.fontSize = "0.8rem";
       metaContainer.style.color = "#aaa";
       metaContainer.style.textAlign = "right";
 
-      const pairNumText = `Pair #${pairId}`;
+      const pairLabel = document.createElement("div");
+      pairLabel.textContent = `Pair #${pairId}`;
+      metaContainer.appendChild(pairLabel);
 
-      // Start details
-      const detailsEl = document.createElement("details");
-      detailsEl.style.display = "inline";
-      detailsEl.style.cursor = "pointer";
-      const summaryEl = document.createElement("summary");
-      summaryEl.style.display = "inline";
-      summaryEl.style.color = "#aaa";
-      summaryEl.style.marginLeft = "8px";
-      summaryEl.textContent = "[metadata]";
-      detailsEl.appendChild(summaryEl);
-
-      // Build the metadata string
-      let metaString = "";
       if(systemContext) {
-        metaString += `System context:\n${systemContext}\n\n`;
+        const scDetails = document.createElement("details");
+        const scSum = document.createElement("summary");
+        scSum.textContent = "System Context";
+        scDetails.appendChild(scSum);
+        const scPre = document.createElement("pre");
+        scPre.textContent = systemContext;
+        scDetails.appendChild(scPre);
+        metaContainer.appendChild(scDetails);
       }
+
       if(fullHistory) {
-        metaString += `Full history:\n${JSON.stringify(fullHistory, null, 2)}\n\n`;
+        const fhDetails = document.createElement("details");
+        const fhSum = document.createElement("summary");
+        fhSum.textContent = "Full History";
+        fhDetails.appendChild(fhSum);
+        const fhPre = document.createElement("pre");
+        fhPre.textContent = JSON.stringify(fullHistory, null, 2);
+        fhDetails.appendChild(fhPre);
+        metaContainer.appendChild(fhDetails);
       }
-      metaString += `Direct link: /pair/${pairId}`;
 
-      const preEl = document.createElement("pre");
-      preEl.textContent = metaString.trim();
-      detailsEl.appendChild(preEl);
-
-      metaContainer.textContent = pairNumText + " ";
-      metaContainer.appendChild(detailsEl);
+      const directDetails = document.createElement("details");
+      const ddSum = document.createElement("summary");
+      ddSum.textContent = "Direct Link";
+      directDetails.appendChild(ddSum);
+      const ddSpan = document.createElement("span");
+      ddSpan.textContent = `/pair/${pairId}`;
+      directDetails.appendChild(ddSpan);
+      metaContainer.appendChild(directDetails);
 
       seqDiv.appendChild(metaContainer);
     }
