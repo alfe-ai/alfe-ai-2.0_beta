@@ -13,7 +13,7 @@ const db = new TaskDB();
 app.use(cors());
 
 /**
- * REST endpoint → JSON dump of all open tasks.
+ * REST endpoint → JSON dump of all open tasks (sorted by priority).
  */
 app.get("/api/tasks", (req, res) => {
   try {
