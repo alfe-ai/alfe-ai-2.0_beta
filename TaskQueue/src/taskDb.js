@@ -7,30 +7,21 @@ export default class TaskDB {
   }
 
   /* ------------------------------------------------------------------ */
-  /*  Schema bootstrap                                                  */
+  /*  Schema bootstrap + migration                                      */
   /* ------------------------------------------------------------------ */
   _init() {
-    /* issues – unchanged from earlier versions (kept for context) */
+    /* 1. Ensure table exists (minimal columns to get started) */
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS issues (
-        id               INTEGER PRIMARY KEY AUTOINCREMENT,
-        github_id        INTEGER UNIQUE,
-        repository       TEXT,
-        number           INTEGER,
-        title            TEXT,
-        html_url         TEXT,
-        task_id_slug     TEXT,
-        priority_number  INTEGER,
-        hidden           INTEGER DEFAULT 0,
-        project          TEXT DEFAULT '',
-        fib_points       INTEGER,
-        assignee         TEXT,
-        created_at       TEXT,
-        closed           INTEGER DEFAULT 0
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        closed       INTEGER DEFAULT 0
       );
     `);
 
-    /* NEW: generic key/value settings table */
+    /* 2. Bring table up-to-date column-wise */
+    this._migrateIssuesTable();
+
+    /* 3. Settings table (unchanged) */
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS settings (
         key   TEXT PRIMARY KEY,
@@ -39,8 +30,56 @@ export default class TaskDB {
     `);
   }
 
+  /**
+   * Compare existing columns of `issues` against our desired schema and
+   * add whatever is missing. This keeps old databases compatible without
+   * data loss.
+   */
+  _migrateIssuesTable() {
+    /* Desired columns with "ALTER TABLE" fragments */
+    const wanted = {
+      github_id:       "INTEGER",
+      repository:      "TEXT",
+      number:          "INTEGER",
+      title:           "TEXT",
+      html_url:        "TEXT",
+      task_id_slug:    "TEXT",
+      priority_number: "INTEGER",
+      hidden:          "INTEGER DEFAULT 0",
+      project:         "TEXT DEFAULT ''",
+      fib_points:      "INTEGER",
+      assignee:        "TEXT",
+      created_at:      "TEXT"
+    };
+
+    /* Actual columns present */
+    const presentRows = this.db
+      .prepare("PRAGMA table_info(issues);")
+      .all();
+    const present = new Set(presentRows.map((r) => r.name));
+
+    const missing = Object.keys(wanted).filter((c) => !present.has(c));
+    if (missing.length) {
+      console.log(
+        `[TaskQueue] Migrating issues table – adding columns: ${missing.join(
+          ", "
+        )}`
+      );
+      this.db.transaction(() => {
+        missing.forEach((col) =>
+          this.db.exec(`ALTER TABLE issues ADD COLUMN ${col} ${wanted[col]};`)
+        );
+      })();
+    }
+
+    /* Ensure UNIQUE index on github_id (cannot add UNIQUE via ALTER) */
+    this.db.exec(
+      "CREATE UNIQUE INDEX IF NOT EXISTS idx_issues_github_id ON issues(github_id);"
+    );
+  }
+
   /* ------------------------------------------------------------------ */
-  /*  Issue helpers (existing behaviour kept)                           */
+  /*  Issue helpers                                                     */
   /* ------------------------------------------------------------------ */
   upsertIssue(issue, repositorySlug) {
     const stmt = this.db.prepare(`
@@ -55,9 +94,9 @@ export default class TaskDB {
         @fib_points, @assignee, @created_at, @closed
       )
       ON CONFLICT(github_id) DO UPDATE SET
-        title           = excluded.title,
-        html_url        = excluded.html_url,
-        closed          = excluded.closed;
+        title    = excluded.title,
+        html_url = excluded.html_url,
+        closed   = excluded.closed;
     `);
 
     stmt.run({
@@ -67,7 +106,7 @@ export default class TaskDB {
       title: issue.title,
       html_url: issue.html_url,
       task_id_slug: `${repositorySlug}#${issue.number}`,
-      priority_number: issue.number, // simplistic – real logic lives elsewhere
+      priority_number: issue.number,
       hidden: 0,
       project: "",
       fib_points: null,
@@ -103,10 +142,6 @@ export default class TaskDB {
   /* ------------------------------------------------------------------ */
   /*  Settings helpers                                                  */
   /* ------------------------------------------------------------------ */
-  /**
-   * Fetch a single setting or return defaultVal if missing.
-   * Stored values are JSON-parsed automatically.
-   */
   getSetting(key, defaultVal = null) {
     const row = this.db
       .prepare("SELECT value FROM settings WHERE key = ?;")
@@ -119,9 +154,6 @@ export default class TaskDB {
     }
   }
 
-  /**
-   * Upsert a setting (value will be JSON-stringified).
-   */
   setSetting(key, value) {
     const json = JSON.stringify(value);
     this.db
@@ -133,9 +165,6 @@ export default class TaskDB {
       .run(key, json);
   }
 
-  /**
-   * Return all settings as { key: value, … } with JSON parsed.
-   */
   allSettings() {
     const rows = this.db.prepare("SELECT key, value FROM settings;").all();
     const out = {};
@@ -158,3 +187,4 @@ export default class TaskDB {
       .all();
   }
 }
+
