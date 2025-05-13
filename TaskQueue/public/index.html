@@ -643,10 +643,20 @@
 
     const seqDiv = document.createElement("div");
     seqDiv.className = "chat-sequence";
+
     const userDiv = document.createElement("div");
     userDiv.className = "chat-user";
     userDiv.textContent = "You: " + userMessage;
     seqDiv.appendChild(userDiv);
+
+    // Display "AI: ... waiting" immediately
+    const botDiv = document.createElement("div");
+    botDiv.className = "chat-bot";
+    botDiv.textContent = `AI (${AI_MODEL}): ... waiting`;
+    seqDiv.appendChild(botDiv);
+
+    chatMessagesEl.appendChild(seqDiv);
+    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
     chatInputEl.value = "";
 
     const waitingElem = document.getElementById("waitingCounter");
@@ -665,24 +675,18 @@
       });
       clearInterval(waitInterval);
       waitingElem.textContent = "";
-      const botDiv = document.createElement("div");
-      botDiv.className = "chat-bot";
+
       if(!resp.ok){
         botDiv.textContent = `AI (${AI_MODEL}): Error contacting AI.`;
       } else {
         const data = await resp.json();
         botDiv.textContent = `AI (${AI_MODEL}): ${data.reply||""}`;
       }
-      seqDiv.appendChild(botDiv);
     } catch(e) {
       clearInterval(waitInterval);
       waitingElem.textContent = "";
-      const botDiv = document.createElement("div");
-      botDiv.className = "chat-bot";
       botDiv.textContent = `AI (${AI_MODEL}): Error occurred.`;
-      seqDiv.appendChild(botDiv);
     }
-    chatMessagesEl.appendChild(seqDiv);
     chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
   });
 
