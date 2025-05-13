@@ -20,7 +20,10 @@ export default class TaskDB {
     /* 2. Bring table up-to-date column-wise */
     this._migrateIssuesTable();
 
-    /* 3. Settings table (unchanged) */
+    /* 3. Deduplicate old priority numbers & make them dense */
+    this._ensureUniquePriorities();
+
+    /* 4. Settings table (unchanged) */
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS settings (
         key   TEXT PRIMARY KEY,
@@ -70,16 +73,57 @@ export default class TaskDB {
       })();
     }
 
-    /* Ensure UNIQUE index on github_id (cannot add UNIQUE via ALTER) */
+    /* Ensure UNIQUE indices */
     this.db.exec(
       "CREATE UNIQUE INDEX IF NOT EXISTS idx_issues_github_id ON issues(github_id);"
     );
+    this.db.exec(
+      "CREATE UNIQUE INDEX IF NOT EXISTS idx_issues_priority ON issues(priority_number);"
+    );
+  }
+
+  /**
+   * Re-number all tasks so that priority_number is unique and dense
+   * (1,2,3,…) to avoid gaps created by previous buggy behaviour.
+   */
+  _ensureUniquePriorities() {
+    const rows = this.db
+      .prepare("SELECT id, priority_number FROM issues ORDER BY priority_number, id;")
+      .all();
+
+    let expected = 1;
+    const upd = this.db.prepare(
+      "UPDATE issues SET priority_number = ? WHERE id = ?;"
+    );
+
+    this.db.transaction(() => {
+      rows.forEach((r) => {
+        if (r.priority_number !== expected) {
+          upd.run(expected, r.id);
+        }
+        expected += 1;
+      });
+    })();
   }
 
   /* ------------------------------------------------------------------ */
   /*  Issue helpers                                                     */
   /* ------------------------------------------------------------------ */
   upsertIssue(issue, repositorySlug) {
+    /* If issue already recorded: keep its priority */
+    const existing = this.db
+      .prepare("SELECT priority_number FROM issues WHERE github_id = ?;")
+      .get(issue.id);
+
+    let priority = existing?.priority_number;
+    if (!priority) {
+      /* New issue → append to bottom */
+      const row = this.db
+        .prepare("SELECT COALESCE(MAX(priority_number), 0) + 1 AS next;")
+        .get();
+      priority = row.next;
+    }
+
     const stmt = this.db.prepare(`
       INSERT INTO issues (
         github_id, repository, number, title, html_url,
@@ -104,7 +148,7 @@ export default class TaskDB {
       title: issue.title,
       html_url: issue.html_url,
       task_id_slug: `${repositorySlug}#${issue.number}`,
-      priority_number: issue.number,
+      priority_number: priority,
       hidden: 0,
       project: "",
       fib_points: null,
@@ -259,3 +303,4 @@ export default class TaskDB {
     };
   }
 }
+
