@@ -260,11 +260,15 @@ export default class TaskDB {
         `[TaskDB Debug] upsertIssue encountered error for ID ${issue.id}:`,
         err.message
       );
-      if (!_retry && /no such column: priority_number/i.test(err.message || "")) {
+      if (
+        !_retry &&
+        /no such column: priority_number/i.test(err.message || "")
+      ) {
         console.warn(
-          "[TaskQueue] Write failed – priority_number column still absent. Creating column and retrying once."
+          "[TaskQueue] Write failed – priority_number column still absent. Attempting full re-migration and retry once."
         );
-        this._addColumnIfMissing("issues", "priority_number", "INTEGER");
+        this._migrateIssuesTable();
+        this._ensureIndices();
         return this.upsertIssue(issue, repositorySlug, true);
       }
       throw err;
@@ -375,3 +379,4 @@ export default class TaskDB {
     return this.db.prepare("SELECT * FROM issues ORDER BY priority_number;").all();
   }
 }
+
