@@ -1,4 +1,220 @@
-[content truncated – unchanged before the main <script> tag]
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>TaskQueue – Open Tasks</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 2rem;
+    }
+    h1 {
+      margin-top: 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th,
+    td {
+      padding: 8px;
+      border: 1px solid #ddd;
+    }
+    th {
+      background: #f0f0f0;
+      text-align: left;
+    }
+    tr:nth-child(even) {
+      background: #fafafa;
+    }
+    a {
+      color: #0366d6;
+      text-decoration: none;
+    }
+    button.arrow,
+    button.eye,
+    button.fib-btn,
+    #addTaskBtn,
+    #gearBtn,
+    #instrBtn,
+    #repoBtn,
+    #defaultsBtn {
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+      padding: 0 4px;
+    }
+    #addTaskBtn {
+      margin-left: 1rem;
+      font-size: 1.1rem;
+    }
+    #gearBtn,
+    #instrBtn,
+    #repoBtn,
+    #defaultsBtn {
+      margin-left: 0.6rem;
+      font-size: 1.2rem;
+    }
+    tr.hidden {
+      opacity: 0.4;
+    }
+    .project-cell,
+    .sprint-cell {
+      cursor: pointer;
+      color: #333;
+    }
+    .project-cell:hover,
+    .sprint-cell:hover {
+      text-decoration: underline dotted;
+    }
+    .inline-input {
+      width: 100%;
+      box-sizing: border-box;
+      font: inherit;
+      padding: 4px;
+    }
+    #controls {
+      margin-bottom: 1rem;
+    }
+
+    /* ------------ modal ------------ */
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.25);
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      background: #fff;
+      padding: 1rem 1.5rem;
+      border-radius: 6px;
+      min-width: 220px;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow: auto;
+    }
+    .modal-content h2 {
+      margin-top: 0;
+    }
+    .modal-content label {
+      display: block;
+      margin: 4px 0;
+    }
+    .modal-buttons {
+      text-align: right;
+      margin-top: 8px;
+    }
+    textarea {
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+<h1>Open Tasks</h1>
+
+<!-- navigation links -->
+<p>
+  <a href="/projects">📂 Projects overview</a> •
+  <a href="/sprints">🏃‍♂️ Sprints overview</a>
+</p>
+
+<div id="controls">
+  <label>
+    <input type="checkbox" id="showHidden" />
+    Show hidden tasks
+  </label>
+
+  <!-- project filter dropdown -->
+  <label style="margin-left:1rem;">
+    Project:
+    <select id="projectFilter">
+      <option value="">All projects</option>
+    </select>
+  </label>
+
+  <!-- sprint filter dropdown -->
+  <label style="margin-left:1rem;">
+    Sprint:
+    <select id="sprintFilter">
+      <option value="">All sprints</option>
+    </select>
+  </label>
+
+  <button id="addTaskBtn">➕ New Task</button>
+  <button id="instrBtn" title="Agent instructions">📝</button>
+  <button id="gearBtn" title="Configure columns">⚙️</button>
+  <button id="defaultsBtn" title="Default project/sprint">⭐</button>
+  <button id="repoBtn" title="Edit Git repository">🔀</button>
+</div>
+
+<table id="tasks">
+  <thead>
+  <tr id="headerRow"></tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<!-- Column picker modal -->
+<div id="colModal" class="modal">
+  <div class="modal-content">
+    <h2>Visible columns</h2>
+    <div id="colCheckboxes"></div>
+    <div class="modal-buttons">
+      <button id="colSaveBtn">Save</button>
+      <button id="colCancelBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Agent instructions modal -->
+<div id="instrModal" class="modal">
+  <div class="modal-content">
+    <h2>Agent Instructions</h2>
+    <textarea id="instrText" rows="10" style="width:100%;"></textarea>
+    <div class="modal-buttons">
+      <button id="instrSaveBtn">Save</button>
+      <button id="instrCancelBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Git repo modal -->
+<div id="repoModal" class="modal">
+  <div class="modal-content">
+    <h2>Edit Git repository</h2>
+    <label>
+      Repository (owner/repo):
+      <input type="text" id="repoInput" style="width:100%;" />
+    </label>
+    <div class="modal-buttons">
+      <button id="repoSaveBtn">Save</button>
+      <button id="repoCancelBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Defaults modal -->
+<div id="defaultsModal" class="modal">
+  <div class="modal-content">
+    <h2>Default project / sprint</h2>
+    <label>
+      Default project:
+      <input type="text" id="defProjectInput" style="width:100%;" />
+    </label>
+    <label>
+      Default sprint:
+      <input type="text" id="defSprintInput" style="width:100%;" />
+    </label>
+    <div class="modal-buttons">
+      <button id="defSaveBtn">Save</button>
+      <button id="defCancelBtn">Cancel</button>
+    </div>
+  </div>
+</div>
 
 <script>
 /* ---------------- constants ---------------- */
