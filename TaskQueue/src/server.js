@@ -49,6 +49,25 @@ app.post("/api/tasks/reorder", (req, res) => {
 });
 
 /**
+ * POST /api/tasks/project
+ * Body: { id: <issue id>, project: "<string>" }
+ */
+app.post("/api/tasks/project", (req, res) => {
+  const { id, project } = req.body ?? {};
+  if (!id || typeof project !== "string") {
+    return res.status(400).json({ error: "Invalid payload" });
+  }
+
+  try {
+    db.updateProject(Number(id), project.trim());
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("[TaskQueue] /api/tasks/project failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/**
  * Serve static frontend from ../public
  */
 app.use(express.static(path.join(__dirname, "..", "public")));

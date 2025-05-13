@@ -3,7 +3,7 @@ import path from "path";
 
 /**
  * Very small wrapper around better-sqlite3 for our issue store.
- * Now stores `repo`, `task_id_slug` and `priority_number` columns.
+ * Now stores `repo`, `task_id_slug`, `priority_number`, and `project` columns.
  */
 export default class TaskDB {
   constructor(dbPath = path.resolve("issues.sqlite")) {
@@ -51,6 +51,9 @@ export default class TaskDB {
         .run();
       addedPriority = true;
     }
+    if (!cols.includes("project")) {
+      this.db.prepare(`ALTER TABLE issues ADD COLUMN project TEXT DEFAULT '';`).run();
+    }
 
     // 3. When column first introduced → assign priorities to existing rows
     if (addedPriority) {
@@ -69,8 +72,11 @@ export default class TaskDB {
    */
   #nextPriority() {
     return (
-      this.db.prepare(`SELECT COALESCE(MAX(priority_number),0)+1 AS nxt FROM issues;`).get()
-        .nxt
+      this.db
+        .prepare(
+          `SELECT COALESCE(MAX(priority_number),0)+1 AS nxt FROM issues;`
+        )
+        .get().nxt
     );
   }
 
@@ -82,22 +88,25 @@ export default class TaskDB {
   upsertIssue(issue, repo) {
     const slug = `${repo}-${issue.id}`;
 
-    // Preserve existing priority if record already present
+    // Preserve existing fields we do not wish to overwrite
     const existing = this.db
-      .prepare(`SELECT priority_number FROM issues WHERE id=?;`)
+      .prepare(
+        `SELECT priority_number, project FROM issues WHERE id=?;`
+      )
       .get(issue.id);
 
     const priority_number =
       existing?.priority_number ?? this.#nextPriority();
+    const project = existing?.project ?? "";
 
     const stmt = this.db.prepare(`
       INSERT INTO issues (
         id, number, repo, task_id_slug, title, html_url, state, assignee,
-        created_at, updated_at, priority_number
+        created_at, updated_at, priority_number, project
       )
       VALUES (
         @id, @number, @repo, @task_id_slug, @title, @html_url, @state, @assignee,
-        @created_at, @updated_at, @priority_number
+        @created_at, @updated_at, @priority_number, @project
       )
       ON CONFLICT(id) DO UPDATE SET
         number          = excluded.number,
@@ -109,7 +118,7 @@ export default class TaskDB {
         assignee        = excluded.assignee,
         created_at      = excluded.created_at,
         updated_at      = excluded.updated_at
-        -- priority_number intentionally NOT overwritten
+        -- priority_number & project intentionally NOT overwritten
       ;
     `);
 
@@ -124,8 +133,20 @@ export default class TaskDB {
       assignee: issue.assignee?.login ?? null,
       created_at: issue.created_at,
       updated_at: issue.updated_at,
-      priority_number
+      priority_number,
+      project
     });
+  }
+
+  /**
+   * Update the `project` column for a task.
+   * @param {number} id
+   * @param {string} project
+   */
+  updateProject(id, project) {
+    this.db
+      .prepare(`UPDATE issues SET project=? WHERE id=?;`)
+      .run(project, id);
   }
 
   /**
