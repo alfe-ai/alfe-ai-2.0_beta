@@ -2,13 +2,23 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
+import dotenv from "dotenv";
 import TaskDB from "./taskDb.js";
+import GitHubClient from "./githubClient.js";
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const db = new TaskDB();
+
+const ghClient = new GitHubClient({
+  token: process.env.GITHUB_TOKEN,
+  owner: process.env.GITHUB_OWNER,
+  repo: process.env.GITHUB_REPO
+});
 
 app.use(cors());
 app.use(express.json());
@@ -24,6 +34,28 @@ app.get("/api/tasks", (req, res) => {
   } catch (err) {
     console.error("[TaskQueue] /api/tasks failed:", err);
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/**
+ * POST /api/tasks
+ * Body: { title: string, body?: string }
+ * Creates a new GitHub issue and stores it locally.
+ */
+app.post("/api/tasks", async (req, res) => {
+  const { title, body } = req.body ?? {};
+  if (!title || typeof title !== "string") {
+    return res.status(400).json({ error: "Invalid payload" });
+  }
+
+  try {
+    const issue = await ghClient.createIssue(title.trim(), body?.trim() || "");
+    const repositorySlug = `${ghClient.owner}/${ghClient.repo}`;
+    db.upsertIssue(issue, repositorySlug);
+    res.json({ ok: true, issue });
+  } catch (err) {
+    console.error("[TaskQueue] /api/tasks (create) failed:", err);
+    res.status(500).json({ error: "Failed to create task" });
   }
 });
 
@@ -90,3 +122,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () =>
   console.log(`[TaskQueue] Web UI available at http://localhost:${PORT}`)
 );
+

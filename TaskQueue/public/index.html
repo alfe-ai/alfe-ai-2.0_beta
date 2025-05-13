@@ -32,13 +32,18 @@
         text-decoration: none;
       }
       button.arrow,
-      button.eye {
+      button.eye,
+      #addTaskBtn {
         border: none;
         background: none;
         cursor: pointer;
         font-size: 1rem;
         line-height: 1;
         padding: 0 4px;
+      }
+      #addTaskBtn {
+        margin-left: 1rem;
+        font-size: 1.1rem;
       }
       tr.hidden {
         opacity: 0.4;
@@ -69,6 +74,7 @@
         <input type="checkbox" id="showHidden" />
         Show hidden tasks
       </label>
+      <button id="addTaskBtn">➕ New Task</button>
     </div>
 
     <table id="tasks">
@@ -163,6 +169,21 @@
         });
         await load();
       }
+
+      /* ------------------------------------------------------------------
+       * Add new task
+       * ------------------------------------------------------------------ */
+      $("#addTaskBtn").addEventListener("click", async () => {
+        const title = prompt("New task title:");
+        if (!title) return;
+        const body = prompt("Optional description (leave blank if none):", "");
+        await fetch("/api/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title, body })
+        });
+        await load();
+      });
 
       /* ------------------------------------------------------------------
        * Inline project editor

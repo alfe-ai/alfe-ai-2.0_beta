@@ -38,4 +38,22 @@ export default class GitHubClient {
       params
     );
   }
+
+  /**
+   * Create a new GitHub issue.
+   *
+   * @param {string} title
+   * @param {string} body
+   * @returns {Promise<Object>} newly created issue object
+   */
+  async createIssue(title, body = "") {
+    const { data } = await this.octokit.issues.create({
+      owner: this.owner,
+      repo: this.repo,
+      title,
+      body
+    });
+    return data;
+  }
 }
+
