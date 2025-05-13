@@ -14,11 +14,14 @@ async function main() {
 
     const queue = new TaskQueue();
 
-    console.log("[TaskQueue] Fetching tasks from GitHub …");
-    const issues = await client.fetchOpenIssuesWithLabel(
-      process.env.GITHUB_LABEL || "task"
+    const label = process.env.GITHUB_LABEL; // may be undefined / empty
+    console.log(
+      `[TaskQueue] Fetching tasks from GitHub ${
+        label ? `(label='${label}')` : "(all open issues)"
+      } …`
     );
 
+    const issues = await client.fetchOpenIssues(label?.trim() || undefined);
     issues.forEach((issue) => queue.enqueue(issue));
 
     console.log(`[TaskQueue] ${queue.size()} task(s) in queue.`);

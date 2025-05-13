@@ -17,9 +17,9 @@ npm start
 | `GITHUB_TOKEN` | Personal access token (classic) with `repo` scope.    |
 | `GITHUB_OWNER` | Repository owner or organisation.                     |
 | `GITHUB_REPO`  | Repository name.                                      |
-| `GITHUB_LABEL` | (Optional) Issue label to filter on, default `task`.  |
+| `GITHUB_LABEL` | (Optional) Issue label to filter on. If omitted, **all** open issues are returned. |
 
-The script prints out all matching open issues and the current queue size.
+The script prints matching open issues and the current queue size.
 
 ### Obtaining a GitHub token
 1. Sign in to GitHub and open **Settings → Developer settings → Personal access tokens → Tokens (classic)**.  

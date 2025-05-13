@@ -15,17 +15,27 @@ export default class GitHubClient {
   }
 
   /**
-   * Fetches all open issues that carry the requested label.
-   * @param {string} label - GitHub label. Defaults to "task".
-   * @returns {Promise<Array>} Array of issue objects.
+   * Fetch open issues, optionally filtered by a single label.
+   * If `label` is falsy → returns every open issue.
+   *
+   * @param {string | undefined} label
+   * @returns {Promise<Array>} Array of issue objects
    */
-  async fetchOpenIssuesWithLabel(label = "task") {
-    const { data } = await this.octokit.issues.listForRepo({
+  async fetchOpenIssues(label) {
+    const params = {
       owner: this.owner,
       repo: this.repo,
-      labels: label,
-      state: "open"
-    });
-    return data;
+      state: "open",
+      per_page: 100
+    };
+    if (label) {
+      params.labels = label;
+    }
+
+    // `paginate()` handles multi-page responses transparently.
+    return await this.octokit.paginate(
+      this.octokit.issues.listForRepo,
+      params
+    );
   }
 }
