@@ -57,6 +57,7 @@
           <th>P</th>
           <th>↕</th>
           <th>Slug</th>
+          <th>Repo</th>
           <th>#</th>
           <th>Title</th>
           <th>Project</th>
@@ -86,6 +87,7 @@
               } onclick="reorder(${t.id}, 'down')">▼</button>
             </td>
             <td>${t.task_id_slug}</td>
+            <td>${t.repository}</td>
             <td><a href="${t.html_url}" target="_blank">#${t.number}</a></td>
             <td>${t.title}</td>
             <td class="project-cell" onclick="editProject(${t.id}, ${JSON.stringify(
@@ -128,4 +130,3 @@
     </script>
   </body>
 </html>
-
