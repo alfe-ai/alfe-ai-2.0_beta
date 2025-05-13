@@ -23,6 +23,7 @@ export default class TaskDB {
         html_url        TEXT,
         task_id_slug    TEXT,
         priority_number INTEGER UNIQUE,
+        priority        TEXT DEFAULT 'Medium',
         hidden          INTEGER DEFAULT 0,
         project         TEXT DEFAULT '',
         sprint          TEXT DEFAULT '',
@@ -33,12 +34,15 @@ export default class TaskDB {
       );
     `);
 
-    /* add sprint column if DB existed before this migration */
+    /* migrations (ignore error if column exists already) */
     try {
       this.db.exec(`ALTER TABLE issues ADD COLUMN sprint TEXT DEFAULT '';`);
-    } catch {
-      /* column exists – ignore */
-    }
+    } catch {}
+    try {
+      this.db.exec(
+        `ALTER TABLE issues ADD COLUMN priority TEXT DEFAULT 'Medium';`
+      );
+    } catch {}
 
     /* simple key/value store */
     this.db.exec(`
@@ -63,21 +67,24 @@ export default class TaskDB {
   /*  Upsert / sync helpers                                             */
   /* ------------------------------------------------------------------ */
   upsertIssue(issue, repositorySlug) {
-    /* detect existing row (keep its priority / project / sprint) */
+    /* detect existing row (keep its priority fields / project / sprint) */
     const existing = this.db
       .prepare(
-        "SELECT priority_number, project, sprint FROM issues WHERE github_id = ?"
+        "SELECT priority_number, priority, project, sprint FROM issues WHERE github_id = ?"
       )
       .get(issue.id);
 
-    /* priority ------------------------------------------------------- */
-    let priority = existing?.priority_number;
-    if (!priority) {
+    /* numeric priority ------------------------------------------------ */
+    let priorityNum = existing?.priority_number;
+    if (!priorityNum) {
       const max =
         this.db.prepare("SELECT MAX(priority_number) AS m FROM issues").get()
           .m || 0;
-      priority = max + 1;
+      priorityNum = max + 1;
     }
+
+    /* textual priority ------------------------------------------------ */
+    const textualPriority = existing?.priority ?? "Medium";
 
     /* defaults for NEW tasks ---------------------------------------- */
     const defaultProject =
@@ -92,7 +99,8 @@ export default class TaskDB {
       title: issue.title,
       html_url: issue.html_url,
       task_id_slug: `${repositorySlug}#${issue.number}`,
-      priority_number: priority,
+      priority_number: priorityNum,
+      priority: textualPriority,
       hidden: 0,
       project: defaultProject,
       sprint: defaultSprint,
@@ -105,12 +113,12 @@ export default class TaskDB {
     const stmt = this.db.prepare(`
       INSERT INTO issues (
         github_id, repository, number, title, html_url,
-        task_id_slug, priority_number, hidden, project, sprint,
-        fib_points, assignee, created_at, closed
+        task_id_slug, priority_number, priority, hidden,
+        project, sprint, fib_points, assignee, created_at, closed
       ) VALUES (
         @github_id, @repository, @number, @title, @html_url,
-        @task_id_slug, @priority_number, @hidden, @project, @sprint,
-        @fib_points, @assignee, @created_at, @closed
+        @task_id_slug, @priority_number, @priority, @hidden,
+        @project, @sprint, @fib_points, @assignee, @created_at, @closed
       )
       ON CONFLICT(github_id) DO UPDATE SET
         repository      = excluded.repository,
@@ -119,6 +127,7 @@ export default class TaskDB {
         html_url        = excluded.html_url,
         task_id_slug    = excluded.task_id_slug,
         priority_number = excluded.priority_number,
+        priority        = excluded.priority,
         assignee        = excluded.assignee,
         created_at      = excluded.created_at,
         closed          = 0
@@ -204,6 +213,13 @@ export default class TaskDB {
   setSprint(id, sprint) {
     this.db.prepare("UPDATE issues SET sprint = ? WHERE id = ?").run(
       sprint,
+      id
+    );
+  }
+
+  setPriority(id, priority) {
+    this.db.prepare("UPDATE issues SET priority = ? WHERE id = ?").run(
+      priority,
       id
     );
   }

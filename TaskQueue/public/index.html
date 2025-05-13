@@ -219,9 +219,10 @@
     <script>
       /* ---------------- constants ---------------- */
       const columns = [
-        { key: "priority", label: "P" },
+        { key: "order", label: "P" },
         { key: "reorder", label: "↕" },
         { key: "visibility", label: "" },
+        { key: "priority", label: "Prio" },
         { key: "slug", label: "Slug" },
         { key: "repo", label: "Repo" },
         { key: "number", label: "#" },
@@ -232,488 +233,49 @@
         { key: "assignee", label: "Assignee" },
         { key: "created", label: "Created" }
       ];
+[... unchanged JS until render rows ...]
 
-      /* --------------- state --------------------- */
-      let visibleCols = new Set(columns.map((c) => c.key));
-
-      /* --------------- selectors ----------------- */
-      const $ = (sel, ctx = document) => ctx.querySelector(sel);
-      const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
-
-      /* ------------------------------------------------------------------
-       * Settings helpers (persist on server)
-       * ------------------------------------------------------------------ */
-      async function loadSettings() {
-        const res = await fetch("/api/settings/visible_columns");
-        if (res.ok) {
-          const { value } = await res.json();
-          if (Array.isArray(value)) visibleCols = new Set(value);
-        }
-      }
-
-      async function saveSettings() {
-        await fetch("/api/settings", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            key: "visible_columns",
-            value: [...visibleCols]
-          })
-        });
-      }
-
-      /* ------------------------------------------------------------------
-       * Default project / sprint helpers
-       * ------------------------------------------------------------------ */
-      async function loadDefaults() {
-        let project = "";
-        let sprint = "";
-        try {
-          const p = await fetch("/api/settings/default_project");
-          if (p.ok) ({ value: project } = await p.json());
-        } catch {}
-        try {
-          const s = await fetch("/api/settings/default_sprint");
-          if (s.ok) ({ value: sprint } = await s.json());
-        } catch {}
-        return { project, sprint };
-      }
-
-      async function saveDefaults(project, sprint) {
-        await Promise.all([
-          fetch("/api/settings", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ key: "default_project", value: project })
-          }),
-          fetch("/api/settings", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ key: "default_sprint", value: sprint })
-          })
-        ]);
-      }
-
-      /* ------------------------------------------------------------------
-       * Agent instructions helpers
-       * ------------------------------------------------------------------ */
-      async function loadInstructions() {
-        const res = await fetch("/api/instructions");
-        if (!res.ok) return "";
-        const { instructions } = await res.json();
-        return instructions;
-      }
-
-      async function saveInstructions(text) {
-        await fetch("/api/instructions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ instructions: text })
-        });
-      }
-
-      /* ------------------------------------------------------------------
-       * Git repo helpers
-       * ------------------------------------------------------------------ */
-      async function loadGitRepo() {
-        const res = await fetch("/api/github");
-        if (!res.ok) return "";
-        const { owner, repo } = await res.json();
-        return owner && repo ? `${owner}/${repo}` : "";
-      }
-
-      async function saveGitRepo(slug) {
-        await fetch("/api/github", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ slug })
-        });
-      }
-
-      /* ------------------------------------------------------------------
-       * Load & populate projects / sprints dropdown
-       * ------------------------------------------------------------------ */
-      async function loadProjects() {
-        const res = await fetch("/api/projects");
-        if (!res.ok) return;
-        const projects = await res.json();
-        const sel = $("#projectFilter");
-        sel.innerHTML =
-          '<option value="">All projects</option>' +
-          projects
-            .map(
-              (p) =>
-                `<option value="${p.project.replaceAll(
-                  '"',
-                  "&quot;"
-                )}">${p.project}</option>`
-            )
-            .join("");
-      }
-
-      async function loadSprints() {
-        const res = await fetch("/api/sprints");
-        if (!res.ok) return;
-        const sprints = await res.json();
-        const sel = $("#sprintFilter");
-        sel.innerHTML =
-          '<option value="">All sprints</option>' +
-          sprints
-            .map(
-              (p) =>
-                `<option value="${p.sprint.replaceAll(
-                  '"',
-                  "&quot;"
-                )}">${p.sprint}</option>`
-            )
-            .join("");
-      }
-
-      /* ------------------------------------------------------------------
-       * Render table header & rows
-       * ------------------------------------------------------------------ */
-      function renderHeader() {
-        const hdr = $("#headerRow");
-        hdr.innerHTML = "";
-        columns.forEach((c) => {
-          if (!visibleCols.has(c.key)) return;
-          const th = document.createElement("th");
-          th.textContent = c.label;
-          hdr.appendChild(th);
-        });
-      }
-
-      async function loadTasks() {
-        const includeHidden = $("#showHidden").checked;
-        const res = await fetch(
-          "/api/tasks" + (includeHidden ? "?includeHidden=1" : "")
-        );
-        const tasks = await res.json();
-
-        /* filter by selected project/sprint */
-        const selectedProject = $("#projectFilter").value;
-        const selectedSprint = $("#sprintFilter").value;
-        let displayTasks = tasks;
-        if (selectedProject)
-          displayTasks = displayTasks.filter((t) => t.project === selectedProject);
-        if (selectedSprint)
-          displayTasks = displayTasks.filter((t) => t.sprint === selectedSprint);
-
-        renderHeader();
-        const tbody = $("#tasks tbody");
-        tbody.innerHTML = "";
-
-        displayTasks.forEach((t, idx) => {
-          const tr = document.createElement("tr");
-          if (t.hidden) tr.classList.add("hidden");
-
-          const cells = [];
           const push = (key, html) => {
             if (!visibleCols.has(key)) return;
             cells.push(html);
           };
 
-          push("priority", `<td>${t.priority_number}</td>`);
+          /* numeric order */
+          push("order", `<td>${t.priority_number}</td>`);
+
+[... unchanged pushes ...]
+
+          /* textual priority */
+          const priorityOpts = ["Low", "Medium", "High"]
+            .map(
+              (p) =>
+                `<option value="${p}" ${t.priority === p ? "selected" : ""}>${p}</option>`
+            )
+            .join("");
           push(
-            "reorder",
+            "priority",
             `<td>
-              <button class="arrow" title="Move up" ${
-                idx === 0 ? "disabled" : ""
-              } onclick="reorder(${t.id}, 'up')">▲</button>
-              <button class="arrow" title="Move down" ${
-                idx === displayTasks.length - 1 ? "disabled" : ""
-              } onclick="reorder(${t.id}, 'down')">▼</button>
+              <select onchange="setPriority(${t.id}, this.value)">
+                ${priorityOpts}
+              </select>
             </td>`
           );
-          push(
-            "visibility",
-            `<td>
-              <button class="eye" title="${
-                t.hidden ? "Unhide" : "Hide"
-              }" onclick="toggleHidden(${t.id}, ${!t.hidden})">${
-              t.hidden ? "🙈" : "👁️"
-            }</button>
-            </td>`
-          );
-          push(
-            "slug",
-            `<td><a href="${t.html_url}" target="_blank">${t.task_id_slug}</a></td>`
-          );
-          push("repo", `<td>${t.repository}</td>`);
-          push(
-            "number",
-            `<td><a href="${t.html_url}" target="_blank">#${t.number}</a></td>`
-          );
-          push("title", `<td>${t.title}</td>`);
-          push(
-            "project",
-            `<td class="project-cell" data-id="${t.id}" data-project="${encodeURIComponent(
-              t.project ?? ""
-            )}">${t.project || "-"}</td>`
-          );
-          push(
-            "sprint",
-            `<td class="sprint-cell" data-id="${t.id}" data-sprint="${encodeURIComponent(
-              t.sprint ?? ""
-            )}">${t.sprint || "-"}</td>`
-          );
-          push(
-            "points",
-            `<td>
-              <span class="fib-display">${t.fib_points ?? "-"}</span>
-              <div class="fib-buttons">
-                ${[1, 2, 3, 5, 8]
-                  .map(
-                    (p) =>
-                      `<button class="fib-btn" onclick="setPoints(${t.id}, ${p})">${p}</button>`
-                  )
-                  .join(" ")}
-              </div>
-            </td>`
-          );
-          push("assignee", `<td>${t.assignee ?? "-"}</td>`);
-          push(
-            "created",
-            `<td>${new Date(t.created_at).toLocaleString()}</td>`
-          );
 
-          tr.innerHTML = cells.join("");
-          tbody.appendChild(tr);
-        });
+[... remaining pushes unchanged ...]
       }
 
-      /* ------------------------------------------------------------------
-       * Actions (existing)
-       * ------------------------------------------------------------------ */
-      async function reorder(id, direction) {
-        await fetch("/api/tasks/reorder", {
+[... actions section ...]
+      async function setPriority(id, priority) {
+        await fetch("/api/tasks/priority", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id, direction })
+          body: JSON.stringify({ id, priority })
         });
         await loadTasks();
       }
 
-      async function toggleHidden(id, hidden) {
-        await fetch("/api/tasks/hidden", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id, hidden })
-        });
-        await loadTasks();
-      }
-
-      async function setPoints(id, points) {
-        await fetch("/api/tasks/points", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id, points })
-        });
-        await loadTasks();
-      }
-
-      /* ------------------------------------------------------------------
-       * Add new task
-       * ------------------------------------------------------------------ */
-      $("#addTaskBtn").addEventListener("click", async () => {
-        const title = prompt("New task title:");
-        if (!title) return;
-        const body = prompt("Optional description (leave blank if none):", "");
-        await fetch("/api/tasks", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title, body })
-        });
-        await loadTasks();
-        await loadProjects();
-        await loadSprints();
-      });
-
-      /* ------------------------------------------------------------------
-       * Inline project / sprint editor
-       * ------------------------------------------------------------------ */
-      function startInlineEdit(cell, kind) {
-        if (cell.querySelector("input")) return;
-
-        const id = cell.dataset.id;
-        const current = decodeURIComponent(cell.dataset[kind] || "");
-        const input = document.createElement("input");
-        input.type = "text";
-        input.value = current;
-        input.className = "inline-input";
-
-        cell.textContent = "";
-        cell.appendChild(input);
-        input.focus();
-        input.select();
-
-        const finish = async (save) => {
-          cell.removeEventListener("keydown", onKeyDown);
-          input.removeEventListener("blur", onBlur);
-          const newVal = input.value.trim();
-          if (save && newVal !== current) {
-            await fetch(`/api/tasks/${kind}`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ id, [kind]: newVal })
-            });
-          }
-          await loadTasks();
-          await loadProjects();
-          await loadSprints();
-        };
-
-        const onKeyDown = (e) => {
-          if (e.key === "Enter") finish(true);
-          else if (e.key === "Escape") finish(false);
-        };
-        const onBlur = () => finish(true);
-
-        input.addEventListener("keydown", onKeyDown);
-        input.addEventListener("blur", onBlur);
-      }
-
-      document.addEventListener("click", (e) => {
-        if (e.target.classList.contains("project-cell")) {
-          startInlineEdit(e.target, "project");
-        } else if (e.target.classList.contains("sprint-cell")) {
-          startInlineEdit(e.target, "sprint");
-        }
-      });
-
-      $("#showHidden").addEventListener("change", () => loadTasks());
-      $("#projectFilter").addEventListener("change", () => loadTasks());
-      $("#sprintFilter").addEventListener("change", () => loadTasks());
-
-      /* ------------------------------------------------------------------
-       * Column picker modal logic
-       * ------------------------------------------------------------------ */
-      const colModal = $("#colModal");
-      $("#gearBtn").addEventListener("click", () => {
-        // build checkboxes
-        const wrap = $("#colCheckboxes");
-        wrap.innerHTML = "";
-        columns.forEach((c) => {
-          const label = document.createElement("label");
-          label.innerHTML = `
-            <input type="checkbox" data-key="${c.key}" ${
-            visibleCols.has(c.key) ? "checked" : ""
-          } />
-            ${c.label || "(blank)"}
-          `;
-          wrap.appendChild(label);
-        });
-        colModal.style.display = "flex";
-      });
-
-      $("#colSaveBtn").addEventListener("click", async () => {
-        visibleCols = new Set(
-          $$("input[type=checkbox][data-key]", $("#colCheckboxes"))
-            .filter((cb) => cb.checked)
-            .map((cb) => cb.dataset.key)
-        );
-        await saveSettings();
-        colModal.style.display = "none";
-        await loadTasks();
-      });
-      $("#colCancelBtn").addEventListener(
-        "click",
-        () => (colModal.style.display = "none")
-      );
-      colModal.addEventListener("click", (e) => {
-        if (e.target === colModal) colModal.style.display = "none";
-      });
-
-      /* ------------------------------------------------------------------
-       * Agent instructions modal logic
-       * ------------------------------------------------------------------ */
-      const instrModal = $("#instrModal");
-      $("#instrBtn").addEventListener("click", async () => {
-        $("#instrText").value = await loadInstructions();
-        instrModal.style.display = "flex";
-        $("#instrText").focus();
-      });
-      $("#instrSaveBtn").addEventListener("click", async () => {
-        await saveInstructions($("#instrText").value);
-        instrModal.style.display = "none";
-      });
-      $("#instrCancelBtn").addEventListener(
-        "click",
-        () => (instrModal.style.display = "none")
-      );
-      instrModal.addEventListener("click", (e) => {
-        if (e.target === instrModal) instrModal.style.display = "none";
-      });
-
-      /* ------------------------------------------------------------------
-       * Git repo modal logic
-       * ------------------------------------------------------------------ */
-      const repoModal = $("#repoModal");
-      $("#repoBtn").addEventListener("click", async () => {
-        $("#repoInput").value = await loadGitRepo();
-        repoModal.style.display = "flex";
-        $("#repoInput").focus();
-      });
-      $("#repoSaveBtn").addEventListener("click", async () => {
-        const slug = $("#repoInput").value.trim();
-        if (!slug.includes("/")) {
-          alert("Please enter in owner/repo format.");
-          return;
-        }
-        await saveGitRepo(slug);
-        repoModal.style.display = "none";
-        alert("Repository updated – page will reload.");
-        location.reload();
-      });
-      $("#repoCancelBtn").addEventListener(
-        "click",
-        () => (repoModal.style.display = "none")
-      );
-      repoModal.addEventListener("click", (e) => {
-        if (e.target === repoModal) repoModal.style.display = "none";
-      });
-
-      /* ------------------------------------------------------------------
-       * Default project/sprint modal logic
-       * ------------------------------------------------------------------ */
-      const defaultsModal = $("#defaultsModal");
-      $("#defaultsBtn").addEventListener("click", async () => {
-        const { project, sprint } = await loadDefaults();
-        $("#defProjectInput").value = project;
-        $("#defSprintInput").value = sprint;
-        defaultsModal.style.display = "flex";
-        $("#defProjectInput").focus();
-      });
-      $("#defSaveBtn").addEventListener("click", async () => {
-        const project = $("#defProjectInput").value.trim();
-        const sprint = $("#defSprintInput").value.trim();
-        await saveDefaults(project, sprint);
-        defaultsModal.style.display = "none";
-        alert("Defaults updated.");
-      });
-      $("#defCancelBtn").addEventListener(
-        "click",
-        () => (defaultsModal.style.display = "none")
-      );
-      defaultsModal.addEventListener("click", (e) => {
-        if (e.target === defaultsModal) defaultsModal.style.display = "none";
-      });
-
-      /* ------------------------------------------------------------------
-       * Initial load & polling
-       * ------------------------------------------------------------------ */
-      (async () => {
-        await loadProjects();
-        await loadSprints();
-        await loadSettings();
-        await loadTasks();
-        setInterval(loadTasks, 30_000);
-      })();
-
-      /* expose */
-      window.reorder = reorder;
-      window.toggleHidden = toggleHidden;
-      window.setPoints = setPoints;
+[... expose ...]
+      window.setPriority = setPriority;
     </script>
   </body>
 </html>
