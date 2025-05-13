@@ -55,5 +55,21 @@ export default class GitHubClient {
     });
     return data;
   }
+
+  /**
+   * Update the title of an existing GitHub issue.
+   *
+   * @param {number} issueNumber
+   * @param {string} newTitle
+   */
+  async updateIssueTitle(issueNumber, newTitle) {
+    const { data } = await this.octokit.issues.update({
+      owner: this.owner,
+      repo: this.repo,
+      issue_number: issueNumber,
+      title: newTitle
+    });
+    return data;
+  }
 }
 

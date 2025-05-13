@@ -21,11 +21,11 @@
     #gearBtn,#instrBtn,#repoBtn,#defaultsBtn{margin-left:.6rem;font-size:1.2rem;}
     tr.hidden{opacity:.4;}
     .project-cell,.sprint-cell,.priority-cell,.status-cell,
-    .dependencies-cell,.blocking-cell {
+    .dependencies-cell,.blocking-cell, .title-cell {
       cursor:pointer;color:#333;
     }
     .project-cell:hover,.sprint-cell:hover,.priority-cell:hover,.status-cell:hover,
-    .dependencies-cell:hover,.blocking-cell:hover {
+    .dependencies-cell:hover,.blocking-cell:hover, .title-cell:hover {
       text-decoration:underline dotted;
     }
     .inline-input{width:100%;box-sizing:border-box;font:inherit;padding:4px;}
@@ -313,7 +313,8 @@ function renderBody(){
           td.innerHTML = `<a href="${t.html_url}" target="_blank">#${t.number}</a>`;
           break;
         case "title":
-          td.innerHTML = `<a href="${t.html_url}" target="_blank">${t.title}</a>`;
+          td.textContent = t.title;
+          td.className = "title-cell";
           break;
         case "project":
           td.textContent = t.project;
@@ -625,6 +626,37 @@ $("#tasks").addEventListener("click", async (e)=>{
       await loadTasks();
     });
   }
+
+  /* Title cell click (rename) */
+  if(e.target.classList.contains("title-cell")){
+    const row = e.target.closest("tr");
+    const taskId = +row.dataset.taskId;
+    const currentTitle = e.target.textContent.trim();
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = currentTitle;
+    input.className = "inline-input";
+    e.target.textContent = "";
+    e.target.appendChild(input);
+    input.focus();
+
+    input.addEventListener("change", async ()=>{
+      const chosen = input.value;
+      if(chosen !== currentTitle){
+        await fetch("/api/tasks/rename", {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({ id:taskId, newTitle: chosen })
+        });
+      }
+      await loadTasks();
+    });
+
+    input.addEventListener("blur", async ()=>{
+      await loadTasks();
+    });
+  }
 });
 
 /* ------------------------------------------------------------------
@@ -755,3 +787,4 @@ $("#cancelTaskBtn").addEventListener("click", ()=>{
 </script>
 </body>
 </html>
+

@@ -372,5 +372,10 @@ export default class TaskDB {
       .prepare("SELECT * FROM issues WHERE sprint=? AND closed=0 ORDER BY priority_number")
       .all(sprint);
   }
+
+  /* NEW: setTitle for renaming tasks */
+  setTitle(id, newTitle) {
+    this.db.prepare("UPDATE issues SET title = ? WHERE id = ?").run(newTitle, id);
+  }
 }
 

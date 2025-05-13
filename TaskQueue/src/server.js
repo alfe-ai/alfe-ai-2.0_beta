@@ -255,6 +255,36 @@ app.get("/api/sprints/:sprint", (req, res) => {
   }
 });
 
+// NEW: Rename task (update DB + GitHub)
+app.post("/api/tasks/rename", async (req, res) => {
+  try {
+    const { id, newTitle } = req.body;
+    if (!id || !newTitle) {
+      return res.status(400).json({ error: "Missing id or newTitle" });
+    }
+    const task = db.getTaskById(id);
+    if (!task) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+
+    const gh = new GitHubClient({
+      token: process.env.GITHUB_TOKEN,
+      owner: process.env.GITHUB_OWNER,
+      repo: process.env.GITHUB_REPO
+    });
+    // Update GitHub issue
+    await gh.updateIssueTitle(task.number, newTitle);
+
+    // Update local DB
+    db.setTitle(id, newTitle);
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[TaskQueue] /api/tasks/rename error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 app.use(express.static(path.join(__dirname, "../public")));
 
@@ -268,3 +298,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
+
