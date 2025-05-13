@@ -129,6 +129,46 @@ export default class TaskDB {
   }
 
   /**
+   * Swap priority with adjacent task in given direction.
+   * @param {number} id         – issue id
+   * @param {"up"|"down"} dir   – direction to move
+   * @returns {boolean}         – true if swap happened
+   */
+  movePriority(id, dir) {
+    const curr = this.db
+      .prepare(`SELECT id, priority_number FROM issues WHERE id=?;`)
+      .get(id);
+    if (!curr) return false;
+
+    const neighbour = this.db
+      .prepare(
+        `
+        SELECT id, priority_number FROM issues
+        WHERE state='open' AND priority_number ${
+          dir === "up" ? "<" : ">"
+        } ?
+        ORDER BY priority_number ${dir === "up" ? "DESC" : "ASC"}
+        LIMIT 1;
+      `
+      )
+      .get(curr.priority_number);
+
+    if (!neighbour) return false; // already at edge
+
+    // Transaction – swap numbers
+    const swap = this.db.transaction((a, b) => {
+      this.db
+        .prepare(`UPDATE issues SET priority_number=? WHERE id=?;`)
+        .run(b.priority_number, a.id);
+      this.db
+        .prepare(`UPDATE issues SET priority_number=? WHERE id=?;`)
+        .run(a.priority_number, b.id);
+    });
+    swap(curr, neighbour);
+    return true;
+  }
+
+  /**
    * Mark every issue not passed in `openIds` as closed.
    */
   markClosedExcept(openIds = []) {
@@ -161,3 +201,4 @@ export default class TaskDB {
       .all();
   }
 }
+
