@@ -25,8 +25,8 @@ app.use(bodyParser.json());
 app.get("/api/tasks", (req, res) => {
   try {
     const includeHidden =
-        req.query.includeHidden === "1" ||
-        req.query.includeHidden === "true";
+      req.query.includeHidden === "1" ||
+      req.query.includeHidden === "true";
     res.json(db.listTasks(includeHidden));
   } catch (err) {
     console.error("[TaskQueue] /api/tasks failed:", err);
@@ -149,8 +149,8 @@ app.post("/api/tasks/priority", (req, res) => {
     db.setPriority(id, priority);
 
     db.logActivity(
-        "Set priority",
-        JSON.stringify({ id, from: oldPriority, to: priority })
+      "Set priority",
+      JSON.stringify({ id, from: oldPriority, to: priority })
     );
 
     res.json({ success: true });
@@ -247,7 +247,7 @@ app.post("/api/settings", (req, res) => {
     db.setSetting(key, value);
     res.json({ success: true });
   } catch (err) {
-    console.error("[TaskQueue] POST /api/settings failed", err);
+    console.error("[TaskQueue] POST /api/settings failed:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -349,7 +349,7 @@ app.post("/api/chat", async (req, res) => {
 
     const responseText =
       completion.choices?.[0]?.message?.content || "";
-    res.json({ reply: responseText });
+    res.json({ reply: responseText, model });
   } catch (err) {
     console.error("[TaskQueue] /api/chat error:", err);
     res.status(500).json({ error: "Internal server error" });
@@ -374,3 +374,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
+ // 
