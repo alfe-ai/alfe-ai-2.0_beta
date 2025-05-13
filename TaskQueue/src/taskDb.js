@@ -101,6 +101,23 @@ export default class TaskDB {
       );
     `);
 
+    // New table for chat tabs
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS chat_tabs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      );
+    `);
+
+    // Add column for associating a chat tab with each pair
+    try {
+      this.db.exec(`ALTER TABLE chat_pairs ADD COLUMN chat_tab_id INTEGER DEFAULT 1;`);
+      console.debug("[TaskDB Debug] Added chat_tab_id column to chat_pairs.");
+    } catch(e) {
+      console.debug("[TaskDB Debug] chat_tab_id column likely exists. Skipped.", e.message);
+    }
+
     // New table for storing chat bubble pairs
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS chat_pairs (
@@ -108,17 +125,11 @@ export default class TaskDB {
         user_text TEXT NOT NULL,
         ai_text TEXT,
         model TEXT,
-        timestamp TEXT NOT NULL
+        timestamp TEXT NOT NULL,
+        ai_timestamp TEXT,
+        chat_tab_id INTEGER DEFAULT 1
       );
     `);
-
-    // Add "ai_timestamp" if not present
-    try {
-      this.db.exec(`ALTER TABLE chat_pairs ADD COLUMN ai_timestamp TEXT;`);
-      console.debug("[TaskDB Debug] Added ai_timestamp column to chat_pairs table.");
-    } catch(e) {
-      console.debug("[TaskDB Debug] Could not add ai_timestamp column (already exists?).", e.message);
-    }
 
     console.debug("[TaskDB Debug] Finished DB schema init.");
   }
@@ -436,14 +447,15 @@ export default class TaskDB {
   /* ------------------------------------------------------------------ */
   /*  Chat storage methods                                              */
   /* ------------------------------------------------------------------ */
-  createChatPair(userText) {
+  createChatPair(userText, chatTabId = 1) {
     const timestamp = new Date().toISOString();
     const { lastInsertRowid } = this.db.prepare(`
-      INSERT INTO chat_pairs (user_text, ai_text, model, timestamp, ai_timestamp)
-      VALUES (@user_text, '', '', @timestamp, NULL)
+      INSERT INTO chat_pairs (user_text, ai_text, model, timestamp, ai_timestamp, chat_tab_id)
+      VALUES (@user_text, '', '', @timestamp, NULL, @chat_tab_id)
     `).run({
       user_text: userText,
-      timestamp
+      timestamp,
+      chat_tab_id: chatTabId
     });
     return lastInsertRowid;
   }
@@ -463,10 +475,44 @@ export default class TaskDB {
     });
   }
 
-  getAllChatPairs() {
+  getAllChatPairs(tabId = 1) {
     return this.db
-      .prepare("SELECT * FROM chat_pairs ORDER BY id ASC")
-      .all();
+      .prepare("SELECT * FROM chat_pairs WHERE chat_tab_id=? ORDER BY id ASC")
+      .all(tabId);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Chat tabs methods                                                 */
+  /* ------------------------------------------------------------------ */
+  createChatTab(name) {
+    const ts = new Date().toISOString();
+    const { lastInsertRowid } = this.db.prepare(`
+      INSERT INTO chat_tabs (name, created_at)
+      VALUES (@name, @created_at)
+    `).run({
+      name,
+      created_at: ts
+    });
+    return lastInsertRowid;
+  }
+
+  listChatTabs() {
+    return this.db.prepare("SELECT * FROM chat_tabs ORDER BY id ASC").all();
+  }
+
+  renameChatTab(tabId, newName) {
+    this.db.prepare("UPDATE chat_tabs SET name=? WHERE id=?").run(newName, tabId);
+  }
+
+  deleteChatTab(tabId) {
+    // Also consider whether to remove chat_pairs or reassign them
+    this.db.prepare("DELETE FROM chat_tabs WHERE id=?").run(tabId);
+    this.db.prepare("DELETE FROM chat_pairs WHERE chat_tab_id=?").run(tabId);
+  }
+
+  getChatTab(tabId) {
+    return this.db.prepare("SELECT * FROM chat_tabs WHERE id=?").get(tabId);
   }
 }
+
 

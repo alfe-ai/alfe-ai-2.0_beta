@@ -332,16 +332,17 @@ app.get("/api/activity", (req, res) => {
   }
 });
 
-// Updated /api/chat for streaming completions, now storing user & AI messages
+// Updated /api/chat for streaming completions; now passing optional tabId
 app.post("/api/chat", async (req, res) => {
   try {
     const userMessage = req.body.message || "";
+    const chatTabId = req.body.tabId || 1;
     if (!userMessage) {
       return res.status(400).send("Missing message");
     }
 
     // Insert user message into chat_pairs table
-    const chatPairId = db.createChatPair(userMessage);
+    const chatPairId = db.createChatPair(userMessage, chatTabId);
 
     // Start streaming the response
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
@@ -377,10 +378,11 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
-// New route to get all stored chat pairs
+// New route: get all stored chat pairs for a tab
 app.get("/api/chat/history", (req, res) => {
   try {
-    const chatPairs = db.getAllChatPairs();
+    const tabId = parseInt(req.query.tabId || "1", 10);
+    const chatPairs = db.getAllChatPairs(tabId);
     res.json(chatPairs);
   } catch (err) {
     console.error("[TaskQueue] /api/chat/history error:", err);
@@ -392,6 +394,56 @@ app.get("/api/chat/history", (req, res) => {
 app.get("/api/model", (req, res) => {
   const model = process.env.OPENAI_MODEL || "o3-mini";
   res.json({ model });
+});
+
+// Chat tabs API
+app.get("/api/chat/tabs", (req, res) => {
+  try {
+    const tabs = db.listChatTabs();
+    res.json(tabs);
+  } catch (err) {
+    console.error("[TaskQueue] GET /api/chat/tabs error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/api/chat/tabs/new", (req, res) => {
+  try {
+    const name = req.body.name || "Untitled";
+    const tabId = db.createChatTab(name);
+    res.json({ success: true, id: tabId });
+  } catch (err) {
+    console.error("[TaskQueue] POST /api/chat/tabs/new error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/api/chat/tabs/rename", (req, res) => {
+  try {
+    const { tabId, newName } = req.body;
+    if (!tabId || !newName) {
+      return res.status(400).json({ error: "Missing tabId or newName" });
+    }
+    db.renameChatTab(tabId, newName);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[TaskQueue] POST /api/chat/tabs/rename error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.delete("/api/chat/tabs/:id", (req, res) => {
+  try {
+    const tabId = parseInt(req.params.id, 10);
+    if (!tabId) {
+      return res.status(400).json({ error: "Invalid tabId" });
+    }
+    db.deleteChatTab(tabId);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[TaskQueue] DELETE /api/chat/tabs/:id error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -412,4 +464,5 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
+
 

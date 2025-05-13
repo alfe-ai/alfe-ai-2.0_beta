@@ -102,6 +102,12 @@
   </div>
 </div>
 
+<!-- Chat tabs area -->
+<div id="chatTabs" style="display:flex; gap:0.5rem; align-items:center; margin-bottom:8px;">
+  <div id="tabsContainer" style="flex-wrap: wrap; display: flex; gap: 0.5rem;"></div>
+  <button id="newTabBtn">➕ Tab</button>
+</div>
+
 <!-- Chat panel -->
 <div id="chatPanel">
   <!-- Model HUD -->
@@ -139,6 +145,10 @@
   let modelName = "unknown";
   let tasksVisible = true;
 
+  // Chat tabs
+  let currentTabId = 1;
+  let chatTabs = [];
+
   const $  = (sel, ctx=document) => ctx.querySelector(sel);
   const $$ = (sel, ctx=document) => [...ctx.querySelectorAll(sel)];
   const isoDate = d => new Date(d).toLocaleDateString([], {year:"numeric",month:"2-digit",day:"2-digit"});
@@ -146,11 +156,9 @@
   function formatTimestamp(isoStr){
     if(!isoStr) return "(no time)";
     const d = new Date(isoStr);
-    // Show HH:MM:SS
     return d.toLocaleTimeString([], { hour12: false });
   }
 
-  /* --------------- modals -------------------- */
   function showModal(m){ m.style.display = "flex"; }
   function hideModal(m){ m.style.display = "none"; }
   $$(".modal").forEach(m => m.addEventListener("click", e => { if(e.target===m) hideModal(m); }));
@@ -166,7 +174,7 @@
   $("#toggleTasksBtn").addEventListener("click", toggleTasks);
 
   /* ------------------------------------------------------------------
-   * Load & save settings
+   * Load & save column config
    * ------------------------------------------------------------------ */
   async function loadSettings(){
     {
@@ -395,7 +403,6 @@
     const cnt = $("#colList");
     cnt.innerHTML="";
     columnsOrder.forEach((c,i)=>{
-      if(!visibleCols.has(c.key)){}
       const div = document.createElement("div");
       div.className="col-item";
       div.innerHTML = `<button class="col-move" data-idx="${i}" data-dir="up">⬆️</button>` +
@@ -423,7 +430,7 @@
     hideModal($("#colModal"));
     await loadTasks();
   });
-  $("#colCancelBtn").addEventListener("click", ()=>hideModal($("#colModal")));
+  $("#colCancelBtn").addEventListener("click",()=>hideModal($("#colModal")));
 
   /* ------------------------------------------------------------------
    * Row interactions
@@ -456,7 +463,6 @@
     if(!row) return;
     const taskId=+row.dataset.taskId;
 
-    /* helper to inline edit */
     function inlineEdit(newEl, saveCb){
       cell.textContent="";
       cell.appendChild(newEl);
@@ -646,7 +652,86 @@
   $("#cancelTaskBtn").addEventListener("click",()=>hideModal($("#newTaskModal")));
 
   /* ------------------------------------------------------------------
-   * Chat logic with streaming response + Loading existing history
+   * Chat tab logic
+   * ------------------------------------------------------------------ */
+  async function loadTabs(){
+    const res = await fetch("/api/chat/tabs");
+    chatTabs = await res.json();
+  }
+  async function addNewTab(){
+    const name = prompt("Enter tab name:", "New Tab");
+    if(!name) return;
+    const r = await fetch("/api/chat/tabs/new", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name })
+    });
+    if(r.ok){
+      await loadTabs();
+      renderTabs();
+    }
+  }
+  async function renameTab(tabId){
+    const t = chatTabs.find(t => t.id===tabId);
+    const newName = prompt("Enter new tab name:", t ? t.name : "Untitled");
+    if(!newName) return;
+    const r = await fetch("/api/chat/tabs/rename", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tabId, newName })
+    });
+    if(r.ok){
+      await loadTabs();
+      renderTabs();
+    }
+  }
+  async function deleteTab(tabId){
+    if(!confirm("Are you sure you want to delete this tab (and all its messages)?")) return;
+    const r = await fetch(`/api/chat/tabs/${tabId}`, { method: "DELETE" });
+    if(r.ok){
+      await loadTabs();
+      if(chatTabs.length>0){
+        currentTabId = chatTabs[0].id;
+      } else {
+        currentTabId=1; 
+      }
+      renderTabs();
+      await loadChatHistory(currentTabId);
+    }
+  }
+  function selectTab(tabId){
+    currentTabId = tabId;
+    loadChatHistory(tabId);
+    renderTabs();
+  }
+  function renderTabs(){
+    const tc = $("#tabsContainer");
+    tc.innerHTML="";
+    chatTabs.forEach(tab => {
+      const tabBtn = document.createElement("div");
+      tabBtn.style.display="flex";
+      tabBtn.style.alignItems="center";
+      tabBtn.style.border="1px solid #ccc";
+      tabBtn.style.padding="4px 6px";
+      tabBtn.style.cursor="pointer";
+      tabBtn.style.backgroundColor = (tab.id===currentTabId) ? "#eee" : "#f9f9f9";
+      tabBtn.textContent = tab.name;
+      tabBtn.addEventListener("click", ()=>selectTab(tab.id));
+
+      // Right-click context to rename or delete
+      tabBtn.addEventListener("contextmenu", e=>{
+        e.preventDefault();
+        const choice = prompt("Type 'rename' or 'delete':", "");
+        if(choice==="rename") renameTab(tab.id);
+        else if(choice==="delete") deleteTab(tab.id);
+      });
+      tc.appendChild(tabBtn);
+    });
+  }
+  $("#newTabBtn").addEventListener("click", addNewTab);
+
+  /* ------------------------------------------------------------------
+   * Chat logic with streaming response
    * ------------------------------------------------------------------ */
   const chatMessagesEl = document.getElementById("chatMessages");
   const chatInputEl = document.getElementById("chatInput");
@@ -671,9 +756,10 @@
     chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
   }
 
-  async function loadChatHistory() {
+  async function loadChatHistory(tabId = 1) {
+    chatMessagesEl.innerHTML="";
     try {
-      const pairs = await fetch("/api/chat/history").then(r => r.json());
+      const pairs = await fetch(`/api/chat/history?tabId=${tabId}`).then(r => r.json());
       for (const p of pairs) {
         addChatMessage(p.user_text, p.timestamp, p.ai_text, p.ai_timestamp, p.model);
       }
@@ -725,7 +811,7 @@
       const resp = await fetch("/api/chat",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({message:userMessage})
+        body:JSON.stringify({message:userMessage, tabId: currentTabId})
       });
       clearInterval(waitInterval);
       waitingElem.textContent = "";
@@ -771,10 +857,25 @@
     // Display the model in the HUD
     $("#modelHud").textContent = "Model: " + modelName;
 
-    // Load chat history
-    await loadChatHistory();
+    // Load chat tabs
+    await loadTabs();
+    if(chatTabs.length>0){
+      currentTabId = chatTabs[0].id;
+    } else {
+      // Ensure at least one default tab
+      await fetch("/api/chat/tabs/new", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "Main" })
+      });
+      await loadTabs();
+      currentTabId = chatTabs[0].id;
+    }
+    renderTabs();
+    await loadChatHistory(currentTabId);
   })();
 </script>
 </body>
 </html>
+
 
