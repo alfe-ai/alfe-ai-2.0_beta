@@ -38,6 +38,16 @@
       <thead><tr id="headerRow"></tr></thead>
       <tbody></tbody>
     </table>
+
+    <hr/>
+    <section class="secure-uploader">
+      <h2>Secure File Uploader</h2>
+      <form id="secureUploadForm" enctype="multipart/form-data" method="POST">
+        <input type="file" id="fileInput"/>
+        <button type="submit">Upload</button>
+      </form>
+      <ul id="secureFilesList"></ul>
+    </section>
   </aside>
 
   <div id="divider" class="divider"></div>
@@ -1018,6 +1028,18 @@
       document.body.style.userSelect = "";
     });
   })();
+
+  // Placeholder event listener to handle file uploads
+  // (currently does nothing server-side)
+  $("#secureUploadForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const file = $("#fileInput").files[0];
+    if(!file) {
+      alert("Please select a file first.");
+      return;
+    }
+    alert(`File "${file.name}" selected. Upload handling not implemented.`);
+  });
 
   (async function init(){
     await loadSettings();
