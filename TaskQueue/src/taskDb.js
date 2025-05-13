@@ -13,8 +13,7 @@ export default class TaskDB {
     /* 1. Ensure table exists (minimal columns to get started) */
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS issues (
-        id           INTEGER PRIMARY KEY AUTOINCREMENT,
-        closed       INTEGER DEFAULT 0
+        id     INTEGER PRIMARY KEY AUTOINCREMENT
       );
     `);
 
@@ -38,6 +37,7 @@ export default class TaskDB {
   _migrateIssuesTable() {
     /* Desired columns with "ALTER TABLE" fragments */
     const wanted = {
+      closed:          "INTEGER DEFAULT 0",
       github_id:       "INTEGER",
       repository:      "TEXT",
       number:          "INTEGER",
@@ -53,9 +53,7 @@ export default class TaskDB {
     };
 
     /* Actual columns present */
-    const presentRows = this.db
-      .prepare("PRAGMA table_info(issues);")
-      .all();
+    const presentRows = this.db.prepare("PRAGMA table_info(issues);").all();
     const present = new Set(presentRows.map((r) => r.name));
 
     const missing = Object.keys(wanted).filter((c) => !present.has(c));
@@ -187,4 +185,3 @@ export default class TaskDB {
       .all();
   }
 }
-
