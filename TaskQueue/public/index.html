@@ -738,13 +738,13 @@
   const chatSendBtnEl = document.getElementById("chatSendBtn");
   const waitingElem = document.getElementById("waitingCounter");
 
-  function addChatMessage(userText, userTs, aiText, aiTs, model) {
+  function addChatMessage(pairId, userText, userTs, aiText, aiTs, model) {
     const seqDiv = document.createElement("div");
     seqDiv.className = "chat-sequence";
 
     const userDiv = document.createElement("div");
     userDiv.className = "chat-user";
-    userDiv.textContent = "You (" + formatTimestamp(userTs) + "): " + (userText || "");
+    userDiv.textContent = "You (pair #" + pairId + ", " + formatTimestamp(userTs) + "): " + (userText || "");
     seqDiv.appendChild(userDiv);
 
     const botDiv = document.createElement("div");
@@ -761,7 +761,7 @@
     try {
       const pairs = await fetch(`/api/chat/history?tabId=${tabId}`).then(r => r.json());
       for (const p of pairs) {
-        addChatMessage(p.user_text, p.timestamp, p.ai_text, p.ai_timestamp, p.model);
+        addChatMessage(p.id, p.user_text, p.timestamp, p.ai_text, p.ai_timestamp, p.model);
       }
     } catch (err) {
       console.error("Error loading chat history:", err);
@@ -788,7 +788,7 @@
 
     const userDiv = document.createElement("div");
     userDiv.className = "chat-user";
-    userDiv.textContent = "You (" + formatTimestamp(userTime) + "): " + userMessage;
+    userDiv.textContent = "You (pending ID, " + formatTimestamp(userTime) + "): " + userMessage;
     seqDiv.appendChild(userDiv);
 
     const botDiv = document.createElement("div");
@@ -877,5 +877,3 @@
 </script>
 </body>
 </html>
-
-
