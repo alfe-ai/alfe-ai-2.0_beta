@@ -39,6 +39,7 @@
     <table id="tasks">
       <thead>
         <tr>
+          <th>Slug</th>
           <th>#</th>
           <th>Title</th>
           <th>Assignee</th>
@@ -59,6 +60,7 @@
         tasks.forEach((t) => {
           const tr = document.createElement("tr");
           tr.innerHTML = `
+            <td>${t.task_id_slug}</td>
             <td><a href="${t.html_url}" target="_blank">#${t.number}</a></td>
             <td>${t.title}</td>
             <td>${t.assignee ?? "-"}</td>
@@ -74,3 +76,4 @@
     </script>
   </body>
 </html>
+

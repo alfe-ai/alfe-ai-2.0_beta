@@ -28,7 +28,7 @@ async function main() {
     // ------------------------------------------------------------------
     // 1. Synchronise local DB
     // ------------------------------------------------------------------
-    issues.forEach((iss) => db.upsertIssue(iss));
+    issues.forEach((iss) => db.upsertIssue(iss, client.repo));
 
     // Closed issue detection
     const openIds = issues.map((i) => i.id);
@@ -51,3 +51,4 @@ async function main() {
 }
 
 main();
+

@@ -3,6 +3,7 @@ import path from "path";
 
 /**
  * Very small wrapper around better-sqlite3 for our issue store.
+ * Now stores `repo` and `task_id_slug` columns.
  */
 export default class TaskDB {
   constructor(dbPath = path.resolve("issues.sqlite")) {
@@ -10,43 +11,69 @@ export default class TaskDB {
     this.#init();
   }
 
+  /**
+   * Initialise / migrate DB schema.
+   * – creates table if missing
+   * – adds new columns when upgrading from older versions
+   */
   #init() {
+    // 1. Base table (legacy columns)
     const createSql = `
       CREATE TABLE IF NOT EXISTS issues (
-        id         INTEGER PRIMARY KEY,
-        number     INTEGER,
-        title      TEXT,
-        html_url   TEXT,
-        state      TEXT,
-        assignee   TEXT,
-        created_at TEXT,
-        updated_at TEXT
+        id           INTEGER PRIMARY KEY,
+        number       INTEGER,
+        title        TEXT,
+        html_url     TEXT,
+        state        TEXT,
+        assignee     TEXT,
+        created_at   TEXT,
+        updated_at   TEXT
       );
     `;
     this.db.prepare(createSql).run();
+
+    // 2. Check for new columns and add them if required
+    const cols = this.db
+      .prepare(`PRAGMA table_info('issues');`)
+      .all()
+      .map((c) => c.name);
+
+    if (!cols.includes("repo")) {
+      this.db.prepare(`ALTER TABLE issues ADD COLUMN repo TEXT;`).run();
+    }
+    if (!cols.includes("task_id_slug")) {
+      this.db.prepare(`ALTER TABLE issues ADD COLUMN task_id_slug TEXT;`).run();
+    }
   }
 
   /**
    * Insert or update one GitHub issue row.
-   * Called by the GitHub sync script.
+   * @param {object} issue  – raw Octokit issue object
+   * @param {string} repo   – repository name (for slug / grouping)
    */
-  upsertIssue(issue) {
+  upsertIssue(issue, repo) {
+    const slug = `${repo}-${issue.id}`;
+
     const stmt = this.db.prepare(`
-      INSERT INTO issues (id, number, title, html_url, state, assignee, created_at, updated_at)
-      VALUES             (@id,@number,@title,@html_url,@state,@assignee,@created_at,@updated_at)
+      INSERT INTO issues (id, number, repo, task_id_slug, title, html_url, state, assignee, created_at, updated_at)
+      VALUES             (@id,@number,@repo,@task_id_slug,@title,@html_url,@state,@assignee,@created_at,@updated_at)
       ON CONFLICT(id) DO UPDATE SET
-        number     = excluded.number,
-        title      = excluded.title,
-        html_url   = excluded.html_url,
-        state      = excluded.state,
-        assignee   = excluded.assignee,
-        created_at = excluded.created_at,
-        updated_at = excluded.updated_at;
+        number       = excluded.number,
+        repo         = excluded.repo,
+        task_id_slug = excluded.task_id_slug,
+        title        = excluded.title,
+        html_url     = excluded.html_url,
+        state        = excluded.state,
+        assignee     = excluded.assignee,
+        created_at   = excluded.created_at,
+        updated_at   = excluded.updated_at;
     `);
 
     stmt.run({
       id: issue.id,
       number: issue.number,
+      repo,
+      task_id_slug: slug,
       title: issue.title,
       html_url: issue.html_url,
       state: issue.state,
@@ -70,7 +97,7 @@ export default class TaskDB {
   }
 
   /**
-   * Return all still-open issues (for the web UI / API).
+   * Return all still-open issues.
    */
   allOpenIssues() {
     return this.db
@@ -79,9 +106,10 @@ export default class TaskDB {
   }
 
   /**
-   * Convenience helper used by the CLI sync script for debug dumps.
+   * Convenience helper for CLI sync script.
    */
   dump() {
     return this.db.prepare("SELECT * FROM issues ORDER BY created_at DESC;").all();
   }
 }
+
