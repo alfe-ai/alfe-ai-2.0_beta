@@ -1,23 +1,52 @@
 /* General styling for the Task Queue page */
 body {
   margin: 0;
-  padding: 1rem;
+  padding: 0;
   font-family: sans-serif;
   background-color: #f7f7f7;
 }
 
+/* App layout: sidebar + main chat panel */
+.app {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 300px;
+  background: #f4f4f6;
+  padding: 1rem;
+  overflow-y: auto;
+  border-right: 1px solid #ccc;
+}
+
+/* Chat Panel in main area */
+.chat-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+/* The controls, tasks table, and other components end up in the sidebar. */
 #controls {
   margin-bottom: 1rem;
 }
 
+/* Tasks table */
 #tasks {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 2rem;
   background: #fff;
+  margin-bottom: 2rem;
+  display: table;
 }
 
-#tasks th, #tasks td {
+#tasks th,
+#tasks td {
   border: 1px solid #ddd;
   padding: 6px 8px;
 }
@@ -77,6 +106,7 @@ body {
   padding: 1rem;
   position: relative;
   width: 90%;
+  max-width: 600px;
   margin: auto;
   border-radius: 4px;
 }
@@ -94,20 +124,24 @@ body {
   margin-right: 4px;
 }
 
-/* Chat panel */
+/* Chat panel area */
 #chatPanel {
-  margin-top: 2rem;
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 #chatMessages {
-  resize: both;
+  resize: vertical;
   overflow: auto;
   min-height: 150px;
-  max-height: 80vh;
+  max-height: 60vh;
   margin-bottom: 0.5rem;
   background: #ffffff;
   border: 1px solid #ccc;
   padding: 8px;
+  flex: 1 1 auto;
 }
 
 #waitingCounter {
@@ -125,18 +159,25 @@ body {
   margin-bottom: 8px;
   background: #fefefe;
 }
-.chat-sequence .chat-user {
-  background: #e6f7ff;
+
+/* Align user messages to the right in greenish bubble */
+.chat-user {
+  background: #dcf8c6; /* Light green (WhatsApp style) */
   padding: 6px 8px;
-  border-radius: 4px;
+  border-radius: 16px;
   margin-bottom: 6px;
-  color: #0066aa;
+  color: #333;
+  text-align: right;
 }
-.chat-sequence .chat-bot {
-  background: #f6ffed;
+
+/* Align AI messages to the left in a grayish bubble */
+.chat-bot {
+  background: #f1f0f0;
   padding: 6px 8px;
-  border-radius: 4px;
-  color: #009900;
+  border-radius: 16px;
+  color: #333;
+  text-align: left;
+  margin-bottom: 6px;
 }
 
 .chat-system {
@@ -169,15 +210,20 @@ body {
   margin-top: 0.5rem;
   width: 100%;
   max-width: 600px;
+  flex: 0 0 auto;
 }
 
-.chat-input-container input[type="text"] {
+.chat-input-container textarea {
   border: none;
   padding: 8px;
   flex: 1;
   outline: none;
   font-size: 1rem;
   border-radius: 4px 0 0 4px;
+  resize: none;
+  min-height: 40px;
+  max-height: 120px;
+  overflow-y: auto;
 }
 
 .send-btn {
