@@ -220,12 +220,17 @@ export default class TaskDB {
     return true;
   }
 
-  /* New method to reorder tasks in bulk according to the array order */
+  /* Updated method to avoid UNIQUE constraint errors */
   reorderAll(taskIdsInOrder) {
     const upd = this.db.prepare(
       "UPDATE issues SET priority_number=? WHERE id=?"
     );
     this.db.transaction(() => {
+      // first set them all to a temporary value
+      taskIdsInOrder.forEach((taskId) => {
+        upd.run(-1, taskId);
+      });
+      // then assign the new priority order
       taskIdsInOrder.forEach((taskId, index) => {
         upd.run(index + 1, taskId);
       });
@@ -413,4 +418,3 @@ export default class TaskDB {
       .all();
   }
 }
-
