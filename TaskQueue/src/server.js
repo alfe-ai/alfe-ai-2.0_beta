@@ -18,7 +18,6 @@ app.use(bodyParser.json());
 // GET /api/tasks
 app.get("/api/tasks", (req, res) => {
   try {
-    // parse query param explicitly: "1"/"true" => true
     const includeHidden =
       req.query.includeHidden === "1" ||
       req.query.includeHidden === "true";
@@ -173,10 +172,8 @@ app.post("/api/tasks/new", async (req, res) => {
     });
 
     const newIssue = await gh.createIssue(title, body || "");
-    // upsert in local DB
     db.upsertIssue(newIssue, `${gh.owner}/${gh.repo}`);
 
-    // also apply default project/sprint if set
     const defaultProject = db.getSetting("default_project");
     const defaultSprint = db.getSetting("default_sprint");
     if (defaultProject) {
@@ -258,13 +255,16 @@ app.get("/api/sprints/:sprint", (req, res) => {
   }
 });
 
-// Serve static files
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 app.use(express.static(path.join(__dirname, "../public")));
+
+// Serve test_projects page
+app.get("/test_projects", (req, res) => {
+  res.sendFile(path.join(__dirname, "../public/test_projects.html"));
+});
 
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
-

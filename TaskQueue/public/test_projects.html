@@ -1,34 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Test /api/projects/:project</title>
-  </head>
-  <body>
-    <h1>Test: GET /api/projects/:project</h1>
-    <p>Enter a project name to fetch tasks in that project:</p>
-    <input type="text" id="projInput" />
-    <button id="fetchBtn">Fetch Project Tasks</button>
-    <pre id="output"></pre>
-
-    <script>
-      const fetchBtn = document.getElementById("fetchBtn");
-      const output = document.getElementById("output");
-      fetchBtn.addEventListener("click", async () => {
-        const p = document.getElementById("projInput").value.trim();
-        if(!p) {
-          output.textContent = "Please enter a project name";
-          return;
-        }
-        try {
-          const res = await fetch(`/api/projects/${encodeURIComponent(p)}`);
-          const data = await res.json();
-          output.textContent = JSON.stringify(data, null, 2);
-        } catch(err) {
-          output.textContent = "Error: " + err.message;
-        }
-      });
-    </script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <title>Test Projects Page</title>
+</head>
+<body>
+  <h1>API Endpoint Test Page</h1>
+  <ul>
+    <li><a href="/api/tasks" target="_blank">/api/tasks</a></li>
+    <li><a href="/api/projects" target="_blank">/api/projects</a></li>
+    <li><a href="/api/sprints" target="_blank">/api/sprints</a></li>
+    <li><a href="/api/tasks/new" target="_blank">/api/tasks/new (POST only)</a></li>
+  </ul>
+  <p><a href="/">← Back to Main Page</a></p>
+</body>
 </html>
-
