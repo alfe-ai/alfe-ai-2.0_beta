@@ -175,11 +175,7 @@ body {
 }
 
 #chatMessages {
-  resize: vertical;
   overflow: auto;
-  min-height: 150px;
-  max-height: 60vh;
-  margin-bottom: 0.5rem;
   background: #2a2a2a;
   border: 1px solid #444;
   padding: 8px;
@@ -187,6 +183,7 @@ body {
   color: #ddd;
 }
 
+/* The waiting counter */
 #waitingCounter {
   font-size: 0.9rem;
   color: #888;
