@@ -9,9 +9,11 @@ import { fileURLToPath } from "url";
 import TaskDB from "./taskDb.js";
 import GitHubClient from "./githubClient.js";
 
-// Changed to default import for OpenAI, then destructure Configuration, OpenAIApi
-import openai from "openai";
-const { Configuration, OpenAIApi } = openai;
+// Updated OpenAI SDK import and initialization
+import OpenAI from "openai";
+const openaiClient = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || ""
+});
 
 const db = new TaskDB();
 const app = express();
@@ -19,18 +21,12 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Configure OpenAI
-const openaiConfig = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY || ""
-});
-const openaiClient = new OpenAIApi(openaiConfig);
-
 // GET /api/tasks
 app.get("/api/tasks", (req, res) => {
   try {
     const includeHidden =
-      req.query.includeHidden === "1" ||
-      req.query.includeHidden === "true";
+        req.query.includeHidden === "1" ||
+        req.query.includeHidden === "true";
     res.json(db.listTasks(includeHidden));
   } catch (err) {
     console.error("[TaskQueue] /api/tasks failed:", err);
@@ -88,7 +84,7 @@ app.post("/api/tasks/reorder", (req, res) => {
   }
 });
 
-// NEW: reorder an entire list of tasks according to the array order
+// POST /api/tasks/reorderAll
 app.post("/api/tasks/reorderAll", (req, res) => {
   try {
     const { orderedIds } = req.body;
@@ -153,8 +149,8 @@ app.post("/api/tasks/priority", (req, res) => {
     db.setPriority(id, priority);
 
     db.logActivity(
-      "Set priority",
-      JSON.stringify({ id, from: oldPriority, to: priority })
+        "Set priority",
+        JSON.stringify({ id, from: oldPriority, to: priority })
     );
 
     res.json({ success: true });
@@ -164,7 +160,7 @@ app.post("/api/tasks/priority", (req, res) => {
   }
 });
 
-// NEW: POST /api/tasks/status
+// POST /api/tasks/status
 app.post("/api/tasks/status", (req, res) => {
   try {
     const { id, status } = req.body;
@@ -177,7 +173,7 @@ app.post("/api/tasks/status", (req, res) => {
   }
 });
 
-// NEW: POST /api/tasks/dependencies
+// POST /api/tasks/dependencies
 app.post("/api/tasks/dependencies", (req, res) => {
   try {
     const { id, dependencies } = req.body;
@@ -190,7 +186,7 @@ app.post("/api/tasks/dependencies", (req, res) => {
   }
 });
 
-// NEW: POST /api/tasks/blocking
+// POST /api/tasks/blocking
 app.post("/api/tasks/blocking", (req, res) => {
   try {
     const { id, blocking } = req.body;
@@ -203,7 +199,7 @@ app.post("/api/tasks/blocking", (req, res) => {
   }
 });
 
-// --- Create new GitHub issue and upsert ---
+// Create new GitHub issue and upsert
 app.post("/api/tasks/new", async (req, res) => {
   try {
     const { title, body } = req.body;
@@ -223,17 +219,13 @@ app.post("/api/tasks/new", async (req, res) => {
 
     const defaultProject = db.getSetting("default_project");
     const defaultSprint = db.getSetting("default_sprint");
-    if (defaultProject) {
-      db.setProjectByGithubId(newIssue.id, defaultProject);
-    }
-    if (defaultSprint) {
-      db.setSprintByGithubId(newIssue.id, defaultSprint);
-    }
+    if (defaultProject) db.setProjectByGithubId(newIssue.id, defaultProject);
+    if (defaultSprint) db.setSprintByGithubId(newIssue.id, defaultSprint);
 
-    return res.json({ success: true });
+    res.json({ success: true });
   } catch (err) {
     console.error("POST /api/tasks/new error:", err);
-    return res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -260,7 +252,7 @@ app.post("/api/settings", (req, res) => {
   }
 });
 
-// NEW: Get single task by ID
+// GET /api/tasks/:id
 app.get("/api/tasks/:id", (req, res) => {
   try {
     const taskId = parseInt(req.params.id, 10);
@@ -271,38 +263,36 @@ app.get("/api/tasks/:id", (req, res) => {
     if (!t) {
       return res.status(404).json({ error: "Task not found" });
     }
-    return res.json(t);
+    res.json(t);
   } catch (err) {
     console.error("[TaskQueue] /api/tasks/:id failed:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
 
-// NEW: get tasks in a specified project
+// GET /api/projects/:project
 app.get("/api/projects/:project", (req, res) => {
   try {
-    const p = req.params.project;
-    const tasks = db.listTasksByProject(p);
-    return res.json(tasks);
+    const tasks = db.listTasksByProject(req.params.project);
+    res.json(tasks);
   } catch (err) {
     console.error("[TaskQueue] /api/projects/:project failed:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
 
-// NEW: get tasks in a specified sprint
+// GET /api/sprints/:sprint
 app.get("/api/sprints/:sprint", (req, res) => {
   try {
-    const s = req.params.sprint;
-    const tasks = db.listTasksBySprint(s);
-    return res.json(tasks);
+    const tasks = db.listTasksBySprint(req.params.sprint);
+    res.json(tasks);
   } catch (err) {
-    console.error("[TaskQueue]! /api/sprints/:sprint failed:", err);
+    console.error("[TaskQueue] /api/sprints/:sprint failed:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
 
-// NEW: Rename task (update DB + GitHub)
+// POST /api/tasks/rename
 app.post("/api/tasks/rename", async (req, res) => {
   try {
     const { id, newTitle } = req.body;
@@ -319,10 +309,8 @@ app.post("/api/tasks/rename", async (req, res) => {
       owner: process.env.GITHUB_OWNER,
       repo: process.env.GITHUB_REPO
     });
-    // Update GitHub issue
     await gh.updateIssueTitle(task.number, newTitle);
 
-    // Update local DB
     db.setTitle(id, newTitle);
     db.logActivity("Rename task", JSON.stringify({ id, newTitle }));
 
@@ -333,7 +321,7 @@ app.post("/api/tasks/rename", async (req, res) => {
   }
 });
 
-// NEW: Return timeline
+// GET /api/activity
 app.get("/api/activity", (req, res) => {
   try {
     const activity = db.getActivity();
@@ -344,7 +332,7 @@ app.get("/api/activity", (req, res) => {
   }
 });
 
-// NEW: Chat route
+// POST /api/chat
 app.post("/api/chat", async (req, res) => {
   try {
     const userMessage = req.body.message || "";
