@@ -794,147 +794,105 @@
   $("#newTabBtn").addEventListener("click", addNewTab);
 
   /* ------------------------------------------------------------------
-   * Chat logic with streaming response
+   * Single function to display a chat pair with minimal expansions
    * ------------------------------------------------------------------ */
-  const chatMessagesEl = document.getElementById("chatMessages");
-  const chatInputEl = document.getElementById("chatInput");
-  const chatSendBtnEl = document.getElementById("chatSendBtn");
-  const waitingElem = document.getElementById("waitingCounter");
-  const scrollDownBtnEl = document.getElementById("scrollDownBtn");
-
-  // Show or hide the scroll-down button
-  function checkScroll() {
-    const bottomOffset = chatMessagesEl.scrollHeight - chatMessagesEl.scrollTop - chatMessagesEl.clientHeight;
-    if(bottomOffset > 80) {
-      scrollDownBtnEl.style.display = "block";
-    } else {
-      scrollDownBtnEl.style.display = "none";
-    }
-  }
-  chatMessagesEl.addEventListener("scroll", checkScroll);
-  scrollDownBtnEl.addEventListener("click", ()=>{
-    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
-  });
-
   function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemContext, fullHistory) {
     const seqDiv = document.createElement("div");
     seqDiv.className = "chat-sequence";
 
-    if (!chatHideMetadata) {
-      let agentInstructions = "";
-      let systemInfoText = "";
-      if (systemContext) {
-        const re = /System Context:\n([\s\S]*?)\n\nModel:\s*([^]+)\nUserTime:\s*([^]+)/;
-        const match = re.exec(systemContext);
-        if (match) {
-          agentInstructions = match[1].trim();
-          const modelVal = match[2].trim();
-          const timeVal = match[3].trim();
-          systemInfoText = `Model: ${modelVal}\nTime: ${timeVal}`;
-        } else {
-          systemInfoText = systemContext;
-        }
-      }
-
-      if (agentInstructions) {
-        const detailsEl = document.createElement("details");
-        detailsEl.open = false;
-        detailsEl.className = "chat-instructions";
-        const summaryEl = document.createElement("summary");
-        summaryEl.textContent = "Agent Instructions (click to expand)";
-        detailsEl.appendChild(summaryEl);
-
-        const preEl = document.createElement("pre");
-        preEl.textContent = agentInstructions;
-        detailsEl.appendChild(preEl);
-
-        seqDiv.appendChild(detailsEl);
-      }
-
-      if (systemInfoText) {
-        const detailsSysEl = document.createElement("details");
-        detailsSysEl.open = false;
-        detailsSysEl.className = "chat-system";
-        const sumSys = document.createElement("summary");
-        sumSys.textContent = "System Info (click to expand)";
-        detailsSysEl.appendChild(sumSys);
-
-        const preSys = document.createElement("pre");
-        preSys.textContent = systemInfoText;
-        detailsSysEl.appendChild(preSys);
-
-        seqDiv.appendChild(detailsSysEl);
-      }
-    }
-
     /* User bubble */
     const userDiv = document.createElement("div");
     userDiv.className = "chat-user";
-    const userHead = document.createElement("div");
-    userHead.className = "bubble-header";
-    userHead.innerHTML = `<img src="data:image/svg+xml;utf8,<svg width='24' height='24' xmlns='http://www.w3.org/2000/svg'><rect width='24' height='24' fill='%2309f'/><text x='50%25' y='50%25' fill='%23fff' font-size='12' font-family='Arial' dy='.3em' text-anchor='middle'>U</text></svg>" alt="User" style="border-radius:50%;">`;
-    userHead.innerHTML += `<span style="opacity:0.8;">${formatTimestamp(userTs)}</span>`;
-    userDiv.appendChild(userHead);
+    {
+      const userHead = document.createElement("div");
+      userHead.className = "bubble-header";
+      userHead.innerHTML = `
+        <img src="data:image/svg+xml;utf8,
+          <svg width='24' height='24' xmlns='http://www.w3.org/2000/svg'>
+            <rect width='24' height='24' fill='%2309f'/>
+            <text x='50%25' y='50%25' fill='%23fff' font-size='12'
+             font-family='Arial' dy='.3em' text-anchor='middle'>U</text>
+          </svg>" alt="User" style="border-radius:50%;">
+      `;
+      userHead.innerHTML += `<span style="opacity:0.8;">${formatTimestamp(userTs)}</span>`;
+      userDiv.appendChild(userHead);
 
-    const userBody = document.createElement("div");
-    userBody.textContent = userText;
-    userDiv.appendChild(userBody);
-
-    // Minimal link to pair details
-    if(!chatHideMetadata) {
-      const link = document.createElement("a");
-      link.href = `/pair/${pairId}`;
-      link.target = "_blank";
-      link.style.display = "block";
-      link.style.fontSize = "0.8rem";
-      link.textContent = "[details]";
-      userDiv.appendChild(link);
+      const userBody = document.createElement("div");
+      userBody.textContent = userText;
+      userDiv.appendChild(userBody);
     }
     seqDiv.appendChild(userDiv);
 
     /* AI bubble */
     const botDiv = document.createElement("div");
     botDiv.className = "chat-bot";
-    const botHead = document.createElement("div");
-    botHead.className = "bubble-header";
-    botHead.innerHTML = `<img src="data:image/svg+xml;utf8,<svg width='24' height='24' xmlns='http://www.w3.org/2000/svg'><rect width='24' height='24' fill='%23f90'/><text x='50%25' y='50%25' fill='%23fff' font-size='10' font-family='Arial' dy='.3em' text-anchor='middle'>AI</text></svg>" alt="AI" style="border-radius:50%;">`;
-    botHead.innerHTML += `<span style="opacity:0.8;">${formatTimestamp(aiTs)}</span>`;
-    botDiv.appendChild(botHead);
+    {
+      const botHead = document.createElement("div");
+      botHead.className = "bubble-header";
+      botHead.innerHTML = `
+        <img src="data:image/svg+xml;utf8,
+          <svg width='24' height='24' xmlns='http://www.w3.org/2000/svg'>
+            <rect width='24' height='24' fill='%23f90'/>
+            <text x='50%25' y='50%25' fill='%23fff' font-size='10'
+             font-family='Arial' dy='.3em' text-anchor='middle'>AI</text>
+          </svg>" alt="AI" style="border-radius:50%;">
+      `;
+      botHead.innerHTML += `<span style="opacity:0.8;">${aiTs ? formatTimestamp(aiTs) : "…"}</span>`;
+      botDiv.appendChild(botHead);
 
-    const botBody = document.createElement("div");
-    botBody.textContent = aiText || "";
-    botDiv.appendChild(botBody);
-
-    if(!chatHideMetadata) {
-      const link = document.createElement("a");
-      link.href = `/pair/${pairId}`;
-      link.target = "_blank";
-      link.style.display = "block";
-      link.style.fontSize = "0.8rem";
-      link.textContent = "[details]";
-      botDiv.appendChild(link);
+      const botBody = document.createElement("div");
+      botBody.textContent = aiText || "";
+      botDiv.appendChild(botBody);
     }
     seqDiv.appendChild(botDiv);
 
-    if (!chatHideMetadata && fullHistory) {
-      const detailsHistEl = document.createElement("details");
-      detailsHistEl.open = false;
-      detailsHistEl.className = "chat-system";
-      const sumHist = document.createElement("summary");
-      sumHist.textContent = "View Full History JSON (collapsed)";
-      detailsHistEl.appendChild(sumHist);
+    /* Unified metadata block at bottom if not hidden */
+    if(!chatHideMetadata){
+      const metaContainer = document.createElement("div");
+      metaContainer.style.fontSize = "0.8rem";
+      metaContainer.style.color = "#aaa";
+      metaContainer.style.textAlign = "right";
 
-      const preHist = document.createElement("pre");
-      preHist.textContent = JSON.stringify(fullHistory, null, 2);
-      detailsHistEl.appendChild(preHist);
+      const pairNumText = `Pair #${pairId}`;
 
-      seqDiv.appendChild(detailsHistEl);
+      // Start details
+      const detailsEl = document.createElement("details");
+      detailsEl.style.display = "inline";
+      detailsEl.style.cursor = "pointer";
+      const summaryEl = document.createElement("summary");
+      summaryEl.style.display = "inline";
+      summaryEl.style.color = "#aaa";
+      summaryEl.style.marginLeft = "8px";
+      summaryEl.textContent = "[metadata]";
+      detailsEl.appendChild(summaryEl);
+
+      // Build the metadata string
+      let metaString = "";
+      if(systemContext) {
+        metaString += `System context:\n${systemContext}\n\n`;
+      }
+      if(fullHistory) {
+        metaString += `Full history:\n${JSON.stringify(fullHistory, null, 2)}\n\n`;
+      }
+      metaString += `Direct link: /pair/${pairId}`;
+
+      const preEl = document.createElement("pre");
+      preEl.textContent = metaString.trim();
+      detailsEl.appendChild(preEl);
+
+      metaContainer.textContent = pairNumText + " ";
+      metaContainer.appendChild(detailsEl);
+
+      seqDiv.appendChild(metaContainer);
     }
 
     chatMessagesEl.appendChild(seqDiv);
     chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
   }
 
+  /* ------------------------------------------------------------------
+   * Get and render entire chat history for a tab
+   * ------------------------------------------------------------------ */
   async function loadChatHistory(tabId = 1) {
     chatMessagesEl.innerHTML="";
     try {
@@ -958,6 +916,28 @@
     }
   }
 
+  /* ------------------------------------------------------------------
+   * Chat input + streaming
+   * ------------------------------------------------------------------ */
+  const chatMessagesEl = document.getElementById("chatMessages");
+  const chatInputEl = document.getElementById("chatInput");
+  const chatSendBtnEl = document.getElementById("chatSendBtn");
+  const waitingElem = document.getElementById("waitingCounter");
+  const scrollDownBtnEl = document.getElementById("scrollDownBtn");
+
+  function checkScroll() {
+    const bottomOffset = chatMessagesEl.scrollHeight - chatMessagesEl.scrollTop - chatMessagesEl.clientHeight;
+    if(bottomOffset > 80) {
+      scrollDownBtnEl.style.display = "block";
+    } else {
+      scrollDownBtnEl.style.display = "none";
+    }
+  }
+  chatMessagesEl.addEventListener("scroll", checkScroll);
+  scrollDownBtnEl.addEventListener("click", ()=>{
+    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+  });
+
   chatInputEl.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -968,74 +948,66 @@
   chatSendBtnEl.addEventListener("click", async () => {
     const userMessage = chatInputEl.value.trim();
     if(!userMessage) return;
-
     const userTime = new Date().toISOString();
-    let partialText = "";
+    chatInputEl.value = "";
 
+    // We'll show a simple user bubble + bot placeholder
+    // After streaming finishes, we reload from DB so it displays in final form
     const seqDiv = document.createElement("div");
     seqDiv.className = "chat-sequence";
 
-    if (!chatHideMetadata && window.agentInstructions) {
-      const detailsEl = document.createElement("details");
-      detailsEl.open = false;
-      detailsEl.className = "chat-instructions";
-      const summaryEl = document.createElement("summary");
-      summaryEl.textContent = "Agent Instructions (click to expand)";
-      detailsEl.appendChild(summaryEl);
-
-      const preEl = document.createElement("pre");
-      preEl.textContent = window.agentInstructions.trim();
-      detailsEl.appendChild(preEl);
-
-      seqDiv.appendChild(detailsEl);
-    }
-
-    if (!chatHideMetadata) {
-      const detailsSysEl = document.createElement("details");
-      detailsSysEl.open = false;
-      detailsSysEl.className = "chat-system";
-      const sumSys = document.createElement("summary");
-      sumSys.textContent = "System Info (click to expand)";
-      detailsSysEl.appendChild(sumSys);
-
-      const preSys = document.createElement("pre");
-      preSys.textContent = `Model: ${modelName}\nTime: ${userTime}`;
-      detailsSysEl.appendChild(preSys);
-
-      seqDiv.appendChild(detailsSysEl);
-    }
-
-    /* User bubble (pending AI) */
+    /* User bubble quick placeholder */
     const userDiv = document.createElement("div");
     userDiv.className = "chat-user";
-    const userHead = document.createElement("div");
-    userHead.className = "bubble-header";
-    userHead.innerHTML = `<img src="data:image/svg+xml;utf8,<svg width='24' height='24' xmlns='http://www.w3.org/2000/svg'><rect width='24' height='24' fill='%2309f'/><text x='50%25' y='50%25' fill='%23fff' font-size='12' font-family='Arial' dy='.3em' text-anchor='middle'>U</text></svg>" alt="User" style="border-radius:50%;">`;
-    userHead.innerHTML += `<span style="opacity:0.8;">${formatTimestamp(userTime)}</span>`;
-    userDiv.appendChild(userHead);
-    const userBody = document.createElement("div");
-    userBody.textContent = userMessage;
-    userDiv.appendChild(userBody);
+    {
+      const userHead = document.createElement("div");
+      userHead.className = "bubble-header";
+      userHead.innerHTML = `
+        <img src="data:image/svg+xml;utf8,
+          <svg width='24' height='24' xmlns='http://www.w3.org/2000/svg'>
+            <rect width='24' height='24' fill='%2309f'/>
+            <text x='50%25' y='50%25' fill='%23fff' font-size='12'
+             font-family='Arial' dy='.3em' text-anchor='middle'>U</text>
+          </svg>" 
+          alt="User" style="border-radius:50%;">
+      `;
+      userHead.innerHTML += `<span style="opacity:0.8;">${formatTimestamp(userTime)}</span>`;
+      userDiv.appendChild(userHead);
+
+      const userBody = document.createElement("div");
+      userBody.textContent = userMessage;
+      userDiv.appendChild(userBody);
+    }
     seqDiv.appendChild(userDiv);
 
-    /* AI bubble placeholder */
+    /* Bot placeholder bubble */
     const botDiv = document.createElement("div");
     botDiv.className = "chat-bot";
-    const botHead = document.createElement("div");
-    botHead.className = "bubble-header";
-    // Provide an inline SVG for the AI avatar:
-    botHead.innerHTML = `<img src="data:image/svg+xml;utf8,<svg width='24' height='24' xmlns='http://www.w3.org/2000/svg'><rect width='24' height='24' fill='%23f90'/><text x='50%25' y='50%25' fill='%23fff' font-size='10' font-family='Arial' dy='.3em' text-anchor='middle'>AI</text></svg>" alt="AI" style="border-radius:50%;">`;
-    botHead.innerHTML += `<span style="opacity:0.8;">…</span>`;
-    botDiv.appendChild(botHead);
-    const botBody = document.createElement("div");
-    botBody.textContent = "Thinking…";
-    botDiv.appendChild(botBody);
+    {
+      const botHead = document.createElement("div");
+      botHead.className = "bubble-header";
+      botHead.innerHTML = `
+        <img src="data:image/svg+xml;utf8,
+          <svg width='24' height='24' xmlns='http://www.w3.org/2000/svg'>
+            <rect width='24' height='24' fill='%23f90'/>
+            <text x='50%25' y='50%25' fill='%23fff' font-size='10'
+             font-family='Arial' dy='.3em' text-anchor='middle'>AI</text>
+          </svg>" 
+          alt="AI" style="border-radius:50%;">
+      `;
+      botHead.innerHTML += `<span style="opacity:0.8;">…</span>`;
+      botDiv.appendChild(botHead);
+
+      const botBody = document.createElement("div");
+      botBody.textContent = "Thinking…";
+      botDiv.appendChild(botBody);
+    }
     seqDiv.appendChild(botDiv);
 
     chatMessagesEl.appendChild(seqDiv);
     chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
-    chatInputEl.value = "";
 
+    let partialText = "";
     let waitTime=0;
     waitingElem.textContent = "Waiting: 0.0s";
     const waitInterval = setInterval(()=>{
@@ -1053,25 +1025,25 @@
       waitingElem.textContent = "";
 
       if(!resp.ok){
-        botBody.textContent = "[Error contacting AI]";
-        botHead.querySelector("span").textContent = formatTimestamp(new Date().toISOString());
+        botDiv.querySelector("div").textContent = "[Error contacting AI]";
+        botDiv.querySelector(".bubble-header span").textContent = formatTimestamp(new Date().toISOString());
       } else {
         const reader = resp.body.getReader();
         while(true){
           const { value, done } = await reader.read();
           if(done) break;
           partialText += new TextDecoder().decode(value);
-          botBody.textContent = partialText;
+          botDiv.querySelector("div").textContent = partialText;
         }
-        botHead.querySelector("span").textContent = formatTimestamp(new Date().toISOString());
+        botDiv.querySelector(".bubble-header span").textContent = formatTimestamp(new Date().toISOString());
       }
+      // Final load from DB to display everything in final format
       await loadChatHistory(currentTabId);
-
     } catch(e) {
       clearInterval(waitInterval);
       waitingElem.textContent = "";
-      botBody.textContent = "[Error occurred]";
-      botHead.querySelector("span").textContent = formatTimestamp(new Date().toISOString());
+      botDiv.querySelector("div").textContent = "[Error occurred]";
+      botDiv.querySelector(".bubble-header span").textContent = formatTimestamp(new Date().toISOString());
     }
     chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
   });
