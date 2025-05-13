@@ -20,6 +20,15 @@ body {
   padding: 1rem;
   overflow-y: auto;
   border-right: 1px solid #ccc;
+  flex: none; /* Keep fixed width, let the divider adjust. */
+}
+
+/* Draggable divider */
+.divider {
+  width: 5px;
+  cursor: col-resize;
+  background: #ccc;
+  flex: none;
 }
 
 /* Chat Panel in main area */
@@ -242,3 +251,4 @@ body {
 .send-btn:hover {
   background: #0062cc;
 }
+

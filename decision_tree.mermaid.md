@@ -38,3 +38,4 @@ flowchart TD
     %% ── 7. CLEANUP & IDLE ─────────────────────────────
     N --> O[Cleanup temp files & logs]
     O --> A  %% back to idle wait
+

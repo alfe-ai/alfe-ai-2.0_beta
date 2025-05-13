@@ -25,3 +25,4 @@ Log every action (command, exit_code, stdout, stderr) to a rolling file + option
 Abstract the user-interaction layer: today it might be a Slack bot; tomorrow a web dashboard. Keep the poll/ask/notify primitives generic.
 
 That tree should give your Alfe AI agent a clear, auditable control-flow while still leaving room for iterative improvements (e.g., adding a “safety sandbox” branch, more granular retry logic, or time-outs on long-running commands). Let me know if you’d like code scaffolding for the FSM or examples of self-repair prompts!
+
