@@ -366,8 +366,8 @@ app.post("/api/chat", async (req, res) => {
 
     res.end();
 
-    // Finalize the chat pair with the complete AI response
-    db.finalizeChatPair(chatPairId, assistantMessage, model);
+    // Finalize the chat pair with the complete AI response + AI timestamp
+    db.finalizeChatPair(chatPairId, assistantMessage, model, new Date().toISOString());
 
   } catch (err) {
     console.error("[TaskQueue] /api/chat (stream) error:", err);
@@ -412,3 +412,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
+

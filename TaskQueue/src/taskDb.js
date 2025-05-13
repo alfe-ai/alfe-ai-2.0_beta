@@ -112,6 +112,14 @@ export default class TaskDB {
       );
     `);
 
+    // Add "ai_timestamp" if not present
+    try {
+      this.db.exec(`ALTER TABLE chat_pairs ADD COLUMN ai_timestamp TEXT;`);
+      console.debug("[TaskDB Debug] Added ai_timestamp column to chat_pairs table.");
+    } catch(e) {
+      console.debug("[TaskDB Debug] Could not add ai_timestamp column (already exists?).", e.message);
+    }
+
     console.debug("[TaskDB Debug] Finished DB schema init.");
   }
 
@@ -431,8 +439,8 @@ export default class TaskDB {
   createChatPair(userText) {
     const timestamp = new Date().toISOString();
     const { lastInsertRowid } = this.db.prepare(`
-      INSERT INTO chat_pairs (user_text, ai_text, model, timestamp)
-      VALUES (@user_text, '', '', @timestamp)
+      INSERT INTO chat_pairs (user_text, ai_text, model, timestamp, ai_timestamp)
+      VALUES (@user_text, '', '', @timestamp, NULL)
     `).run({
       user_text: userText,
       timestamp
@@ -440,16 +448,18 @@ export default class TaskDB {
     return lastInsertRowid;
   }
 
-  finalizeChatPair(id, aiText, model) {
+  finalizeChatPair(id, aiText, model, aiTimestamp) {
     this.db.prepare(`
       UPDATE chat_pairs
       SET ai_text = @ai_text,
-          model = @model
+          model = @model,
+          ai_timestamp = @ai_timestamp
       WHERE id = @id
     `).run({
       id,
       ai_text: aiText,
-      model
+      model,
+      ai_timestamp: aiTimestamp
     });
   }
 
@@ -459,3 +469,4 @@ export default class TaskDB {
       .all();
   }
 }
+

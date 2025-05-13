@@ -141,7 +141,14 @@
 
   const $  = (sel, ctx=document) => ctx.querySelector(sel);
   const $$ = (sel, ctx=document) => [...ctx.querySelectorAll(sel)];
-  const isoDate = d => new Date(d).toLocaleDateString();
+  const isoDate = d => new Date(d).toLocaleDateString([], {year:"numeric",month:"2-digit",day:"2-digit"});
+
+  function formatTimestamp(isoStr){
+    if(!isoStr) return "(no time)";
+    const d = new Date(isoStr);
+    // Show HH:MM:SS
+    return d.toLocaleTimeString([], { hour12: false });
+  }
 
   /* --------------- modals -------------------- */
   function showModal(m){ m.style.display = "flex"; }
@@ -646,18 +653,18 @@
   const chatSendBtnEl = document.getElementById("chatSendBtn");
   const waitingElem = document.getElementById("waitingCounter");
 
-  function addChatMessage(userText, aiText, model) {
+  function addChatMessage(userText, userTs, aiText, aiTs, model) {
     const seqDiv = document.createElement("div");
     seqDiv.className = "chat-sequence";
 
     const userDiv = document.createElement("div");
     userDiv.className = "chat-user";
-    userDiv.textContent = "You: " + (userText || "");
+    userDiv.textContent = "You (" + formatTimestamp(userTs) + "): " + (userText || "");
     seqDiv.appendChild(userDiv);
 
     const botDiv = document.createElement("div");
     botDiv.className = "chat-bot";
-    botDiv.textContent = `AI (model: ${model || "?"}): ${aiText || ""}`;
+    botDiv.textContent = `AI (model: ${model}, ${formatTimestamp(aiTs)}): ${aiText || ""}`;
     seqDiv.appendChild(botDiv);
 
     chatMessagesEl.appendChild(seqDiv);
@@ -668,7 +675,7 @@
     try {
       const pairs = await fetch("/api/chat/history").then(r => r.json());
       for (const p of pairs) {
-        addChatMessage(p.user_text, p.ai_text, p.model);
+        addChatMessage(p.user_text, p.timestamp, p.ai_text, p.ai_timestamp, p.model);
       }
     } catch (err) {
       console.error("Error loading chat history:", err);
@@ -686,18 +693,21 @@
     const userMessage = chatInputEl.value.trim();
     if(!userMessage) return;
 
+    // Locally computed user timestamp (approximate unless reloaded)
+    const userTime = new Date().toISOString();
+
     // Immediately reflect user input
     const seqDiv = document.createElement("div");
     seqDiv.className = "chat-sequence";
 
     const userDiv = document.createElement("div");
     userDiv.className = "chat-user";
-    userDiv.textContent = "You: " + userMessage;
+    userDiv.textContent = "You (" + formatTimestamp(userTime) + "): " + userMessage;
     seqDiv.appendChild(userDiv);
 
     const botDiv = document.createElement("div");
     botDiv.className = "chat-bot";
-    botDiv.textContent = `AI (model: ${modelName}): `;
+    botDiv.textContent = `AI (model: ${modelName}, ...): `;
     seqDiv.appendChild(botDiv);
 
     chatMessagesEl.appendChild(seqDiv);
@@ -729,7 +739,7 @@
           const { value, done } = await reader.read();
           if(done) break;
           partialText += new TextDecoder().decode(value);
-          botDiv.textContent = `AI (model: ${modelName}): ` + partialText;
+          botDiv.textContent = `AI (model: ${modelName}, ...): ` + partialText;
           chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
         }
       }
@@ -767,3 +777,4 @@
 </script>
 </body>
 </html>
+
