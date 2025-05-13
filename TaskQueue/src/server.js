@@ -5,9 +5,11 @@ import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 import TaskDB from "./taskDb.js";
 import GitHubClient from "./githubClient.js";
+import multer from "multer";
 
 // Updated OpenAI SDK import and initialization
 import OpenAI from "openai";
@@ -17,9 +19,21 @@ const openaiClient = new OpenAI({
 
 const db = new TaskDB();
 const app = express();
-
 app.use(cors());
 app.use(bodyParser.json());
+
+// Ensure uploads directory exists
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const uploadsDir = path.join(__dirname, "../uploads");
+try {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log("[Server Debug] Ensured uploads directory exists at", uploadsDir);
+} catch (err) {
+  console.error("[Server Debug] Error creating uploads folder:", err);
+}
+
+// Multer setup
+const upload = multer({ dest: uploadsDir });
 
 // GET /api/tasks
 app.get("/api/tasks", (req, res) => {
@@ -345,8 +359,6 @@ app.post("/api/chat", async (req, res) => {
 
     // Gather entire conversation history
     const priorPairs = db.getAllChatPairs(chatTabId);
-    // We'll build a conversation array for the OpenAI API
-    // Start with the system context
     const model = process.env.OPENAI_MODEL || "o3-mini";
     const savedInstructions = db.getSetting("agent_instructions") || "";
     const systemContext = `System Context:\n${savedInstructions}\n\nModel: ${model}\nUserTime: ${userTime}\nTimeZone: Central`;
@@ -504,7 +516,28 @@ app.get("/api/time", (req, res) => {
   });
 });
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// Implement file upload
+app.post("/api/upload", upload.single("myfile"), (req, res) => {
+  console.log("[Server Debug] File upload request:", req.file);
+  if (!req.file) {
+    return res.status(400).json({ error: "No file uploaded" });
+  }
+  // Log activity
+  db.logActivity("File upload", JSON.stringify({ filename: req.file.originalname }));
+  res.json({ success: true, file: req.file });
+});
+
+// Provide list of uploaded files
+app.get("/api/upload/list", (req, res) => {
+  try {
+    const fileNames = fs.readdirSync(uploadsDir);
+    res.json(fileNames);
+  } catch (err) {
+    console.error("[Server Debug] /api/upload/list error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.use(express.static(path.join(__dirname, "../public")));
 
 // Serve test_projects page
@@ -522,4 +555,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
-

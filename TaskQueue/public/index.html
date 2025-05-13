@@ -344,67 +344,67 @@
     const pj = $("#projectFilter").value;
     const sp = $("#sprintFilter").value;
     allTasks
-            .filter(t=>{
-              if(pj && t.project!==pj) return false;
-              if(sp && t.sprint!==sp) return false;
-              return true;
-            })
-            .forEach(t=>{
-              const tr = document.createElement("tr");
-              tr.dataset.taskId = t.id;
-              if(t.hidden) tr.classList.add("hidden");
-              [
-                "drag","priority","status","number","title",
-                "dependencies","project","created"
-              ].forEach(key=>{
-                if(!visibleCols.has(key)) return;
-                const td = document.createElement("td");
-                switch(key){
-                  case "drag":
-                    td.innerHTML = `<span class="drag-handle" draggable="true">⠿</span>`;
-                    td.querySelector(".drag-handle").addEventListener("dragstart", handleDragStart);
-                    break;
-                  case "priority":
-                    td.textContent = t.priority;
-                    td.className="priority-cell";
-                    break;
-                  case "status":
-                    td.textContent = t.status;
-                    td.className="status-cell";
-                    break;
-                  case "number":
-                    td.innerHTML = `<a href="${t.html_url}" target="_blank">#${t.number}</a>`;
-                    break;
-                  case "title":
-                    td.textContent = t.title;
-                    td.className="title-cell";
-                    break;
-                  case "dependencies":
-                    td.textContent = t.dependencies;
-                    td.className="dependencies-cell";
-                    break;
-                  case "project":
-                    td.textContent = t.project;
-                    td.className="project-cell";
-                    break;
-                  case "created":
-                    td.textContent = isoDate(t.created_at);
-                    break;
-                  default:
-                    td.textContent = t[key]||"";
-                }
-                tr.appendChild(td);
-              });
-              ["dragover","dragleave","drop","dragend"].forEach(evt=>{
-                tr.addEventListener(evt, {
-                  "dragover":handleDragOver,
-                  "dragleave":handleDragLeave,
-                  "drop":handleDrop,
-                  "dragend":handleDragEnd
-                }[evt]);
-              });
-              tbody.appendChild(tr);
-            });
+      .filter(t=>{
+        if(pj && t.project!==pj) return false;
+        if(sp && t.sprint!==sp) return false;
+        return true;
+      })
+      .forEach(t=>{
+        const tr = document.createElement("tr");
+        tr.dataset.taskId = t.id;
+        if(t.hidden) tr.classList.add("hidden");
+        [
+          "drag","priority","status","number","title",
+          "dependencies","project","created"
+        ].forEach(key=>{
+          if(!visibleCols.has(key)) return;
+          const td = document.createElement("td");
+          switch(key){
+            case "drag":
+              td.innerHTML = `<span class="drag-handle" draggable="true">⠿</span>`;
+              td.querySelector(".drag-handle").addEventListener("dragstart", handleDragStart);
+              break;
+            case "priority":
+              td.textContent = t.priority;
+              td.className="priority-cell";
+              break;
+            case "status":
+              td.textContent = t.status;
+              td.className="status-cell";
+              break;
+            case "number":
+              td.innerHTML = `<a href="${t.html_url}" target="_blank">#${t.number}</a>`;
+              break;
+            case "title":
+              td.textContent = t.title;
+              td.className="title-cell";
+              break;
+            case "dependencies":
+              td.textContent = t.dependencies;
+              td.className="dependencies-cell";
+              break;
+            case "project":
+              td.textContent = t.project;
+              td.className="project-cell";
+              break;
+            case "created":
+              td.textContent = isoDate(t.created_at);
+              break;
+            default:
+              td.textContent = t[key]||"";
+          }
+          tr.appendChild(td);
+        });
+        ["dragover","dragleave","drop","dragend"].forEach(evt=>{
+          tr.addEventListener(evt, {
+            "dragover":handleDragOver,
+            "dragleave":handleDragLeave,
+            "drop":handleDrop,
+            "dragend":handleDragEnd
+          }[evt]);
+        });
+        tbody.appendChild(tr);
+      });
   }
 
   async function loadTasks(){
@@ -643,7 +643,7 @@
   });
   $("#createTaskBtn").addEventListener("click", async ()=>{
     const title=$("#newTaskTitle").value.trim(),
-            body=$("#newTaskBody").value.trim();
+          body=$("#newTaskBody").value.trim();
     if(!title){
       alert("Please enter a title for the new task.");
       return;
@@ -846,14 +846,14 @@
         const pairDetail = await fetch(`/pair/${p.id}`).then(r=>r.json());
         p._history = pairDetail;
         addChatMessage(
-                p.id,
-                p.user_text,
-                p.timestamp,
-                p.ai_text,
-                p.ai_timestamp,
-                p.model,
-                p.system_context,
-                p._history
+          p.id,
+          p.user_text,
+          p.timestamp,
+          p.ai_text,
+          p.ai_timestamp,
+          p.model,
+          p.system_context,
+          p._history
         );
       }
     } catch (err) {
@@ -1029,16 +1029,55 @@
     });
   })();
 
-  // Placeholder event listener to handle file uploads
-  // (currently does nothing server-side)
-  $("#secureUploadForm").addEventListener("submit", e => {
+  // Implement actual file uploading
+  async function loadFileList() {
+    try {
+      const files = await fetch("/api/upload/list").then(r => r.json());
+      const listEl = $("#secureFilesList");
+      listEl.innerHTML = "";
+      files.forEach(fn => {
+        const li = document.createElement("li");
+        li.textContent = fn;
+        listEl.appendChild(li);
+      });
+    } catch(e) {
+      console.error("Error fetching file list:", e);
+    }
+  }
+
+  $("#secureUploadForm").addEventListener("submit", async e => {
     e.preventDefault();
     const file = $("#fileInput").files[0];
     if(!file) {
       alert("Please select a file first.");
       return;
     }
-    alert(`File "${file.name}" selected. Upload handling not implemented.`);
+    console.log("[Uploader Debug] Uploading file:", file.name);
+
+    const formData = new FormData();
+    formData.append("myfile", file, file.name);
+
+    try {
+      const resp = await fetch("/api/upload", {
+        method: "POST",
+        body: formData
+      });
+      if(!resp.ok){
+        console.error("[Uploader Debug] Server responded with status:", resp.status);
+        alert("Upload failed. Check console for details.");
+        return;
+      }
+      const result = await resp.json();
+      if(result.success){
+        alert("File uploaded successfully!");
+        await loadFileList();
+      } else {
+        alert("Upload error: " + (result.error || "Unknown error"));
+      }
+    } catch(err) {
+      console.error("[Uploader Debug] Upload error:", err);
+      alert("Upload error. Check console.");
+    }
   });
 
   (async function init(){
@@ -1102,6 +1141,9 @@
     } catch(e) {
       console.error("Error loading chat_hide_metadata:", e);
     }
+
+    // Load file list on init
+    await loadFileList();
   })();
 </script>
 </body>
