@@ -7,6 +7,14 @@ export default class TaskDB {
   }
 
   /* ------------------------------------------------------------------ */
+  /*  Small util                                                         */
+  /* ------------------------------------------------------------------ */
+  _columnExists(table, column) {
+    const rows = this.db.prepare(`PRAGMA table_info(${table});`).all();
+    return rows.some((r) => r.name === column);
+  }
+
+  /* ------------------------------------------------------------------ */
   /*  Schema bootstrap + migration                                      */
   /* ------------------------------------------------------------------ */
   _init() {
@@ -82,8 +90,20 @@ export default class TaskDB {
    * Make sure `priority_number` is unique and dense (1,2,3,…).
    * Any duplicates caused by earlier bugs are resolved here so that a
    * subsequent UNIQUE index can be created without failure.
+   *
+   * If the column is still missing (e.g., an unexpected legacy DB),
+   * it is created on-the-fly and we return early.
    */
   _ensureUniquePriorities() {
+    /* Safeguard: add column if for some reason it still doesn’t exist */
+    if (!this._columnExists("issues", "priority_number")) {
+      console.warn(
+        "[TaskQueue] priority_number column missing – creating on the fly."
+      );
+      this.db.exec("ALTER TABLE issues ADD COLUMN priority_number INTEGER;");
+      return; // nothing else to do – DB has no data yet
+    }
+
     const rows = this.db
       .prepare(
         "SELECT id, priority_number FROM issues ORDER BY priority_number, id;"
