@@ -22,9 +22,6 @@ export default class TaskDB {
       try {
         this.db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition};`);
       } catch (e) {
-        /* If another concurrent process added it between the check
-           and the ALTER we can safely ignore the “duplicate column”
-           error. */
         if (!/duplicate column/i.test(e.message || "")) throw e;
       }
     }
@@ -64,9 +61,7 @@ export default class TaskDB {
 
   /**
    * Handle older DBs that used the name `priority` instead of
-   * `priority_number`.  The rename must happen *before* any statement
-   * references the new column name or Node will crash with
-   * “no such column: priority_number”.
+   * `priority_number`. Attempt direct rename; if it fails, do a fallback.
    */
   _fixLegacyColumns() {
     const hasOld = this._columnExists("issues", "priority");
@@ -74,18 +69,29 @@ export default class TaskDB {
 
     if (hasOld && !hasNew) {
       console.log(
-        "[TaskQueue] Detected legacy column 'priority' – renaming to 'priority_number'"
+        "[TaskQueue] Detected legacy column 'priority' – attempting rename to 'priority_number'"
       );
       try {
-        // SQLite ≥3.25 supports RENAME COLUMN
         this.db.exec(
           "ALTER TABLE issues RENAME COLUMN priority TO priority_number;"
         );
       } catch (err) {
         console.error(
-          "[TaskQueue] Failed to rename column (old SQLite?):",
+          "[TaskQueue] Rename column failed; attempting fallback approach:",
           err.message
         );
+        /* fallback approach: create 'priority_number' if missing and copy data */
+        this._addColumnIfMissing("issues", "priority_number", "INTEGER");
+        try {
+          this.db.exec(`
+            UPDATE issues
+               SET priority_number = priority
+             WHERE priority_number IS NULL
+          `);
+          console.log("[TaskQueue] Fallback approach complete.");
+        } catch (copyErr) {
+          console.error("[TaskQueue] Fallback copy failed:", copyErr.message);
+        }
       }
     }
   }
@@ -96,7 +102,6 @@ export default class TaskDB {
    * data loss.
    */
   _migrateIssuesTable() {
-    /* Desired columns with "ALTER TABLE" fragments */
     const wanted = {
       closed: "INTEGER DEFAULT 0",
       github_id: "INTEGER",
@@ -113,7 +118,6 @@ export default class TaskDB {
       created_at: "TEXT"
     };
 
-    /* Actual columns present */
     const presentRows = this.db.prepare("PRAGMA table_info(issues);").all();
     const present = new Set(presentRows.map((r) => r.name));
 
@@ -134,14 +138,8 @@ export default class TaskDB {
 
   /**
    * Make sure `priority_number` is unique and dense (1,2,3,…).
-   * Any duplicates caused by earlier bugs are resolved here so that a
-   * subsequent UNIQUE index can be created without failure.
-   *
-   * If the column is still missing (very first run) it is created
-   * on-the-fly and we return early.
    */
   _ensureUniquePriorities() {
-    /* Safeguard: add column if for some reason it still doesn’t exist */
     this._addColumnIfMissing("issues", "priority_number", "INTEGER");
 
     const rows = this.db
@@ -167,11 +165,6 @@ export default class TaskDB {
 
   /**
    * Ensure all required (unique) indices exist.
-   * This is executed *after* priority numbers have been deduplicated so
-   * index creation cannot fail with “UNIQUE constraint failed”.
-   *
-   * If the attempt throws “no such column: priority_number” we add the
-   * column and retry once.
    */
   _ensureIndices(retried = false) {
     try {
@@ -190,7 +183,7 @@ export default class TaskDB {
           "[TaskQueue] Index creation failed – missing 'priority_number'. Attempting automatic fix."
         );
         this._addColumnIfMissing("issues", "priority_number", "INTEGER");
-        this._ensureIndices(true); // retry once
+        this._ensureIndices(true);
         return;
       }
       throw err;
@@ -201,18 +194,15 @@ export default class TaskDB {
   /*  Issue helpers                                                     */
   /* ------------------------------------------------------------------ */
   upsertIssue(issue, repositorySlug, _retry = false) {
-    /* Extra defence in case a stale DB slipped through earlier steps */
     this._addColumnIfMissing("issues", "priority_number", "INTEGER");
 
     try {
-      /* If issue already recorded: keep its priority */
       const existing = this.db
         .prepare("SELECT priority_number FROM issues WHERE github_id = ?;")
         .get(issue.id);
 
       let priority = existing?.priority_number;
       if (!priority) {
-        /* New issue → append to bottom */
         const row = this.db
           .prepare("SELECT COALESCE(MAX(priority_number), 0) + 1 AS next;")
           .get();
@@ -252,7 +242,6 @@ export default class TaskDB {
         closed: 0
       });
     } catch (err) {
-      /* One last automatic repair attempt */
       if (
         !_retry &&
         /no such column: priority_number/i.test(err.message || "")
@@ -267,7 +256,109 @@ export default class TaskDB {
     }
   }
 
-  /* ---------------- Remaining methods unchanged -------------------- */
-  // (getSetting, setSetting, listTasks, reorderTask, etc.)
-}
+  getSetting(key) {
+    const row = this.db
+      .prepare("SELECT value FROM settings WHERE key = ?;")
+      .get(key);
+    if (!row) return undefined;
+    return JSON.parse(row.value);
+  }
 
+  setSetting(key, value) {
+    const valStr = JSON.stringify(value ?? null);
+    this.db
+      .prepare(
+        `INSERT INTO settings (key, value)
+         VALUES (@key, @value)
+         ON CONFLICT(key) DO UPDATE SET value=excluded.value;`
+      )
+      .run({ key, value: valStr });
+  }
+
+  allSettings() {
+    const rows = this.db.prepare("SELECT key, value FROM settings;").all();
+    return rows.map((r) => ({
+      key: r.key,
+      value: JSON.parse(r.value)
+    }));
+  }
+
+  listTasks(includeHidden = false) {
+    const sql = includeHidden
+      ? "SELECT * FROM issues WHERE closed=0 ORDER BY priority_number;"
+      : "SELECT * FROM issues WHERE closed=0 AND hidden=0 ORDER BY priority_number;";
+    return this.db.prepare(sql).all();
+  }
+
+  markClosedExcept(openIds) {
+    if (!openIds.length) {
+      this.db.exec("UPDATE issues SET closed=1 WHERE closed=0;");
+      return;
+    }
+
+    const placeholders = openIds.map(() => "?").join(",");
+    this.db
+      .prepare(`UPDATE issues SET closed=1 WHERE id NOT IN (${placeholders});`)
+      .run(...openIds);
+  }
+
+  reorderTask(id, direction) {
+    const currentRow = this.db
+      .prepare("SELECT id, priority_number FROM issues WHERE id=?;")
+      .get(id);
+    if (!currentRow) return false;
+
+    const adj = direction === "up" ? -1 : 1;
+    const swapRow = this.db
+      .prepare(
+        "SELECT id, priority_number FROM issues WHERE priority_number=?;"
+      )
+      .get(currentRow.priority_number + adj);
+
+    if (!swapRow) return false;
+
+    const swapStmt = this.db.prepare(
+      "UPDATE issues SET priority_number=? WHERE id=?;"
+    );
+    const t = this.db.transaction(() => {
+      swapStmt.run(swapRow.priority_number, currentRow.id);
+      swapStmt.run(currentRow.priority_number, swapRow.id);
+    });
+    t();
+    return true;
+  }
+
+  setHidden(id, hidden) {
+    this.db
+      .prepare("UPDATE issues SET hidden=? WHERE id=?;")
+      .run(hidden ? 1 : 0, id);
+  }
+
+  setPoints(id, points) {
+    this.db
+      .prepare("UPDATE issues SET fib_points=? WHERE id=?;")
+      .run(points, id);
+  }
+
+  setProject(id, project) {
+    this.db
+      .prepare("UPDATE issues SET project=? WHERE id=?;")
+      .run(project, id);
+  }
+
+  listProjects() {
+    const sql = `
+      SELECT project, COUNT(*) as count
+        FROM issues
+       WHERE closed=0
+    GROUP BY project
+    HAVING project != ''
+    ORDER BY count DESC;
+    `;
+    return this.db.prepare(sql).all();
+  }
+
+  dump() {
+    return this.db.prepare("SELECT * FROM issues ORDER BY priority_number;").all();
+  }
+}
