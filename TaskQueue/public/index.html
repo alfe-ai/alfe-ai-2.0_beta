@@ -102,11 +102,23 @@
   <body>
     <h1>Open Tasks</h1>
 
+    <!-- navigation link to projects page -->
+    <p><a href="/projects">📂 Projects overview</a></p>
+
     <div id="controls">
       <label>
         <input type="checkbox" id="showHidden" />
         Show hidden tasks
       </label>
+
+      <!-- project filter dropdown -->
+      <label style="margin-left:1rem;">
+        Project:
+        <select id="projectFilter">
+          <option value="">All projects</option>
+        </select>
+      </label>
+
       <button id="addTaskBtn">➕ New Task</button>
       <button id="gearBtn" title="Configure columns">⚙️</button>
     </div>
@@ -176,6 +188,27 @@
       }
 
       /* ------------------------------------------------------------------
+       * Load & populate projects dropdown
+       * ------------------------------------------------------------------ */
+      async function loadProjects() {
+        const res = await fetch("/api/projects");
+        if (!res.ok) return;
+        const projects = await res.json();
+        const sel = $("#projectFilter");
+        sel.innerHTML =
+          '<option value="">All projects</option>' +
+          projects
+            .map(
+              (p) =>
+                `<option value="${p.project.replaceAll(
+                  '"',
+                  "&quot;"
+                )}">${p.project}</option>`
+            )
+            .join("");
+      }
+
+      /* ------------------------------------------------------------------
        * Render table header & rows
        * ------------------------------------------------------------------ */
       function renderHeader() {
@@ -196,16 +229,21 @@
         );
         const tasks = await res.json();
 
+        /* filter by selected project */
+        const selectedProject = $("#projectFilter").value;
+        const displayTasks = selectedProject
+          ? tasks.filter((t) => t.project === selectedProject)
+          : tasks;
+
         renderHeader();
         const tbody = $("#tasks tbody");
         tbody.innerHTML = "";
 
-        tasks.forEach((t, idx) => {
+        displayTasks.forEach((t, idx) => {
           const tr = document.createElement("tr");
           if (t.hidden) tr.classList.add("hidden");
 
           const cells = [];
-
           const push = (key, html) => {
             if (!visibleCols.has(key)) return;
             cells.push(html);
@@ -219,7 +257,7 @@
                 idx === 0 ? "disabled" : ""
               } onclick="reorder(${t.id}, 'up')">▲</button>
               <button class="arrow" title="Move down" ${
-                idx === tasks.length - 1 ? "disabled" : ""
+                idx === displayTasks.length - 1 ? "disabled" : ""
               } onclick="reorder(${t.id}, 'down')">▼</button>
             </td>`
           );
@@ -314,6 +352,7 @@
           body: JSON.stringify({ title, body })
         });
         await loadTasks();
+        await loadProjects(); // refresh project list in case new project added
       });
 
       /* ------------------------------------------------------------------
@@ -347,6 +386,7 @@
             });
           }
           await loadTasks();
+          await loadProjects(); // update dropdown if needed
         };
 
         const onKeyDown = (e) => {
@@ -366,6 +406,7 @@
       });
 
       $("#showHidden").addEventListener("change", () => loadTasks());
+      $("#projectFilter").addEventListener("change", () => loadTasks());
 
       /* ------------------------------------------------------------------
        * Column picker modal logic
@@ -410,6 +451,7 @@
        * Initial load & polling
        * ------------------------------------------------------------------ */
       (async () => {
+        await loadProjects();
         await loadSettings();
         await loadTasks();
         setInterval(loadTasks, 30_000);
