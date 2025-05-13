@@ -160,8 +160,11 @@ export default class TaskDB {
                 try {
                     this.db.exec("ALTER TABLE issues ADD COLUMN priority_number INTEGER;");
                 } catch (addErr) {
-                    console.error("Failed to add 'priority_number' column:", addErr);
-                    throw err;
+                    // Ignore duplicate column error, only fail on other errors
+                    if (!/duplicate column name|already exists/i.test(addErr.message || "")) {
+                        console.error("Failed to add 'priority_number' column:", addErr);
+                        throw err;
+                    }
                 }
                 return this.upsertIssue(issue, repositorySlug, true);
             }
