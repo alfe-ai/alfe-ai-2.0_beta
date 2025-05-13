@@ -50,6 +50,12 @@
       .project-cell:hover {
         text-decoration: underline dotted;
       }
+      .project-input {
+        width: 100%;
+        box-sizing: border-box;
+        font: inherit;
+        padding: 4px;
+      }
       #controls {
         margin-bottom: 1rem;
       }
@@ -84,14 +90,22 @@
     </table>
 
     <script>
+      /* ------------------------------------------------------------------
+       * Helpers
+       * ------------------------------------------------------------------ */
+      const $ = (sel, ctx = document) => ctx.querySelector(sel);
+
+      /* ------------------------------------------------------------------
+       * Fetch & render table
+       * ------------------------------------------------------------------ */
       async function load() {
-        const includeHidden = document.querySelector("#showHidden").checked;
+        const includeHidden = $("#showHidden").checked;
         const res = await fetch(
           "/api/tasks" + (includeHidden ? "?includeHidden=1" : "")
         );
         const tasks = await res.json();
 
-        const tbody = document.querySelector("#tasks tbody");
+        const tbody = $("#tasks tbody");
         tbody.innerHTML = "";
 
         tasks.forEach((t, idx) => {
@@ -119,9 +133,9 @@
             <td>${t.repository}</td>
             <td><a href="${t.html_url}" target="_blank">#${t.number}</a></td>
             <td>${t.title}</td>
-            <td class="project-cell" onclick="editProject(${t.id}, ${JSON.stringify(
-              t.project ?? ""
-            )})">${t.project || "-"}</td>
+            <td class="project-cell" data-id="${t.id}" data-project="${encodeURIComponent(
+            t.project ?? ""
+          )}">${t.project || "-"}</td>
             <td>${t.assignee ?? "-"}</td>
             <td>${new Date(t.created_at).toLocaleString()}</td>
           `;
@@ -129,22 +143,14 @@
         });
       }
 
+      /* ------------------------------------------------------------------
+       * Actions
+       * ------------------------------------------------------------------ */
       async function reorder(id, direction) {
         await fetch("/api/tasks/reorder", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id, direction })
-        });
-        await load();
-      }
-
-      async function editProject(id, current) {
-        const value = prompt("Set Project:", current || "");
-        if (value === null) return;
-        await fetch("/api/tasks/project", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id, project: value })
         });
         await load();
       }
@@ -158,17 +164,75 @@
         await load();
       }
 
-      // Global
-      window.reorder = reorder;
-      window.editProject = editProject;
-      window.toggleHidden = toggleHidden;
+      /* ------------------------------------------------------------------
+       * Inline project editor
+       * ------------------------------------------------------------------ */
+      function startInlineProjectEdit(cell) {
+        if (cell.querySelector("input")) return; // already editing
 
-      document
-        .querySelector("#showHidden")
-        .addEventListener("change", () => load());
+        const id = cell.dataset.id;
+        const current = decodeURIComponent(cell.dataset.project || "");
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = current;
+        input.className = "project-input";
 
+        const originalContent = cell.textContent;
+        cell.textContent = "";
+        cell.appendChild(input);
+        input.focus();
+        input.select();
+
+        const finish = async (save) => {
+          cell.removeEventListener("keydown", onKeyDown);
+          input.removeEventListener("blur", onBlur);
+          const newVal = input.value.trim();
+          if (save && newVal !== current) {
+            await fetch("/api/tasks/project", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id, project: newVal })
+            });
+          }
+          await load();
+        };
+
+        const onKeyDown = (e) => {
+          if (e.key === "Enter") {
+            finish(true);
+          } else if (e.key === "Escape") {
+            finish(false);
+          }
+        };
+
+        const onBlur = () => finish(true);
+
+        input.addEventListener("keydown", onKeyDown);
+        input.addEventListener("blur", onBlur);
+      }
+
+      /* ------------------------------------------------------------------
+       * Event bindings
+       * ------------------------------------------------------------------ */
+      document.addEventListener("click", (e) => {
+        if (e.target.classList.contains("project-cell")) {
+          startInlineProjectEdit(e.target);
+        }
+      });
+
+      $("#showHidden").addEventListener("change", () => load());
+
+      /* ------------------------------------------------------------------
+       * Initial load + polling
+       * ------------------------------------------------------------------ */
       load();
       setInterval(load, 30_000);
+
+      /* ------------------------------------------------------------------
+       * Expose global functions required by inline HTML handlers
+       * ------------------------------------------------------------------ */
+      window.reorder = reorder;
+      window.toggleHidden = toggleHidden;
     </script>
   </body>
 </html>
