@@ -766,11 +766,10 @@
     const seqDiv = document.createElement("div");
     seqDiv.className = "chat-sequence";
 
-    // Separate agent instructions from system info if possible
     let agentInstructions = "";
     let systemInfoText = "";
     if (systemContext) {
-      // Attempt to parse: "System Context:\n[ instructions ]\n\nModel: [modelVal]\nUserTime: [timeVal]"
+      // Attempt to parse the system context
       const re = /System Context:\n([\s\S]*?)\n\nModel:\s*([^]+)\nUserTime:\s*([^]+)/;
       const match = re.exec(systemContext);
       if (match) {
@@ -859,16 +858,53 @@
     if(!userMessage) return;
 
     const userTime = new Date().toISOString();
+    let partialText = "";
 
-    // A simple user bubble
+    // Construct system context now so that we can display it immediately
+    const sc = `System Context:\n${(window.agentInstructions || "").trim()}\n\nModel: ${modelName}\nUserTime: ${userTime}\nTimeZone: Central`;
+
+    // Create a container for the new sequence (with instructions + user + AI partial)
     const seqDiv = document.createElement("div");
     seqDiv.className = "chat-sequence";
+
+    // Agent instructions + system info
+    if (window.agentInstructions) {
+      const detailsEl = document.createElement("details");
+      detailsEl.open = false;
+      detailsEl.className = "chat-instructions";
+      const summaryEl = document.createElement("summary");
+      summaryEl.textContent = "Agent Instructions (click to expand)";
+      detailsEl.appendChild(summaryEl);
+
+      const preEl = document.createElement("pre");
+      preEl.textContent = window.agentInstructions.trim();
+      detailsEl.appendChild(preEl);
+
+      seqDiv.appendChild(detailsEl);
+    }
+
+    {
+      const detailsSysEl = document.createElement("details");
+      detailsSysEl.open = false;
+      detailsSysEl.className = "chat-system";
+      const sumSys = document.createElement("summary");
+      sumSys.textContent = "System Info (click to expand)";
+      detailsSysEl.appendChild(sumSys);
+
+      const preSys = document.createElement("pre");
+      preSys.textContent = `Model: ${modelName}\nTime: ${userTime}`;
+      detailsSysEl.appendChild(preSys);
+
+      seqDiv.appendChild(detailsSysEl);
+    }
+
+    // User bubble
     const userDiv = document.createElement("div");
     userDiv.className = "chat-user";
     userDiv.innerHTML = `You (pending ID, ${formatTimestamp(userTime)}): ${userMessage}`;
     seqDiv.appendChild(userDiv);
 
-    // Bot bubble for partial response
+    // AI bubble for partial streaming
     const botDiv = document.createElement("div");
     botDiv.className = "chat-bot";
     botDiv.textContent = `AI (model: ${modelName}, ...): `;
@@ -898,7 +934,6 @@
         botDiv.textContent = `AI (model: ${modelName}): [Error contacting AI]`;
       } else {
         const reader = resp.body.getReader();
-        let partialText = "";
         while(true){
           const { value, done } = await reader.read();
           if(done) break;
@@ -907,7 +942,7 @@
           chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
         }
       }
-      // Reload the history to show final context + instructions
+      // Once streaming completes, reload to show final content (with real ID, final instructions, etc.)
       await loadChatHistory(currentTabId);
 
     } catch(e) {
@@ -954,15 +989,17 @@
     renderTabs();
     await loadChatHistory(currentTabId);
 
-    // Populate collapsible instructions
+    // Populate collapsible instructions & store globally
     try {
       const r2 = await fetch("/api/settings/agent_instructions");
       if(r2.ok){
         const { value } = await r2.json();
         $("#displayedInstructions").textContent = value || "(none)";
+        window.agentInstructions = value || "";
       }
     } catch(e){
       console.error("Error loading agent instructions:", e);
+      window.agentInstructions = "";
     }
   })();
 </script>
