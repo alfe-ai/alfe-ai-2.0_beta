@@ -452,5 +452,10 @@ export default class TaskDB {
       model
     });
   }
-}
 
+  getAllChatPairs() {
+    return this.db
+      .prepare("SELECT * FROM chat_pairs ORDER BY id ASC")
+      .all();
+  }
+}

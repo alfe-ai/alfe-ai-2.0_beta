@@ -388,6 +388,7 @@
     const cnt = $("#colList");
     cnt.innerHTML="";
     columnsOrder.forEach((c,i)=>{
+      if(!visibleCols.has(c.key)){}
       const div = document.createElement("div");
       div.className="col-item";
       div.innerHTML = `<button class="col-move" data-idx="${i}" data-dir="up">⬆️</button>` +
@@ -618,7 +619,7 @@
   });
   $("#createTaskBtn").addEventListener("click", async ()=>{
     const title=$("#newTaskTitle").value.trim(),
-            body=$("#newTaskBody").value.trim();
+          body=$("#newTaskBody").value.trim();
     if(!title){
       alert("Please enter a title for the new task.");
       return;
@@ -638,12 +639,41 @@
   $("#cancelTaskBtn").addEventListener("click",()=>hideModal($("#newTaskModal")));
 
   /* ------------------------------------------------------------------
-   * Chat logic with streaming response
+   * Chat logic with streaming response + Loading existing history
    * ------------------------------------------------------------------ */
   const chatMessagesEl = document.getElementById("chatMessages");
   const chatInputEl = document.getElementById("chatInput");
   const chatSendBtnEl = document.getElementById("chatSendBtn");
   const waitingElem = document.getElementById("waitingCounter");
+
+  function addChatMessage(userText, aiText, model) {
+    const seqDiv = document.createElement("div");
+    seqDiv.className = "chat-sequence";
+
+    const userDiv = document.createElement("div");
+    userDiv.className = "chat-user";
+    userDiv.textContent = "You: " + (userText || "");
+    seqDiv.appendChild(userDiv);
+
+    const botDiv = document.createElement("div");
+    botDiv.className = "chat-bot";
+    botDiv.textContent = `AI (model: ${model || "?"}): ${aiText || ""}`;
+    seqDiv.appendChild(botDiv);
+
+    chatMessagesEl.appendChild(seqDiv);
+    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+  }
+
+  async function loadChatHistory() {
+    try {
+      const pairs = await fetch("/api/chat/history").then(r => r.json());
+      for (const p of pairs) {
+        addChatMessage(p.user_text, p.ai_text, p.model);
+      }
+    } catch (err) {
+      console.error("Error loading chat history:", err);
+    }
+  }
 
   chatInputEl.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
@@ -656,6 +686,7 @@
     const userMessage = chatInputEl.value.trim();
     if(!userMessage) return;
 
+    // Immediately reflect user input
     const seqDiv = document.createElement("div");
     seqDiv.className = "chat-sequence";
 
@@ -729,6 +760,9 @@
     }
     // Display the model in the HUD
     $("#modelHud").textContent = "Model: " + modelName;
+
+    // Load chat history
+    await loadChatHistory();
   })();
 </script>
 </body>

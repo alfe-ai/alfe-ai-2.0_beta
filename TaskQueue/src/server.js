@@ -377,6 +377,17 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
+// New route to get all stored chat pairs
+app.get("/api/chat/history", (req, res) => {
+  try {
+    const chatPairs = db.getAllChatPairs();
+    res.json(chatPairs);
+  } catch (err) {
+    console.error("[TaskQueue] /api/chat/history error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // Provide the current openai model
 app.get("/api/model", (req, res) => {
   const model = process.env.OPENAI_MODEL || "o3-mini";
@@ -401,5 +412,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
- // 
-
