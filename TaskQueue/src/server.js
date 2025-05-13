@@ -50,7 +50,16 @@ const INSTR_FILE = path.resolve("agent_instructions.txt");
 app.use(cors());
 app.use(express.json());
 
-/* (other routes unchanged – truncated for brevity) */
+/* ------------------------------------------------------------------ */
+/*  Static front-end                                                  */
+/* ------------------------------------------------------------------ */
+const publicDir = path.resolve(__dirname, "../public");
+app.use(express.static(publicDir));
+
+/* root (‘/’) – deliver SPA entry */
+app.get("/", (_req, res) =>
+  res.sendFile(path.join(publicDir, "index.html"))
+);
 
 /* ------------------------------------------------------------------ */
 /*  Tasks core                                                         */
@@ -95,7 +104,9 @@ app.post("/api/tasks", async (req, res) => {
   }
 });
 
-/* (remaining routes unchanged – truncated for brevity) */
+/* ------------------------------------------------------------------ */
+/*  (Other API routes remain unchanged)                                */
+/* ------------------------------------------------------------------ */
 
 /* ------------------------------------------------------------------ */
 /*  Server start                                                       */
