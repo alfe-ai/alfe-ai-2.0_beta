@@ -12,21 +12,26 @@
 <div class="app">
   <aside class="sidebar">
     <h2 style="font-size:1.2rem; margin-top:0;">Tasks</h2>
-    <div id="controls">
-      <label><input type="checkbox" id="showHidden" /> Show hidden tasks</label>
-      <label style="margin-left:1rem;">Project:
-        <select id="projectFilter"><option value="">All projects</option></select>
-      </label>
-      <label style="margin-left:1rem;">Sprint:
-        <select id="sprintFilter"><option value="">All sprints</option></select>
-      </label>
-      <button id="addTaskBtn" style="margin-top:4px;">➕ New Task</button>
-      <button id="instrBtn" title="Agent instructions">📝</button>
-      <button id="gearBtn" title="Configure columns">⚙️</button>
-      <button id="defaultsBtn" title="Default project/sprint">⭐</button>
-      <button id="repoBtn" title="Edit Git repository">🔀</button>
-      <button id="toggleTasksBtn">Hide tasks</button>
-    </div>
+
+    <!-- Collapsible toolbar, so it doesn't clutter the top row constantly -->
+    <details id="toolbarCollapsible">
+      <summary>Toolbar & Filters</summary>
+      <div id="controls">
+        <label><input type="checkbox" id="showHidden" /> Show hidden tasks</label>
+        <label style="margin-left:1rem;">Project:
+          <select id="projectFilter"><option value="">All projects</option></select>
+        </label>
+        <label style="margin-left:1rem;">Sprint:
+          <select id="sprintFilter"><option value="">All sprints</option></select>
+        </label>
+        <button id="addTaskBtn" style="margin-top:4px;">➕ New Task</button>
+        <button id="instrBtn" title="Agent instructions">📝</button>
+        <button id="gearBtn" title="Configure columns">⚙️</button>
+        <button id="defaultsBtn" title="Default project/sprint">⭐</button>
+        <button id="repoBtn" title="Edit Git repository">🔀</button>
+        <button id="toggleTasksBtn">Hide tasks</button>
+      </div>
+    </details>
 
     <table id="tasks">
       <thead><tr id="headerRow"></tr></thead>
@@ -52,16 +57,18 @@
       </details>
     </div>
 
-    <!-- Chat panel -->
-    <div id="chatPanel">
+    <div id="chatPanel" style="position: relative;">
       <div style="display: flex; align-items: center; gap: 0.5rem;">
         <!-- Model HUD -->
-        <div id="modelHud" style="font-size:0.9rem; color:#555; margin-bottom:4px;"></div>
+        <div id="modelHud" style="font-size:0.9rem; color:#aaa; margin-bottom:4px;"></div>
         <!-- Chat Settings gear -->
         <button id="chatSettingsBtn" title="Chat Settings">⚙️</button>
       </div>
 
       <div id="chatMessages"></div>
+      <!-- Scroll down button -->
+      <button id="scrollDownBtn">Scroll to Bottom</button>
+
       <div id="waitingCounter"></div>
       <div class="chat-input-container">
         <textarea id="chatInput" placeholder="Type your message..."></textarea>
@@ -194,17 +201,22 @@
   const $  = (sel, ctx=document) => ctx.querySelector(sel);
   const $$ = (sel, ctx=document) => [...ctx.querySelectorAll(sel)];
 
-  // Only formatting the date portion (no time), leaving as-is
-  const isoDate = d => new Date(d).toLocaleDateString([], {year:"numeric",month:"2-digit",day:"2-digit"});
-
+  // Show only hour and minute, e.g. 03:32 PM
   function formatTimestamp(isoStr){
     if(!isoStr) return "(no time)";
     const d = new Date(isoStr);
     return d.toLocaleTimeString([], {
       hour12: true,
       hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
+      minute: '2-digit'
+    });
+  }
+
+  function isoDate(d) {
+    return new Date(d).toLocaleDateString([], {
+      year:"numeric",
+      month:"2-digit",
+      day:"2-digit"
     });
   }
 
@@ -277,9 +289,6 @@
     });
   }
 
-  /* ------------------------------------------------------------------
-   * Column rendering
-   * ------------------------------------------------------------------ */
   function renderHeader(){
     const tr = $("#headerRow");
     tr.innerHTML = "";
@@ -324,7 +333,7 @@
     }
     dragSrcRow = null;
   }
-  function handleDragEnd(e){
+  function handleDragEnd(){
     $$(`tr.drag-over`).forEach(r=>r.classList.remove("drag-over"));
     dragSrcRow = null;
   }
@@ -337,14 +346,12 @@
     });
   }
 
-  /* ------------------------------------------------------------------
-   * Fetch & render tasks
-   * ------------------------------------------------------------------ */
   async function fetchTasks(){
     const inc = $("#showHidden").checked;
     const res = await fetch(`/api/tasks?includeHidden=${inc?1:0}`);
     return res.json();
   }
+
   function renderBody(){
     const tbody = $("#tasks tbody");
     tbody.innerHTML = "";
@@ -444,15 +451,14 @@
         tbody.appendChild(tr);
       });
   }
+
   async function loadTasks(){
     allTasks = await fetchTasks();
     renderHeader();
     renderBody();
   }
 
-  /* ------------------------------------------------------------------
-   * Filters
-   * ------------------------------------------------------------------ */
+  /* Filter logic */
   async function populateFilters(){
     const pj = await (await fetch("/api/projects")).json();
     $("#projectFilter").innerHTML = '<option value="">All projects</option>' +
@@ -462,9 +468,6 @@
       sp.map(s=>`<option value="${s.sprint}">${s.sprint}</option>`).join("");
   }
 
-  /* ------------------------------------------------------------------
-   * Column picker logic
-   * ------------------------------------------------------------------ */
   function openColModal(){
     const cnt = $("#colList");
     cnt.innerHTML="";
@@ -498,9 +501,6 @@
   });
   $("#colCancelBtn").addEventListener("click",()=>hideModal($("#colModal")));
 
-  /* ------------------------------------------------------------------
-   * Row interactions
-   * ------------------------------------------------------------------ */
   $("#tasks").addEventListener("click", async e=>{
     const btn = e.target.closest("button");
     if(btn){
@@ -624,9 +624,6 @@
   $("#projectFilter").addEventListener("change", renderBody);
   $("#sprintFilter").addEventListener("change", renderBody);
 
-  /* ------------------------------------------------------------------
-   * Modal hooking for instructions, repo, defaults, new task
-   * ------------------------------------------------------------------ */
   $("#instrBtn").addEventListener("click", async ()=>{
     const r=await fetch("/api/settings/agent_instructions");
     if(r.ok){
@@ -777,14 +774,14 @@
       const tabBtn = document.createElement("div");
       tabBtn.style.display="flex";
       tabBtn.style.alignItems="center";
-      tabBtn.style.border="1px solid #ccc";
+      tabBtn.style.border="1px solid #444";
       tabBtn.style.padding="4px 6px";
       tabBtn.style.cursor="pointer";
-      tabBtn.style.backgroundColor = (tab.id===currentTabId) ? "#eee" : "#f9f9f9";
+      tabBtn.style.backgroundColor = (tab.id===currentTabId) ? "#444" : "#333";
+      tabBtn.style.color = "#ddd";
       tabBtn.textContent = tab.name;
       tabBtn.addEventListener("click", ()=>selectTab(tab.id));
 
-      // Right-click context to rename or delete
       tabBtn.addEventListener("contextmenu", e=>{
         e.preventDefault();
         const choice = prompt("Type 'rename' or 'delete':", "");
@@ -803,6 +800,21 @@
   const chatInputEl = document.getElementById("chatInput");
   const chatSendBtnEl = document.getElementById("chatSendBtn");
   const waitingElem = document.getElementById("waitingCounter");
+  const scrollDownBtnEl = document.getElementById("scrollDownBtn");
+
+  // Show or hide the scroll-down button
+  function checkScroll() {
+    const bottomOffset = chatMessagesEl.scrollHeight - chatMessagesEl.scrollTop - chatMessagesEl.clientHeight;
+    if(bottomOffset > 80) {
+      scrollDownBtnEl.style.display = "block";
+    } else {
+      scrollDownBtnEl.style.display = "none";
+    }
+  }
+  chatMessagesEl.addEventListener("scroll", checkScroll);
+  scrollDownBtnEl.addEventListener("click", ()=>{
+    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+  });
 
   function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemContext, fullHistory) {
     const seqDiv = document.createElement("div");
@@ -855,14 +867,53 @@
       }
     }
 
+    /* User bubble */
     const userDiv = document.createElement("div");
     userDiv.className = "chat-user";
-    userDiv.innerHTML = `You (pair #${pairId}, ${formatTimestamp(userTs)}): ${userText} <a href="/pair/${pairId}" target="_blank">[details]</a>`;
+    const userHead = document.createElement("div");
+    userHead.className = "bubble-header";
+    userHead.innerHTML = `<img src="https://via.placeholder.com/24/09f/fff?text=U" alt="User" style="border-radius:50%;">`;
+    userHead.innerHTML += `<span style="opacity:0.8;">${formatTimestamp(userTs)}</span>`;
+    userDiv.appendChild(userHead);
+
+    const userBody = document.createElement("div");
+    userBody.textContent = userText;
+    userDiv.appendChild(userBody);
+
+    // Minimal link to pair details
+    if(!chatHideMetadata) {
+      const link = document.createElement("a");
+      link.href = `/pair/${pairId}`;
+      link.target = "_blank";
+      link.style.display = "block";
+      link.style.fontSize = "0.8rem";
+      link.textContent = "[details]";
+      userDiv.appendChild(link);
+    }
     seqDiv.appendChild(userDiv);
 
+    /* AI bubble */
     const botDiv = document.createElement("div");
     botDiv.className = "chat-bot";
-    botDiv.innerHTML = `AI (model: ${model}, ${formatTimestamp(aiTs)}): ${aiText || ""} <a href="/pair/${pairId}" target="_blank">[details]</a>`;
+    const botHead = document.createElement("div");
+    botHead.className = "bubble-header";
+    botHead.innerHTML = `<img src="https://via.placeholder.com/24/f90/fff?text=AI" alt="AI" style="border-radius:50%;">`;
+    botHead.innerHTML += `<span style="opacity:0.8;">${formatTimestamp(aiTs)}</span>`;
+    botDiv.appendChild(botHead);
+
+    const botBody = document.createElement("div");
+    botBody.textContent = aiText || "";
+    botDiv.appendChild(botBody);
+
+    if(!chatHideMetadata) {
+      const link = document.createElement("a");
+      link.href = `/pair/${pairId}`;
+      link.target = "_blank";
+      link.style.display = "block";
+      link.style.fontSize = "0.8rem";
+      link.textContent = "[details]";
+      botDiv.appendChild(link);
+    }
     seqDiv.appendChild(botDiv);
 
     if (!chatHideMetadata && fullHistory) {
@@ -889,10 +940,8 @@
     try {
       const pairs = await fetch(`/api/chat/history?tabId=${tabId}`).then(r => r.json());
       for (const p of pairs) {
-        // Fetch the full JSON from /pair/:id
         const pairDetail = await fetch(`/pair/${p.id}`).then(r=>r.json());
         p._history = pairDetail;
-
         addChatMessage(
           p.id,
           p.user_text,
@@ -956,14 +1005,30 @@
       seqDiv.appendChild(detailsSysEl);
     }
 
+    /* User bubble (pending AI) */
     const userDiv = document.createElement("div");
     userDiv.className = "chat-user";
-    userDiv.innerHTML = `You (pending ID, ${formatTimestamp(userTime)}): ${userMessage}`;
+    const userHead = document.createElement("div");
+    userHead.className = "bubble-header";
+    userHead.innerHTML = `<img src="https://via.placeholder.com/24/09f/fff?text=U" alt="User" style="border-radius:50%;">`;
+    userHead.innerHTML += `<span style="opacity:0.8;">${formatTimestamp(userTime)}</span>`;
+    userDiv.appendChild(userHead);
+    const userBody = document.createElement("div");
+    userBody.textContent = userMessage;
+    userDiv.appendChild(userBody);
     seqDiv.appendChild(userDiv);
 
+    /* AI bubble placeholder */
     const botDiv = document.createElement("div");
     botDiv.className = "chat-bot";
-    botDiv.textContent = `AI (model: ${modelName}, ...): `;
+    const botHead = document.createElement("div");
+    botHead.className = "bubble-header";
+    botHead.innerHTML = `<img src="https://via.placeholder.com/24/f90/fff?text=AI" alt="AI" style="border-radius:50%;">`;
+    botHead.innerHTML += `<span style="opacity:0.8;">…</span>`;
+    botDiv.appendChild(botHead);
+    const botBody = document.createElement("div");
+    botBody.textContent = "Thinking…";
+    botDiv.appendChild(botBody);
     seqDiv.appendChild(botDiv);
 
     chatMessagesEl.appendChild(seqDiv);
@@ -987,32 +1052,31 @@
       waitingElem.textContent = "";
 
       if(!resp.ok){
-        botDiv.textContent = `AI (model: ${modelName}): [Error contacting AI]`;
+        botBody.textContent = "[Error contacting AI]";
+        botHead.querySelector("span").textContent = formatTimestamp(new Date().toISOString());
       } else {
         const reader = resp.body.getReader();
         while(true){
           const { value, done } = await reader.read();
           if(done) break;
           partialText += new TextDecoder().decode(value);
-          botDiv.textContent = `AI (model: ${modelName}, ...): ` + partialText;
-          chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+          botBody.textContent = partialText;
         }
+        botHead.querySelector("span").textContent = formatTimestamp(new Date().toISOString());
       }
       await loadChatHistory(currentTabId);
 
     } catch(e) {
       clearInterval(waitInterval);
       waitingElem.textContent = "";
-      botDiv.textContent = `AI (model: ${modelName}): [Error occurred]`;
+      botBody.textContent = "[Error occurred]";
+      botHead.querySelector("span").textContent = formatTimestamp(new Date().toISOString());
     }
     chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
   });
 
-  /* ------------------------------------------------------------------
-   * Chat Settings gear logic
-   * ------------------------------------------------------------------ */
+  /* Chat Settings gear logic */
   $("#chatSettingsBtn").addEventListener("click", async () => {
-    // Fetch the current setting from DB to refresh checkbox state
     const r = await fetch("/api/settings/chat_hide_metadata");
     if(r.ok){
       const { value } = await r.json();
@@ -1030,7 +1094,6 @@
       body: JSON.stringify({ key: "chat_hide_metadata", value: chatHideMetadata })
     });
     hideModal($("#chatSettingsModal"));
-    // Reload chat to reflect new setting
     await loadChatHistory(currentTabId);
   });
 
@@ -1038,9 +1101,7 @@
     hideModal($("#chatSettingsModal"));
   });
 
-  /* ------------------------------------------------------------------
-   * Draggable divider logic
-   * ------------------------------------------------------------------ */
+  /* Draggable divider */
   (function installDividerDrag(){
     const divider = $("#divider");
     let isDragging = false;
@@ -1060,7 +1121,6 @@
       const dx = e.clientX - startX;
       const newWidth = startWidth + dx;
       const minWidth = 150;
-      // Removed maxWidth to allow unlimited width
       if(newWidth >= minWidth) {
         $(".sidebar").style.width = newWidth + "px";
       }
