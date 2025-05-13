@@ -119,6 +119,23 @@
   </div>
 </div>
 
+<!-- New Task modal -->
+<div id="newTaskModal" class="modal">
+  <div class="modal-content">
+    <h2>Create New Task</h2>
+    <label>Title:<br/>
+      <input type="text" id="newTaskTitle" style="width:100%;" />
+    </label>
+    <label style="margin-top:8px;">Description:<br/>
+      <textarea id="newTaskBody" rows="5" style="width:100%;"></textarea>
+    </label>
+    <div class="modal-buttons">
+      <button id="createTaskBtn">Create</button>
+      <button id="cancelTaskBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ---------------- constants ---------------- */
 const columns = [
@@ -161,6 +178,7 @@ async function loadSettings(){
     if(Array.isArray(value)) visibleCols = new Set(value);
   }
 }
+
 async function saveSettings(){
   await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({key:"visible_columns",value:[...visibleCols]})});
@@ -319,6 +337,119 @@ $("#tasks").addEventListener("click", async (e)=>{
 $("#showHidden").addEventListener("change", loadTasks);
 $("#projectFilter").addEventListener("change", renderBody);
 $("#sprintFilter").addEventListener("change", renderBody);
+
+/* ------------------------------------------------------------------
+ * Modal hooking (instructions)
+ * ------------------------------------------------------------------ */
+$("#instrBtn").addEventListener("click", async ()=>{
+  // load setting
+  const r = await fetch("/api/settings/agent_instructions");
+  if(r.ok){
+    const { value } = await r.json();
+    $("#instrText").value = value || "";
+  }
+  showModal($("#instrModal"));
+});
+$("#instrSaveBtn").addEventListener("click", async ()=>{
+  const val = $("#instrText").value;
+  await fetch("/api/settings",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({key:"agent_instructions",value:val})
+  });
+  hideModal($("#instrModal"));
+});
+$("#instrCancelBtn").addEventListener("click", ()=>{
+  hideModal($("#instrModal"));
+});
+
+/* ------------------------------------------------------------------
+ * Modal hooking (repo)
+ * ------------------------------------------------------------------ */
+$("#repoBtn").addEventListener("click", async ()=>{
+  const r = await fetch("/api/settings/github_repo");
+  if(r.ok){
+    const { value } = await r.json();
+    $("#repoInput").value = value || "";
+  }
+  showModal($("#repoModal"));
+});
+$("#repoSaveBtn").addEventListener("click", async ()=>{
+  const val = $("#repoInput").value;
+  await fetch("/api/settings",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({key:"github_repo",value:val})
+  });
+  hideModal($("#repoModal"));
+});
+$("#repoCancelBtn").addEventListener("click", ()=>{
+  hideModal($("#repoModal"));
+});
+
+/* ------------------------------------------------------------------
+ * Modal hooking (defaults)
+ * ------------------------------------------------------------------ */
+$("#defaultsBtn").addEventListener("click", async ()=>{
+  // load from db
+  let r = await fetch("/api/settings/default_project");
+  if(r.ok){
+    const { value } = await r.json();
+    $("#defProjectInput").value = value || "";
+  }
+  r = await fetch("/api/settings/default_sprint");
+  if(r.ok){
+    const { value } = await r.json();
+    $("#defSprintInput").value = value || "";
+  }
+  showModal($("#defaultsModal"));
+});
+$("#defSaveBtn").addEventListener("click", async ()=>{
+  const dp = $("#defProjectInput").value;
+  const ds = $("#defSprintInput").value;
+  await fetch("/api/settings",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({key:"default_project",value:dp})
+  });
+  await fetch("/api/settings",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({key:"default_sprint",value:ds})
+  });
+  hideModal($("#defaultsModal"));
+});
+$("#defCancelBtn").addEventListener("click", ()=>{
+  hideModal($("#defaultsModal"));
+});
+
+/* ------------------------------------------------------------------
+ * Modal hooking (new task)
+ * ------------------------------------------------------------------ */
+$("#addTaskBtn").addEventListener("click", ()=>{
+  // clear fields
+  $("#newTaskTitle").value = "";
+  $("#newTaskBody").value = "";
+  showModal($("#newTaskModal"));
+});
+$("#createTaskBtn").addEventListener("click", async ()=>{
+  const title = $("#newTaskTitle").value.trim();
+  const body = $("#newTaskBody").value.trim();
+  if(!title) {
+    alert("Please enter a title for the new task.");
+    return;
+  }
+  const res = await fetch("/api/tasks/new", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ title, body })
+  });
+  if(!res.ok){
+    alert("Error creating task. Check console/logs.");
+    return;
+  }
+  hideModal($("#newTaskModal"));
+  await loadTasks();
+});
+$("#cancelTaskBtn").addEventListener("click", ()=>{
+  hideModal($("#newTaskModal"));
+});
 
 /* ------------------------------------------------------------------
  * Init sequence

@@ -4,6 +4,7 @@ import bodyParser from "body-parser";
 import path from "path";
 import { fileURLToPath } from "url";
 import TaskDB from "./taskDb.js";
+import GitHubClient from "./githubClient.js";
 
 const db = new TaskDB();
 const app = express();
@@ -118,6 +119,41 @@ app.post("/api/tasks/priority", (req, res) => {
   }
 });
 
+// --- NEW: Create new GitHub issue and upsert ---
+app.post("/api/tasks/new", async (req, res) => {
+  try {
+    const { title, body } = req.body;
+    if (!title) {
+      return res.status(400).json({ error: "Title required" });
+    }
+
+    const gh = new GitHubClient({
+      token: process.env.GITHUB_TOKEN,
+      owner: process.env.GITHUB_OWNER,
+      repo: process.env.GITHUB_REPO
+    });
+
+    const newIssue = await gh.createIssue(title, body || "");
+    // upsert in local DB
+    db.upsertIssue(newIssue, `${gh.owner}/${gh.repo}`);
+
+    // also apply default project/sprint if set
+    const defaultProject = db.getSetting("default_project");
+    const defaultSprint = db.getSetting("default_sprint");
+    if (defaultProject) {
+      db.setProjectByGithubId(newIssue.id, defaultProject);
+    }
+    if (defaultSprint) {
+      db.setSprintByGithubId(newIssue.id, defaultSprint);
+    }
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error("POST /api/tasks/new error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // GET /api/settings/:key
 app.get("/api/settings/:key", (req, res) => {
   try {
@@ -150,3 +186,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
+
