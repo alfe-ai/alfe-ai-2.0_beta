@@ -323,7 +323,7 @@ $("#colSaveBtn").addEventListener("click", async ()=>{
 $("#colCancelBtn").addEventListener("click", ()=>hideModal($("#colModal")));
 
 /* ------------------------------------------------------------------
- * Row interactions (visibility / reorder / priority / status)
+ * Row interactions (visibility / reorder / priority / status / project / sprint)
  * ------------------------------------------------------------------ */
 $("#tasks").addEventListener("click", async (e)=>{
   const btn = e.target.closest("button");
@@ -409,6 +409,64 @@ $("#tasks").addEventListener("click", async (e)=>{
     });
 
     statusSelect.addEventListener("blur", async ()=>{
+      await loadTasks();
+    });
+  }
+
+  /* Project cell click */
+  if(e.target.classList.contains("project-cell")){
+    const row = e.target.closest("tr");
+    const taskId = +row.dataset.taskId;
+    const currentProj = e.target.textContent.trim();
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = currentProj;
+    input.className = "inline-input";
+    e.target.textContent = "";
+    e.target.appendChild(input);
+    input.focus();
+
+    input.addEventListener("change", async ()=>{
+      const chosen = input.value;
+      await fetch("/api/tasks/project", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({id:taskId, project:chosen})
+      });
+      await loadTasks();
+    });
+
+    input.addEventListener("blur", async ()=>{
+      await loadTasks();
+    });
+  }
+
+  /* Sprint cell click */
+  if(e.target.classList.contains("sprint-cell")){
+    const row = e.target.closest("tr");
+    const taskId = +row.dataset.taskId;
+    const currentSprint = e.target.textContent.trim();
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = currentSprint;
+    input.className = "inline-input";
+    e.target.textContent = "";
+    e.target.appendChild(input);
+    input.focus();
+
+    input.addEventListener("change", async ()=>{
+      const chosen = input.value;
+      await fetch("/api/tasks/sprint", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({id:taskId, sprint:chosen})
+      });
+      await loadTasks();
+    });
+
+    input.addEventListener("blur", async ()=>{
       await loadTasks();
     });
   }
@@ -542,4 +600,3 @@ $("#cancelTaskBtn").addEventListener("click", ()=>{
 </script>
 </body>
 </html>
-
