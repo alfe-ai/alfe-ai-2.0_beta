@@ -9,8 +9,9 @@ import { fileURLToPath } from "url";
 import TaskDB from "./taskDb.js";
 import GitHubClient from "./githubClient.js";
 
-// Fixed: Import Configuration, OpenAIApi directly from openai
-import { Configuration, OpenAIApi } from "openai";
+// Changed to default import for OpenAI, then destructure Configuration, OpenAIApi
+import openai from "openai";
+const { Configuration, OpenAIApi } = openai;
 
 const db = new TaskDB();
 const app = express();
@@ -351,7 +352,6 @@ app.post("/api/chat", async (req, res) => {
       return res.status(400).json({ error: "Missing message" });
     }
 
-    // Using openaiClient variable
     const completion = await openaiClient.createChatCompletion({
       model: "o3-mini",
       messages: [{ role: "user", content: userMessage }]
