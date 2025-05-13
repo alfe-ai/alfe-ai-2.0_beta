@@ -1,11 +1,12 @@
 {
   "name": "task-queue",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Simple queue that tracks GitHub tasks for Alfe AI (now persisted to SQLite)",
   "type": "module",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
+    "web": "node src/server.js",
     "lint": "echo \"(no linter configured)\""
   },
   "author": "Alfe AI",
@@ -13,6 +14,8 @@
   "dependencies": {
     "@octokit/rest": "^20.1.0",
     "better-sqlite3": "^9.4.0",
-    "dotenv": "^16.4.1"
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.1",
+    "express": "^4.19.2"
   }
 }
