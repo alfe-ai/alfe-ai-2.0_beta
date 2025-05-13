@@ -118,8 +118,13 @@
 
 <!-- Chat panel -->
 <div id="chatPanel">
-  <!-- Model HUD -->
-  <div id="modelHud" style="font-size:0.9rem; color:#555; margin-bottom:4px;"></div>
+  <div style="display: flex; align-items: center; gap: 0.5rem;">
+    <!-- Model HUD -->
+    <div id="modelHud" style="font-size:0.9rem; color:#555; margin-bottom:4px;"></div>
+    <!-- Chat Settings gear -->
+    <button id="chatSettingsBtn" title="Chat Settings">⚙️</button>
+  </div>
+
   <div id="chatMessages"></div>
   <div id="waitingCounter"></div>
   <div class="chat-input-container">
@@ -131,6 +136,18 @@
         <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
       </svg>
     </button>
+  </div>
+</div>
+
+<!-- Chat Settings Modal -->
+<div id="chatSettingsModal" class="modal">
+  <div class="modal-content">
+    <h2>Chat Settings</h2>
+    <label><input type="checkbox" id="hideMetadataCheck" /> Hide metadata expansions</label>
+    <div class="modal-buttons">
+      <button id="chatSettingsSaveBtn">Save</button>
+      <button id="chatSettingsCancelBtn">Cancel</button>
+    </div>
   </div>
 </div>
 
@@ -162,6 +179,7 @@
   let tasksVisible = true;
   let chatTabs = [];
   let currentTabId = 1;
+  let chatHideMetadata = false; // new global for hiding expansions
 
   const $  = (sel, ctx=document) => ctx.querySelector(sel);
   const $$ = (sel, ctx=document) => [...ctx.querySelectorAll(sel)];
@@ -780,49 +798,51 @@
     const seqDiv = document.createElement("div");
     seqDiv.className = "chat-sequence";
 
-    let agentInstructions = "";
-    let systemInfoText = "";
-    if (systemContext) {
-      const re = /System Context:\n([\s\S]*?)\n\nModel:\s*([^]+)\nUserTime:\s*([^]+)/;
-      const match = re.exec(systemContext);
-      if (match) {
-        agentInstructions = match[1].trim();
-        const modelVal = match[2].trim();
-        const timeVal = match[3].trim();
-        systemInfoText = `Model: ${modelVal}\nTime: ${timeVal}`;
-      } else {
-        systemInfoText = systemContext;
+    if (!chatHideMetadata) {
+      let agentInstructions = "";
+      let systemInfoText = "";
+      if (systemContext) {
+        const re = /System Context:\n([\s\S]*?)\n\nModel:\s*([^]+)\nUserTime:\s*([^]+)/;
+        const match = re.exec(systemContext);
+        if (match) {
+          agentInstructions = match[1].trim();
+          const modelVal = match[2].trim();
+          const timeVal = match[3].trim();
+          systemInfoText = `Model: ${modelVal}\nTime: ${timeVal}`;
+        } else {
+          systemInfoText = systemContext;
+        }
       }
-    }
 
-    if (agentInstructions) {
-      const detailsEl = document.createElement("details");
-      detailsEl.open = false;
-      detailsEl.className = "chat-instructions";
-      const summaryEl = document.createElement("summary");
-      summaryEl.textContent = "Agent Instructions (click to expand)";
-      detailsEl.appendChild(summaryEl);
+      if (agentInstructions) {
+        const detailsEl = document.createElement("details");
+        detailsEl.open = false;
+        detailsEl.className = "chat-instructions";
+        const summaryEl = document.createElement("summary");
+        summaryEl.textContent = "Agent Instructions (click to expand)";
+        detailsEl.appendChild(summaryEl);
 
-      const preEl = document.createElement("pre");
-      preEl.textContent = agentInstructions;
-      detailsEl.appendChild(preEl);
+        const preEl = document.createElement("pre");
+        preEl.textContent = agentInstructions;
+        detailsEl.appendChild(preEl);
 
-      seqDiv.appendChild(detailsEl);
-    }
+        seqDiv.appendChild(detailsEl);
+      }
 
-    if (systemInfoText) {
-      const detailsSysEl = document.createElement("details");
-      detailsSysEl.open = false;
-      detailsSysEl.className = "chat-system";
-      const sumSys = document.createElement("summary");
-      sumSys.textContent = "System Info (click to expand)";
-      detailsSysEl.appendChild(sumSys);
+      if (systemInfoText) {
+        const detailsSysEl = document.createElement("details");
+        detailsSysEl.open = false;
+        detailsSysEl.className = "chat-system";
+        const sumSys = document.createElement("summary");
+        sumSys.textContent = "System Info (click to expand)";
+        detailsSysEl.appendChild(sumSys);
 
-      const preSys = document.createElement("pre");
-      preSys.textContent = systemInfoText;
-      detailsSysEl.appendChild(preSys);
+        const preSys = document.createElement("pre");
+        preSys.textContent = systemInfoText;
+        detailsSysEl.appendChild(preSys);
 
-      seqDiv.appendChild(detailsSysEl);
+        seqDiv.appendChild(detailsSysEl);
+      }
     }
 
     const userDiv = document.createElement("div");
@@ -835,7 +855,7 @@
     botDiv.innerHTML = `AI (model: ${model}, ${formatTimestamp(aiTs)}): ${aiText || ""} <a href="/pair/${pairId}" target="_blank">[details]</a>`;
     seqDiv.appendChild(botDiv);
 
-    if (fullHistory) {
+    if (!chatHideMetadata && fullHistory) {
       const detailsHistEl = document.createElement("details");
       detailsHistEl.open = false;
       detailsHistEl.className = "chat-system";
@@ -896,7 +916,7 @@
     const seqDiv = document.createElement("div");
     seqDiv.className = "chat-sequence";
 
-    if (window.agentInstructions) {
+    if (!chatHideMetadata && window.agentInstructions) {
       const detailsEl = document.createElement("details");
       detailsEl.open = false;
       detailsEl.className = "chat-instructions";
@@ -911,7 +931,7 @@
       seqDiv.appendChild(detailsEl);
     }
 
-    {
+    if (!chatHideMetadata) {
       const detailsSysEl = document.createElement("details");
       detailsSysEl.open = false;
       detailsSysEl.className = "chat-system";
@@ -978,6 +998,36 @@
     chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
   });
 
+  /* ------------------------------------------------------------------
+   * Chat Settings gear logic
+   * ------------------------------------------------------------------ */
+  $("#chatSettingsBtn").addEventListener("click", async () => {
+    // Fetch the current setting from DB to refresh checkbox state
+    const r = await fetch("/api/settings/chat_hide_metadata");
+    if(r.ok){
+      const { value } = await r.json();
+      chatHideMetadata = !!value;
+    }
+    $("#hideMetadataCheck").checked = chatHideMetadata;
+    showModal($("#chatSettingsModal"));
+  });
+
+  $("#chatSettingsSaveBtn").addEventListener("click", async () => {
+    chatHideMetadata = $("#hideMetadataCheck").checked;
+    await fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: "chat_hide_metadata", value: chatHideMetadata })
+    });
+    hideModal($("#chatSettingsModal"));
+    // Reload chat to reflect new setting
+    await loadChatHistory(currentTabId);
+  });
+
+  $("#chatSettingsCancelBtn").addEventListener("click", () => {
+    hideModal($("#chatSettingsModal"));
+  });
+
   (async function init(){
     await loadSettings();
     await populateFilters();
@@ -1018,6 +1068,17 @@
     } catch(e){
       console.error("Error loading agent instructions:", e);
       window.agentInstructions = "";
+    }
+
+    // Load chatHideMetadata setting
+    try {
+      const r3 = await fetch("/api/settings/chat_hide_metadata");
+      if(r3.ok){
+        const { value } = await r3.json();
+        chatHideMetadata = !!value;
+      }
+    } catch(e) {
+      console.error("Error loading chat_hide_metadata:", e);
     }
   })();
 </script>
