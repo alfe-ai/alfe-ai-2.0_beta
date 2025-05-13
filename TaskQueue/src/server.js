@@ -332,27 +332,38 @@ app.get("/api/activity", (req, res) => {
   }
 });
 
-// POST /api/chat
+// Updated /api/chat for streaming completions
 app.post("/api/chat", async (req, res) => {
   try {
     const userMessage = req.body.message || "";
     if (!userMessage) {
-      return res.status(400).json({ error: "Missing message" });
+      return res.status(400).send("Missing message");
     }
 
-    // Use the new OpenAI SDK method
+    // Start streaming the response
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader("Transfer-Encoding", "chunked");
+
     const model = process.env.OPENAI_MODEL || "o3-mini";
-    const completion = await openaiClient.chat.completions.create({
+    const stream = await openaiClient.chat.completions.create({
       model,
-      messages: [{ role: "user", content: userMessage }]
+      messages: [{ role: "user", content: userMessage }],
+      stream: true
     });
 
-    const responseText =
-      completion.choices?.[0]?.message?.content || "";
-    res.json({ reply: responseText, model });
+    for await (const part of stream) {
+      const textChunk = part.choices?.[0]?.delta?.content || "";
+      if (textChunk) {
+        res.write(textChunk);
+      }
+    }
+
+    res.end();
   } catch (err) {
-    console.error("[TaskQueue] /api/chat error:", err);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("[TaskQueue] /api/chat (stream) error:", err);
+    if (!res.headersSent) {
+      res.status(500).send("Internal server error");
+    }
   }
 });
 

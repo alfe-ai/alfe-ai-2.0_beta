@@ -622,14 +622,13 @@
   $("#cancelTaskBtn").addEventListener("click",()=>hideModal($("#newTaskModal")));
 
   /* ------------------------------------------------------------------
-   * Chat logic with grouped bubbles + model display
+   * Chat logic with streaming response
    * ------------------------------------------------------------------ */
-  const AI_MODEL = "o3-mini";
   const chatMessagesEl = document.getElementById("chatMessages");
   const chatInputEl = document.getElementById("chatInput");
   const chatSendBtnEl = document.getElementById("chatSendBtn");
+  const waitingElem = document.getElementById("waitingCounter");
 
-  // Press Enter to submit chat
   chatInputEl.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -649,17 +648,15 @@
     userDiv.textContent = "You: " + userMessage;
     seqDiv.appendChild(userDiv);
 
-    // Display "AI: ... waiting" immediately
     const botDiv = document.createElement("div");
     botDiv.className = "chat-bot";
-    botDiv.textContent = `AI (${AI_MODEL}): ... waiting`;
+    botDiv.textContent = "AI: ";
     seqDiv.appendChild(botDiv);
 
     chatMessagesEl.appendChild(seqDiv);
     chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
     chatInputEl.value = "";
 
-    const waitingElem = document.getElementById("waitingCounter");
     let waitTime=0;
     waitingElem.textContent = "Waiting: 0.0s";
     const waitInterval = setInterval(()=>{
@@ -677,15 +674,22 @@
       waitingElem.textContent = "";
 
       if(!resp.ok){
-        botDiv.textContent = `AI (${AI_MODEL}): Error contacting AI.`;
+        botDiv.textContent = "AI: [Error contacting AI]";
       } else {
-        const data = await resp.json();
-        botDiv.textContent = `AI (${AI_MODEL}): ${data.reply||""}`;
+        const reader = resp.body.getReader();
+        let partialText = "";
+        while(true){
+          const { value, done } = await reader.read();
+          if(done) break;
+          partialText += new TextDecoder().decode(value);
+          botDiv.textContent = "AI: " + partialText;
+          chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+        }
       }
     } catch(e) {
       clearInterval(waitInterval);
       waitingElem.textContent = "";
-      botDiv.textContent = `AI (${AI_MODEL}): Error occurred.`;
+      botDiv.textContent = "AI: [Error occurred]";
     }
     chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
   });
