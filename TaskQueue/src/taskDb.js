@@ -7,11 +7,20 @@ export default class TaskDB {
   }
 
   /* ------------------------------------------------------------------ */
-  /*  Small util                                                         */
+  /*  Small utils                                                        */
   /* ------------------------------------------------------------------ */
   _columnExists(table, column) {
     const rows = this.db.prepare(`PRAGMA table_info(${table});`).all();
     return rows.some((r) => r.name === column);
+  }
+
+  _addColumnIfMissing(table, column, definition = "INTEGER") {
+    if (!this._columnExists(table, column)) {
+      console.warn(
+        `[TaskQueue] Column '${column}' missing in '${table}' – adding (${definition})`
+      );
+      this.db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition};`);
+    }
   }
 
   /* ------------------------------------------------------------------ */
@@ -21,7 +30,7 @@ export default class TaskDB {
     /* 1. Ensure table exists (minimal columns to get started) */
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS issues (
-        id     INTEGER PRIMARY KEY AUTOINCREMENT
+        id INTEGER PRIMARY KEY AUTOINCREMENT
       );
     `);
 
@@ -34,7 +43,7 @@ export default class TaskDB {
     /* 4. Remove duplicate / sparse priority numbers                    */
     this._ensureUniquePriorities();
 
-    /* 5. Indices                                                       */
+    /* 5. Indices (may add column on-the-fly if still missing)          */
     this._ensureIndices();
 
     /* 6. Settings table (unchanged)                                    */
@@ -60,10 +69,17 @@ export default class TaskDB {
       console.log(
         "[TaskQueue] Detected legacy column 'priority' – renaming to 'priority_number'"
       );
-      // SQLite ≥3.25 supports RENAME COLUMN
-      this.db.exec(
-        "ALTER TABLE issues RENAME COLUMN priority TO priority_number;"
-      );
+      try {
+        // SQLite ≥3.25 supports RENAME COLUMN
+        this.db.exec(
+          "ALTER TABLE issues RENAME COLUMN priority TO priority_number;"
+        );
+      } catch (err) {
+        console.error(
+          "[TaskQueue] Failed to rename column (old SQLite?):",
+          err.message
+        );
+      }
     }
   }
 
@@ -75,19 +91,19 @@ export default class TaskDB {
   _migrateIssuesTable() {
     /* Desired columns with "ALTER TABLE" fragments */
     const wanted = {
-      closed:          "INTEGER DEFAULT 0",
-      github_id:       "INTEGER",
-      repository:      "TEXT",
-      number:          "INTEGER",
-      title:           "TEXT",
-      html_url:        "TEXT",
-      task_id_slug:    "TEXT",
+      closed: "INTEGER DEFAULT 0",
+      github_id: "INTEGER",
+      repository: "TEXT",
+      number: "INTEGER",
+      title: "TEXT",
+      html_url: "TEXT",
+      task_id_slug: "TEXT",
       priority_number: "INTEGER",
-      hidden:          "INTEGER DEFAULT 0",
-      project:         "TEXT DEFAULT ''",
-      fib_points:      "INTEGER",
-      assignee:        "TEXT",
-      created_at:      "TEXT"
+      hidden: "INTEGER DEFAULT 0",
+      project: "TEXT DEFAULT ''",
+      fib_points: "INTEGER",
+      assignee: "TEXT",
+      created_at: "TEXT"
     };
 
     /* Actual columns present */
@@ -119,13 +135,7 @@ export default class TaskDB {
    */
   _ensureUniquePriorities() {
     /* Safeguard: add column if for some reason it still doesn’t exist */
-    if (!this._columnExists("issues", "priority_number")) {
-      console.warn(
-        "[TaskQueue] priority_number column missing – creating on the fly."
-      );
-      this.db.exec("ALTER TABLE issues ADD COLUMN priority_number INTEGER;");
-      return; // nothing else to do – DB has no data yet
-    }
+    this._addColumnIfMissing("issues", "priority_number", "INTEGER");
 
     const rows = this.db
       .prepare(
@@ -152,14 +162,32 @@ export default class TaskDB {
    * Ensure all required (unique) indices exist.
    * This is executed *after* priority numbers have been deduplicated so
    * index creation cannot fail with “UNIQUE constraint failed”.
+   *
+   * If the attempt throws “no such column: priority_number” we add the
+   * column and retry once.
    */
-  _ensureIndices() {
-    this.db.exec(
-      "CREATE UNIQUE INDEX IF NOT EXISTS idx_issues_github_id ON issues(github_id);"
-    );
-    this.db.exec(
-      "CREATE UNIQUE INDEX IF NOT EXISTS idx_issues_priority ON issues(priority_number);"
-    );
+  _ensureIndices(retried = false) {
+    try {
+      this.db.exec(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_issues_github_id ON issues(github_id);"
+      );
+      this.db.exec(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_issues_priority ON issues(priority_number);"
+      );
+    } catch (err) {
+      if (
+        !retried &&
+        /no such column: priority_number/i.test(err.message || "")
+      ) {
+        console.warn(
+          "[TaskQueue] Index creation failed – missing 'priority_number'. Attempting automatic fix."
+        );
+        this._addColumnIfMissing("issues", "priority_number", "INTEGER");
+        this._ensureIndices(true); // retry once
+        return;
+      }
+      throw err;
+    }
   }
 
   /* ------------------------------------------------------------------ */
@@ -218,3 +246,4 @@ export default class TaskDB {
   // (getSetting, setSetting, listTasks, reorderTask, etc.)
   // The rest of the file remains identical to the previous version.
 }
+
