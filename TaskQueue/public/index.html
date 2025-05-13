@@ -35,7 +35,8 @@
       button.eye,
       button.fib-btn,
       #addTaskBtn,
-      #gearBtn {
+      #gearBtn,
+      #instrBtn {
         border: none;
         background: none;
         cursor: pointer;
@@ -47,7 +48,8 @@
         margin-left: 1rem;
         font-size: 1.1rem;
       }
-      #gearBtn {
+      #gearBtn,
+      #instrBtn {
         margin-left: 0.6rem;
         font-size: 1.2rem;
       }
@@ -87,6 +89,9 @@
         padding: 1rem 1.5rem;
         border-radius: 6px;
         min-width: 220px;
+        max-width: 600px;
+        max-height: 90vh;
+        overflow: auto;
       }
       .modal-content h2 {
         margin-top: 0;
@@ -98,6 +103,9 @@
       .modal-buttons {
         text-align: right;
         margin-top: 8px;
+      }
+      textarea {
+        font-family: monospace;
       }
     </style>
   </head>
@@ -133,6 +141,7 @@
       </label>
 
       <button id="addTaskBtn">➕ New Task</button>
+      <button id="instrBtn" title="Agent instructions">📝</button>
       <button id="gearBtn" title="Configure columns">⚙️</button>
     </div>
 
@@ -151,6 +160,18 @@
         <div class="modal-buttons">
           <button id="colSaveBtn">Save</button>
           <button id="colCancelBtn">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agent instructions modal -->
+    <div id="instrModal" class="modal">
+      <div class="modal-content">
+        <h2>Agent Instructions</h2>
+        <textarea id="instrText" rows="10" style="width:100%;"></textarea>
+        <div class="modal-buttons">
+          <button id="instrSaveBtn">Save</button>
+          <button id="instrCancelBtn">Cancel</button>
         </div>
       </div>
     </div>
@@ -198,6 +219,24 @@
             key: "visible_columns",
             value: [...visibleCols]
           })
+        });
+      }
+
+      /* ------------------------------------------------------------------
+       * Agent instructions helpers
+       * ------------------------------------------------------------------ */
+      async function loadInstructions() {
+        const res = await fetch("/api/instructions");
+        if (!res.ok) return "";
+        const { instructions } = await res.json();
+        return instructions;
+      }
+
+      async function saveInstructions(text) {
+        await fetch("/api/instructions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ instructions: text })
         });
       }
 
@@ -493,6 +532,27 @@
       });
 
       /* ------------------------------------------------------------------
+       * Agent instructions modal logic
+       * ------------------------------------------------------------------ */
+      const instrModal = $("#instrModal");
+      $("#instrBtn").addEventListener("click", async () => {
+        $("#instrText").value = await loadInstructions();
+        instrModal.style.display = "flex";
+        $("#instrText").focus();
+      });
+      $("#instrSaveBtn").addEventListener("click", async () => {
+        await saveInstructions($("#instrText").value);
+        instrModal.style.display = "none";
+      });
+      $("#instrCancelBtn").addEventListener(
+        "click",
+        () => (instrModal.style.display = "none")
+      );
+      instrModal.addEventListener("click", (e) => {
+        if (e.target === instrModal) instrModal.style.display = "none";
+      });
+
+      /* ------------------------------------------------------------------
        * Initial load & polling
        * ------------------------------------------------------------------ */
       (async () => {
@@ -510,3 +570,4 @@
     </script>
   </body>
 </html>
+
