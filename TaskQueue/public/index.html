@@ -20,8 +20,8 @@
     #addTaskBtn{margin-left:1rem;font-size:1.1rem;}
     #gearBtn,#instrBtn,#repoBtn,#defaultsBtn{margin-left:.6rem;font-size:1.2rem;}
     tr.hidden{opacity:.4;}
-    .project-cell,.sprint-cell{cursor:pointer;color:#333;}
-    .project-cell:hover,.sprint-cell:hover{text-decoration:underline dotted;}
+    .project-cell,.sprint-cell,.priority-cell{cursor:pointer;color:#333;}
+    .project-cell:hover,.sprint-cell:hover,.priority-cell:hover{text-decoration:underline dotted;}
     .inline-input{width:100%;box-sizing:border-box;font:inherit;padding:4px;}
     #controls{margin-bottom:1rem;}
 
@@ -218,6 +218,7 @@ function renderBody(){
 
   rows.forEach(t=>{
     const tr = document.createElement("tr");
+    tr.dataset.taskId = t.id;
     if(t.hidden) tr.classList.add("hidden");
 
     columns.forEach(col=>{
@@ -226,7 +227,10 @@ function renderBody(){
 
       switch(col.key){
         case "order":   td.textContent = t.priority_number; break;
-        case "priority":td.textContent = t.priority; break;
+        case "priority":
+          td.textContent = t.priority;
+          td.className="priority-cell";
+          break;
         case "slug":    td.textContent = t.task_id_slug; break;
         case "repo":    td.textContent = t.repository; break;
         case "reorder":
@@ -244,16 +248,24 @@ function renderBody(){
           td.innerHTML = `<a href="${t.html_url}" target="_blank">${t.title}</a>`;
           break;
         case "project":
-          td.textContent = t.project; td.className="project-cell"; break;
+          td.textContent = t.project; 
+          td.className="project-cell";
+          break;
         case "sprint":
-          td.textContent = t.sprint;  td.className="sprint-cell"; break;
+          td.textContent = t.sprint;  
+          td.className="sprint-cell";
+          break;
         case "points":
-          td.textContent = t.fib_points ?? ""; break;
+          td.textContent = t.fib_points ?? ""; 
+          break;
         case "assignee":
-          td.textContent = t.assignee ?? ""; break;
+          td.textContent = t.assignee ?? ""; 
+          break;
         case "created":
-          td.textContent = isoDate(t.created_at); break;
-        default: td.textContent = t[col.key]??"";
+          td.textContent = isoDate(t.created_at); 
+          break;
+        default: 
+          td.textContent = t[col.key]??"";
       }
       tr.appendChild(td);
     });
@@ -306,28 +318,62 @@ $("#colSaveBtn").addEventListener("click", async ()=>{
 $("#colCancelBtn").addEventListener("click", ()=>hideModal($("#colModal")));
 
 /* ------------------------------------------------------------------
- * Visibility / reorder buttons (delegated)
+ * Visibility / reorder buttons; priority editing
  * ------------------------------------------------------------------ */
 $("#tasks").addEventListener("click", async (e)=>{
   const btn = e.target.closest("button");
-  if(!btn) return;
+  if(btn){
+    /* visibility toggle */
+    if(btn.classList.contains("eye")){
+      const id = +btn.dataset.id;
+      const hiddenNow = btn.textContent==="👁️";
+      await fetch("/api/tasks/hidden",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({id, hidden:hiddenNow})});
+      await loadTasks();
+    }
 
-  /* visibility toggle */
-  if(btn.classList.contains("eye")){
-    const id = +btn.dataset.id;
-    const hiddenNow = btn.textContent==="👁️";
-    await fetch("/api/tasks/hidden",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({id, hidden:hiddenNow})});
-    await loadTasks();
+    /* reorder */
+    if(btn.classList.contains("arrow")){
+      const id = +btn.dataset.id;
+      const direction = btn.dataset.dir;
+      await fetch("/api/tasks/reorder",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({id,direction})});
+      await loadTasks();
+    }
   }
 
-  /* reorder */
-  if(btn.classList.contains("arrow")){
-    const id = +btn.dataset.id;
-    const direction = btn.dataset.dir;
-    await fetch("/api/tasks/reorder",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({id,direction})});
-    await loadTasks();
+  /* Priority cell click */
+  if(e.target.classList.contains("priority-cell")){
+    const row = e.target.closest("tr");
+    const taskId = +row.dataset.taskId;
+    const currentPrio = e.target.textContent.trim();
+
+    const select = document.createElement("select");
+    ["Low","Medium","High"].forEach(optVal=>{
+      const o = document.createElement("option");
+      o.value=optVal; o.textContent=optVal;
+      if(optVal===currentPrio) o.selected=true;
+      select.appendChild(o);
+    });
+
+    e.target.textContent="";
+    e.target.appendChild(select);
+    select.focus();
+
+    select.addEventListener("change", async ()=>{
+      const chosen = select.value;
+      await fetch("/api/tasks/priority", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({id:taskId, priority:chosen})
+      });
+      await loadTasks();
+    });
+
+    /* revert if user clicks away without picking */
+    select.addEventListener("blur", async ()=>{
+      await loadTasks();
+    });
   }
 });
 
@@ -342,7 +388,6 @@ $("#sprintFilter").addEventListener("change", renderBody);
  * Modal hooking (instructions)
  * ------------------------------------------------------------------ */
 $("#instrBtn").addEventListener("click", async ()=>{
-  // load setting
   const r = await fetch("/api/settings/agent_instructions");
   if(r.ok){
     const { value } = await r.json();
@@ -389,7 +434,6 @@ $("#repoCancelBtn").addEventListener("click", ()=>{
  * Modal hooking (defaults)
  * ------------------------------------------------------------------ */
 $("#defaultsBtn").addEventListener("click", async ()=>{
-  // load from db
   let r = await fetch("/api/settings/default_project");
   if(r.ok){
     const { value } = await r.json();
@@ -423,7 +467,6 @@ $("#defCancelBtn").addEventListener("click", ()=>{
  * Modal hooking (new task)
  * ------------------------------------------------------------------ */
 $("#addTaskBtn").addEventListener("click", ()=>{
-  // clear fields
   $("#newTaskTitle").value = "";
   $("#newTaskBody").value = "";
   showModal($("#newTaskModal"));
