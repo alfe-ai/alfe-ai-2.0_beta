@@ -5,3 +5,4 @@ issues.sqlite
 backups
 *..env.swp
 *.swp
+uploads
