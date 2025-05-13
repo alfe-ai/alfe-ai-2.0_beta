@@ -1037,7 +1037,11 @@
       listEl.innerHTML = "";
       files.forEach(fn => {
         const li = document.createElement("li");
-        li.textContent = fn;
+        const link = document.createElement("a");
+        link.href = `/uploads/${fn}`;
+        link.target = "_blank";
+        link.textContent = fn;
+        li.appendChild(link);
         listEl.appendChild(li);
       });
     } catch(e) {
@@ -1148,3 +1152,4 @@
 </script>
 </body>
 </html>
+

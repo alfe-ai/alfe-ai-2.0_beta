@@ -22,7 +22,7 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Ensure uploads directory exists
+// Determine uploads directory
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadsDir = path.join(__dirname, "../uploads");
 try {
@@ -31,6 +31,9 @@ try {
 } catch (err) {
   console.error("[Server Debug] Error creating uploads folder:", err);
 }
+
+// Serve static files from /uploads so they can be opened in the browser
+app.use("/uploads", express.static(uploadsDir));
 
 // Multer setup
 const upload = multer({ dest: uploadsDir });
@@ -555,3 +558,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
+
