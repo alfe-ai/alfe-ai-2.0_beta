@@ -123,6 +123,69 @@ export default class TaskDB {
       .run();
   }
 
+  /* ------------------------------------------------------------------ */
+  /*  New helpers for web UI                                            */
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * Return open tasks ordered by priority_number.
+   * If includeHidden=false → hidden tasks are filtered out.
+   */
+  listTasks(includeHidden = false) {
+    return this.db
+      .prepare(
+        `SELECT *
+         FROM issues
+         WHERE closed = 0 ${includeHidden ? "" : "AND hidden = 0"}
+         ORDER BY priority_number;`
+      )
+      .all();
+  }
+
+  /**
+   * Swap priority_number with adjacent task to move up/down.
+   * @param {number} id internal issues.id
+   * @param {'up'|'down'} direction
+   */
+  reorderTask(id, direction) {
+    const tasks = this.listTasks(true); // include hidden so indexes match UI
+    const idx = tasks.findIndex((t) => t.id === id);
+    if (idx === -1) return false;
+
+    const targetIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= tasks.length) return false;
+
+    const cur = tasks[idx];
+    const tgt = tasks[targetIdx];
+
+    const upd = this.db.prepare(
+      "UPDATE issues SET priority_number = ? WHERE id = ?;"
+    );
+    this.db.transaction(() => {
+      upd.run(tgt.priority_number, cur.id);
+      upd.run(cur.priority_number, tgt.id);
+    })();
+    return true;
+  }
+
+  setHidden(id, hidden) {
+    this.db
+      .prepare("UPDATE issues SET hidden = ? WHERE id = ?;")
+      .run(hidden ? 1 : 0, id);
+  }
+
+  setPoints(id, points) {
+    this.db
+      .prepare("UPDATE issues SET fib_points = ? WHERE id = ?;")
+      .run(points, id);
+  }
+
+  setProject(id, project) {
+    this.db
+      .prepare("UPDATE issues SET project = ? WHERE id = ?;")
+      .run(project.trim(), id);
+  }
+
   listProjects() {
     return this.db
       .prepare(
