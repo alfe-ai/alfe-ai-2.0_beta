@@ -857,6 +857,12 @@
       pairLabel.textContent = `Pair #${pairId}`;
       metaContainer.appendChild(pairLabel);
 
+      if(model) {
+        const modelLabel = document.createElement("div");
+        modelLabel.textContent = `Model: ${model}`;
+        metaContainer.appendChild(modelLabel);
+      }
+
       if(systemContext) {
         const scDetails = document.createElement("details");
         const scSum = document.createElement("summary");
