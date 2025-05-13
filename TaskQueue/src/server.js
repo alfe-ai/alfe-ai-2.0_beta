@@ -9,8 +9,9 @@ import { fileURLToPath } from "url";
 import TaskDB from "./taskDb.js";
 import GitHubClient from "./githubClient.js";
 
-// New: OpenAI
-import { Configuration, OpenAIApi } from "openai";
+// Fix: Use default import and destructure for openai
+import openai from "openai";
+const { Configuration, OpenAIApi } = openai;
 
 const db = new TaskDB();
 const app = express();
@@ -22,7 +23,7 @@ app.use(bodyParser.json());
 const openaiConfig = new Configuration({
   apiKey: process.env.OPENAI_API_KEY || ""
 });
-const openai = new OpenAIApi(openaiConfig);
+const openaiClient = new OpenAIApi(openaiConfig);
 
 // GET /api/tasks
 app.get("/api/tasks", (req, res) => {
@@ -351,8 +352,8 @@ app.post("/api/chat", async (req, res) => {
       return res.status(400).json({ error: "Missing message" });
     }
 
-    // OpenAI call using model "o3-mini"
-    const completion = await openai.createChatCompletion({
+    // Using openaiClient variable
+    const completion = await openaiClient.createChatCompletion({
       model: "o3-mini",
       messages: [{ role: "user", content: userMessage }]
     });
