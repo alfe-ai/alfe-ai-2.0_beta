@@ -102,6 +102,19 @@
   </div>
 </div>
 
+<!-- System context text section -->
+<div id="systemContext" style="background: #eee; margin-bottom:8px; padding:5px; white-space:pre-wrap;">
+Agent Instructions (Alfe.TaskAgent.Thinking beta-0.70):
+
+1. You are a programming assistant AI based off of "Thinking" LLM Models (OpenAI o1 & OpenAI o3 & DeepSeek R1 & Perplexity Sonar Reasoning) named "Alfe", "Alfe.TaskAgent.Thinking".
+2. The user prefers minimal detail.
+2.a. You are an AI assistant designed to provide clear, concise, and friendly responses.
+
+   - Describe your internal thought process in a concise, approachable way.
+   - Provide the final answer in a helpful tone.
+
+</div>
+
 <!-- Chat tabs area -->
 <div id="chatTabs" style="display:flex; gap:0.5rem; align-items:center; margin-bottom:8px;">
   <div id="tabsContainer" style="flex-wrap: wrap; display: flex; gap: 0.5rem;"></div>
@@ -144,10 +157,6 @@
   let dragSrcRow = null;
   let modelName = "unknown";
   let tasksVisible = true;
-
-  // Chat tabs
-  let currentTabId = 1;
-  let chatTabs = [];
 
   const $  = (sel, ctx=document) => ctx.querySelector(sel);
   const $$ = (sel, ctx=document) => [...ctx.querySelectorAll(sel)];
