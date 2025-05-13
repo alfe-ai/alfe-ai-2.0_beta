@@ -332,21 +332,23 @@ app.get("/api/activity", (req, res) => {
   }
 });
 
-// Updated /api/chat for streaming completions; now passing optional tabId
+// Updated /api/chat for streaming completions; now passing optional tabId + userTime
 app.post("/api/chat", async (req, res) => {
   try {
     const userMessage = req.body.message || "";
     const chatTabId = req.body.tabId || 1;
+    const userTime = req.body.userTime || new Date().toISOString();
+
     if (!userMessage) {
       return res.status(400).send("Missing message");
     }
 
     // Log user chat
-    db.logActivity("User chat", JSON.stringify({ tabId: chatTabId, message: userMessage }));
+    db.logActivity("User chat", JSON.stringify({ tabId: chatTabId, message: userMessage, userTime }));
 
     const model = process.env.OPENAI_MODEL || "o3-mini";
     const savedInstructions = db.getSetting("agent_instructions") || "";
-    const systemContext = `System Context:\n${savedInstructions}\n\nModel: ${model}\nTimestamp: ${new Date().toISOString()}`;
+    const systemContext = `System Context:\n${savedInstructions}\n\nModel: ${model}\nUserTime: ${userTime}`;
 
     // Insert user message into chat_pairs table with system context
     const chatPairId = db.createChatPair(userMessage, chatTabId, systemContext);
@@ -466,7 +468,6 @@ app.get("/pair/:id", (req, res) => {
   if (!pair) return res.status(404).send("Pair not found");
   res.json(pair);
 });
-
 
 // FIX: New route that returns server time
 app.get("/api/time", (req, res) => {

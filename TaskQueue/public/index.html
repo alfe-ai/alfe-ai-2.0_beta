@@ -810,7 +810,7 @@
     const userMessage = chatInputEl.value.trim();
     if(!userMessage) return;
 
-    // Locally computed user timestamp (approximate unless reloaded)
+    // Locally computed user timestamp
     const userTime = new Date().toISOString();
 
     // Immediately reflect user input
@@ -849,7 +849,7 @@
       const resp = await fetch("/api/chat",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({message:userMessage, tabId: currentTabId})
+        body:JSON.stringify({message:userMessage, tabId: currentTabId, userTime})
       });
       clearInterval(waitInterval);
       waitingElem.textContent = "";
