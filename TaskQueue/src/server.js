@@ -137,8 +137,16 @@ app.post("/api/tasks/sprint", (req, res) => {
 app.post("/api/tasks/priority", (req, res) => {
   try {
     const { id, priority } = req.body;
+    const oldTask = db.getTaskById(id);
+    const oldPriority = oldTask?.priority || null;
+
     db.setPriority(id, priority);
-    db.logActivity("Set priority", JSON.stringify({ id, priority }));
+
+    db.logActivity(
+      "Set priority",
+      JSON.stringify({ id, from: oldPriority, to: priority })
+    );
+
     res.json({ success: true });
   } catch (err) {
     console.error("[TaskQueue] /api/tasks/priority failed:", err);
@@ -344,4 +352,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
-
