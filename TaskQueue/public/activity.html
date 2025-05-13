@@ -61,8 +61,16 @@ async function loadTimeline() {
   data.forEach(item => {
     const tr = document.createElement("tr");
     const timeCell = document.createElement("td");
-    timeCell.textContent = new Date(item.timestamp).toLocaleString();
     timeCell.className = "ts";
+    timeCell.textContent = new Date(item.timestamp).toLocaleString([], {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true
+    });
     const actionCell = document.createElement("td");
     actionCell.textContent = item.action;
     const detailsCell = document.createElement("td");

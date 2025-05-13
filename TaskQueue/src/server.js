@@ -487,11 +487,19 @@ app.get("/pair/:id", (req, res) => {
   });
 });
 
-// FIX: New route that returns server time
+// FIX: New route that returns server time in 12-hour format
 app.get("/api/time", (req, res) => {
   const now = new Date();
   res.json({
-    time: now.toString(),
+    time: now.toLocaleString("en-US", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true
+    }),
     iso: now.toISOString()
   });
 });

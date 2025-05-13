@@ -165,12 +165,19 @@
 
   const $  = (sel, ctx=document) => ctx.querySelector(sel);
   const $$ = (sel, ctx=document) => [...ctx.querySelectorAll(sel)];
+
+  // Only formatting the date portion (no time), leaving as-is
   const isoDate = d => new Date(d).toLocaleDateString([], {year:"numeric",month:"2-digit",day:"2-digit"});
 
   function formatTimestamp(isoStr){
     if(!isoStr) return "(no time)";
     const d = new Date(isoStr);
-    return d.toLocaleTimeString([], { hour12: false });
+    return d.toLocaleTimeString([], {
+      hour12: true,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
   }
 
   function showModal(m){ m.style.display = "flex"; }
@@ -217,7 +224,6 @@
         }
       }
     }
-    // Load tasks_visible setting
     {
       const r = await fetch("/api/settings/tasks_visible");
       if(r.ok){
@@ -343,7 +349,7 @@
                     break;
                   case "reorder":
                     td.innerHTML = `<button class="arrow" data-id="${t.id}" data-dir="up">⬆️</button>` +
-                            `<button class="arrow" data-id="${t.id}" data-dir="down">⬇️</button>`;
+                                   `<button class="arrow" data-id="${t.id}" data-dir="down">⬇️</button>`;
                     break;
                   case "visibility":
                     td.innerHTML = `<button class="eye" data-id="${t.id}">${t.hidden?"🙈":"👁️"}</button>`;
@@ -438,8 +444,8 @@
       const div = document.createElement("div");
       div.className="col-item";
       div.innerHTML = `<button class="col-move" data-idx="${i}" data-dir="up">⬆️</button>` +
-              `<button class="col-move" data-idx="${i}" data-dir="down">⬇️</button>` +
-              `<label><input type="checkbox" value="${c.key}" ${visibleCols.has(c.key)?"checked":""}/> ${c.label||c.key}</label>`;
+                      `<button class="col-move" data-idx="${i}" data-dir="down">⬇️</button>` +
+                      `<label><input type="checkbox" value="${c.key}" ${visibleCols.has(c.key)?"checked":""}/> ${c.label||c.key}</label>`;
       cnt.appendChild(div);
     });
     showModal($("#colModal"));
@@ -664,7 +670,7 @@
   });
   $("#createTaskBtn").addEventListener("click", async ()=>{
     const title=$("#newTaskTitle").value.trim(),
-            body=$("#newTaskBody").value.trim();
+          body=$("#newTaskBody").value.trim();
     if(!title){
       alert("Please enter a title for the new task.");
       return;
@@ -886,8 +892,6 @@
 
     const userTime = new Date().toISOString();
     let partialText = "";
-
-    const sc = `System Context:\n${(window.agentInstructions || "").trim()}\n\nModel: ${modelName}\nUserTime: ${userTime}\nTimeZone: Central`;
 
     const seqDiv = document.createElement("div");
     seqDiv.className = "chat-sequence";
