@@ -17,13 +17,17 @@ export default class TaskDB {
       );
     `);
 
-    /* 2. Bring table up-to-date column-wise */
+    /* 2. Make sure all desired columns are present */
     this._migrateIssuesTable();
 
-    /* 3. Deduplicate old priority numbers & make them dense */
+    /* 3. Fix any duplicate / sparse priority numbers BEFORE we add
+          a UNIQUE constraint on that column.                         */
     this._ensureUniquePriorities();
 
-    /* 4. Settings table (unchanged) */
+    /* 4. Now it is safe to add UNIQUE indices                       */
+    this._ensureIndices();
+
+    /* 5. Settings table (unchanged) */
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS settings (
         key   TEXT PRIMARY KEY,
@@ -72,23 +76,18 @@ export default class TaskDB {
         );
       })();
     }
-
-    /* Ensure UNIQUE indices */
-    this.db.exec(
-      "CREATE UNIQUE INDEX IF NOT EXISTS idx_issues_github_id ON issues(github_id);"
-    );
-    this.db.exec(
-      "CREATE UNIQUE INDEX IF NOT EXISTS idx_issues_priority ON issues(priority_number);"
-    );
   }
 
   /**
-   * Re-number all tasks so that priority_number is unique and dense
-   * (1,2,3,…) to avoid gaps created by previous buggy behaviour.
+   * Make sure `priority_number` is unique and dense (1,2,3,…).
+   * Any duplicates caused by earlier bugs are resolved here so that a
+   * subsequent UNIQUE index can be created without failure.
    */
   _ensureUniquePriorities() {
     const rows = this.db
-      .prepare("SELECT id, priority_number FROM issues ORDER BY priority_number, id;")
+      .prepare(
+        "SELECT id, priority_number FROM issues ORDER BY priority_number, id;"
+      )
       .all();
 
     let expected = 1;
@@ -104,6 +103,20 @@ export default class TaskDB {
         expected += 1;
       });
     })();
+  }
+
+  /**
+   * Ensure all required (unique) indices exist.
+   * This is executed *after* priority numbers have been deduplicated so
+   * index creation cannot fail with “UNIQUE constraint failed”.
+   */
+  _ensureIndices() {
+    this.db.exec(
+      "CREATE UNIQUE INDEX IF NOT EXISTS idx_issues_github_id ON issues(github_id);"
+    );
+    this.db.exec(
+      "CREATE UNIQUE INDEX IF NOT EXISTS idx_issues_priority ON issues(priority_number);"
+    );
   }
 
   /* ------------------------------------------------------------------ */
