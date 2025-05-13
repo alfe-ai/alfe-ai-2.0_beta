@@ -467,6 +467,16 @@ app.get("/pair/:id", (req, res) => {
   res.json(pair);
 });
 
+
+// FIX: New route that returns server time
+app.get("/api/time", (req, res) => {
+  const now = new Date();
+  res.json({
+    time: now.toString(),
+    iso: now.toISOString()
+  });
+});
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 app.use(express.static(path.join(__dirname, "../public")));
 
