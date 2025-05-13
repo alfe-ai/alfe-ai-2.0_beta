@@ -341,19 +341,24 @@ app.post("/api/chat", async (req, res) => {
       return res.status(400).send("Missing message");
     }
 
-    // Insert user message into chat_pairs table
-    const chatPairId = db.createChatPair(userMessage, chatTabId);
+    const model = process.env.OPENAI_MODEL || "o3-mini";
+    const systemContext = `System Context:\nModel: ${model}\nTimestamp: ${new Date().toISOString()}`;
+
+    // Insert user message into chat_pairs table with system context
+    const chatPairId = db.createChatPair(userMessage, chatTabId, systemContext);
 
     // Start streaming the response
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.setHeader("Transfer-Encoding", "chunked");
 
-    const model = process.env.OPENAI_MODEL || "o3-mini";
     let assistantMessage = "";
 
     const stream = await openaiClient.chat.completions.create({
       model,
-      messages: [{ role: "user", content: userMessage }],
+      messages: [
+        { role: "system", content: systemContext },
+        { role: "user", content: userMessage }
+      ],
       stream: true
     });
 

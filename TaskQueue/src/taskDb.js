@@ -131,6 +131,14 @@ export default class TaskDB {
       );
     `);
 
+    // Add system_context column
+    try {
+      this.db.exec(`ALTER TABLE chat_pairs ADD COLUMN system_context TEXT;`);
+      console.debug("[TaskDB Debug] Added system_context column to chat_pairs.");
+    } catch(e) {
+      console.debug("[TaskDB Debug] system_context column likely exists. Skipped.", e.message);
+    }
+
     console.debug("[TaskDB Debug] Finished DB schema init.");
   }
 
@@ -447,15 +455,16 @@ export default class TaskDB {
   /* ------------------------------------------------------------------ */
   /*  Chat storage methods                                              */
   /* ------------------------------------------------------------------ */
-  createChatPair(userText, chatTabId = 1) {
+  createChatPair(userText, chatTabId = 1, systemContext = "") {
     const timestamp = new Date().toISOString();
     const { lastInsertRowid } = this.db.prepare(`
-      INSERT INTO chat_pairs (user_text, ai_text, model, timestamp, ai_timestamp, chat_tab_id)
-      VALUES (@user_text, '', '', @timestamp, NULL, @chat_tab_id)
+      INSERT INTO chat_pairs (user_text, ai_text, model, timestamp, ai_timestamp, chat_tab_id, system_context)
+      VALUES (@user_text, '', '', @timestamp, NULL, @chat_tab_id, @system_context)
     `).run({
       user_text: userText,
       timestamp,
-      chat_tab_id: chatTabId
+      chat_tab_id: chatTabId,
+      system_context: systemContext
     });
     return lastInsertRowid;
   }
