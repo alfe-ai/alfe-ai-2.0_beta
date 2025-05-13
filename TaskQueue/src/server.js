@@ -345,7 +345,8 @@ app.post("/api/chat", async (req, res) => {
     db.logActivity("User chat", JSON.stringify({ tabId: chatTabId, message: userMessage }));
 
     const model = process.env.OPENAI_MODEL || "o3-mini";
-    const systemContext = `System Context:\nModel: ${model}\nTimestamp: ${new Date().toISOString()}`;
+    const savedInstructions = db.getSetting("agent_instructions") || "";
+    const systemContext = `System Context:\n${savedInstructions}\n\nModel: ${model}\nTimestamp: ${new Date().toISOString()}`;
 
     // Insert user message into chat_pairs table with system context
     const chatPairId = db.createChatPair(userMessage, chatTabId, systemContext);
