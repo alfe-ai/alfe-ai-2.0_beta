@@ -33,6 +33,7 @@
       }
       button.arrow,
       button.eye,
+      button.fib-btn,
       #addTaskBtn {
         border: none;
         background: none;
@@ -64,6 +65,12 @@
       #controls {
         margin-bottom: 1rem;
       }
+      .fib-buttons {
+        margin-top: 4px;
+      }
+      .fib-display {
+        font-weight: bold;
+      }
     </style>
   </head>
   <body>
@@ -88,6 +95,7 @@
           <th>#</th>
           <th>Title</th>
           <th>Project</th>
+          <th>Pts</th>
           <th>Assignee</th>
           <th>Created</th>
         </tr>
@@ -142,6 +150,17 @@
             <td class="project-cell" data-id="${t.id}" data-project="${encodeURIComponent(
             t.project ?? ""
           )}">${t.project || "-"}</td>
+            <td>
+              <span class="fib-display">${t.fib_points ?? "-"}</span>
+              <div class="fib-buttons">
+                ${[1, 2, 3, 5, 8]
+                  .map(
+                    (p) =>
+                      `<button class="fib-btn" onclick="setPoints(${t.id}, ${p})">${p}</button>`
+                  )
+                  .join(" ")}
+              </div>
+            </td>
             <td>${t.assignee ?? "-"}</td>
             <td>${new Date(t.created_at).toLocaleString()}</td>
           `;
@@ -166,6 +185,15 @@
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id, hidden })
+        });
+        await load();
+      }
+
+      async function setPoints(id, points) {
+        await fetch("/api/tasks/points", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, points })
         });
         await load();
       }
@@ -254,6 +282,8 @@
        * ------------------------------------------------------------------ */
       window.reorder = reorder;
       window.toggleHidden = toggleHidden;
+      window.setPoints = setPoints;
     </script>
   </body>
 </html>
+

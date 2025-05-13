@@ -40,7 +40,6 @@ app.get("/api/tasks", (req, res) => {
 /**
  * POST /api/tasks
  * Body: { title: string, body?: string }
- * Creates a new GitHub issue and stores it locally.
  */
 app.post("/api/tasks", async (req, res) => {
   const { title, body } = req.body ?? {};
@@ -109,6 +108,26 @@ app.post("/api/tasks/project", (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     console.error("[TaskQueue] /api/tasks/project failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/**
+ * POST /api/tasks/points
+ * Body: { id: <issue id>, points: 1|2|3|5|8|null }
+ */
+app.post("/api/tasks/points", (req, res) => {
+  const { id, points } = req.body ?? {};
+  const allowed = [1, 2, 3, 5, 8, null];
+  if (!id || !allowed.includes(points)) {
+    return res.status(400).json({ error: "Invalid payload" });
+  }
+
+  try {
+    db.updatePoints(Number(id), points);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("[TaskQueue] /api/tasks/points failed:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });

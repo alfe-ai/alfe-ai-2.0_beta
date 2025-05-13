@@ -46,7 +46,8 @@ export default class TaskDB {
     maybeAdd("repository", "repository TEXT");
     maybeAdd("task_id_slug", "task_id_slug TEXT");
     maybeAdd("project", "project TEXT DEFAULT ''");
-    maybeAdd("hidden", "hidden INTEGER DEFAULT 0"); // ← NEW COLUMN
+    maybeAdd("hidden", "hidden INTEGER DEFAULT 0");
+    maybeAdd("fib_points", "fib_points INTEGER");            // ← NEW COLUMN
 
     let addedPriority = false;
     if (!cols.includes("priority_number")) {
@@ -88,22 +89,25 @@ export default class TaskDB {
     const slug = `${repoShort}-${issue.id}`;
 
     const existing = this.db
-      .prepare(`SELECT priority_number, project, hidden FROM issues WHERE id=?;`)
+      .prepare(
+        `SELECT priority_number, project, hidden, fib_points FROM issues WHERE id=?;`
+      )
       .get(issue.id);
 
     const priority_number =
       existing?.priority_number ?? this.#nextPriority();
     const project = existing?.project ?? "";
     const hidden = existing?.hidden ?? 0;
+    const fib_points = existing?.fib_points ?? null;
 
     const stmt = this.db.prepare(`
       INSERT INTO issues (
         id, number, repo, repository, task_id_slug, title, html_url, state,
-        assignee, created_at, updated_at, priority_number, project, hidden
+        assignee, created_at, updated_at, priority_number, project, hidden, fib_points
       )
       VALUES (
         @id, @number, @repo, @repository, @task_id_slug, @title, @html_url, @state,
-        @assignee, @created_at, @updated_at, @priority_number, @project, @hidden
+        @assignee, @created_at, @updated_at, @priority_number, @project, @hidden, @fib_points
       )
       ON CONFLICT(id) DO UPDATE SET
         number       = excluded.number,
@@ -116,7 +120,7 @@ export default class TaskDB {
         assignee     = excluded.assignee,
         created_at   = excluded.created_at,
         updated_at   = excluded.updated_at
-        -- priority_number, project, hidden remain as-is
+        -- priority_number, project, hidden, fib_points remain as-is
       ;
     `);
 
@@ -134,7 +138,8 @@ export default class TaskDB {
       updated_at: issue.updated_at,
       priority_number,
       project,
-      hidden
+      hidden,
+      fib_points
     });
   }
 
@@ -149,11 +154,22 @@ export default class TaskDB {
    * Set hidden flag (0/1).
    */
   updateHidden(id, hidden) {
-    this.db.prepare(`UPDATE issues SET hidden=? WHERE id=?;`).run(hidden ? 1 : 0, id);
+    this.db
+      .prepare(`UPDATE issues SET hidden=? WHERE id=?;`)
+      .run(hidden ? 1 : 0, id);
   }
 
   /**
-   * Move priority.
+   * Update Fibonacci points.
+   */
+  updatePoints(id, points) {
+    this.db
+      .prepare(`UPDATE issues SET fib_points=? WHERE id=?;`)
+      .run(points, id);
+  }
+
+  /**
+   * Move priority up/down.
    */
   movePriority(id, dir) {
     const curr = this.db
@@ -216,3 +232,4 @@ export default class TaskDB {
       .all();
   }
 }
+
