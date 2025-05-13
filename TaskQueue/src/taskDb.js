@@ -69,6 +69,16 @@ export default class TaskDB {
       `CREATE UNIQUE INDEX IF NOT EXISTS idx_issues_priority ON issues(priority_number);`
     );
 
+    /* new activity table */
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS activity_timeline (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp TEXT NOT NULL,
+        action TEXT NOT NULL,
+        details TEXT
+      );
+    `);
+
     console.debug("[TaskDB Debug] Finished DB schema init.");
   }
 
@@ -306,7 +316,6 @@ export default class TaskDB {
       .run(key, val);
   }
 
-  /* ---------------- Project / Sprint helper --------------- */
   listProjects() {
     return this.db
       .prepare(
@@ -337,7 +346,6 @@ export default class TaskDB {
       .all();
   }
 
-  /* Utility ----------------------------------------------------------- */
   dump() {
     return this.db
       .prepare("SELECT * FROM issues ORDER BY priority_number")
@@ -377,5 +385,19 @@ export default class TaskDB {
   setTitle(id, newTitle) {
     this.db.prepare("UPDATE issues SET title = ? WHERE id = ?").run(newTitle, id);
   }
-}
 
+  /* ------------------------------------------------------------------ */
+  /*  Activity logging                                                  */
+  /* ------------------------------------------------------------------ */
+  logActivity(action, details) {
+    this.db
+      .prepare("INSERT INTO activity_timeline (timestamp, action, details) VALUES (?, ?, ?)")
+      .run(new Date().toISOString(), action, details ?? "");
+  }
+
+  getActivity() {
+    return this.db
+      .prepare("SELECT * FROM activity_timeline ORDER BY id DESC")
+      .all();
+  }
+}

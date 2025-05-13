@@ -53,6 +53,7 @@ app.post("/api/tasks/hidden", (req, res) => {
   try {
     const { id, hidden } = req.body;
     db.setHidden(id, hidden);
+    db.logActivity("Set hidden", JSON.stringify({ id, hidden }));
     res.json({ success: true });
   } catch (err) {
     console.error("[TaskQueue] /api/tasks/hidden failed:", err);
@@ -65,8 +66,12 @@ app.post("/api/tasks/reorder", (req, res) => {
   try {
     const { id, direction } = req.body;
     const ok = db.reorderTask(id, direction);
-    if (!ok) return res.status(400).json({ error: "Unable to reorder" });
-    res.json({ success: true });
+    if (ok) {
+      db.logActivity("Reorder task", JSON.stringify({ id, direction }));
+      res.json({ success: true });
+    } else {
+      res.status(400).json({ error: "Unable to reorder" });
+    }
   } catch (err) {
     console.error("[TaskQueue] /api/tasks/reorder failed:", err);
     res.status(500).json({ error: "Internal server error" });
@@ -78,6 +83,7 @@ app.post("/api/tasks/points", (req, res) => {
   try {
     const { id, points } = req.body;
     db.setPoints(id, points);
+    db.logActivity("Set fib_points", JSON.stringify({ id, points }));
     res.json({ success: true });
   } catch (err) {
     console.error("[TaskQueue] /api/tasks/points failed:", err);
@@ -90,6 +96,7 @@ app.post("/api/tasks/project", (req, res) => {
   try {
     const { id, project } = req.body;
     db.setProject(id, project);
+    db.logActivity("Set project", JSON.stringify({ id, project }));
     res.json({ success: true });
   } catch (err) {
     console.error("[TaskQueue] /api/tasks/project failed:", err);
@@ -102,6 +109,7 @@ app.post("/api/tasks/sprint", (req, res) => {
   try {
     const { id, sprint } = req.body;
     db.setSprint(id, sprint);
+    db.logActivity("Set sprint", JSON.stringify({ id, sprint }));
     res.json({ success: true });
   } catch (err) {
     console.error("[TaskQueue] /api/tasks/sprint failed:", err);
@@ -114,6 +122,7 @@ app.post("/api/tasks/priority", (req, res) => {
   try {
     const { id, priority } = req.body;
     db.setPriority(id, priority);
+    db.logActivity("Set priority", JSON.stringify({ id, priority }));
     res.json({ success: true });
   } catch (err) {
     console.error("[TaskQueue] /api/tasks/priority failed:", err);
@@ -126,6 +135,7 @@ app.post("/api/tasks/status", (req, res) => {
   try {
     const { id, status } = req.body;
     db.setStatus(id, status);
+    db.logActivity("Set status", JSON.stringify({ id, status }));
     res.json({ success: true });
   } catch (err) {
     console.error("[TaskQueue] /api/tasks/status failed:", err);
@@ -138,6 +148,7 @@ app.post("/api/tasks/dependencies", (req, res) => {
   try {
     const { id, dependencies } = req.body;
     db.setDependencies(id, dependencies);
+    db.logActivity("Set dependencies", JSON.stringify({ id, dependencies }));
     res.json({ success: true });
   } catch (err) {
     console.error("[TaskQueue] /api/tasks/dependencies failed:", err);
@@ -150,6 +161,7 @@ app.post("/api/tasks/blocking", (req, res) => {
   try {
     const { id, blocking } = req.body;
     db.setBlocking(id, blocking);
+    db.logActivity("Set blocking", JSON.stringify({ id, blocking }));
     res.json({ success: true });
   } catch (err) {
     console.error("[TaskQueue] /api/tasks/blocking failed:", err);
@@ -173,6 +185,7 @@ app.post("/api/tasks/new", async (req, res) => {
 
     const newIssue = await gh.createIssue(title, body || "");
     db.upsertIssue(newIssue, `${gh.owner}/${gh.repo}`);
+    db.logActivity("New task", JSON.stringify({ title, body }));
 
     const defaultProject = db.getSetting("default_project");
     const defaultSprint = db.getSetting("default_sprint");
@@ -277,10 +290,22 @@ app.post("/api/tasks/rename", async (req, res) => {
 
     // Update local DB
     db.setTitle(id, newTitle);
+    db.logActivity("Rename task", JSON.stringify({ id, newTitle }));
 
     res.json({ success: true });
   } catch (err) {
     console.error("[TaskQueue] /api/tasks/rename error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// NEW: Return timeline
+app.get("/api/activity", (req, res) => {
+  try {
+    const activity = db.getActivity();
+    res.json(activity);
+  } catch (err) {
+    console.error("[TaskQueue] /api/activity failed", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -293,9 +318,13 @@ app.get("/test_projects", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/test_projects.html"));
 });
 
+// Serve activity page
+app.get("/activity", (req, res) => {
+  res.sendFile(path.join(__dirname, "../public/activity.html"));
+});
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
-
