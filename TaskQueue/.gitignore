@@ -4,3 +4,4 @@ node_modules
 issues.sqlite
 backups
 *..env.swp
+*.swp
