@@ -1,103 +1,91 @@
+/**
+ * Lightweight persistence layer for GitHub issues (SQLite).
+ *
+ * Columns
+ * ┌─────────────┬─────────┐
+ * │ id          │ PK      │ GitHub internal issue ID
+ * │ number      │ INT     │ Human-visible issue number (#123)
+ * │ title       │ TEXT    │ Issue title
+ * │ html_url    │ TEXT    │ Permalink to issue
+ * │ state       │ TEXT    │ "open" / "closed"
+ * │ created_at  │ TEXT    │ RFC-3339 timestamp (ISO 8601)
+ * │ updated_at  │ TEXT    │ RFC-3339 timestamp (ISO 8601)  ← NEW
+ * └─────────────┴─────────┘
+ *
+ * We store timestamps as plain ISO strings for simplicity.
+ */
+
 import Database from "better-sqlite3";
-import fs from "fs";
-import path from "path";
 
 export default class TaskDB {
-  constructor(dbPath = path.resolve(process.cwd(), "issues.sqlite")) {
-    const firstRun = !fs.existsSync(dbPath);
+  constructor(dbPath = "issues.sqlite") {
     this.db = new Database(dbPath);
-    this.db.pragma("journal_mode = WAL");
 
-    this._ensureSchema(firstRun);
+    // Create table if missing; add updated_at column if user had an older DB.
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS issues (
+        id          INTEGER PRIMARY KEY,
+        number      INTEGER NOT NULL,
+        title       TEXT    NOT NULL,
+        html_url    TEXT    NOT NULL,
+        state       TEXT    NOT NULL,
+        created_at  TEXT    NOT NULL,
+        updated_at  TEXT    NOT NULL
+      );
+    `);
+
+    // If an existing DB predates updated_at we might still be missing the column.
+    // Attempting to add it conditionally keeps migrations zero-touch.
+    try {
+      this.db.exec(`ALTER TABLE issues ADD COLUMN updated_at TEXT`);
+    } catch {
+      /* column already exists — ignore */
+    }
+
+    this.insertStmt = this.db.prepare(`
+      INSERT INTO issues (id, number, title, html_url, state, created_at, updated_at)
+      VALUES            (@id,@number,@title,@html_url,@state,@created_at,@updated_at)
+      ON CONFLICT(id) DO UPDATE SET
+          number      = excluded.number,
+          title       = excluded.title,
+          html_url    = excluded.html_url,
+          state       = excluded.state,
+          created_at  = excluded.created_at,
+          updated_at  = excluded.updated_at;
+    `);
+
+    this.markClosedStmt = this.db.prepare(
+      `UPDATE issues SET state='closed' WHERE id NOT IN (@openIds)`
+    );
   }
 
-  /* ------------------------------------------------------------------ */
-  /*  Public API                                                        */
-  /* ------------------------------------------------------------------ */
-
-  /**
-   * Insert or update an issue row.
-   * @param {object} issue Raw GitHub issue object (Octokit shape)
-   */
+  /** Upsert / refresh a GitHub issue row. */
   upsertIssue(issue) {
-    const stmt = this.db.prepare(
-      `INSERT INTO issues (gh_id, title, state, html_url, created_at)
-         VALUES (@id, @title, @state, @html_url, @created_at)
-       ON CONFLICT(gh_id) DO UPDATE SET
-         title       = excluded.title,
-         state       = excluded.state,
-         html_url    = excluded.html_url,
-         created_at  = excluded.created_at`
-    );
-
-    stmt.run({
+    this.insertStmt.run({
       id: issue.id,
+      number: issue.number,
       title: issue.title,
-      state: issue.state,
       html_url: issue.html_url,
-      created_at: issue.created_at
+      state: issue.state,
+      created_at: issue.created_at,
+      updated_at: issue.updated_at
     });
   }
 
   /**
-   * Mark all issues as closed that are NOT listed in `openIds`.
-   * @param {number[]} openIds Array of GitHub numeric issue IDs that are open.
+   * Mark every issue not present in `openIds` array as closed.
+   * This keeps local state in sync with GitHub deletions / closures.
+   *
+   * @param {number[]} openIds
    */
   markClosedExcept(openIds) {
-    const placeholders = openIds.length
-      ? `(${openIds.map(() => "?").join(",")})`
-      : "(NULL)"; // forces match-nothing when list is empty
-
-    this.db
-      .prepare(
-        `UPDATE issues
-            SET state = 'closed'
-          WHERE gh_id NOT IN ${placeholders}`
-      )
-      .run(openIds);
+    // Empty array → mark everything closed.
+    const ids = openIds.length ? openIds.join(",") : "NULL";
+    this.markClosedStmt.run({ openIds: ids });
   }
 
-  /**
-   * Convenience helper for debugging – returns all rows.
-   */
+  /** Convenience helper used by index.js for debug printing. */
   dump() {
-    return this.db.prepare("SELECT * FROM issues ORDER BY rowid").all();
-  }
-
-  /* ------------------------------------------------------------------ */
-  /*  Private helpers                                                   */
-  /* ------------------------------------------------------------------ */
-
-  /**
-   * Creates the table on first run and performs cheap migrations
-   * (only additive columns for now) on subsequent launches.
-   */
-  _ensureSchema(firstRun) {
-    if (firstRun) {
-      this.db.exec(`
-        CREATE TABLE IF NOT EXISTS issues (
-          gh_id       INTEGER PRIMARY KEY,
-          title       TEXT NOT NULL,
-          state       TEXT NOT NULL,
-          html_url    TEXT NOT NULL,
-          created_at  TEXT NOT NULL
-        );
-      `);
-      return;
-    }
-
-    // Lightweight migration: add column if it doesn't exist yet.
-    const cols = this.db
-      .prepare("PRAGMA table_info(issues);")
-      .all()
-      .map((c) => c.name);
-
-    if (!cols.includes("created_at")) {
-      console.log("[TaskDB] Migrating DB → adding 'created_at' column …");
-      this.db.exec(`ALTER TABLE issues ADD COLUMN created_at TEXT;`);
-      // Fill NULLs with empty string to maintain NOT NULL invariant.
-      this.db.exec(`UPDATE issues SET created_at = '' WHERE created_at IS NULL;`);
-      console.log("[TaskDB] Migration complete.");
-    }
+    return this.db.prepare(`SELECT * FROM issues ORDER BY number`).all();
   }
 }
