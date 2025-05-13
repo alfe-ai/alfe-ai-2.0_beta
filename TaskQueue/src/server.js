@@ -446,6 +446,15 @@ app.delete("/api/chat/tabs/:id", (req, res) => {
   }
 });
 
+// New route: raw DB dump for a single pair
+app.get("/pair/:id", (req, res) => {
+  const pairId = parseInt(req.params.id, 10);
+  if (Number.isNaN(pairId)) return res.status(400).send("Invalid pair ID");
+  const pair = db.getPairById(pairId);
+  if (!pair) return res.status(404).send("Pair not found");
+  res.json(pair);
+});
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 app.use(express.static(path.join(__dirname, "../public")));
 
@@ -464,5 +473,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
-
 

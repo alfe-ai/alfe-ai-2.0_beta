@@ -481,6 +481,13 @@ export default class TaskDB {
       .all(tabId);
   }
 
+  /* New method: fetch a single pair */
+  getPairById(id) {
+    return this.db
+      .prepare("SELECT * FROM chat_pairs WHERE id = ?")
+      .get(id);
+  }
+
   /* ------------------------------------------------------------------ */
   /*  Chat tabs methods                                                 */
   /* ------------------------------------------------------------------ */
@@ -514,5 +521,4 @@ export default class TaskDB {
     return this.db.prepare("SELECT * FROM chat_tabs WHERE id=?").get(tabId);
   }
 }
-
 

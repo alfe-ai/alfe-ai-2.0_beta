@@ -744,12 +744,12 @@
 
     const userDiv = document.createElement("div");
     userDiv.className = "chat-user";
-    userDiv.textContent = "You (pair #" + pairId + ", " + formatTimestamp(userTs) + "): " + (userText || "");
+    userDiv.innerHTML = `You (pair #${pairId}, ${formatTimestamp(userTs)}): ${userText} <a href="/pair/${pairId}" target="_blank">[details]</a>`;
     seqDiv.appendChild(userDiv);
 
     const botDiv = document.createElement("div");
     botDiv.className = "chat-bot";
-    botDiv.textContent = `AI (model: ${model}, ${formatTimestamp(aiTs)}): ${aiText || ""}`;
+    botDiv.innerHTML = `AI (model: ${model}, ${formatTimestamp(aiTs)}): ${aiText || ""} <a href="/pair/${pairId}" target="_blank">[details]</a>`;
     seqDiv.appendChild(botDiv);
 
     chatMessagesEl.appendChild(seqDiv);
@@ -788,7 +788,7 @@
 
     const userDiv = document.createElement("div");
     userDiv.className = "chat-user";
-    userDiv.textContent = "You (pending ID, " + formatTimestamp(userTime) + "): " + userMessage;
+    userDiv.innerHTML = `You (pending ID, ${formatTimestamp(userTime)}): ${userMessage}`;
     seqDiv.appendChild(userDiv);
 
     const botDiv = document.createElement("div");
@@ -877,3 +877,4 @@
 </script>
 </body>
 </html>
+
