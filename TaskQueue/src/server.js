@@ -11,14 +11,15 @@ const app = express();
 const db = new TaskDB();
 
 app.use(cors());
-app.use(express.json()); // parses application/json bodies
+app.use(express.json());
 
 /**
- * REST endpoint → JSON dump of all open tasks (sorted by priority).
+ * GET /api/tasks?includeHidden=1
  */
 app.get("/api/tasks", (req, res) => {
   try {
-    const tasks = db.allOpenIssues();
+    const includeHidden = req.query.includeHidden === "1";
+    const tasks = db.allOpenIssues({ includeHidden });
     res.json(tasks);
   } catch (err) {
     console.error("[TaskQueue] /api/tasks failed:", err);
@@ -27,8 +28,25 @@ app.get("/api/tasks", (req, res) => {
 });
 
 /**
+ * POST /api/tasks/hidden
+ * Body: { id: <issue id>, hidden: true|false }
+ */
+app.post("/api/tasks/hidden", (req, res) => {
+  const { id, hidden } = req.body ?? {};
+  if (!id || typeof hidden !== "boolean") {
+    return res.status(400).json({ error: "Invalid payload" });
+  }
+  try {
+    db.updateHidden(Number(id), hidden);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("[TaskQueue] /api/tasks/hidden failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/**
  * POST /api/tasks/reorder
- * Body: { id: <issue id>, direction: "up"|"down" }
  */
 app.post("/api/tasks/reorder", (req, res) => {
   const { id, direction } = req.body ?? {};
@@ -38,10 +56,7 @@ app.post("/api/tasks/reorder", (req, res) => {
 
   try {
     const moved = db.movePriority(Number(id), direction);
-    if (!moved) {
-      return res.status(200).json({ ok: false, message: "No change" });
-    }
-    res.json({ ok: true });
+    return res.json({ ok: moved });
   } catch (err) {
     console.error("[TaskQueue] /api/tasks/reorder failed:", err);
     res.status(500).json({ error: "Internal server error" });
@@ -50,7 +65,6 @@ app.post("/api/tasks/reorder", (req, res) => {
 
 /**
  * POST /api/tasks/project
- * Body: { id: <issue id>, project: "<string>" }
  */
 app.post("/api/tasks/project", (req, res) => {
   const { id, project } = req.body ?? {};
@@ -68,7 +82,7 @@ app.post("/api/tasks/project", (req, res) => {
 });
 
 /**
- * Serve static frontend from ../public
+ * Static front-end
  */
 app.use(express.static(path.join(__dirname, "..", "public")));
 
@@ -76,4 +90,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () =>
   console.log(`[TaskQueue] Web UI available at http://localhost:${PORT}`)
 );
-

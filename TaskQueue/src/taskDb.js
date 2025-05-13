@@ -3,8 +3,7 @@ import path from "path";
 
 /**
  * Very small wrapper around better-sqlite3 for our issue store.
- * Now stores `repo` (short name), **new** `repository` (owner/repo),
- * `task_id_slug`, `priority_number`, and `project` columns.
+ * Stores GitHub issue meta plus queue-specific fields.
  */
 export default class TaskDB {
   constructor(dbPath = path.resolve("issues.sqlite")) {
@@ -14,8 +13,6 @@ export default class TaskDB {
 
   /**
    * Initialise / migrate DB schema.
-   * – creates table if missing
-   * – adds new columns when upgrading from older versions
    */
   #init() {
     // 1. Base table (run-once)
@@ -33,7 +30,7 @@ export default class TaskDB {
     `;
     this.db.prepare(createSql).run();
 
-    // 2. Detect existing columns, add new ones if absent
+    // 2. Detect existing columns
     const cols = this.db
       .prepare(`PRAGMA table_info('issues');`)
       .all()
@@ -46,8 +43,11 @@ export default class TaskDB {
     };
 
     maybeAdd("repo", "repo TEXT");
-    maybeAdd("repository", "repository TEXT"); // <─ NEW
+    maybeAdd("repository", "repository TEXT");
     maybeAdd("task_id_slug", "task_id_slug TEXT");
+    maybeAdd("project", "project TEXT DEFAULT ''");
+    maybeAdd("hidden", "hidden INTEGER DEFAULT 0"); // ← NEW COLUMN
+
     let addedPriority = false;
     if (!cols.includes("priority_number")) {
       this.db
@@ -55,9 +55,8 @@ export default class TaskDB {
         .run();
       addedPriority = true;
     }
-    maybeAdd("project", "project TEXT DEFAULT ''");
 
-    // 3. When column first introduced → assign priorities to existing rows
+    // 3. Assign priorities to pre-existing rows (only first time column added)
     if (addedPriority) {
       const rows = this.db
         .prepare(`SELECT id FROM issues ORDER BY created_at ASC;`)
@@ -69,9 +68,6 @@ export default class TaskDB {
     }
   }
 
-  /**
-   * Compute next available priority (max + 1).
-   */
   #nextPriority() {
     return (
       this.db
@@ -83,35 +79,31 @@ export default class TaskDB {
   }
 
   /**
-   * Insert or update one GitHub issue row.
-   * @param {object} issue        – raw Octokit issue object
-   * @param {string} repository   – full "owner/repo" slug
+   * Insert / update GitHub issue.
    */
   upsertIssue(issue, repository) {
-    // Short repository name (without owner) for legacy `repo` + slug
     const repoShort = repository.includes("/")
       ? repository.split("/").pop()
       : repository;
-
     const slug = `${repoShort}-${issue.id}`;
 
-    // Preserve existing fields we do not wish to overwrite
     const existing = this.db
-      .prepare(`SELECT priority_number, project FROM issues WHERE id=?;`)
+      .prepare(`SELECT priority_number, project, hidden FROM issues WHERE id=?;`)
       .get(issue.id);
 
     const priority_number =
       existing?.priority_number ?? this.#nextPriority();
     const project = existing?.project ?? "";
+    const hidden = existing?.hidden ?? 0;
 
     const stmt = this.db.prepare(`
       INSERT INTO issues (
         id, number, repo, repository, task_id_slug, title, html_url, state,
-        assignee, created_at, updated_at, priority_number, project
+        assignee, created_at, updated_at, priority_number, project, hidden
       )
       VALUES (
         @id, @number, @repo, @repository, @task_id_slug, @title, @html_url, @state,
-        @assignee, @created_at, @updated_at, @priority_number, @project
+        @assignee, @created_at, @updated_at, @priority_number, @project, @hidden
       )
       ON CONFLICT(id) DO UPDATE SET
         number       = excluded.number,
@@ -124,7 +116,7 @@ export default class TaskDB {
         assignee     = excluded.assignee,
         created_at   = excluded.created_at,
         updated_at   = excluded.updated_at
-        -- priority_number & project intentionally NOT overwritten
+        -- priority_number, project, hidden remain as-is
       ;
     `);
 
@@ -141,24 +133,27 @@ export default class TaskDB {
       created_at: issue.created_at,
       updated_at: issue.updated_at,
       priority_number,
-      project
+      project,
+      hidden
     });
   }
 
   /**
-   * Update the `project` column for a task.
-   * @param {number} id
-   * @param {string} project
+   * Update `project` field.
    */
   updateProject(id, project) {
     this.db.prepare(`UPDATE issues SET project=? WHERE id=?;`).run(project, id);
   }
 
   /**
-   * Swap priority with adjacent task in given direction.
-   * @param {number} id         – issue id
-   * @param {"up"|"down"} dir   – direction to move
-   * @returns {boolean}         – true if swap happened
+   * Set hidden flag (0/1).
+   */
+  updateHidden(id, hidden) {
+    this.db.prepare(`UPDATE issues SET hidden=? WHERE id=?;`).run(hidden ? 1 : 0, id);
+  }
+
+  /**
+   * Move priority.
    */
   movePriority(id, dir) {
     const curr = this.db
@@ -170,7 +165,7 @@ export default class TaskDB {
       .prepare(
         `
         SELECT id, priority_number FROM issues
-        WHERE state='open' AND priority_number ${
+        WHERE state='open' AND hidden=0 AND priority_number ${
           dir === "up" ? "<" : ">"
         } ?
         ORDER BY priority_number ${dir === "up" ? "DESC" : "ASC"}
@@ -179,9 +174,8 @@ export default class TaskDB {
       )
       .get(curr.priority_number);
 
-    if (!neighbour) return false; // already at edge
+    if (!neighbour) return false;
 
-    // Transaction – swap numbers
     const swap = this.db.transaction((a, b) => {
       this.db
         .prepare(`UPDATE issues SET priority_number=? WHERE id=?;`)
@@ -194,9 +188,6 @@ export default class TaskDB {
     return true;
   }
 
-  /**
-   * Mark every issue not passed in `openIds` as closed.
-   */
   markClosedExcept(openIds = []) {
     const ids = openIds.map(() => "?").join(",");
     const sql =
@@ -208,19 +199,17 @@ export default class TaskDB {
   }
 
   /**
-   * Return all still-open issues ordered by priority.
+   * Fetch open issues; hidden ones optional.
    */
-  allOpenIssues() {
-    return this.db
-      .prepare(
-        "SELECT * FROM issues WHERE state='open' ORDER BY priority_number ASC;"
-      )
-      .all();
+  allOpenIssues({ includeHidden = false } = {}) {
+    const sql = `
+      SELECT * FROM issues
+      WHERE state='open' ${includeHidden ? "" : "AND hidden=0"}
+      ORDER BY priority_number ASC;
+    `;
+    return this.db.prepare(sql).all();
   }
 
-  /**
-   * Convenience helper for CLI sync script.
-   */
   dump() {
     return this.db
       .prepare("SELECT * FROM issues ORDER BY priority_number ASC;")
