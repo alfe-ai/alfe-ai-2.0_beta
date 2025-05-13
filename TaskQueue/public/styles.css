@@ -202,6 +202,9 @@ body {
   padding: 8px;
   margin-bottom: 8px;
   color: #ddd;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 /* Avatars inline with text. */
@@ -213,26 +216,26 @@ body {
   font-size: 0.9rem;
 }
 
-/* User bubble: left-aligned, darker background */
+/* User bubble: display block so it sits on its own line */
 .chat-user {
   background: #3b3b3b;
   padding: 6px 8px;
   border-radius: 12px;
   margin-bottom: 6px;
-  display: inline-block;
-  max-width: 60%;
+  display: block;
+  max-width: 70%;
   word-wrap: break-word;
   color: #ddd;
 }
 
-/* AI bubble: left-aligned, slightly different tone */
+/* AI bubble: display block so it sits below the user bubble */
 .chat-bot {
   background: #2a2a2a;
   padding: 6px 8px;
   border-radius: 12px;
   margin-bottom: 6px;
-  display: inline-block;
-  max-width: 60%;
+  display: block;
+  max-width: 70%;
   word-wrap: break-word;
   color: #ddd;
 }
@@ -320,4 +323,3 @@ body {
   border-radius: 4px;
   border: 1px solid #444;
 }
-

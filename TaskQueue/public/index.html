@@ -872,7 +872,7 @@
     userDiv.className = "chat-user";
     const userHead = document.createElement("div");
     userHead.className = "bubble-header";
-    userHead.innerHTML = `<img src="https://via.placeholder.com/24/09f/fff?text=U" alt="User" style="border-radius:50%;">`;
+    userHead.innerHTML = `<img src="data:image/svg+xml;utf8,<svg width='24' height='24' xmlns='http://www.w3.org/2000/svg'><rect width='24' height='24' fill='%2309f'/><text x='50%25' y='50%25' fill='%23fff' font-size='12' font-family='Arial' dy='.3em' text-anchor='middle'>U</text></svg>" alt="User" style="border-radius:50%;">`;
     userHead.innerHTML += `<span style="opacity:0.8;">${formatTimestamp(userTs)}</span>`;
     userDiv.appendChild(userHead);
 
@@ -897,7 +897,7 @@
     botDiv.className = "chat-bot";
     const botHead = document.createElement("div");
     botHead.className = "bubble-header";
-    botHead.innerHTML = `<img src="https://via.placeholder.com/24/f90/fff?text=AI" alt="AI" style="border-radius:50%;">`;
+    botHead.innerHTML = `<img src="data:image/svg+xml;utf8,<svg width='24' height='24' xmlns='http://www.w3.org/2000/svg'><rect width='24' height='24' fill='%23f90'/><text x='50%25' y='50%25' fill='%23fff' font-size='10' font-family='Arial' dy='.3em' text-anchor='middle'>AI</text></svg>" alt="AI" style="border-radius:50%;">`;
     botHead.innerHTML += `<span style="opacity:0.8;">${formatTimestamp(aiTs)}</span>`;
     botDiv.appendChild(botHead);
 
@@ -1010,7 +1010,7 @@
     userDiv.className = "chat-user";
     const userHead = document.createElement("div");
     userHead.className = "bubble-header";
-    userHead.innerHTML = `<img src="https://via.placeholder.com/24/09f/fff?text=U" alt="User" style="border-radius:50%;">`;
+    userHead.innerHTML = `<img src="data:image/svg+xml;utf8,<svg width='24' height='24' xmlns='http://www.w3.org/2000/svg'><rect width='24' height='24' fill='%2309f'/><text x='50%25' y='50%25' fill='%23fff' font-size='12' font-family='Arial' dy='.3em' text-anchor='middle'>U</text></svg>" alt="User" style="border-radius:50%;">`;
     userHead.innerHTML += `<span style="opacity:0.8;">${formatTimestamp(userTime)}</span>`;
     userDiv.appendChild(userHead);
     const userBody = document.createElement("div");
@@ -1023,7 +1023,8 @@
     botDiv.className = "chat-bot";
     const botHead = document.createElement("div");
     botHead.className = "bubble-header";
-    botHead.innerHTML = `<img src="https://via.placeholder.com/24/f90/fff?text=AI" alt="AI" style="border-radius:50%;">`;
+    // Provide an inline SVG for the AI avatar:
+    botHead.innerHTML = `<img src="data:image/svg+xml;utf8,<svg width='24' height='24' xmlns='http://www.w3.org/2000/svg'><rect width='24' height='24' fill='%23f90'/><text x='50%25' y='50%25' fill='%23fff' font-size='10' font-family='Arial' dy='.3em' text-anchor='middle'>AI</text></svg>" alt="AI" style="border-radius:50%;">`;
     botHead.innerHTML += `<span style="opacity:0.8;">…</span>`;
     botDiv.appendChild(botHead);
     const botBody = document.createElement("div");
