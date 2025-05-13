@@ -10,20 +10,30 @@ export default class TaskDB {
   /*  Small utils                                                        */
   /* ------------------------------------------------------------------ */
   _columnExists(table, column) {
+    console.debug(`[TaskDB Debug] Checking if column '${column}' exists in '${table}'...`);
     const rows = this.db.prepare(`PRAGMA table_info(${table});`).all();
-    return rows.some((r) => r.name === column);
+    const exists = rows.some((r) => r.name === column);
+    console.debug(`[TaskDB Debug] Column '${column}' in '${table}' existence: ${exists}`);
+    return exists;
   }
 
   _addColumnIfMissing(table, column, definition = "INTEGER") {
+    console.debug(`[TaskDB Debug] Checking column '${column}' on table '${table}' with definition '${definition}'...`);
     if (!this._columnExists(table, column)) {
-      console.warn(
-        `[TaskQueue] Column '${column}' missing in '${table}' – adding (${definition})`
-      );
+      console.warn(`[TaskQueue] Column '${column}' missing in '${table}' – attempting to add (${definition})`);
       try {
         this.db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition};`);
+        console.debug(`[TaskDB Debug] Column '${column}' successfully added.`);
+        // Double-check
+        if (!this._columnExists(table, column)) {
+          console.warn(`[TaskDB Debug] Column '${column}' not found after creation attempt in '${table}'.`);
+        }
       } catch (e) {
+        console.error(`[TaskDB Debug] Failed to add column '${column}' to '${table}':`, e.message);
         if (!/duplicate column/i.test(e.message || "")) throw e;
       }
+    } else {
+      console.debug(`[TaskDB Debug] Column '${column}' already present in '${table}', skipping add.`);
     }
   }
 
@@ -31,6 +41,7 @@ export default class TaskDB {
   /*  Schema bootstrap + migration                                      */
   /* ------------------------------------------------------------------ */
   _init() {
+    console.debug("[TaskDB Debug] Initializing DB schema...");
     /* 1. Ensure table exists (minimal columns to get started) */
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS issues (
@@ -57,6 +68,8 @@ export default class TaskDB {
         value TEXT NOT NULL
       );
     `);
+
+    console.debug("[TaskDB Debug] Finished DB schema init.");
   }
 
   /**
@@ -64,22 +77,17 @@ export default class TaskDB {
    * `priority_number`. Attempt direct rename; if it fails, do a fallback.
    */
   _fixLegacyColumns() {
+    console.debug("[TaskDB Debug] Checking for legacy columns...");
     const hasOld = this._columnExists("issues", "priority");
     const hasNew = this._columnExists("issues", "priority_number");
 
     if (hasOld && !hasNew) {
-      console.log(
-        "[TaskQueue] Detected legacy column 'priority' – attempting rename to 'priority_number'"
-      );
+      console.log("[TaskQueue] Detected legacy column 'priority' – attempting rename to 'priority_number'");
       try {
-        this.db.exec(
-          "ALTER TABLE issues RENAME COLUMN priority TO priority_number;"
-        );
+        this.db.exec("ALTER TABLE issues RENAME COLUMN priority TO priority_number;");
+        console.debug("[TaskDB Debug] Rename of 'priority' to 'priority_number' succeeded.");
       } catch (err) {
-        console.error(
-          "[TaskQueue] Rename column failed; attempting fallback approach:",
-          err.message
-        );
+        console.error("[TaskQueue] Rename column failed; attempting fallback approach:", err.message);
         /* fallback approach: create 'priority_number' if missing and copy data */
         this._addColumnIfMissing("issues", "priority_number", "INTEGER");
         try {
@@ -102,6 +110,7 @@ export default class TaskDB {
    * data loss.
    */
   _migrateIssuesTable() {
+    console.debug("[TaskDB Debug] Migrating 'issues' table to ensure all columns are present...");
     const wanted = {
       closed: "INTEGER DEFAULT 0",
       github_id: "INTEGER",
@@ -124,15 +133,21 @@ export default class TaskDB {
     const missing = Object.keys(wanted).filter((c) => !present.has(c));
     if (missing.length) {
       console.log(
-        `[TaskQueue] Migrating issues table – adding columns: ${missing.join(
-          ", "
-        )}`
+        `[TaskQueue] Migrating issues table – adding columns: ${missing.join(", ")}`
       );
       this.db.transaction(() => {
-        missing.forEach((col) =>
-          this.db.exec(`ALTER TABLE issues ADD COLUMN ${col} ${wanted[col]};`)
-        );
+        missing.forEach((col) => {
+          try {
+            console.debug(`[TaskDB Debug] Adding missing column '${col}' with definition '${wanted[col]}'`);
+            this.db.exec(`ALTER TABLE issues ADD COLUMN ${col} ${wanted[col]};`);
+          } catch (err) {
+            console.error(`[TaskDB Debug] Failed to add column '${col}':`, err.message);
+            if (!/duplicate column/i.test(err.message || "")) throw err;
+          }
+        });
       })();
+    } else {
+      console.debug("[TaskDB Debug] No missing columns detected in 'issues' table.");
     }
   }
 
@@ -140,12 +155,11 @@ export default class TaskDB {
    * Make sure `priority_number` is unique and dense (1,2,3,…).
    */
   _ensureUniquePriorities() {
+    console.debug("[TaskDB Debug] Ensuring 'priority_number' is consistent and unique...");
     this._addColumnIfMissing("issues", "priority_number", "INTEGER");
 
     const rows = this.db
-      .prepare(
-        "SELECT id, priority_number FROM issues ORDER BY priority_number, id;"
-      )
+      .prepare("SELECT id, priority_number FROM issues ORDER BY priority_number, id;")
       .all();
 
     let expected = 1;
@@ -167,6 +181,7 @@ export default class TaskDB {
    * Ensure all required (unique) indices exist.
    */
   _ensureIndices(retried = false) {
+    console.debug("[TaskDB Debug] Ensuring unique indices exist on 'issues' table...");
     try {
       this.db.exec(
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_issues_github_id ON issues(github_id);"
@@ -174,14 +189,11 @@ export default class TaskDB {
       this.db.exec(
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_issues_priority ON issues(priority_number);"
       );
+      console.debug("[TaskDB Debug] Indices created/verified successfully.");
     } catch (err) {
-      if (
-        !retried &&
-        /no such column: priority_number/i.test(err.message || "")
-      ) {
-        console.warn(
-          "[TaskQueue] Index creation failed – missing 'priority_number'. Attempting automatic fix."
-        );
+      console.error("[TaskDB Debug] Failed to create indices:", err.message);
+      if (!retried && /no such column: priority_number/i.test(err.message || "")) {
+        console.warn("[TaskQueue] Index creation failed – missing 'priority_number'. Attempting automatic fix.");
         this._addColumnIfMissing("issues", "priority_number", "INTEGER");
         this._ensureIndices(true);
         return;
@@ -194,6 +206,7 @@ export default class TaskDB {
   /*  Issue helpers                                                     */
   /* ------------------------------------------------------------------ */
   upsertIssue(issue, repositorySlug, _retry = false) {
+    console.debug(`[TaskDB Debug] upsertIssue called for GitHub issue ID: ${issue.id}`);
     this._addColumnIfMissing("issues", "priority_number", "INTEGER");
 
     try {
@@ -241,11 +254,13 @@ export default class TaskDB {
         created_at: issue.created_at,
         closed: 0
       });
+      console.debug(`[TaskDB Debug] upsertIssue succeeded for GitHub issue ID: ${issue.id}`);
     } catch (err) {
-      if (
-        !_retry &&
-        /no such column: priority_number/i.test(err.message || "")
-      ) {
+      console.error(
+        `[TaskDB Debug] upsertIssue encountered error for ID ${issue.id}:`,
+        err.message
+      );
+      if (!_retry && /no such column: priority_number/i.test(err.message || "")) {
         console.warn(
           "[TaskQueue] Write failed – priority_number column still absent. Creating column and retrying once."
         );
@@ -310,9 +325,7 @@ export default class TaskDB {
 
     const adj = direction === "up" ? -1 : 1;
     const swapRow = this.db
-      .prepare(
-        "SELECT id, priority_number FROM issues WHERE priority_number=?;"
-      )
+      .prepare("SELECT id, priority_number FROM issues WHERE priority_number=?;")
       .get(currentRow.priority_number + adj);
 
     if (!swapRow) return false;
