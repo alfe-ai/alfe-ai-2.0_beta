@@ -290,8 +290,8 @@ body {
   font-size: 1rem;
   resize: none;
   min-height: 40px;
-  max-height: 120px;
   overflow-y: auto;
+  /* Removed max-height to allow the input to expand */
 }
 
 .chat-input-container textarea::placeholder {
