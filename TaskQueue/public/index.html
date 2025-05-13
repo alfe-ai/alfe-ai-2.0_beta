@@ -50,6 +50,24 @@
     tr.drag-over {
       outline: 2px dashed #888;
     }
+
+    /* chat panel */
+    #chatPanel {
+      margin-top: 2rem;
+      border: 1px solid #ccc;
+      padding: 1rem;
+      max-width: 600px;
+    }
+    #chatMessages {
+      border: 1px solid #ddd;
+      height: 200px;
+      overflow-y: auto;
+      margin-bottom: 0.5rem;
+      padding: 0.5rem;
+      background: #fafafa;
+    }
+    .chat-user { color: #0066aa; }
+    .chat-bot { color: #009900; }
   </style>
 </head>
 <body>
@@ -154,6 +172,16 @@
       <button id="createTaskBtn">Create</button>
       <button id="cancelTaskBtn">Cancel</button>
     </div>
+  </div>
+</div>
+
+<!-- Chat panel -->
+<div id="chatPanel">
+  <h2>AI Chat</h2>
+  <div id="chatMessages"></div>
+  <div>
+    <input type="text" id="chatInput" style="width:80%;" placeholder="Ask something..." />
+    <button id="chatSendBtn">Send</button>
   </div>
 </div>
 
@@ -355,10 +383,10 @@
         switch(col.key){
           case "drag":
             td.innerHTML = `<span class="drag-handle" draggable="true">⠿</span>`;
-          {
-            const handleSpan = td.querySelector(".drag-handle");
-            handleSpan.addEventListener("dragstart", handleDragStart);
-          }
+            {
+              const handleSpan = td.querySelector(".drag-handle");
+              handleSpan.addEventListener("dragstart", handleDragStart);
+            }
             break;
           case "order":
             td.textContent = t.priority_number;
@@ -855,6 +883,45 @@
   });
   $("#cancelTaskBtn").addEventListener("click", ()=>{
     hideModal($("#newTaskModal"));
+  });
+
+  /* ------------------------------------------------------------------
+   * Chat logic
+   * ------------------------------------------------------------------ */
+  const chatMessages = $("#chatMessages");
+  const chatInput = $("#chatInput");
+  const chatSendBtn = $("#chatSendBtn");
+
+  function appendChatMessage(sender, text) {
+    const div = document.createElement("div");
+    div.className = sender === "user" ? "chat-user" : "chat-bot";
+    div.textContent = (sender === "user" ? "You: " : "AI: ") + text;
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  chatSendBtn.addEventListener("click", async () => {
+    const userMessage = chatInput.value.trim();
+    if (!userMessage) return;
+    appendChatMessage("user", userMessage);
+    chatInput.value = "";
+
+    try {
+      const resp = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userMessage })
+      });
+      if(!resp.ok) {
+        appendChatMessage("bot", "Error contacting AI.");
+        return;
+      }
+      const data = await resp.json();
+      appendChatMessage("bot", data.reply || "");
+    } catch(e){
+      console.error("Chat error:", e);
+      appendChatMessage("bot", "Error occurred.");
+    }
   });
 
   /* ------------------------------------------------------------------

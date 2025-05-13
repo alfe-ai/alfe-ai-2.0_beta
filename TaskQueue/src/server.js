@@ -9,11 +9,20 @@ import { fileURLToPath } from "url";
 import TaskDB from "./taskDb.js";
 import GitHubClient from "./githubClient.js";
 
+// New: OpenAI
+import { Configuration, OpenAIApi } from "openai";
+
 const db = new TaskDB();
 const app = express();
 
 app.use(cors());
 app.use(bodyParser.json());
+
+// Configure OpenAI
+const openaiConfig = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY || ""
+});
+const openai = new OpenAIApi(openaiConfig);
 
 // GET /api/tasks
 app.get("/api/tasks", (req, res) => {
@@ -330,6 +339,28 @@ app.get("/api/activity", (req, res) => {
     res.json(activity);
   } catch (err) {
     console.error("[TaskQueue] /api/activity failed", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// NEW: Chat route
+app.post("/api/chat", async (req, res) => {
+  try {
+    const userMessage = req.body.message || "";
+    if (!userMessage) {
+      return res.status(400).json({ error: "Missing message" });
+    }
+
+    // OpenAI call using model "o3-mini"
+    const completion = await openai.createChatCompletion({
+      model: "o3-mini",
+      messages: [{ role: "user", content: userMessage }]
+    });
+
+    const responseText = completion.data.choices[0]?.message?.content || "";
+    res.json({ reply: responseText });
+  } catch (err) {
+    console.error("[TaskQueue] /api/chat error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
