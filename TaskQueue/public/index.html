@@ -37,6 +37,9 @@
     .modal-content h2{margin-top:0;}
     .modal-buttons{text-align:right;margin-top:8px;}
     textarea{font-family:monospace;}
+    .col-item{display:flex;align-items:center;margin-bottom:6px;}
+    .col-label{margin-left:6px;}
+    .col-move{margin:0 4px;}
   </style>
 </head>
 <body>
@@ -73,8 +76,8 @@
 <!-- Column picker modal -->
 <div id="colModal" class="modal">
   <div class="modal-content">
-    <h2>Visible columns</h2>
-    <div id="colCheckboxes"></div>
+    <h2>Columns</h2>
+    <div id="colList"></div>
     <div class="modal-buttons">
       <button id="colSaveBtn">Save</button>
       <button id="colCancelBtn">Cancel</button>
@@ -143,8 +146,8 @@
 </div>
 
 <script>
-/* ---------------- constants ---------------- */
-const columns = [
+/* ---------------- default column definitions ---------------- */
+let columnsOrder = [
   { key: "order",      label: "P"      },
   { key: "reorder",    label: "↕"     },
   { key: "visibility", label: ""       },
@@ -163,9 +166,11 @@ const columns = [
   { key: "created",    label: "Created"}
 ];
 
+/* track which columns are visible */
+let visibleCols = new Set(columnsOrder.map(c=>c.key));
+
 /* --------------- state --------------------- */
-let visibleCols = new Set(columns.map(c => c.key));
-let allTasks     = [];
+let allTasks = [];
 
 /* --------------- helpers ------------------- */
 const $  = (sel, ctx=document) => ctx.querySelector(sel);
@@ -178,39 +183,80 @@ function hideModal(modal){ modal.style.display="none"; }
 $$(".modal").forEach(m=>m.addEventListener("click",e=>{ if(e.target===m)hideModal(m);}));
 
 /* ------------------------------------------------------------------
- * Settings helpers
+ * Load & save settings
  * ------------------------------------------------------------------ */
 async function loadSettings(){
-  const r = await fetch("/api/settings/visible_columns");
-  if(r.ok){
-    const { value } = await r.json();
-    if(Array.isArray(value)) visibleCols = new Set(value);
+  {
+    const r = await fetch("/api/settings/visible_columns");
+    if(r.ok){
+      const { value } = await r.json();
+      if(Array.isArray(value)) {
+        visibleCols = new Set(value);
+      }
+    }
+  }
+  {
+    const r = await fetch("/api/settings/columns_order");
+    if(r.ok){
+      const { value } = await r.json();
+      if(Array.isArray(value)){
+        // Rebuild columnsOrder from the stored order, matching our known keys
+        const existingMap = Object.fromEntries(columnsOrder.map(c=>[c.key,c]));
+        const newOrder = [];
+        value.forEach(k=>{
+          if(existingMap[k]) newOrder.push(existingMap[k]);
+          delete existingMap[k];
+        });
+        // Add any missing columns that weren't in stored array
+        Object.values(existingMap).forEach(c=>newOrder.push(c));
+        columnsOrder = newOrder;
+      }
+    }
   }
 }
 
 async function saveSettings(){
-  await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({key:"visible_columns",value:[...visibleCols]})});
+  await fetch("/api/settings",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      key:"visible_columns",
+      value:[...visibleCols]
+    })
+  });
+
+  await fetch("/api/settings", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      key:"columns_order",
+      value: columnsOrder.map(c=>c.key)
+    })
+  });
 }
 
 /* ------------------------------------------------------------------
- * Load / render tasks
+ * Column rendering
+ * ------------------------------------------------------------------ */
+function renderHeader(){
+  const tr = $("#headerRow");
+  tr.innerHTML = "";
+  columnsOrder.forEach(col=>{
+    if(!visibleCols.has(col.key))return;
+    const th = document.createElement("th");
+    th.textContent = col.label;
+    tr.appendChild(th);
+  });
+}
+
+/* ------------------------------------------------------------------
+ * Fetch tasks & populate table
  * ------------------------------------------------------------------ */
 async function fetchTasks(){
   const includeHidden = $("#showHidden").checked;
   const url = `/api/tasks?includeHidden=${includeHidden?1:0}`;
   const res = await fetch(url);
   return res.json();
-}
-function renderHeader(){
-  const tr = $("#headerRow");
-  tr.innerHTML = "";
-  columns.forEach(col=>{
-    if(!visibleCols.has(col.key))return;
-    const th = document.createElement("th");
-    th.textContent = col.label;
-    tr.appendChild(th);
-  });
 }
 function renderBody(){
   const tbody = $("#tasks tbody");
@@ -230,7 +276,7 @@ function renderBody(){
     tr.dataset.taskId = t.id;
     if(t.hidden) tr.classList.add("hidden");
 
-    columns.forEach(col=>{
+    columnsOrder.forEach(col=>{
       if(!visibleCols.has(col.key))return;
       const td = document.createElement("td");
 
@@ -269,23 +315,23 @@ function renderBody(){
           td.innerHTML = `<a href="${t.html_url}" target="_blank">${t.title}</a>`;
           break;
         case "project":
-          td.textContent = t.project; 
+          td.textContent = t.project;
           td.className="project-cell";
           break;
         case "sprint":
-          td.textContent = t.sprint;  
+          td.textContent = t.sprint;
           td.className="sprint-cell";
           break;
         case "points":
-          td.textContent = t.fib_points ?? ""; 
+          td.textContent = t.fib_points ?? "";
           break;
         case "assignee":
-          td.textContent = t.assignee ?? ""; 
+          td.textContent = t.assignee ?? "";
           break;
         case "created":
-          td.textContent = isoDate(t.created_at); 
+          td.textContent = isoDate(t.created_at);
           break;
-        default: 
+        default:
           td.textContent = t[col.key]??"";
       }
       tr.appendChild(td);
@@ -317,26 +363,60 @@ async function populateFilters(){
 }
 
 /* ------------------------------------------------------------------
- * Column picker modal logic
+ * Column picker logic
  * ------------------------------------------------------------------ */
 function openColModal(){
-  $("#colCheckboxes").innerHTML = columns.map(c=>`
-      <label>
+  const container = $("#colList");
+  container.innerHTML = "";
+  columnsOrder.forEach((c, idx)=>{
+    const div = document.createElement("div");
+    div.className = "col-item";
+    div.innerHTML = `
+      <button class="col-move" data-idx="${idx}" data-dir="up">⬆️</button>
+      <button class="col-move" data-idx="${idx}" data-dir="down">⬇️</button>
+      <label class="col-label">
         <input type="checkbox" value="${c.key}" ${visibleCols.has(c.key)?"checked":""}/>
-        ${c.label||c.key}
+        ${c.label || c.key}
       </label>
-    `).join("<br/>");
+    `;
+    container.appendChild(div);
+  });
   showModal($("#colModal"));
 }
 $("#gearBtn").addEventListener("click",openColModal);
+
+// handle reordering inside the modal
+$("#colList").addEventListener("click",(e)=>{
+  if(!e.target.classList.contains("col-move")) return;
+  const idx = parseInt(e.target.dataset.idx,10);
+  const dir = e.target.dataset.dir;
+  const newIdx = dir==="up" ? idx-1 : idx+1;
+  if(newIdx<0 || newIdx>= columnsOrder.length) return;
+  // swap
+  const tmp = columnsOrder[idx];
+  columnsOrder[idx] = columnsOrder[newIdx];
+  columnsOrder[newIdx] = tmp;
+  openColModal(); // re-render
+});
+
+// on Save
 $("#colSaveBtn").addEventListener("click", async ()=>{
-  const checked = $$("#colCheckboxes input:checked").map(el=>el.value);
-  visibleCols = new Set(checked);
+  // get updated visibility
+  const checks = $$("#colList input[type=checkbox]");
+  visibleCols.clear();
+  checks.forEach(ch=>{
+    if(ch.checked) visibleCols.add(ch.value);
+  });
+
   await saveSettings();
   hideModal($("#colModal"));
   await loadTasks();
 });
-$("#colCancelBtn").addEventListener("click", ()=>hideModal($("#colModal")));
+
+// on Cancel
+$("#colCancelBtn").addEventListener("click", ()=>{
+  hideModal($("#colModal"));
+});
 
 /* ------------------------------------------------------------------
  * Row interactions
@@ -674,4 +754,3 @@ $("#cancelTaskBtn").addEventListener("click", ()=>{
 </script>
 </body>
 </html>
-
