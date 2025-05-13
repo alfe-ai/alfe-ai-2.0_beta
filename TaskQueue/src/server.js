@@ -332,7 +332,7 @@ app.get("/api/activity", (req, res) => {
   }
 });
 
-// Updated /api/chat for streaming completions
+// Updated /api/chat for streaming completions, now storing user & AI messages
 app.post("/api/chat", async (req, res) => {
   try {
     const userMessage = req.body.message || "";
@@ -340,11 +340,16 @@ app.post("/api/chat", async (req, res) => {
       return res.status(400).send("Missing message");
     }
 
+    // Insert user message into chat_pairs table
+    const chatPairId = db.createChatPair(userMessage);
+
     // Start streaming the response
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.setHeader("Transfer-Encoding", "chunked");
 
     const model = process.env.OPENAI_MODEL || "o3-mini";
+    let assistantMessage = "";
+
     const stream = await openaiClient.chat.completions.create({
       model,
       messages: [{ role: "user", content: userMessage }],
@@ -354,11 +359,16 @@ app.post("/api/chat", async (req, res) => {
     for await (const part of stream) {
       const textChunk = part.choices?.[0]?.delta?.content || "";
       if (textChunk) {
+        assistantMessage += textChunk;
         res.write(textChunk);
       }
     }
 
     res.end();
+
+    // Finalize the chat pair with the complete AI response
+    db.finalizeChatPair(chatPairId, assistantMessage, model);
+
   } catch (err) {
     console.error("[TaskQueue] /api/chat (stream) error:", err);
     if (!res.headersSent) {

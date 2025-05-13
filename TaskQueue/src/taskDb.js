@@ -101,6 +101,17 @@ export default class TaskDB {
       );
     `);
 
+    // New table for storing chat bubble pairs
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS chat_pairs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_text TEXT NOT NULL,
+        ai_text TEXT,
+        model TEXT,
+        timestamp TEXT NOT NULL
+      );
+    `);
+
     console.debug("[TaskDB Debug] Finished DB schema init.");
   }
 
@@ -413,4 +424,33 @@ export default class TaskDB {
       .prepare("SELECT * FROM activity_timeline ORDER BY id DESC")
       .all();
   }
+
+  /* ------------------------------------------------------------------ */
+  /*  Chat storage methods                                              */
+  /* ------------------------------------------------------------------ */
+  createChatPair(userText) {
+    const timestamp = new Date().toISOString();
+    const { lastInsertRowid } = this.db.prepare(`
+      INSERT INTO chat_pairs (user_text, ai_text, model, timestamp)
+      VALUES (@user_text, '', '', @timestamp)
+    `).run({
+      user_text: userText,
+      timestamp
+    });
+    return lastInsertRowid;
+  }
+
+  finalizeChatPair(id, aiText, model) {
+    this.db.prepare(`
+      UPDATE chat_pairs
+      SET ai_text = @ai_text,
+          model = @model
+      WHERE id = @id
+    `).run({
+      id,
+      ai_text: aiText,
+      model
+    });
+  }
 }
+
