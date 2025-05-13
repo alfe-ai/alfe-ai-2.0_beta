@@ -1060,8 +1060,8 @@
       const dx = e.clientX - startX;
       const newWidth = startWidth + dx;
       const minWidth = 150;
-      const maxWidth = 800;
-      if(newWidth >= minWidth && newWidth <= maxWidth){
+      // Removed maxWidth to allow unlimited width
+      if(newWidth >= minWidth) {
         $(".sidebar").style.width = newWidth + "px";
       }
     });
@@ -1128,4 +1128,3 @@
 </script>
 </body>
 </html>
-

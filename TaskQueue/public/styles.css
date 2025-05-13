@@ -160,7 +160,7 @@ body {
   margin-bottom: 0.5rem;
 }
 
-/* Chat bubbles */
+/* Chat bubbles container */
 .chat-sequence {
   border: 1px solid #ccc;
   border-radius: 8px;
@@ -169,26 +169,37 @@ body {
   background: #fefefe;
 }
 
-/* Align user messages to the right in greenish bubble */
+/* User bubble: right-aligned, shrink to text size */
 .chat-user {
-  background: #dcf8c6; /* Light green (WhatsApp style) */
-  padding: 6px 8px;
-  border-radius: 16px;
+  background: #dcf8c6;
+  display: inline-block;
+  max-width: 60%;
+  width: fit-content;
   margin-bottom: 6px;
-  color: #333;
-  text-align: right;
-}
-
-/* Align AI messages to the left in a grayish bubble */
-.chat-bot {
-  background: #f1f0f0;
-  padding: 6px 8px;
-  border-radius: 16px;
+  margin-left: auto;
+  margin-right: 0;
   color: #333;
   text-align: left;
-  margin-bottom: 6px;
+  padding: 6px 8px;
+  border-radius: 16px;
 }
 
+/* AI bubble: left-aligned, shrink to text size */
+.chat-bot {
+  background: #f1f0f0;
+  display: inline-block;
+  max-width: 60%;
+  width: fit-content;
+  margin-bottom: 6px;
+  margin-left: 0;
+  margin-right: auto;
+  color: #333;
+  text-align: left;
+  padding: 6px 8px;
+  border-radius: 16px;
+}
+
+/* Additional details styling */
 .chat-system {
   background: #eee;
   padding: 6px 8px;
@@ -251,4 +262,3 @@ body {
 .send-btn:hover {
   background: #0062cc;
 }
-
