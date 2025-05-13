@@ -22,6 +22,7 @@
   <button id="gearBtn" title="Configure columns">⚙️</button>
   <button id="defaultsBtn" title="Default project/sprint">⭐</button>
   <button id="repoBtn" title="Edit Git repository">🔀</button>
+  <button id="toggleTasksBtn">Hide tasks</button>
 </div>
 
 <table id="tasks">
@@ -133,6 +134,9 @@
   let visibleCols = new Set(columnsOrder.map(c => c.key));
   let allTasks = [];
   let dragSrcRow = null;
+  let modelName = "unknown";
+  let tasksVisible = true;
+
   const $  = (sel, ctx=document) => ctx.querySelector(sel);
   const $$ = (sel, ctx=document) => [...ctx.querySelectorAll(sel)];
   const isoDate = d => new Date(d).toLocaleDateString();
@@ -141,6 +145,16 @@
   function showModal(m){ m.style.display = "flex"; }
   function hideModal(m){ m.style.display = "none"; }
   $$(".modal").forEach(m => m.addEventListener("click", e => { if(e.target===m) hideModal(m); }));
+
+  /* ------------------------------------------------------------------
+   * Toggling the task table
+   * ------------------------------------------------------------------ */
+  function toggleTasks(){
+    tasksVisible = !tasksVisible;
+    $("#tasks").style.display = tasksVisible ? "" : "none";
+    $("#toggleTasksBtn").textContent = tasksVisible ? "Hide tasks" : "Show tasks";
+  }
+  $("#toggleTasksBtn").addEventListener("click", toggleTasks);
 
   /* ------------------------------------------------------------------
    * Load & save settings
@@ -629,6 +643,17 @@
   const chatSendBtnEl = document.getElementById("chatSendBtn");
   const waitingElem = document.getElementById("waitingCounter");
 
+  // Insert a placeholder AI bubble to show the model even with no messages
+  function insertAiPlaceholder(){
+    const seqDiv = document.createElement("div");
+    seqDiv.className = "chat-sequence";
+    const botDiv = document.createElement("div");
+    botDiv.className = "chat-bot";
+    botDiv.textContent = `AI (model: ${modelName}) is listening...`;
+    seqDiv.appendChild(botDiv);
+    chatMessagesEl.appendChild(seqDiv);
+  }
+
   chatInputEl.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -650,7 +675,7 @@
 
     const botDiv = document.createElement("div");
     botDiv.className = "chat-bot";
-    botDiv.textContent = "AI: ";
+    botDiv.textContent = `AI (model: ${modelName}): `;
     seqDiv.appendChild(botDiv);
 
     chatMessagesEl.appendChild(seqDiv);
@@ -674,7 +699,7 @@
       waitingElem.textContent = "";
 
       if(!resp.ok){
-        botDiv.textContent = "AI: [Error contacting AI]";
+        botDiv.textContent = `AI (model: ${modelName}): [Error contacting AI]`;
       } else {
         const reader = resp.body.getReader();
         let partialText = "";
@@ -682,14 +707,14 @@
           const { value, done } = await reader.read();
           if(done) break;
           partialText += new TextDecoder().decode(value);
-          botDiv.textContent = "AI: " + partialText;
+          botDiv.textContent = `AI (model: ${modelName}): ` + partialText;
           chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
         }
       }
     } catch(e) {
       clearInterval(waitInterval);
       waitingElem.textContent = "";
-      botDiv.textContent = "AI: [Error occurred]";
+      botDiv.textContent = `AI (model: ${modelName}): [Error occurred]`;
     }
     chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
   });
@@ -701,7 +726,19 @@
     await loadSettings();
     await populateFilters();
     await loadTasks();
+    // Fetch the model name and insert placeholder bubble
+    try {
+      const r = await fetch("/api/model");
+      if(r.ok){
+        const data = await r.json();
+        modelName = data.model || "unknown";
+      }
+    } catch(e){
+      modelName = "unknown";
+    }
+    insertAiPlaceholder();
   })();
 </script>
 </body>
 </html>
+

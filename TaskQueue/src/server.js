@@ -367,6 +367,12 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
+// Provide the current openai model
+app.get("/api/model", (req, res) => {
+  const model = process.env.OPENAI_MODEL || "o3-mini";
+  res.json({ model });
+});
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 app.use(express.static(path.join(__dirname, "../public")));
 
@@ -386,3 +392,4 @@ app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
  // 
+
