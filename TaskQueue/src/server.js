@@ -35,8 +35,16 @@ try {
 // Serve static files from /uploads so they can be opened in the browser
 app.use("/uploads", express.static(uploadsDir));
 
-// Multer setup
-const upload = multer({ dest: uploadsDir });
+// Multer storage (keep file extension)
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadsDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, file.fieldname + "-" + uniqueSuffix + ext);
+  }
+});
+const upload = multer({ storage });
 
 // GET /api/tasks
 app.get("/api/tasks", (req, res) => {
@@ -558,4 +566,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
-
