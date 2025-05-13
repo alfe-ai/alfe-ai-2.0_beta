@@ -784,17 +784,33 @@
     }
 
     if (agentInstructions) {
-      const instrDiv = document.createElement("div");
-      instrDiv.className = "chat-instructions";
-      instrDiv.textContent = agentInstructions;
-      seqDiv.appendChild(instrDiv);
+      const detailsEl = document.createElement("details");
+      detailsEl.open = false;
+      detailsEl.className = "chat-instructions";
+      const summaryEl = document.createElement("summary");
+      summaryEl.textContent = "Agent Instructions (click to expand)";
+      detailsEl.appendChild(summaryEl);
+
+      const preEl = document.createElement("pre");
+      preEl.textContent = agentInstructions;
+      detailsEl.appendChild(preEl);
+
+      seqDiv.appendChild(detailsEl);
     }
 
     if (systemInfoText) {
-      const sysDiv = document.createElement("div");
-      sysDiv.className = "chat-system";
-      sysDiv.textContent = "System Info:\n" + systemInfoText;
-      seqDiv.appendChild(sysDiv);
+      const detailsSysEl = document.createElement("details");
+      detailsSysEl.open = false;
+      detailsSysEl.className = "chat-system";
+      const sumSys = document.createElement("summary");
+      sumSys.textContent = "System Info (click to expand)";
+      detailsSysEl.appendChild(sumSys);
+
+      const preSys = document.createElement("pre");
+      preSys.textContent = systemInfoText;
+      detailsSysEl.appendChild(preSys);
+
+      seqDiv.appendChild(detailsSysEl);
     }
 
     const userDiv = document.createElement("div");
