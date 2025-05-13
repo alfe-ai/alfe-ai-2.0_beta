@@ -3,7 +3,8 @@ import path from "path";
 
 /**
  * Very small wrapper around better-sqlite3 for our issue store.
- * Now stores `repo`, `task_id_slug`, `priority_number`, and `project` columns.
+ * Now stores `repo` (short name), **new** `repository` (owner/repo),
+ * `task_id_slug`, `priority_number`, and `project` columns.
  */
 export default class TaskDB {
   constructor(dbPath = path.resolve("issues.sqlite")) {
@@ -17,7 +18,7 @@ export default class TaskDB {
    * – adds new columns when upgrading from older versions
    */
   #init() {
-    // 1. Base table (legacy columns)
+    // 1. Base table (run-once)
     const createSql = `
       CREATE TABLE IF NOT EXISTS issues (
         id             INTEGER PRIMARY KEY,
@@ -32,18 +33,21 @@ export default class TaskDB {
     `;
     this.db.prepare(createSql).run();
 
-    // 2. Detect & add new columns
+    // 2. Detect existing columns, add new ones if absent
     const cols = this.db
       .prepare(`PRAGMA table_info('issues');`)
       .all()
       .map((c) => c.name);
 
-    if (!cols.includes("repo")) {
-      this.db.prepare(`ALTER TABLE issues ADD COLUMN repo TEXT;`).run();
-    }
-    if (!cols.includes("task_id_slug")) {
-      this.db.prepare(`ALTER TABLE issues ADD COLUMN task_id_slug TEXT;`).run();
-    }
+    const maybeAdd = (name, ddl) => {
+      if (!cols.includes(name)) {
+        this.db.prepare(`ALTER TABLE issues ADD COLUMN ${ddl};`).run();
+      }
+    };
+
+    maybeAdd("repo", "repo TEXT");
+    maybeAdd("repository", "repository TEXT"); // <─ NEW
+    maybeAdd("task_id_slug", "task_id_slug TEXT");
     let addedPriority = false;
     if (!cols.includes("priority_number")) {
       this.db
@@ -51,9 +55,7 @@ export default class TaskDB {
         .run();
       addedPriority = true;
     }
-    if (!cols.includes("project")) {
-      this.db.prepare(`ALTER TABLE issues ADD COLUMN project TEXT DEFAULT '';`).run();
-    }
+    maybeAdd("project", "project TEXT DEFAULT ''");
 
     // 3. When column first introduced → assign priorities to existing rows
     if (addedPriority) {
@@ -82,17 +84,20 @@ export default class TaskDB {
 
   /**
    * Insert or update one GitHub issue row.
-   * @param {object} issue  – raw Octokit issue object
-   * @param {string} repo   – repository name (for slug / grouping)
+   * @param {object} issue        – raw Octokit issue object
+   * @param {string} repository   – full "owner/repo" slug
    */
-  upsertIssue(issue, repo) {
-    const slug = `${repo}-${issue.id}`;
+  upsertIssue(issue, repository) {
+    // Short repository name (without owner) for legacy `repo` + slug
+    const repoShort = repository.includes("/")
+      ? repository.split("/").pop()
+      : repository;
+
+    const slug = `${repoShort}-${issue.id}`;
 
     // Preserve existing fields we do not wish to overwrite
     const existing = this.db
-      .prepare(
-        `SELECT priority_number, project FROM issues WHERE id=?;`
-      )
+      .prepare(`SELECT priority_number, project FROM issues WHERE id=?;`)
       .get(issue.id);
 
     const priority_number =
@@ -101,23 +106,24 @@ export default class TaskDB {
 
     const stmt = this.db.prepare(`
       INSERT INTO issues (
-        id, number, repo, task_id_slug, title, html_url, state, assignee,
-        created_at, updated_at, priority_number, project
+        id, number, repo, repository, task_id_slug, title, html_url, state,
+        assignee, created_at, updated_at, priority_number, project
       )
       VALUES (
-        @id, @number, @repo, @task_id_slug, @title, @html_url, @state, @assignee,
-        @created_at, @updated_at, @priority_number, @project
+        @id, @number, @repo, @repository, @task_id_slug, @title, @html_url, @state,
+        @assignee, @created_at, @updated_at, @priority_number, @project
       )
       ON CONFLICT(id) DO UPDATE SET
-        number          = excluded.number,
-        repo            = excluded.repo,
-        task_id_slug    = excluded.task_id_slug,
-        title           = excluded.title,
-        html_url        = excluded.html_url,
-        state           = excluded.state,
-        assignee        = excluded.assignee,
-        created_at      = excluded.created_at,
-        updated_at      = excluded.updated_at
+        number       = excluded.number,
+        repo         = excluded.repo,
+        repository   = excluded.repository,
+        task_id_slug = excluded.task_id_slug,
+        title        = excluded.title,
+        html_url     = excluded.html_url,
+        state        = excluded.state,
+        assignee     = excluded.assignee,
+        created_at   = excluded.created_at,
+        updated_at   = excluded.updated_at
         -- priority_number & project intentionally NOT overwritten
       ;
     `);
@@ -125,7 +131,8 @@ export default class TaskDB {
     stmt.run({
       id: issue.id,
       number: issue.number,
-      repo,
+      repo: repoShort,
+      repository,
       task_id_slug: slug,
       title: issue.title,
       html_url: issue.html_url,
@@ -144,9 +151,7 @@ export default class TaskDB {
    * @param {string} project
    */
   updateProject(id, project) {
-    this.db
-      .prepare(`UPDATE issues SET project=? WHERE id=?;`)
-      .run(project, id);
+    this.db.prepare(`UPDATE issues SET project=? WHERE id=?;`).run(project, id);
   }
 
   /**
@@ -222,4 +227,3 @@ export default class TaskDB {
       .all();
   }
 }
-

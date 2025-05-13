@@ -53,10 +53,13 @@ async function main() {
 
     const issues = await client.fetchOpenIssues(label?.trim() || undefined);
 
+    // Build full repository slug once
+    const repositorySlug = `${client.owner}/${client.repo}`;
+
     // ------------------------------------------------------------------
     // 1. Synchronise local DB
     // ------------------------------------------------------------------
-    issues.forEach((iss) => db.upsertIssue(iss, client.repo));
+    issues.forEach((iss) => db.upsertIssue(iss, repositorySlug));
 
     // Closed issue detection
     const openIds = issues.map((i) => i.id);
