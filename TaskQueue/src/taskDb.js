@@ -177,11 +177,22 @@ export default class TaskDB {
   }
 
   /* ------------------------------------------------------------------ */
-  /*  Misc debugging helper                                             */
+  /*  Misc debugging helpers                                            */
   /* ------------------------------------------------------------------ */
   dumpIssues() {
     return this.db
       .prepare("SELECT * FROM issues ORDER BY priority_number;")
       .all();
+  }
+
+  /**
+   * Convenience wrapper so callers can simply call db.dump()
+   * without worrying about the individual helpers.
+   */
+  dump() {
+    return {
+      issues: this.dumpIssues(),
+      settings: this.allSettings()
+    };
   }
 }
