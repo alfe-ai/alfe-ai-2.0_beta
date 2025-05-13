@@ -341,6 +341,9 @@ app.post("/api/chat", async (req, res) => {
       return res.status(400).send("Missing message");
     }
 
+    // Log user chat
+    db.logActivity("User chat", JSON.stringify({ tabId: chatTabId, message: userMessage }));
+
     const model = process.env.OPENAI_MODEL || "o3-mini";
     const systemContext = `System Context:\nModel: ${model}\nTimestamp: ${new Date().toISOString()}`;
 
@@ -374,6 +377,9 @@ app.post("/api/chat", async (req, res) => {
 
     // Finalize the chat pair with the complete AI response + AI timestamp
     db.finalizeChatPair(chatPairId, assistantMessage, model, new Date().toISOString());
+
+    // Log AI chat
+    db.logActivity("AI chat", JSON.stringify({ tabId: chatTabId, response: assistantMessage }));
 
   } catch (err) {
     console.error("[TaskQueue] /api/chat (stream) error:", err);
@@ -478,4 +484,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
-
