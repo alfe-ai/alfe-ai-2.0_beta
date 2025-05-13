@@ -220,6 +220,18 @@ export default class TaskDB {
     return true;
   }
 
+  /* New method to reorder tasks in bulk according to the array order */
+  reorderAll(taskIdsInOrder) {
+    const upd = this.db.prepare(
+      "UPDATE issues SET priority_number=? WHERE id=?"
+    );
+    this.db.transaction(() => {
+      taskIdsInOrder.forEach((taskId, index) => {
+        upd.run(index + 1, taskId);
+      });
+    })();
+  }
+
   setHidden(id, hidden) {
     this.db.prepare("UPDATE issues SET hidden = ? WHERE id = ?").run(
       hidden ? 1 : 0,
@@ -401,3 +413,4 @@ export default class TaskDB {
       .all();
   }
 }
+

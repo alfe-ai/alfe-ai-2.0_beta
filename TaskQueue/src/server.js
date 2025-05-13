@@ -78,6 +78,22 @@ app.post("/api/tasks/reorder", (req, res) => {
   }
 });
 
+// NEW: reorder an entire list of tasks according to the array order
+app.post("/api/tasks/reorderAll", (req, res) => {
+  try {
+    const { orderedIds } = req.body;
+    if (!Array.isArray(orderedIds)) {
+      return res.status(400).json({ error: "orderedIds must be an array" });
+    }
+    db.reorderAll(orderedIds);
+    db.logActivity("Reorder all tasks", JSON.stringify({ orderedIds }));
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[TaskQueue] /api/tasks/reorderAll failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // POST /api/tasks/points
 app.post("/api/tasks/points", (req, res) => {
   try {
@@ -328,3 +344,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
+
