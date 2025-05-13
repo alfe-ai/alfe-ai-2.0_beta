@@ -4,157 +4,63 @@
   <meta charset="UTF-8" />
   <title>TaskQueue – Open Tasks</title>
   <style>
-    body {
-      font-family: sans-serif;
-      margin: 2rem;
-    }
-    h1 {
-      margin-top: 0;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    th,
-    td {
-      padding: 8px;
-      border: 1px solid #ddd;
-    }
-    th {
-      background: #f0f0f0;
-      text-align: left;
-    }
-    tr:nth-child(even) {
-      background: #fafafa;
-    }
-    a {
-      color: #0366d6;
-      text-decoration: none;
-    }
+    body { font-family: sans-serif; margin: 2rem; }
+    h1   { margin-top: 0; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 8px; border: 1px solid #ddd; }
+    th { background: #f0f0f0; text-align: left; }
+    tr:nth-child(even) { background: #fafafa; }
+    a { color: #0366d6; text-decoration: none; }
     button.arrow,
     button.eye,
     button.fib-btn,
-    #addTaskBtn,
-    #gearBtn,
-    #instrBtn,
-    #repoBtn,
-    #defaultsBtn {
-      border: none;
-      background: none;
-      cursor: pointer;
-      font-size: 1rem;
-      line-height: 1;
-      padding: 0 4px;
+    #addTaskBtn,#gearBtn,#instrBtn,#repoBtn,#defaultsBtn{
+      border:none;background:none;cursor:pointer;font-size:1rem;line-height:1;padding:0 4px;
     }
-    #addTaskBtn {
-      margin-left: 1rem;
-      font-size: 1.1rem;
-    }
-    #gearBtn,
-    #instrBtn,
-    #repoBtn,
-    #defaultsBtn {
-      margin-left: 0.6rem;
-      font-size: 1.2rem;
-    }
-    tr.hidden {
-      opacity: 0.4;
-    }
-    .project-cell,
-    .sprint-cell {
-      cursor: pointer;
-      color: #333;
-    }
-    .project-cell:hover,
-    .sprint-cell:hover {
-      text-decoration: underline dotted;
-    }
-    .inline-input {
-      width: 100%;
-      box-sizing: border-box;
-      font: inherit;
-      padding: 4px;
-    }
-    #controls {
-      margin-bottom: 1rem;
-    }
+    #addTaskBtn{margin-left:1rem;font-size:1.1rem;}
+    #gearBtn,#instrBtn,#repoBtn,#defaultsBtn{margin-left:.6rem;font-size:1.2rem;}
+    tr.hidden{opacity:.4;}
+    .project-cell,.sprint-cell{cursor:pointer;color:#333;}
+    .project-cell:hover,.sprint-cell:hover{text-decoration:underline dotted;}
+    .inline-input{width:100%;box-sizing:border-box;font:inherit;padding:4px;}
+    #controls{margin-bottom:1rem;}
 
     /* ------------ modal ------------ */
-    .modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.25);
-      align-items: center;
-      justify-content: center;
-    }
-    .modal-content {
-      background: #fff;
-      padding: 1rem 1.5rem;
-      border-radius: 6px;
-      min-width: 220px;
-      max-width: 600px;
-      max-height: 90vh;
-      overflow: auto;
-    }
-    .modal-content h2 {
-      margin-top: 0;
-    }
-    .modal-content label {
-      display: block;
-      margin: 4px 0;
-    }
-    .modal-buttons {
-      text-align: right;
-      margin-top: 8px;
-    }
-    textarea {
-      font-family: monospace;
-    }
+    .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.25);align-items:center;justify-content:center;}
+    .modal-content{background:#fff;padding:1rem 1.5rem;border-radius:6px;min-width:220px;max-width:600px;max-height:90vh;overflow:auto;}
+    .modal-content h2{margin-top:0;}
+    .modal-buttons{text-align:right;margin-top:8px;}
+    textarea{font-family:monospace;}
   </style>
 </head>
 <body>
 <h1>Open Tasks</h1>
 
-<!-- navigation links -->
 <p>
   <a href="/projects">📂 Projects overview</a> •
   <a href="/sprints">🏃‍♂️ Sprints overview</a>
 </p>
 
 <div id="controls">
-  <label>
-    <input type="checkbox" id="showHidden" />
-    Show hidden tasks
+  <label><input type="checkbox" id="showHidden" /> Show hidden tasks</label>
+
+  <label style="margin-left:1rem;">Project:
+    <select id="projectFilter"><option value="">All projects</option></select>
   </label>
 
-  <!-- project filter dropdown -->
-  <label style="margin-left:1rem;">
-    Project:
-    <select id="projectFilter">
-      <option value="">All projects</option>
-    </select>
-  </label>
-
-  <!-- sprint filter dropdown -->
-  <label style="margin-left:1rem;">
-    Sprint:
-    <select id="sprintFilter">
-      <option value="">All sprints</option>
-    </select>
+  <label style="margin-left:1rem;">Sprint:
+    <select id="sprintFilter"><option value="">All sprints</option></select>
   </label>
 
   <button id="addTaskBtn">➕ New Task</button>
   <button id="instrBtn" title="Agent instructions">📝</button>
-  <button id="gearBtn" title="Configure columns">⚙️</button>
+  <button id="gearBtn"  title="Configure columns">⚙️</button>
   <button id="defaultsBtn" title="Default project/sprint">⭐</button>
   <button id="repoBtn" title="Edit Git repository">🔀</button>
 </div>
 
 <table id="tasks">
-  <thead>
-  <tr id="headerRow"></tr>
-  </thead>
+  <thead><tr id="headerRow"></tr></thead>
   <tbody></tbody>
 </table>
 
@@ -186,8 +92,7 @@
 <div id="repoModal" class="modal">
   <div class="modal-content">
     <h2>Edit Git repository</h2>
-    <label>
-      Repository (owner/repo):
+    <label>Repository (owner/repo):
       <input type="text" id="repoInput" style="width:100%;" />
     </label>
     <div class="modal-buttons">
@@ -201,12 +106,10 @@
 <div id="defaultsModal" class="modal">
   <div class="modal-content">
     <h2>Default project / sprint</h2>
-    <label>
-      Default project:
+    <label>Default project:
       <input type="text" id="defProjectInput" style="width:100%;" />
     </label>
-    <label>
-      Default sprint:
+    <label>Default sprint:
       <input type="text" id="defSprintInput" style="width:100%;" />
     </label>
     <div class="modal-buttons">
@@ -219,101 +122,212 @@
 <script>
 /* ---------------- constants ---------------- */
 const columns = [
-  { key: "order", label: "P" },
-  { key: "reorder", label: "↕" },
-  { key: "visibility", label: "" },
-  { key: "priority", label: "Prio" },
-  { key: "slug", label: "Slug" },
-  { key: "repo", label: "Repo" },
-  { key: "number", label: "#" },
-  { key: "title", label: "Title" },
-  { key: "project", label: "Project" },
-  { key: "sprint", label: "Sprint" },
-  { key: "points", label: "Pts" },
-  { key: "assignee", label: "Assignee" },
-  { key: "created", label: "Created" }
+  { key: "order",      label: "P"      },
+  { key: "reorder",    label: "↕"     },
+  { key: "visibility", label: ""       },
+  { key: "priority",   label: "Prio"   },
+  { key: "slug",       label: "Slug"   },
+  { key: "repo",       label: "Repo"   },
+  { key: "number",     label: "#"      },
+  { key: "title",      label: "Title"  },
+  { key: "project",    label: "Project"},
+  { key: "sprint",     label: "Sprint" },
+  { key: "points",     label: "Pts"    },
+  { key: "assignee",   label: "Assignee"},
+  { key: "created",    label: "Created"}
 ];
 
 /* --------------- state --------------------- */
-let visibleCols = new Set(columns.map((c) => c.key));
+let visibleCols = new Set(columns.map(c => c.key));
+let allTasks     = [];
 
-/* --------------- selectors ----------------- */
-const $ = (sel, ctx = document) => ctx.querySelector(sel);
-const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
+/* --------------- helpers ------------------- */
+const $  = (sel, ctx=document) => ctx.querySelector(sel);
+const $$ = (sel, ctx=document) => [...ctx.querySelectorAll(sel)];
+const isoDate = (d) => new Date(d).toLocaleDateString();
 
-/* --------------- modal helpers ------------- */
-function showModal(modal) {
-  modal.style.display = "flex";
-}
-function hideModal(modal) {
-  modal.style.display = "none";
-}
+/* --------------- modals -------------------- */
+function showModal(modal){ modal.style.display="flex"; }
+function hideModal(modal){ modal.style.display="none"; }
+$$(".modal").forEach(m=>m.addEventListener("click",e=>{ if(e.target===m)hideModal(m);}));
 
 /* ------------------------------------------------------------------
- * Settings helpers (persist on server)
+ * Settings helpers
  * ------------------------------------------------------------------ */
-async function loadSettings() {
-  const res = await fetch("/api/settings/visible_columns");
-  if (res.ok) {
-    const { value } = await res.json();
-    if (Array.isArray(value)) visibleCols = new Set(value);
+async function loadSettings(){
+  const r = await fetch("/api/settings/visible_columns");
+  if(r.ok){
+    const { value } = await r.json();
+    if(Array.isArray(value)) visibleCols = new Set(value);
   }
 }
-
-async function saveSettings() {
-  await fetch("/api/settings", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      key: "visible_columns",
-      value: [...visibleCols]
-    })
-  });
+async function saveSettings(){
+  await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({key:"visible_columns",value:[...visibleCols]})});
 }
-
-[unchanged helper blocks...]
 
 /* ------------------------------------------------------------------
- * Column-picker modal logic (⚙️)
+ * Load / render tasks
  * ------------------------------------------------------------------ */
-function openColModal() {
-  const modal = $("#colModal");
-  const boxContainer = $("#colCheckboxes");
-  boxContainer.innerHTML = columns
-    .map(
-      (c) => `
-      <label>
-        <input type="checkbox" value="${c.key}" ${
-        visibleCols.has(c.key) ? "checked" : ""
-      } />
-        ${c.label || c.key}
-      </label>
-    `
-    )
-    .join("<br/>");
-  showModal(modal);
+async function fetchTasks(){
+  const includeHidden = $("#showHidden").checked;
+  const url = `/api/tasks?includeHidden=${includeHidden?1:0}`;
+  const res = await fetch(url);
+  return res.json();
+}
+function renderHeader(){
+  const tr = $("#headerRow");
+  tr.innerHTML = "";
+  columns.forEach(col=>{
+    if(!visibleCols.has(col.key))return;
+    const th = document.createElement("th");
+    th.textContent = col.label;
+    tr.appendChild(th);
+  });
+}
+function renderBody(){
+  const tbody = $("#tasks tbody");
+  tbody.innerHTML = "";
+
+  const selectedProj  = $("#projectFilter").value;
+  const selectedSprint= $("#sprintFilter").value;
+
+  const rows = allTasks.filter(t=>{
+    if(selectedProj && t.project!==selectedProj) return false;
+    if(selectedSprint && t.sprint!==selectedSprint) return false;
+    return true;
+  });
+
+  rows.forEach(t=>{
+    const tr = document.createElement("tr");
+    if(t.hidden) tr.classList.add("hidden");
+
+    columns.forEach(col=>{
+      if(!visibleCols.has(col.key))return;
+      const td = document.createElement("td");
+
+      switch(col.key){
+        case "order":   td.textContent = t.priority_number; break;
+        case "priority":td.textContent = t.priority; break;
+        case "slug":    td.textContent = t.task_id_slug; break;
+        case "repo":    td.textContent = t.repository; break;
+        case "reorder":
+          td.innerHTML = `
+            <button class="arrow" data-id="${t.id}" data-dir="up">⬆️</button>
+            <button class="arrow" data-id="${t.id}" data-dir="down">⬇️</button>`;
+          break;
+        case "visibility":
+          td.innerHTML = `<button class="eye" data-id="${t.id}">${t.hidden?"🙈":"👁️"}</button>`;
+          break;
+        case "number":
+          td.innerHTML = `<a href="${t.html_url}" target="_blank">#${t.number}</a>`;
+          break;
+        case "title":
+          td.innerHTML = `<a href="${t.html_url}" target="_blank">${t.title}</a>`;
+          break;
+        case "project":
+          td.textContent = t.project; td.className="project-cell"; break;
+        case "sprint":
+          td.textContent = t.sprint;  td.className="sprint-cell"; break;
+        case "points":
+          td.textContent = t.fib_points ?? ""; break;
+        case "assignee":
+          td.textContent = t.assignee ?? ""; break;
+        case "created":
+          td.textContent = isoDate(t.created_at); break;
+        default: td.textContent = t[col.key]??"";
+      }
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+}
+async function loadTasks(){
+  allTasks = await fetchTasks();
+  renderHeader();
+  renderBody();
 }
 
-$("#gearBtn").addEventListener("click", openColModal);
+/* ------------------------------------------------------------------
+ * Filters (projects / sprints)
+ * ------------------------------------------------------------------ */
+async function populateFilters(){
+  const projRes = await fetch("/api/projects");
+  const projects = await projRes.json();
+  $("#projectFilter").innerHTML =
+    '<option value="">All projects</option>' +
+    projects.map(p=>`<option value="${p.project}">${p.project}</option>`).join("");
 
-$("#colSaveBtn").addEventListener("click", async () => {
-  const checked = $$("#colCheckboxes input:checked").map((el) => el.value);
+  const sprintRes = await fetch("/api/sprints");
+  const sprints = await sprintRes.json();
+  $("#sprintFilter").innerHTML =
+    '<option value="">All sprints</option>' +
+    sprints.map(s=>`<option value="${s.sprint}">${s.sprint}</option>`).join("");
+}
+
+/* ------------------------------------------------------------------
+ * Column picker modal logic
+ * ------------------------------------------------------------------ */
+function openColModal(){
+  $("#colCheckboxes").innerHTML = columns.map(c=>`
+      <label>
+        <input type="checkbox" value="${c.key}" ${visibleCols.has(c.key)?"checked":""}/>
+        ${c.label||c.key}
+      </label>
+    `).join("<br/>");
+  showModal($("#colModal"));
+}
+$("#gearBtn").addEventListener("click",openColModal);
+$("#colSaveBtn").addEventListener("click", async ()=>{
+  const checked = $$("#colCheckboxes input:checked").map(el=>el.value);
   visibleCols = new Set(checked);
   await saveSettings();
   hideModal($("#colModal"));
   await loadTasks();
 });
+$("#colCancelBtn").addEventListener("click", ()=>hideModal($("#colModal")));
 
-$("#colCancelBtn").addEventListener("click", () => hideModal($("#colModal")));
+/* ------------------------------------------------------------------
+ * Visibility / reorder buttons (delegated)
+ * ------------------------------------------------------------------ */
+$("#tasks").addEventListener("click", async (e)=>{
+  const btn = e.target.closest("button");
+  if(!btn) return;
 
-/* click outside content closes modal */
-$$(".modal").forEach((m) =>
-  m.addEventListener("click", (e) => {
-    if (e.target === m) hideModal(m);
-  })
-);
+  /* visibility toggle */
+  if(btn.classList.contains("eye")){
+    const id = +btn.dataset.id;
+    const hiddenNow = btn.textContent==="👁️";
+    await fetch("/api/tasks/hidden",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({id, hidden:hiddenNow})});
+    await loadTasks();
+  }
 
-[rest of existing script unchanged]
+  /* reorder */
+  if(btn.classList.contains("arrow")){
+    const id = +btn.dataset.id;
+    const direction = btn.dataset.dir;
+    await fetch("/api/tasks/reorder",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({id,direction})});
+    await loadTasks();
+  }
+});
+
+/* ------------------------------------------------------------------
+ * Basic controls
+ * ------------------------------------------------------------------ */
+$("#showHidden").addEventListener("change", loadTasks);
+$("#projectFilter").addEventListener("change", renderBody);
+$("#sprintFilter").addEventListener("change", renderBody);
+
+/* ------------------------------------------------------------------
+ * Init sequence
+ * ------------------------------------------------------------------ */
+(async function init(){
+  await loadSettings();
+  await populateFilters();
+  await loadTasks();
+})();
 </script>
 </body>
 </html>
