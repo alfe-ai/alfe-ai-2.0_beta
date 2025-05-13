@@ -332,7 +332,7 @@ app.get("/api/activity", (req, res) => {
   }
 });
 
-// Updated /api/chat for streaming completions; now passing optional tabId + userTime
+// Updated /api/chat for streaming completions; now with prior messages
 app.post("/api/chat", async (req, res) => {
   try {
     const userMessage = req.body.message || "";
@@ -343,15 +343,32 @@ app.post("/api/chat", async (req, res) => {
       return res.status(400).send("Missing message");
     }
 
-    // Log user chat
-    db.logActivity("User chat", JSON.stringify({ tabId: chatTabId, message: userMessage, userTime }));
-
+    // Gather entire conversation history
+    const priorPairs = db.getAllChatPairs(chatTabId);
+    // We'll build a conversation array for the OpenAI API
+    // Start with the system context
     const model = process.env.OPENAI_MODEL || "o3-mini";
     const savedInstructions = db.getSetting("agent_instructions") || "";
     const systemContext = `System Context:\n${savedInstructions}\n\nModel: ${model}\nUserTime: ${userTime}\nTimeZone: Central`;
 
-    // Insert user message into chat_pairs table with system context
+    const conversation = [{ role: "system", content: systemContext }];
+
+    // Add all previous user/assistant messages
+    for (const p of priorPairs) {
+      conversation.push({ role: "user", content: p.user_text });
+      if (p.ai_text) {
+        conversation.push({ role: "assistant", content: p.ai_text });
+      }
+    }
+
+    // Insert user message into chat_pairs table (pending AI response)
     const chatPairId = db.createChatPair(userMessage, chatTabId, systemContext);
+
+    // Finally, push the latest user message
+    conversation.push({ role: "user", content: userMessage });
+
+    // Log user chat
+    db.logActivity("User chat", JSON.stringify({ tabId: chatTabId, message: userMessage, userTime }));
 
     // Start streaming the response
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
@@ -361,10 +378,7 @@ app.post("/api/chat", async (req, res) => {
 
     const stream = await openaiClient.chat.completions.create({
       model,
-      messages: [
-        { role: "system", content: systemContext },
-        { role: "user", content: userMessage }
-      ],
+      messages: conversation,
       stream: true
     });
 
