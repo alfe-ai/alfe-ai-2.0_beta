@@ -34,7 +34,8 @@
       button.arrow,
       button.eye,
       button.fib-btn,
-      #addTaskBtn {
+      #addTaskBtn,
+      #gearBtn {
         border: none;
         background: none;
         cursor: pointer;
@@ -45,6 +46,10 @@
       #addTaskBtn {
         margin-left: 1rem;
         font-size: 1.1rem;
+      }
+      #gearBtn {
+        margin-left: 0.6rem;
+        font-size: 1.2rem;
       }
       tr.hidden {
         opacity: 0.4;
@@ -65,11 +70,32 @@
       #controls {
         margin-bottom: 1rem;
       }
-      .fib-buttons {
-        margin-top: 4px;
+
+      /* ------------ modal ------------ */
+      .modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.25);
+        align-items: center;
+        justify-content: center;
       }
-      .fib-display {
-        font-weight: bold;
+      .modal-content {
+        background: #fff;
+        padding: 1rem 1.5rem;
+        border-radius: 6px;
+        min-width: 220px;
+      }
+      .modal-content h2 {
+        margin-top: 0;
+      }
+      .modal-content label {
+        display: block;
+        margin: 4px 0;
+      }
+      .modal-buttons {
+        text-align: right;
+        margin-top: 8px;
       }
     </style>
   </head>
@@ -82,43 +108,95 @@
         Show hidden tasks
       </label>
       <button id="addTaskBtn">➕ New Task</button>
+      <button id="gearBtn" title="Configure columns">⚙️</button>
     </div>
 
     <table id="tasks">
       <thead>
-        <tr>
-          <th>P</th>
-          <th>↕</th>
-          <th></th>
-          <th>Slug</th>
-          <th>Repo</th>
-          <th>#</th>
-          <th>Title</th>
-          <th>Project</th>
-          <th>Pts</th>
-          <th>Assignee</th>
-          <th>Created</th>
-        </tr>
+        <tr id="headerRow"></tr>
       </thead>
       <tbody></tbody>
     </table>
 
+    <!-- Column picker modal -->
+    <div id="colModal" class="modal">
+      <div class="modal-content">
+        <h2>Visible columns</h2>
+        <div id="colCheckboxes"></div>
+        <div class="modal-buttons">
+          <button id="colSaveBtn">Save</button>
+          <button id="colCancelBtn">Cancel</button>
+        </div>
+      </div>
+    </div>
+
     <script>
-      /* ------------------------------------------------------------------
-       * Helpers
-       * ------------------------------------------------------------------ */
+      /* ---------------- constants ---------------- */
+      const columns = [
+        { key: "priority", label: "P" },
+        { key: "reorder", label: "↕" },
+        { key: "visibility", label: "" },
+        { key: "slug", label: "Slug" },
+        { key: "repo", label: "Repo" },
+        { key: "number", label: "#" },
+        { key: "title", label: "Title" },
+        { key: "project", label: "Project" },
+        { key: "points", label: "Pts" },
+        { key: "assignee", label: "Assignee" },
+        { key: "created", label: "Created" }
+      ];
+
+      /* --------------- state --------------------- */
+      let visibleCols = new Set(columns.map((c) => c.key));
+
+      /* --------------- selectors ----------------- */
       const $ = (sel, ctx = document) => ctx.querySelector(sel);
+      const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
 
       /* ------------------------------------------------------------------
-       * Fetch & render table
+       * Settings helpers (persist on server)
        * ------------------------------------------------------------------ */
-      async function load() {
+      async function loadSettings() {
+        const res = await fetch("/api/settings/visible_columns");
+        if (res.ok) {
+          const { value } = await res.json();
+          if (Array.isArray(value)) visibleCols = new Set(value);
+        }
+      }
+
+      async function saveSettings() {
+        await fetch("/api/settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            key: "visible_columns",
+            value: [...visibleCols]
+          })
+        });
+      }
+
+      /* ------------------------------------------------------------------
+       * Render table header & rows
+       * ------------------------------------------------------------------ */
+      function renderHeader() {
+        const hdr = $("#headerRow");
+        hdr.innerHTML = "";
+        columns.forEach((c) => {
+          if (!visibleCols.has(c.key)) return;
+          const th = document.createElement("th");
+          th.textContent = c.label;
+          hdr.appendChild(th);
+        });
+      }
+
+      async function loadTasks() {
         const includeHidden = $("#showHidden").checked;
         const res = await fetch(
           "/api/tasks" + (includeHidden ? "?includeHidden=1" : "")
         );
         const tasks = await res.json();
 
+        renderHeader();
         const tbody = $("#tasks tbody");
         tbody.innerHTML = "";
 
@@ -126,31 +204,51 @@
           const tr = document.createElement("tr");
           if (t.hidden) tr.classList.add("hidden");
 
-          tr.innerHTML = `
-            <td>${t.priority_number}</td>
-            <td>
+          const cells = [];
+
+          const push = (key, html) => {
+            if (!visibleCols.has(key)) return;
+            cells.push(html);
+          };
+
+          push("priority", `<td>${t.priority_number}</td>`);
+          push(
+            "reorder",
+            `<td>
               <button class="arrow" title="Move up" ${
                 idx === 0 ? "disabled" : ""
               } onclick="reorder(${t.id}, 'up')">▲</button>
               <button class="arrow" title="Move down" ${
                 idx === tasks.length - 1 ? "disabled" : ""
               } onclick="reorder(${t.id}, 'down')">▼</button>
-            </td>
-            <td>
+            </td>`
+          );
+          push(
+            "visibility",
+            `<td>
               <button class="eye" title="${
                 t.hidden ? "Unhide" : "Hide"
               }" onclick="toggleHidden(${t.id}, ${!t.hidden})">${
-            t.hidden ? "🙈" : "👁️"
-          }</button>
-            </td>
-            <td>${t.task_id_slug}</td>
-            <td>${t.repository}</td>
-            <td><a href="${t.html_url}" target="_blank">#${t.number}</a></td>
-            <td>${t.title}</td>
-            <td class="project-cell" data-id="${t.id}" data-project="${encodeURIComponent(
-            t.project ?? ""
-          )}">${t.project || "-"}</td>
-            <td>
+              t.hidden ? "🙈" : "👁️"
+            }</button>
+            </td>`
+          );
+          push("slug", `<td>${t.task_id_slug}</td>`);
+          push("repo", `<td>${t.repository}</td>`);
+          push(
+            "number",
+            `<td><a href="${t.html_url}" target="_blank">#${t.number}</a></td>`
+          );
+          push("title", `<td>${t.title}</td>`);
+          push(
+            "project",
+            `<td class="project-cell" data-id="${t.id}" data-project="${encodeURIComponent(
+              t.project ?? ""
+            )}">${t.project || "-"}</td>`
+          );
+          push(
+            "points",
+            `<td>
               <span class="fib-display">${t.fib_points ?? "-"}</span>
               <div class="fib-buttons">
                 ${[1, 2, 3, 5, 8]
@@ -160,16 +258,21 @@
                   )
                   .join(" ")}
               </div>
-            </td>
-            <td>${t.assignee ?? "-"}</td>
-            <td>${new Date(t.created_at).toLocaleString()}</td>
-          `;
+            </td>`
+          );
+          push("assignee", `<td>${t.assignee ?? "-"}</td>`);
+          push(
+            "created",
+            `<td>${new Date(t.created_at).toLocaleString()}</td>`
+          );
+
+          tr.innerHTML = cells.join("");
           tbody.appendChild(tr);
         });
       }
 
       /* ------------------------------------------------------------------
-       * Actions
+       * Actions (existing)
        * ------------------------------------------------------------------ */
       async function reorder(id, direction) {
         await fetch("/api/tasks/reorder", {
@@ -177,7 +280,7 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id, direction })
         });
-        await load();
+        await loadTasks();
       }
 
       async function toggleHidden(id, hidden) {
@@ -186,7 +289,7 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id, hidden })
         });
-        await load();
+        await loadTasks();
       }
 
       async function setPoints(id, points) {
@@ -195,7 +298,7 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id, points })
         });
-        await load();
+        await loadTasks();
       }
 
       /* ------------------------------------------------------------------
@@ -210,14 +313,14 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ title, body })
         });
-        await load();
+        await loadTasks();
       });
 
       /* ------------------------------------------------------------------
-       * Inline project editor
+       * Inline project editor (unchanged)
        * ------------------------------------------------------------------ */
       function startInlineProjectEdit(cell) {
-        if (cell.querySelector("input")) return; // already editing
+        if (cell.querySelector("input")) return;
 
         const id = cell.dataset.id;
         const current = decodeURIComponent(cell.dataset.project || "");
@@ -243,47 +346,79 @@
               body: JSON.stringify({ id, project: newVal })
             });
           }
-          await load();
+          await loadTasks();
         };
 
         const onKeyDown = (e) => {
-          if (e.key === "Enter") {
-            finish(true);
-          } else if (e.key === "Escape") {
-            finish(false);
-          }
+          if (e.key === "Enter") finish(true);
+          else if (e.key === "Escape") finish(false);
         };
-
         const onBlur = () => finish(true);
 
         input.addEventListener("keydown", onKeyDown);
         input.addEventListener("blur", onBlur);
       }
 
-      /* ------------------------------------------------------------------
-       * Event bindings
-       * ------------------------------------------------------------------ */
       document.addEventListener("click", (e) => {
         if (e.target.classList.contains("project-cell")) {
           startInlineProjectEdit(e.target);
         }
       });
 
-      $("#showHidden").addEventListener("change", () => load());
+      $("#showHidden").addEventListener("change", () => loadTasks());
 
       /* ------------------------------------------------------------------
-       * Initial load + polling
+       * Column picker modal logic
        * ------------------------------------------------------------------ */
-      load();
-      setInterval(load, 30_000);
+      const colModal = $("#colModal");
+      $("#gearBtn").addEventListener("click", () => {
+        // build checkboxes
+        const wrap = $("#colCheckboxes");
+        wrap.innerHTML = "";
+        columns.forEach((c) => {
+          const label = document.createElement("label");
+          label.innerHTML = `
+            <input type="checkbox" data-key="${c.key}" ${
+            visibleCols.has(c.key) ? "checked" : ""
+          } />
+            ${c.label || "(blank)"}
+          `;
+          wrap.appendChild(label);
+        });
+        colModal.style.display = "flex";
+      });
+
+      $("#colSaveBtn").addEventListener("click", async () => {
+        visibleCols = new Set(
+          $$("input[type=checkbox][data-key]", $("#colCheckboxes"))
+            .filter((cb) => cb.checked)
+            .map((cb) => cb.dataset.key)
+        );
+        await saveSettings();
+        colModal.style.display = "none";
+        await loadTasks();
+      });
+      $("#colCancelBtn").addEventListener(
+        "click",
+        () => (colModal.style.display = "none")
+      );
+      colModal.addEventListener("click", (e) => {
+        if (e.target === colModal) colModal.style.display = "none";
+      });
 
       /* ------------------------------------------------------------------
-       * Expose global functions required by inline HTML handlers
+       * Initial load & polling
        * ------------------------------------------------------------------ */
+      (async () => {
+        await loadSettings();
+        await loadTasks();
+        setInterval(loadTasks, 30_000);
+      })();
+
+      /* expose */
       window.reorder = reorder;
       window.toggleHidden = toggleHidden;
       window.setPoints = setPoints;
     </script>
   </body>
 </html>
-
