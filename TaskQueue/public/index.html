@@ -104,6 +104,8 @@
 
 <!-- Chat panel -->
 <div id="chatPanel">
+  <!-- Model HUD -->
+  <div id="modelHud" style="font-size:0.9rem; color:#555; margin-bottom:4px;"></div>
   <div id="chatMessages"></div>
   <div id="waitingCounter"></div>
   <input type="text" id="chatInput" placeholder="Type your message..." />
@@ -268,98 +270,98 @@
     const pj = $("#projectFilter").value;
     const sp = $("#sprintFilter").value;
     allTasks
-      .filter(t=>{
-        if(pj && t.project!==pj) return false;
-        if(sp && t.sprint!==sp) return false;
-        return true;
-      })
-      .forEach(t=>{
-        const tr = document.createElement("tr");
-        tr.dataset.taskId = t.id;
-        if(t.hidden) tr.classList.add("hidden");
-        [
-          "drag","order","reorder","visibility","priority","status",
-          "dependencies","blocking","slug","repo","number","title",
-          "project","sprint","points","assignee","created"
-        ].forEach(key=>{
-          if(!visibleCols.has(key)) return;
-          const td = document.createElement("td");
-          switch(key){
-            case "drag":
-              td.innerHTML = `<span class="drag-handle" draggable="true">⠿</span>`;
-              td.querySelector(".drag-handle").addEventListener("dragstart", handleDragStart);
-              break;
-            case "order":
-              td.textContent = t.priority_number;
-              break;
-            case "reorder":
-              td.innerHTML = `<button class="arrow" data-id="${t.id}" data-dir="up">⬆️</button>` +
-                             `<button class="arrow" data-id="${t.id}" data-dir="down">⬇️</button>`;
-              break;
-            case "visibility":
-              td.innerHTML = `<button class="eye" data-id="${t.id}">${t.hidden?"🙈":"👁️"}</button>`;
-              break;
-            case "priority":
-              td.textContent = t.priority;
-              td.className="priority-cell";
-              break;
-            case "status":
-              td.textContent = t.status;
-              td.className="status-cell";
-              break;
-            case "dependencies":
-              td.textContent = t.dependencies;
-              td.className="dependencies-cell";
-              break;
-            case "blocking":
-              td.textContent = t.blocking;
-              td.className="blocking-cell";
-              break;
-            case "slug":
-              td.innerHTML = `<a href="${t.html_url}" target="_blank">${t.task_id_slug}</a>`;
-              break;
-            case "repo":
-              td.textContent = t.repository;
-              break;
-            case "number":
-              td.innerHTML = `<a href="${t.html_url}" target="_blank">#${t.number}</a>`;
-              break;
-            case "title":
-              td.textContent = t.title;
-              td.className="title-cell";
-              break;
-            case "project":
-              td.textContent = t.project;
-              td.className="project-cell";
-              break;
-            case "sprint":
-              td.textContent = t.sprint;
-              td.className="sprint-cell";
-              break;
-            case "points":
-              td.textContent = t.fib_points||"";
-              break;
-            case "assignee":
-              td.textContent = t.assignee||"";
-              break;
-            case "created":
-              td.textContent = isoDate(t.created_at);
-              break;
-            default:
-              td.textContent = t[key]||"";
-          }
-          tr.appendChild(td);
-        });
-        ["dragover","dragleave","drop","dragend"].forEach(evt=>{
-          tr.addEventListener(evt, {
-            "dragover":handleDragOver,
-            "dragleave":handleDragLeave,
-            "drop":handleDrop,
-            "dragend":handleDragEnd
-          }[evt]);
-        });
-        tbody.appendChild(tr);
-      });
+            .filter(t=>{
+              if(pj && t.project!==pj) return false;
+              if(sp && t.sprint!==sp) return false;
+              return true;
+            })
+            .forEach(t=>{
+              const tr = document.createElement("tr");
+              tr.dataset.taskId = t.id;
+              if(t.hidden) tr.classList.add("hidden");
+              [
+                "drag","order","reorder","visibility","priority","status",
+                "dependencies","blocking","slug","repo","number","title",
+                "project","sprint","points","assignee","created"
+              ].forEach(key=>{
+                if(!visibleCols.has(key)) return;
+                const td = document.createElement("td");
+                switch(key){
+                  case "drag":
+                    td.innerHTML = `<span class="drag-handle" draggable="true">⠿</span>`;
+                    td.querySelector(".drag-handle").addEventListener("dragstart", handleDragStart);
+                    break;
+                  case "order":
+                    td.textContent = t.priority_number;
+                    break;
+                  case "reorder":
+                    td.innerHTML = `<button class="arrow" data-id="${t.id}" data-dir="up">⬆️</button>` +
+                            `<button class="arrow" data-id="${t.id}" data-dir="down">⬇️</button>`;
+                    break;
+                  case "visibility":
+                    td.innerHTML = `<button class="eye" data-id="${t.id}">${t.hidden?"🙈":"👁️"}</button>`;
+                    break;
+                  case "priority":
+                    td.textContent = t.priority;
+                    td.className="priority-cell";
+                    break;
+                  case "status":
+                    td.textContent = t.status;
+                    td.className="status-cell";
+                    break;
+                  case "dependencies":
+                    td.textContent = t.dependencies;
+                    td.className="dependencies-cell";
+                    break;
+                  case "blocking":
+                    td.textContent = t.blocking;
+                    td.className="blocking-cell";
+                    break;
+                  case "slug":
+                    td.innerHTML = `<a href="${t.html_url}" target="_blank">${t.task_id_slug}</a>`;
+                    break;
+                  case "repo":
+                    td.textContent = t.repository;
+                    break;
+                  case "number":
+                    td.innerHTML = `<a href="${t.html_url}" target="_blank">#${t.number}</a>`;
+                    break;
+                  case "title":
+                    td.textContent = t.title;
+                    td.className="title-cell";
+                    break;
+                  case "project":
+                    td.textContent = t.project;
+                    td.className="project-cell";
+                    break;
+                  case "sprint":
+                    td.textContent = t.sprint;
+                    td.className="sprint-cell";
+                    break;
+                  case "points":
+                    td.textContent = t.fib_points||"";
+                    break;
+                  case "assignee":
+                    td.textContent = t.assignee||"";
+                    break;
+                  case "created":
+                    td.textContent = isoDate(t.created_at);
+                    break;
+                  default:
+                    td.textContent = t[key]||"";
+                }
+                tr.appendChild(td);
+              });
+              ["dragover","dragleave","drop","dragend"].forEach(evt=>{
+                tr.addEventListener(evt, {
+                  "dragover":handleDragOver,
+                  "dragleave":handleDragLeave,
+                  "drop":handleDrop,
+                  "dragend":handleDragEnd
+                }[evt]);
+              });
+              tbody.appendChild(tr);
+            });
   }
   async function loadTasks(){
     allTasks = await fetchTasks();
@@ -373,10 +375,10 @@
   async function populateFilters(){
     const pj = await (await fetch("/api/projects")).json();
     $("#projectFilter").innerHTML = '<option value="">All projects</option>' +
-      pj.map(p=>`<option value="${p.project}">${p.project}</option>`).join("");
+            pj.map(p=>`<option value="${p.project}">${p.project}</option>`).join("");
     const sp = await (await fetch("/api/sprints")).json();
     $("#sprintFilter").innerHTML = '<option value="">All sprints</option>' +
-      sp.map(s=>`<option value="${s.sprint}">${s.sprint}</option>`).join("");
+            sp.map(s=>`<option value="${s.sprint}">${s.sprint}</option>`).join("");
   }
 
   /* ------------------------------------------------------------------
@@ -389,8 +391,8 @@
       const div = document.createElement("div");
       div.className="col-item";
       div.innerHTML = `<button class="col-move" data-idx="${i}" data-dir="up">⬆️</button>` +
-        `<button class="col-move" data-idx="${i}" data-dir="down">⬇️</button>` +
-        `<label><input type="checkbox" value="${c.key}" ${visibleCols.has(c.key)?"checked":""}/> ${c.label||c.key}</label>`;
+              `<button class="col-move" data-idx="${i}" data-dir="down">⬇️</button>` +
+              `<label><input type="checkbox" value="${c.key}" ${visibleCols.has(c.key)?"checked":""}/> ${c.label||c.key}</label>`;
       cnt.appendChild(div);
     });
     showModal($("#colModal"));
@@ -616,7 +618,7 @@
   });
   $("#createTaskBtn").addEventListener("click", async ()=>{
     const title=$("#newTaskTitle").value.trim(),
-          body=$("#newTaskBody").value.trim();
+            body=$("#newTaskBody").value.trim();
     if(!title){
       alert("Please enter a title for the new task.");
       return;
@@ -642,17 +644,6 @@
   const chatInputEl = document.getElementById("chatInput");
   const chatSendBtnEl = document.getElementById("chatSendBtn");
   const waitingElem = document.getElementById("waitingCounter");
-
-  // Insert a placeholder AI bubble to show the model even with no messages
-  function insertAiPlaceholder(){
-    const seqDiv = document.createElement("div");
-    seqDiv.className = "chat-sequence";
-    const botDiv = document.createElement("div");
-    botDiv.className = "chat-bot";
-    botDiv.textContent = `AI (model: ${modelName}) is listening...`;
-    seqDiv.appendChild(botDiv);
-    chatMessagesEl.appendChild(seqDiv);
-  }
 
   chatInputEl.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
@@ -726,7 +717,7 @@
     await loadSettings();
     await populateFilters();
     await loadTasks();
-    // Fetch the model name and insert placeholder bubble
+    // Fetch the model name for the HUD
     try {
       const r = await fetch("/api/model");
       if(r.ok){
@@ -736,9 +727,9 @@
     } catch(e){
       modelName = "unknown";
     }
-    insertAiPlaceholder();
+    // Display the model in the HUD
+    $("#modelHud").textContent = "Model: " + modelName;
   })();
 </script>
 </body>
 </html>
-

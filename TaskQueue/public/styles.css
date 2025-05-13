@@ -100,14 +100,18 @@ body {
   margin-top: 2rem;
   max-width: 600px;
 }
+
 #chatMessages {
-  height: 200px;
-  overflow-y: auto;
+  resize: vertical;
+  overflow: auto;
+  min-height: 150px;
+  max-height: 80vh;
   margin-bottom: 0.5rem;
   background: #ffffff;
   border: 1px solid #ccc;
   padding: 8px;
 }
+
 #waitingCounter {
   font-size: 0.9rem;
   color: #888;
