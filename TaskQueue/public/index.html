@@ -66,6 +66,12 @@
       padding: 0.5rem;
       background: #fafafa;
     }
+    #waitingCounter {
+      font-size: 0.9rem;
+      color: #888;
+      height: 1.2em;
+      margin-bottom: 0.5rem;
+    }
     .chat-user { color: #0066aa; }
     .chat-bot { color: #009900; }
   </style>
@@ -74,6 +80,7 @@
 <h1>Aurora - Open Tasks</h1>
 
 <p>
+  <a href="/">🏠 Home</a> •
   <a href="/projects">📂 Projects overview</a> •
   <a href="/sprints">🏃‍♂️ Sprints overview</a> •
   <a href="/test_projects">Test APIs page</a> •
@@ -179,6 +186,7 @@
 <div id="chatPanel">
   <h2>AI Chat</h2>
   <div id="chatMessages"></div>
+  <div id="waitingCounter"></div>
   <div>
     <input type="text" id="chatInput" style="width:80%;" placeholder="Ask something..." />
     <button id="chatSendBtn">Send</button>
@@ -713,7 +721,7 @@
       const taskId = +row.dataset.taskId;
       const currentBlocks = e.target.textContent.trim();
 
-      const input = document.createElement("input");
+      const input = document.createElement("input");  
       input.type = "text";
       input.value = currentBlocks;
       input.className = "inline-input";
@@ -886,7 +894,7 @@
   });
 
   /* ------------------------------------------------------------------
-   * Chat logic
+   * Chat logic with waiting counter
    * ------------------------------------------------------------------ */
   const chatMessages = $("#chatMessages");
   const chatInput = $("#chatInput");
@@ -906,19 +914,31 @@
     appendChatMessage("user", userMessage);
     chatInput.value = "";
 
+    const waitingElem = $("#waitingCounter");
+    let waitTime = 0;
+    waitingElem.textContent = "Waiting: 0.0s";
+    const waitInterval = setInterval(() => {
+      waitTime += 0.1;
+      waitingElem.textContent = `Waiting: ${waitTime.toFixed(1)}s`;
+    }, 100);
+
     try {
       const resp = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: userMessage })
       });
-      if(!resp.ok) {
+      clearInterval(waitInterval);
+      waitingElem.textContent = "";
+      if (!resp.ok) {
         appendChatMessage("bot", "Error contacting AI.");
         return;
       }
       const data = await resp.json();
       appendChatMessage("bot", data.reply || "");
-    } catch(e){
+    } catch (e) {
+      clearInterval(waitInterval);
+      waitingElem.textContent = "";
       console.error("Chat error:", e);
       appendChatMessage("bot", "Error occurred.");
     }
