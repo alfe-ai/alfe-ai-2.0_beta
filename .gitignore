@@ -1,4 +1,4 @@
 .idea/*
 .patchfiles_ignore/*
-.env
+TaskQueue/.env
 *.env
