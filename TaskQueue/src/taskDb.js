@@ -126,49 +126,25 @@ export default class TaskDB {
         }
     }
 
-    upsertIssue(issue, repositorySlug, _retry = false) {
+    async upsertIssue(issue) {
         try {
-            const existing = this.db.prepare("SELECT priority_number FROM issues WHERE github_id=?;").get(issue.id);
-            let priority = existing?.priority_number;
-            if (!priority) {
-                priority = (this.db.prepare("SELECT COALESCE(MAX(priority_number), 0)+1 AS next;").get()).next;
+            // Attempt to insert or update the issue in the database
+            const sql = 'INSERT OR REPLACE INTO issues (id, name, priority_number) VALUES (?, ?, ?)';
+            await this.db.run(sql, [issue.id, issue.name, issue.priority_number]);
+        } catch (error) {
+            // Check if error is due to missing 'priority_number' column
+            if (error.message && error.message.includes('priority_number')) {
+                // Add the missing 'priority_number' column to the issues table
+                await this.db.run('ALTER TABLE issues ADD COLUMN priority_number INTEGER DEFAULT 0');
+
+                // Hard sleep for 5 seconds to allow the new column to be recognized
+                Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5000);
+
+                // Retry the upsert operation after adding the column and waiting
+                return this.upsertIssue(issue);
             }
-            const stmt = this.db.prepare(`
-                INSERT INTO issues (
-                    github_id, repository, number, title, html_url, task_id_slug,
-                    priority_number, hidden, project, fib_points, assignee, created_at, closed
-                ) VALUES (
-                             @github_id,@repository,@number,@title,@html_url,@task_id_slug,
-                             @priority_number,0,'',NULL,@assignee,@created_at,0
-                         )
-                    ON CONFLICT(github_id) DO UPDATE SET title=excluded.title, html_url=excluded.html_url, closed=0;
-            `);
-            stmt.run({
-                github_id: issue.id,
-                repository: repositorySlug,
-                number: issue.number,
-                title: issue.title,
-                html_url: issue.html_url,
-                task_id_slug: `${repositorySlug}#${issue.number}`,
-                priority_number: priority,
-                assignee: issue.assignee?.login || null,
-                created_at: issue.created_at
-            });
-        } catch (err) {
-            if (!_retry && /no such column: priority_number/i.test(err.message || "")) {
-                console.warn("upsertIssue error: Missing 'priority_number' column, adding it dynamically...");
-                try {
-                    this.db.exec("ALTER TABLE issues ADD COLUMN priority_number INTEGER;");
-                } catch (addErr) {
-                    // Ignore duplicate column error, only fail on other errors
-                    if (!/duplicate column name|already exists/i.test(addErr.message || "")) {
-                        console.error("Failed to add 'priority_number' column:", addErr);
-                        throw err;
-                    }
-                }
-                return this.upsertIssue(issue, repositorySlug, true);
-            }
-            throw err;
+            // Re-throw error if it's not related to the missing column
+            throw error;
         }
     }
 
