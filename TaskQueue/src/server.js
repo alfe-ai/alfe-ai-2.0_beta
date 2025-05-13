@@ -327,7 +327,7 @@ app.get("/api/activity", (req, res) => {
     const activity = db.getActivity();
     res.json(activity);
   } catch (err) {
-    console.error("[TaskQueue] /api/activity failed", err);
+    console.error("[TaskQueue] /api/activity failed:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -340,12 +340,15 @@ app.post("/api/chat", async (req, res) => {
       return res.status(400).json({ error: "Missing message" });
     }
 
-    const completion = await openaiClient.createChatCompletion({
-      model: "o3-mini",
+    // Use the new OpenAI SDK method
+    const model = process.env.OPENAI_MODEL || "o3-mini";
+    const completion = await openaiClient.chat.completions.create({
+      model,
       messages: [{ role: "user", content: userMessage }]
     });
 
-    const responseText = completion.data.choices[0]?.message?.content || "";
+    const responseText =
+      completion.choices?.[0]?.message?.content || "";
     res.json({ reply: responseText });
   } catch (err) {
     console.error("[TaskQueue] /api/chat error:", err);
