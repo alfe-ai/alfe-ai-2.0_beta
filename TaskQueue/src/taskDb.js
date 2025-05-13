@@ -8,35 +8,35 @@ export default class TaskDB {
 
   _init() {
     console.debug("[TaskDB Debug] Initializing DB schema...");
-    // Create the full issues table if it doesn't exist, including priority_number and all other columns.
+    // Create the issues table with full schema, including priority_number
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS issues (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        github_id INTEGER UNIQUE,
-        repository TEXT,
-        number INTEGER,
-        title TEXT,
-        html_url TEXT,
-        task_id_slug TEXT,
-        priority_number INTEGER UNIQUE,
-        hidden INTEGER DEFAULT 0,
-        project TEXT DEFAULT '',
-        fib_points INTEGER,
-        assignee TEXT,
-        created_at TEXT,
-        closed INTEGER DEFAULT 0
+                                          id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                          github_id INTEGER UNIQUE,
+                                          repository TEXT,
+                                          number INTEGER,
+                                          title TEXT,
+                                          html_url TEXT,
+                                          task_id_slug TEXT,
+                                          priority_number INTEGER,
+                                          hidden INTEGER DEFAULT 0,
+                                          project TEXT DEFAULT '',
+                                          fib_points INTEGER,
+                                          assignee TEXT,
+                                          created_at TEXT,
+                                          closed INTEGER DEFAULT 0
       );
     `);
     this._fixLegacyColumns();
     if (!this._hasAllColumns()) {
-      this._recreateIssuesTable(); // Full migration if any columns still missing
+      this._recreateIssuesTable(); // Full migration
     }
     this._ensureUniquePriorities();
     this._ensureIndices();
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS settings (
-        key TEXT PRIMARY KEY,
-        value TEXT NOT NULL
+                                            key TEXT PRIMARY KEY,
+                                            value TEXT NOT NULL
       );
     `);
     console.debug("[TaskDB Debug] Finished DB schema init.");
@@ -71,30 +71,29 @@ export default class TaskDB {
     this.db.transaction(() => {
       this.db.exec(`
         CREATE TABLE issues_new (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          github_id INTEGER UNIQUE,
-          repository TEXT,
-          number INTEGER,
-          title TEXT,
-          html_url TEXT,
-          task_id_slug TEXT,
-          priority_number INTEGER UNIQUE,
-          hidden INTEGER DEFAULT 0,
-          project TEXT DEFAULT '',
-          fib_points INTEGER,
-          assignee TEXT,
-          created_at TEXT,
-          closed INTEGER DEFAULT 0
+                                  id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                  github_id INTEGER UNIQUE,
+                                  repository TEXT,
+                                  number INTEGER,
+                                  title TEXT,
+                                  html_url TEXT,
+                                  task_id_slug TEXT,
+                                  priority_number INTEGER UNIQUE,
+                                  hidden INTEGER DEFAULT 0,
+                                  project TEXT DEFAULT '',
+                                  fib_points INTEGER,
+                                  assignee TEXT,
+                                  created_at TEXT,
+                                  closed INTEGER DEFAULT 0
         );
         INSERT INTO issues_new (
           id, github_id, repository, number, title, html_url,
           task_id_slug, priority_number, hidden, project,
           fib_points, assignee, created_at, closed
         )
-        SELECT
-          id, github_id, repository, number, title, html_url,
-          task_id_slug, priority_number, hidden, project,
-          fib_points, assignee, created_at, closed
+        SELECT id, github_id, repository, number, title, html_url,
+               task_id_slug, priority_number, hidden, project,
+               fib_points, assignee, created_at, closed
         FROM issues;
         DROP TABLE issues;
         ALTER TABLE issues_new RENAME TO issues;
@@ -139,10 +138,10 @@ export default class TaskDB {
           github_id, repository, number, title, html_url, task_id_slug,
           priority_number, hidden, project, fib_points, assignee, created_at, closed
         ) VALUES (
-          @github_id,@repository,@number,@title,@html_url,@task_id_slug,
-          @priority_number,0,'',NULL,@assignee,@created_at,0
-        )
-        ON CONFLICT(github_id) DO UPDATE SET title=excluded.title, html_url=excluded.html_url, closed=0;
+                   @github_id,@repository,@number,@title,@html_url,@task_id_slug,
+                   @priority_number,0,'',NULL,@assignee,@created_at,0
+                 )
+          ON CONFLICT(github_id) DO UPDATE SET title=excluded.title, html_url=excluded.html_url, closed=0;
       `);
       stmt.run({
         github_id: issue.id,
@@ -157,8 +156,13 @@ export default class TaskDB {
       });
     } catch (err) {
       if (!_retry && /no such column: priority_number/i.test(err.message || "")) {
-        console.warn("upsertIssue error: Rebuilding table ...");
-        this._recreateIssuesTable();
+        console.warn("upsertIssue error: Missing 'priority_number' column, adding it dynamically...");
+        try {
+          this.db.exec("ALTER TABLE issues ADD COLUMN priority_number INTEGER;");
+        } catch (addErr) {
+          console.error("Failed to add 'priority_number' column:", addErr);
+          throw err;
+        }
         return this.upsertIssue(issue, repositorySlug, true);
       }
       throw err;
