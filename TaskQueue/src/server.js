@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
@@ -186,4 +189,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
-
