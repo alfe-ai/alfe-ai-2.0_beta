@@ -122,8 +122,16 @@
   <div id="modelHud" style="font-size:0.9rem; color:#555; margin-bottom:4px;"></div>
   <div id="chatMessages"></div>
   <div id="waitingCounter"></div>
-  <input type="text" id="chatInput" placeholder="Type your message..." />
-  <button id="chatSendBtn">Send</button>
+  <div class="chat-input-container">
+    <input type="text" id="chatInput" placeholder="Type your message..." />
+    <button id="chatSendBtn" class="send-btn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round" class="feather feather-send">
+        <line x1="22" y1="2" x2="11" y2="13"></line>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+      </svg>
+    </button>
+  </div>
 </div>
 
 <script>
