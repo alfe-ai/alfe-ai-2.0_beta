@@ -166,10 +166,16 @@
   /* ------------------------------------------------------------------
    * Toggling the task table
    * ------------------------------------------------------------------ */
-  function toggleTasks(){
+  async function toggleTasks(){
     tasksVisible = !tasksVisible;
     $("#tasks").style.display = tasksVisible ? "" : "none";
     $("#toggleTasksBtn").textContent = tasksVisible ? "Hide tasks" : "Show tasks";
+    // Save the setting
+    await fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: "tasks_visible", value: tasksVisible })
+    });
   }
   $("#toggleTasksBtn").addEventListener("click", toggleTasks);
 
@@ -196,6 +202,18 @@
           columnsOrder = newOrd;
         }
       }
+    }
+    // Load tasks_visible setting
+    {
+      const r = await fetch("/api/settings/tasks_visible");
+      if(r.ok){
+        const { value } = await r.json();
+        if(typeof value !== "undefined"){
+          tasksVisible = !!value;
+        }
+      }
+      $("#tasks").style.display = tasksVisible ? "" : "none";
+      $("#toggleTasksBtn").textContent = tasksVisible ? "Hide tasks" : "Show tasks";
     }
   }
   async function saveSettings(){
@@ -877,4 +895,3 @@
 </script>
 </body>
 </html>
-
