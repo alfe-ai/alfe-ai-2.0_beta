@@ -22,7 +22,7 @@ export default class TaskDB {
         title           TEXT,
         html_url        TEXT,
         task_id_slug    TEXT,
-        priority_number INTEGER UNIQUE,
+        priority_number REAL,
         priority        TEXT DEFAULT 'Medium',
         hidden          INTEGER DEFAULT 0,
         project         TEXT DEFAULT '',
@@ -61,7 +61,7 @@ export default class TaskDB {
     }
     // 2) Ensure new REAL column
     try {
-      this.db.exec(`ALTER TABLE issues ADD COLUMN priority_number REAL UNIQUE;`);
+      this.db.exec(`ALTER TABLE issues ADD COLUMN priority_number REAL;`);
       console.debug("[TaskDB Debug] Created new priority_number column as REAL");
     } catch(e) {
       console.debug("[TaskDB Debug] Skipped add column (likely exists).", e.message);
@@ -86,9 +86,9 @@ export default class TaskDB {
     this.db.exec(
       `CREATE UNIQUE INDEX IF NOT EXISTS idx_issues_github ON issues(github_id);`
     );
-    // Re-create priority index
+    // Re-create priority index without UNIQUE
     this.db.exec(
-      `CREATE UNIQUE INDEX IF NOT EXISTS idx_issues_priority ON issues(priority_number);`
+      `CREATE INDEX IF NOT EXISTS idx_issues_priority ON issues(priority_number);`
     );
 
     // Activity timeline
