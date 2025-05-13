@@ -19,7 +19,14 @@ export default class TaskDB {
       console.warn(
         `[TaskQueue] Column '${column}' missing in '${table}' – adding (${definition})`
       );
-      this.db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition};`);
+      try {
+        this.db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition};`);
+      } catch (e) {
+        /* If another concurrent process added it between the check
+           and the ALTER we can safely ignore the “duplicate column”
+           error. */
+        if (!/duplicate column/i.test(e.message || "")) throw e;
+      }
     }
   }
 
@@ -191,59 +198,76 @@ export default class TaskDB {
   }
 
   /* ------------------------------------------------------------------ */
-  /*  Issue helpers  (unchanged below)                                  */
+  /*  Issue helpers                                                     */
   /* ------------------------------------------------------------------ */
-  upsertIssue(issue, repositorySlug) {
-    /* If issue already recorded: keep its priority */
-    const existing = this.db
-      .prepare("SELECT priority_number FROM issues WHERE github_id = ?;")
-      .get(issue.id);
+  upsertIssue(issue, repositorySlug, _retry = false) {
+    /* Extra defence in case a stale DB slipped through earlier steps */
+    this._addColumnIfMissing("issues", "priority_number", "INTEGER");
 
-    let priority = existing?.priority_number;
-    if (!priority) {
-      /* New issue → append to bottom */
-      const row = this.db
-        .prepare("SELECT COALESCE(MAX(priority_number), 0) + 1 AS next;")
-        .get();
-      priority = row.next;
+    try {
+      /* If issue already recorded: keep its priority */
+      const existing = this.db
+        .prepare("SELECT priority_number FROM issues WHERE github_id = ?;")
+        .get(issue.id);
+
+      let priority = existing?.priority_number;
+      if (!priority) {
+        /* New issue → append to bottom */
+        const row = this.db
+          .prepare("SELECT COALESCE(MAX(priority_number), 0) + 1 AS next;")
+          .get();
+        priority = row.next;
+      }
+
+      const stmt = this.db.prepare(`
+        INSERT INTO issues (
+          github_id, repository, number, title, html_url,
+          task_id_slug, priority_number, hidden, project,
+          fib_points, assignee, created_at, closed
+        )
+        VALUES (
+          @github_id, @repository, @number, @title, @html_url,
+          @task_id_slug, @priority_number, @hidden, @project,
+          @fib_points, @assignee, @created_at, @closed
+        )
+        ON CONFLICT(github_id) DO UPDATE SET
+          title    = excluded.title,
+          html_url = excluded.html_url,
+          closed   = excluded.closed;
+      `);
+
+      stmt.run({
+        github_id: issue.id,
+        repository: repositorySlug,
+        number: issue.number,
+        title: issue.title,
+        html_url: issue.html_url,
+        task_id_slug: `${repositorySlug}#${issue.number}`,
+        priority_number: priority,
+        hidden: 0,
+        project: "",
+        fib_points: null,
+        assignee: issue.assignee?.login ?? null,
+        created_at: issue.created_at,
+        closed: 0
+      });
+    } catch (err) {
+      /* One last automatic repair attempt */
+      if (
+        !_retry &&
+        /no such column: priority_number/i.test(err.message || "")
+      ) {
+        console.warn(
+          "[TaskQueue] Write failed – priority_number column still absent. Creating column and retrying once."
+        );
+        this._addColumnIfMissing("issues", "priority_number", "INTEGER");
+        return this.upsertIssue(issue, repositorySlug, true);
+      }
+      throw err;
     }
-
-    const stmt = this.db.prepare(`
-      INSERT INTO issues (
-        github_id, repository, number, title, html_url,
-        task_id_slug, priority_number, hidden, project,
-        fib_points, assignee, created_at, closed
-      )
-      VALUES (
-        @github_id, @repository, @number, @title, @html_url,
-        @task_id_slug, @priority_number, @hidden, @project,
-        @fib_points, @assignee, @created_at, @closed
-      )
-      ON CONFLICT(github_id) DO UPDATE SET
-        title    = excluded.title,
-        html_url = excluded.html_url,
-        closed   = excluded.closed;
-    `);
-
-    stmt.run({
-      github_id: issue.id,
-      repository: repositorySlug,
-      number: issue.number,
-      title: issue.title,
-      html_url: issue.html_url,
-      task_id_slug: `${repositorySlug}#${issue.number}`,
-      priority_number: priority,
-      hidden: 0,
-      project: "",
-      fib_points: null,
-      assignee: issue.assignee?.login ?? null,
-      created_at: issue.created_at,
-      closed: 0
-    });
   }
 
   /* ---------------- Remaining methods unchanged -------------------- */
   // (getSetting, setSetting, listTasks, reorderTask, etc.)
-  // The rest of the file remains identical to the previous version.
 }
 
