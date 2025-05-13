@@ -12,7 +12,7 @@ export default class TaskDB {
   _init() {
     console.debug("[TaskDB Debug] Initializing DB schema…");
 
-    // Base table (wide schema) - unchanged from prior version
+    // Base table (wide schema)
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS issues (
         id              INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,18 +51,27 @@ export default class TaskDB {
       this.db.exec(`ALTER TABLE issues ADD COLUMN blocking TEXT DEFAULT '';`);
     } catch {}
 
-    // Migrate priority_number to REAL if needed
-    // (We simply add a new column, copy data, then attempt to clean up.)
+    // Revised migration for priority_number: break into steps
+    // 1) Rename if old column is present
     try {
       this.db.exec(`ALTER TABLE issues RENAME COLUMN priority_number TO priority_number_old;`);
+      console.debug("[TaskDB Debug] Renamed existing priority_number -> priority_number_old");
+    } catch(e) {
+      console.debug("[TaskDB Debug] Skipped rename (likely doesn't exist).", e.message);
+    }
+    // 2) Ensure new REAL column
+    try {
       this.db.exec(`ALTER TABLE issues ADD COLUMN priority_number REAL UNIQUE;`);
+      console.debug("[TaskDB Debug] Created new priority_number column as REAL");
+    } catch(e) {
+      console.debug("[TaskDB Debug] Skipped add column (likely exists).", e.message);
+    }
+    // 3) Copy data over
+    try {
       this.db.exec(`UPDATE issues SET priority_number = priority_number_old;`);
-      // Create index if missing
-      this.db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_issues_priority ON issues(priority_number);`);
-      // priority_number_old stays behind since dropping a column isn’t trivial in SQLite
-    } catch {
-      // If this fails, it likely means the column rename was already done
-      // or it's already REAL. We ignore errors here.
+      console.debug("[TaskDB Debug] Copied data from priority_number_old to priority_number");
+    } catch(e) {
+      console.debug("[TaskDB Debug] Skipped copy data (maybe no old data).", e.message);
     }
 
     // Simple key/value store
@@ -77,7 +86,7 @@ export default class TaskDB {
     this.db.exec(
       `CREATE UNIQUE INDEX IF NOT EXISTS idx_issues_github ON issues(github_id);`
     );
-    // Re-create priority index (just in case)
+    // Re-create priority index
     this.db.exec(
       `CREATE UNIQUE INDEX IF NOT EXISTS idx_issues_priority ON issues(priority_number);`
     );
@@ -99,14 +108,12 @@ export default class TaskDB {
   /*  Upsert / sync helpers                                             */
   /* ------------------------------------------------------------------ */
   upsertIssue(issue, repositorySlug) {
-    // Keep existing row if present
     const existing = this.db
       .prepare(
         "SELECT priority_number, priority, project, sprint, status, dependencies, blocking FROM issues WHERE github_id = ?"
       )
       .get(issue.id);
 
-    // Numeric priority
     let priorityNum = existing?.priority_number;
     if (!priorityNum) {
       const max =
@@ -178,9 +185,6 @@ export default class TaskDB {
       .run(...openGithubIds);
   }
 
-  /* ------------------------------------------------------------------ */
-  /*  Public getters / mutators used by web server                      */
-  /* ------------------------------------------------------------------ */
   listTasks(includeHidden = false) {
     const sql = includeHidden
       ? "SELECT * FROM issues WHERE closed = 0 ORDER BY priority_number;"
@@ -188,10 +192,6 @@ export default class TaskDB {
     return this.db.prepare(sql).all();
   }
 
-  /* 
-    Updated reorderTask to set a new float priority_number 
-    between the current item and its neighbor, preventing duplicates.
-  */
   reorderTask(id, direction) {
     const current = this.db
       .prepare("SELECT id, priority_number FROM issues WHERE id = ?")
@@ -209,17 +209,14 @@ export default class TaskDB {
         )
         .get(current.priority_number);
       if (!neighbor) {
-        // It's already at the top, just subtract 1
         const newVal = current.priority_number - 1;
         this.db.prepare("UPDATE issues SET priority_number=? WHERE id=?").run(newVal, current.id);
         return true;
       }
-      // midpoint
       const newVal = (current.priority_number + neighbor.priority_number) / 2;
       this.db.prepare("UPDATE issues SET priority_number=? WHERE id=?").run(newVal, current.id);
       return true;
     } else {
-      // direction down
       neighbor = this.db
         .prepare(
           `SELECT id, priority_number FROM issues
@@ -229,7 +226,6 @@ export default class TaskDB {
         )
         .get(current.priority_number);
       if (!neighbor) {
-        // It's already at the bottom, just add 1
         const newVal = current.priority_number + 1;
         this.db.prepare("UPDATE issues SET priority_number=? WHERE id=?").run(newVal, current.id);
         return true;
@@ -240,16 +236,11 @@ export default class TaskDB {
     }
   }
 
-  /* 
-    Updated reorderAll to assign consecutive float values,
-    ensuring no duplicates.
-  */
   reorderAll(taskIdsInOrder) {
     const upd = this.db.prepare("UPDATE issues SET priority_number=? WHERE id=?");
     this.db.transaction(() => {
-      // Assign unique floats in order
       taskIdsInOrder.forEach((taskId, index) => {
-        const newVal = index + 1; // e.g. 1.0, 2.0, 3.0
+        const newVal = index + 1;
         upd.run(newVal, taskId);
       });
     })();
@@ -311,7 +302,6 @@ export default class TaskDB {
     );
   }
 
-  /* NEW: helpers by GitHub ID (for freshly created tasks) */
   setProjectByGithubId(githubId, project) {
     this.db
       .prepare("UPDATE issues SET project = ? WHERE github_id = ?")
@@ -324,7 +314,6 @@ export default class TaskDB {
       .run(sprint, githubId);
   }
 
-  /* ---------------- Settings table ---------------- */
   allSettings() {
     return this.db
       .prepare("SELECT key, value FROM settings")
@@ -391,9 +380,6 @@ export default class TaskDB {
     }
   }
 
-  /* ------------------------------------------------------------------ */
-  /*  New retrieval methods for this commit                             */
-  /* ------------------------------------------------------------------ */
   getTaskById(id) {
     return this.db
       .prepare("SELECT * FROM issues WHERE id=?")
@@ -416,9 +402,6 @@ export default class TaskDB {
     this.db.prepare("UPDATE issues SET title = ? WHERE id = ?").run(newTitle, id);
   }
 
-  /* ------------------------------------------------------------------ */
-  /*  Activity logging                                                  */
-  /* ------------------------------------------------------------------ */
   logActivity(action, details) {
     this.db
       .prepare("INSERT INTO activity_timeline (timestamp, action, details) VALUES (?, ?, ?)")
