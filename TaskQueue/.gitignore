@@ -3,3 +3,4 @@ node_modules
 .patchfiles_ignore
 issues.sqlite
 backups
+*..env.swp
