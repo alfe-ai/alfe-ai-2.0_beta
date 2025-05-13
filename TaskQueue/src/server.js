@@ -9,9 +9,8 @@ import { fileURLToPath } from "url";
 import TaskDB from "./taskDb.js";
 import GitHubClient from "./githubClient.js";
 
-// Fix: Use default import and destructure for openai
-import openai from "openai";
-const { Configuration, OpenAIApi } = openai;
+// Fixed: Import Configuration, OpenAIApi directly from openai
+import { Configuration, OpenAIApi } from "openai";
 
 const db = new TaskDB();
 const app = express();
