@@ -1,7 +1,7 @@
 {
   "name": "task-queue",
-  "version": "0.1.0",
-  "description": "Simple queue that tracks GitHub tasks for Alfe AI",
+  "version": "0.1.1",
+  "description": "Simple queue that tracks GitHub tasks for Alfe AI (now persisted to SQLite)",
   "type": "module",
   "main": "src/index.js",
   "scripts": {
@@ -12,6 +12,7 @@
   "license": "MIT",
   "dependencies": {
     "@octokit/rest": "^20.1.0",
+    "better-sqlite3": "^9.4.0",
     "dotenv": "^16.4.1"
   }
 }
