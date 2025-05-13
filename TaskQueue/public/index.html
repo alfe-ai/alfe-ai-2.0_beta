@@ -345,7 +345,10 @@
             }</button>
             </td>`
           );
-          push("slug", `<td>${t.task_id_slug}</td>`);
+          push(
+            "slug",
+            `<td><a href="${t.html_url}" target="_blank">${t.task_id_slug}</a></td>`
+          );
           push("repo", `<td>${t.repository}</td>`);
           push(
             "number",
@@ -570,4 +573,3 @@
     </script>
   </body>
 </html>
-
