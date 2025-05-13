@@ -42,7 +42,7 @@
   </div>
 </div>
 
-<!-- Agent instructions modal -->
+<!-- Agent instructions modal (for editing) -->
 <div id="instrModal" class="modal">
   <div class="modal-content">
     <h2>Agent Instructions</h2>
@@ -106,6 +106,14 @@
 <div id="chatTabs" style="display:flex; gap:0.5rem; align-items:center; margin-bottom:8px;">
   <div id="tabsContainer" style="flex-wrap: wrap; display: flex; gap: 0.5rem;"></div>
   <button id="newTabBtn">➕ Tab</button>
+</div>
+
+<!-- Collapsible section to display agent instructions (collapsed by default) -->
+<div style="margin: 8px 0;">
+  <details style="max-width: 600px;" id="instructionsCollapse">
+    <summary>Agent Instructions (click to expand)</summary>
+    <pre id="displayedInstructions"></pre>
+  </details>
 </div>
 
 <!-- Chat panel -->
@@ -929,6 +937,17 @@
     }
     renderTabs();
     await loadChatHistory(currentTabId);
+
+    // Populate collapsible instructions
+    try {
+      const r2 = await fetch("/api/settings/agent_instructions");
+      if(r2.ok){
+        const { value } = await r2.json();
+        $("#displayedInstructions").textContent = value || "(none)";
+      }
+    } catch(e){
+      console.error("Error loading agent instructions:", e);
+    }
   })();
 </script>
 </body>
