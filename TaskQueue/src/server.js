@@ -32,15 +32,11 @@ app.use(cors());
 app.use(express.json());
 
 /* ------------------------------------------------------------------ */
-/*  Agent instructions routes                                         */
+/*  Agent instructions                                                 */
 /* ------------------------------------------------------------------ */
-
-/* GET /api/instructions -> { instructions: "..." } */
-app.get("/api/instructions", (req, res) => {
+app.get("/api/instructions", (_req, res) => {
   try {
-    const txt = fs.existsSync(INSTR_FILE)
-      ? fs.readFileSync(INSTR_FILE, "utf8")
-      : "";
+    const txt = fs.existsSync(INSTR_FILE) ? fs.readFileSync(INSTR_FILE, "utf8") : "";
     res.json({ instructions: txt });
   } catch (err) {
     console.error("[TaskQueue] read instructions failed:", err);
@@ -48,7 +44,6 @@ app.get("/api/instructions", (req, res) => {
   }
 });
 
-/* POST /api/instructions  body:{ instructions } */
 app.post("/api/instructions", (req, res) => {
   try {
     const { instructions = "" } = req.body ?? {};
@@ -61,10 +56,34 @@ app.post("/api/instructions", (req, res) => {
 });
 
 /* ------------------------------------------------------------------ */
-/*  Tasks routes                                                      */
+/*  Settings                                                           */
 /* ------------------------------------------------------------------ */
+app.get("/api/settings/:key", (req, res) => {
+  try {
+    const val = db.getSetting(req.params.key);
+    if (typeof val === "undefined") return res.status(404).json({ error: "Not found" });
+    res.json({ key: req.params.key, value: val });
+  } catch (err) {
+    console.error("[TaskQueue] settings get failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
-/* GET /api/tasks */
+app.post("/api/settings", (req, res) => {
+  try {
+    const { key, value } = req.body ?? {};
+    if (!key) return res.status(400).json({ error: "Missing key" });
+    db.setSetting(key, value);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("[TaskQueue] settings post failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/* ------------------------------------------------------------------ */
+/*  Tasks core                                                         */
+/* ------------------------------------------------------------------ */
 app.get("/api/tasks", (req, res) => {
   try {
     const includeHidden = Boolean(req.query.includeHidden);
@@ -75,13 +94,11 @@ app.get("/api/tasks", (req, res) => {
   }
 });
 
-/* POST /api/tasks  →  create new GitHub issue & store locally */
 app.post("/api/tasks", async (req, res) => {
   try {
     const { title, body = "" } = req.body ?? {};
     if (!title) return res.status(400).json({ error: "Missing title" });
-    if (!ghClient)
-      return res.status(503).json({ error: "GitHub client not configured" });
+    if (!ghClient) return res.status(503).json({ error: "GitHub client not configured" });
 
     const issue = await ghClient.createIssue(title, body);
     db.upsertIssue(issue, repositorySlug);
@@ -92,21 +109,99 @@ app.post("/api/tasks", async (req, res) => {
   }
 });
 
-/* ... existing routes unchanged ... */
+/* ------------------------------------------------------------------ */
+/*  Tasks helpers (hide, reorder, points, project, sprint)            */
+/* ------------------------------------------------------------------ */
+app.post("/api/tasks/hidden", (req, res) => {
+  try {
+    const { id, hidden } = req.body ?? {};
+    db.setHidden(id, hidden);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("[TaskQueue] set hidden failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/api/tasks/reorder", (req, res) => {
+  try {
+    const { id, direction } = req.body ?? {};
+    if (!["up", "down"].includes(direction))
+      return res.status(400).json({ error: "Invalid direction" });
+    const ok = db.reorderTask(id, direction);
+    res.json({ ok });
+  } catch (err) {
+    console.error("[TaskQueue] reorder failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/api/tasks/points", (req, res) => {
+  try {
+    const { id, points } = req.body ?? {};
+    db.setPoints(id, points);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("[TaskQueue] set points failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/api/tasks/project", (req, res) => {
+  try {
+    const { id, project = "" } = req.body ?? {};
+    db.setProject(id, project.trim());
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("[TaskQueue] set project failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/api/tasks/sprint", (req, res) => {
+  try {
+    const { id, sprint = "" } = req.body ?? {};
+    db.setSprint(id, sprint.trim());
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("[TaskQueue] set sprint failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 /* ------------------------------------------------------------------ */
-/*  Static files & index                                              */
+/*  Projects & sprints overview                                        */
+/* ------------------------------------------------------------------ */
+app.get("/api/projects", (_req, res) => {
+  try {
+    res.json(db.listProjects());
+  } catch (err) {
+    console.error("[TaskQueue] list projects failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.get("/api/sprints", (_req, res) => {
+  try {
+    res.json(db.listSprints());
+  } catch (err) {
+    console.error("[TaskQueue] list sprints failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/* ------------------------------------------------------------------ */
+/*  Static assets & SPA fallback                                       */
 /* ------------------------------------------------------------------ */
 app.use(express.static(path.join(__dirname, "..", "public")));
-app.get("/", (req, res) => {
+app.get("/", (_req, res) => {
   res.sendFile(path.join(__dirname, "..", "public", "index.html"));
 });
 
 /* ------------------------------------------------------------------ */
-/*  Server start                                                      */
+/*  Server start                                                       */
 /* ------------------------------------------------------------------ */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web UI listening on http://localhost:${PORT}`);
 });
-
