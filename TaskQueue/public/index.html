@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Task Queue</title>
   <style>
     /* chat panel */
@@ -12,6 +12,8 @@
       max-width: 600px;
     }
     #chatMessages {
+      height: 200px;
+      overflow-y: auto;
       margin-bottom: 0.5rem;
     }
     #waitingCounter {
@@ -44,25 +46,25 @@
     }
 
     /* remove old flat styles */
-    .chat-user, .chat-bot { margin: 0; }
+    .chat-user,
+    .chat-bot {
+      margin: 0;
+    }
   </style>
 </head>
 <body>
 
 <div id="controls">
   <label><input type="checkbox" id="showHidden" /> Show hidden tasks</label>
-
   <label style="margin-left:1rem;">Project:
     <select id="projectFilter"><option value="">All projects</option></select>
   </label>
-
   <label style="margin-left:1rem;">Sprint:
     <select id="sprintFilter"><option value="">All sprints</option></select>
   </label>
-
   <button id="addTaskBtn">➕ New Task</button>
   <button id="instrBtn" title="Agent instructions">📝</button>
-  <button id="gearBtn"  title="Configure columns">⚙️</button>
+  <button id="gearBtn" title="Configure columns">⚙️</button>
   <button id="defaultsBtn" title="Default project/sprint">⭐</button>
   <button id="repoBtn" title="Edit Git repository">🔀</button>
 </div>
@@ -154,98 +156,333 @@
 
 <script>
   /* ---------------- default column definitions ---------------- */
-  let columnsOrder = [ /* ... same as before ... */ ];
-  let visibleCols = new Set(columnsOrder.map(c=>c.key));
+  let columnsOrder = [
+    { key: "drag",     label: "⠿"      },
+    { key: "order",    label: "P"      },
+    { key: "reorder",  label: "↕"      },
+    { key: "visibility", label: ""     },
+    { key: "priority", label: "Prio"   },
+    { key: "status",   label: "Status" },
+    { key: "dependencies", label: "Depends On" },
+    { key: "blocking", label: "Blocks" },
+    { key: "slug",     label: "Slug"   },
+    { key: "repo",     label: "Repo"   },
+    { key: "number",   label: "#"      },
+    { key: "title",    label: "Title"  },
+    { key: "project",  label: "Project"},
+    { key: "sprint",   label: "Sprint" },
+    { key: "points",   label: "Pts"    },
+    { key: "assignee", label: "Assignee"},
+    { key: "created",  label: "Created"}
+  ];
+  let visibleCols = new Set(columnsOrder.map(c => c.key));
   let allTasks = [];
   let dragSrcRow = null;
   const $  = (sel, ctx=document) => ctx.querySelector(sel);
   const $$ = (sel, ctx=document) => [...ctx.querySelectorAll(sel)];
   const isoDate = d => new Date(d).toLocaleDateString();
-  function showModal(m){ m.style.display="flex"; }
-  function hideModal(m){ m.style.display="none"; }
-  $$(".modal").forEach(m=>m.addEventListener("click",e=>{ if(e.target===m) hideModal(m); }));
-  /* ------------------------------------------------------------------
-   * Load & save settings, renderHeader, drag/drop, fetchTasks, renderBody,
-   * loadTasks, populateFilters, column picker, row interactions,
-   * basic controls, modal hooking for settings, new tasks...
-   * (all code unchanged above)
-   * ------------------------------------------------------------------ */
+
+  /* --------------- modals -------------------- */
+  function showModal(m){ m.style.display = "flex"; }
+  function hideModal(m){ m.style.display = "none"; }
+  $$(".modal").forEach(m => m.addEventListener("click", e => { if(e.target===m) hideModal(m); }));
 
   /* ------------------------------------------------------------------
-   * Chat logic with grouped bubbles
+   * Load & save settings
    * ------------------------------------------------------------------ */
-  const chatMessagesEl = document.getElementById("chatMessages");
-  const chatInputEl    = document.getElementById("chatInput");
-  const chatSendBtnEl  = document.getElementById("chatSendBtn");
+  async function loadSettings(){
+    {
+      const r = await fetch("/api/settings/visible_columns");
+      if(r.ok){ const { value } = await r.json(); if(Array.isArray(value)){ visibleCols = new Set(value); }}
+    }
+    {
+      const r = await fetch("/api/settings/columns_order");
+      if(r.ok){ const { value } = await r.json(); if(Array.isArray(value)){
+        const map = Object.fromEntries(columnsOrder.map(c=>[c.key,c]));
+        const newOrd = [];
+        value.forEach(k => { if(map[k]){ newOrd.push(map[k]); delete map[k]; }});
+        Object.values(map).forEach(c => newOrd.push(c));
+        columnsOrder = newOrd;
+      }}
+    }
+  }
+  async function saveSettings(){
+    await fetch("/api/settings",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ key:"visible_columns", value:[...visibleCols] })
+    });
+    await fetch("/api/settings",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ key:"columns_order", value:columnsOrder.map(c=>c.key) })
+    });
+  }
 
-  chatSendBtnEl.addEventListener("click", async () => {
-    const userMessage = chatInputEl.value.trim();
-    if (!userMessage) return;
+  /* ------------------------------------------------------------------
+   * Column rendering
+   * ------------------------------------------------------------------ */
+  function renderHeader(){
+    const tr = $("#headerRow"); tr.innerHTML = "";
+    columnsOrder.forEach(col => {
+      if(!visibleCols.has(col.key)) return;
+      const th = document.createElement("th"); th.textContent = col.label;
+      tr.appendChild(th);
+    });
+  }
 
-    // Sequence container
-    const seqDiv = document.createElement("div");
-    seqDiv.className = "chat-sequence";
+  /* ------------------------------------------------------------------
+   * Drag & drop reordering
+   * ------------------------------------------------------------------ */
+  function handleDragStart(e){ dragSrcRow = e.target.closest("tr"); e.dataTransfer.effectAllowed = "move"; }
+  function handleDragOver(e){
+    if(dragSrcRow && e.currentTarget !== dragSrcRow){
+      e.preventDefault(); e.dataTransfer.dropEffect = "move";
+      e.currentTarget.classList.add("drag-over");
+    }
+  }
+  function handleDragLeave(e){ e.currentTarget.classList.remove("drag-over"); }
+  function handleDrop(e){
+    e.preventDefault(); const target = e.currentTarget;
+    target.classList.remove("drag-over");
+    if(dragSrcRow && dragSrcRow !== target){
+      const tbody = target.parentNode;
+      const rows = [...tbody.children];
+      let from = rows.indexOf(dragSrcRow);
+      let to = rows.indexOf(target);
+      tbody.removeChild(dragSrcRow);
+      if(from < to) to--;
+      tbody.insertBefore(dragSrcRow, tbody.children[to]);
+      saveNewOrderToServer();
+    }
+    dragSrcRow = null;
+  }
+  function handleDragEnd(e){
+    $$(`tr.drag-over`).forEach(r=>r.classList.remove("drag-over"));
+    dragSrcRow = null;
+  }
+  async function saveNewOrderToServer(){
+    const ids = $$("#tasks tbody tr").map(r=>+r.dataset.taskId);
+    await fetch("/api/tasks/reorderAll",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ orderedIds: ids })
+    });
+  }
 
-    // User sub-bubble
-    const userDiv = document.createElement("div");
-    userDiv.className = "chat-user";
-    userDiv.textContent = "You: " + userMessage;
-    seqDiv.appendChild(userDiv);
+  /* ------------------------------------------------------------------
+   * Fetch & render tasks
+   * ------------------------------------------------------------------ */
+  async function fetchTasks(){
+    const inc = $("#showHidden").checked;
+    const res = await fetch(`/api/tasks?includeHidden=${inc?1:0}`);
+    return res.json();
+  }
+  function renderBody(){
+    const tbody = $("#tasks tbody"); tbody.innerHTML = "";
+    const pj = $("#projectFilter").value;
+    const sp = $("#sprintFilter").value;
+    allTasks.filter(t=>{ if(pj&&t.project!==pj) return false; if(sp&&t.sprint!==sp) return false; return true; })
+            .forEach(t=>{
+              const tr = document.createElement("tr");
+              tr.dataset.taskId = t.id;
+              if(t.hidden) tr.classList.add("hidden");
+              ["drag","order","reorder","visibility","priority","status",
+                "dependencies","blocking","slug","repo","number","title",
+                "project","sprint","points","assignee","created"].forEach(key=>{
+                if(!visibleCols.has(key)) return;
+                const td = document.createElement("td");
+                switch(key){
+                  case "drag":
+                    td.innerHTML = `<span class=\"drag-handle\" draggable=\"true\">⠿</span>`;
+                    td.querySelector(".drag-handle").addEventListener("dragstart", handleDragStart);
+                    break;
+                  case "order": td.textContent = t.priority_number; break;
+                  case "reorder":
+                    td.innerHTML = `<button class=\"arrow\" data-id=\"${t.id}\" data-dir=\"up\">⬆️</button>`+
+                            `<button class=\"arrow\" data-id=\"${t.id}\" data-dir=\"down\">⬇️</button>`;
+                    break;
+                  case "visibility": td.innerHTML = `<button class=\"eye\" data-id=\"${t.id}\">${t.hidden?"🙈":"👁️"}</button>`; break;
+                  case "priority": td.textContent = t.priority; td.className="priority-cell"; break;
+                  case "status": td.textContent = t.status; td.className="status-cell"; break;
+                  case "dependencies": td.textContent = t.dependencies; td.className="dependencies-cell"; break;
+                  case "blocking": td.textContent = t.blocking; td.className="blocking-cell"; break;
+                  case "slug": td.innerHTML = `<a href=\"${t.html_url}\" target=\"_blank\">${t.task_id_slug}</a>`; break;
+                  case "repo": td.textContent = t.repository; break;
+                  case "number": td.innerHTML = `<a href=\"${t.html_url}\" target=\"_blank\">#${t.number}</a>`; break;
+                  case "title": td.textContent = t.title; td.className="title-cell"; break;
+                  case "project": td.textContent = t.project; td.className="project-cell"; break;
+                  case "sprint": td.textContent = t.sprint; td.className="sprint-cell"; break;
+                  case "points": td.textContent = t.fib_points||""; break;
+                  case "assignee": td.textContent = t.assignee||""; break;
+                  case "created": td.textContent = isoDate(t.created_at); break;
+                  default: td.textContent = t[key]||"";
+                }
+                tr.appendChild(td);
+              });
+              ["dragover","dragleave","drop","dragend"].forEach(evt=>{
+                tr.addEventListener(evt, {"dragover":handleDragOver,"dragleave":handleDragLeave,"drop":handleDrop,"dragend":handleDragEnd}[evt]);
+              });
+              tbody.appendChild(tr);
+            });
+  }
+  async function loadTasks(){ allTasks = await fetchTasks(); renderHeader(); renderBody(); }
 
-    chatInputEl.value = "";
+  /* ------------------------------------------------------------------
+   * Filters
+   * ------------------------------------------------------------------ */
+  async function populateFilters(){
+    const pj = await (await fetch("/api/projects")).json();
+    $("#projectFilter").innerHTML = '<option value="">All projects</option>'+pj.map(p=>`<option value=\"${p.project}\">${p.project}</option>`).join("");
+    const sp = await (await fetch("/api/sprints")).json();
+    $("#sprintFilter").innerHTML = '<option value="">All sprints</option>'+sp.map(s=>`<option value=\"${s.sprint}\">${s.sprint}</option>`).join("");
+  }
 
-    // show waiting counter
-    const waitingElem = document.getElementById("waitingCounter");
-    let waitTime = 0;
-    waitingElem.textContent = "Waiting: 0.0s";
-    const waitInterval = setInterval(() => {
-      waitTime += 0.1;
-      waitingElem.textContent = `Waiting: ${waitTime.toFixed(1)}s`;
-    }, 100);
+  /* ------------------------------------------------------------------
+   * Column picker logic
+   * ------------------------------------------------------------------ */
+  function openColModal(){
+    const cnt = $("#colList"); cnt.innerHTML="";
+    columnsOrder.forEach((c,i)=>{
+      const div = document.createElement("div"); div.className="col-item";
+      div.innerHTML = `<button class=\"col-move\" data-idx=\"${i}\" data-dir=\"up\">⬆️</button>`+
+              `<button class=\"col-move\" data-idx=\"${i}\" data-dir=\"down\">⬇️</button>`+
+              `<label><input type=\"checkbox\" value=\"${c.key}\" ${visibleCols.has(c.key)?"checked":""}/> ${c.label||c.key}</label>`;
+      cnt.appendChild(div);
+    });
+    showModal($("#colModal"));
+  }
+  $("#gearBtn").addEventListener("click", openColModal);
+  $("#colList").addEventListener("click", e=>{
+    if(!e.target.classList.contains("col-move")) return;
+    const i = +e.target.dataset.idx, d=e.target.dataset.dir;
+    const ni = d==="up"?i-1:i+1;
+    if(ni<0||ni>=columnsOrder.length) return;
+    [columnsOrder[i],columnsOrder[ni]]=[columnsOrder[ni],columnsOrder[i]];
+    openColModal();
+  });
+  $("#colSaveBtn").addEventListener("click", async ()=>{
+    visibleCols.clear();
+    $$("#colList input[type=checkbox]").forEach(cb=>{ if(cb.checked) visibleCols.add(cb.value); });
+    await saveSettings(); hideModal($("#colModal")); await loadTasks();
+  });
+  $("#colCancelBtn").addEventListener("click", ()=>hideModal($("#colModal")));
 
-    try {
-      const resp = await fetch("/api/chat", {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ message: userMessage })
-      });
-      clearInterval(waitInterval);
-      waitingElem.textContent = "";
-
-      // Bot sub-bubble
-      const botDiv = document.createElement("div");
-      botDiv.className = "chat-bot";
-
-      if (!resp.ok) {
-        botDiv.textContent = "AI: Error contacting AI.";
-      } else {
-        const data = await resp.json();
-        botDiv.textContent = `AI (${data.model}): ${data.reply || ""}`;
+  /* ------------------------------------------------------------------
+   * Row interactions
+   * ------------------------------------------------------------------ */
+  $("#tasks").addEventListener("click", async e=>{
+    const btn = e.target.closest("button");
+    if(btn){
+      if(btn.classList.contains("eye")){
+        const id=+btn.dataset.id;
+        const hideNow=btn.textContent==="👁️";
+        await fetch("/api/tasks/hidden",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,hidden:hideNow})});
+        return loadTasks();
       }
+      if(btn.classList.contains("arrow")){
+        const id=+btn.dataset.id, dir=btn.dataset.dir;
+        await fetch("/api/tasks/reorder",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,direction:dir})});
+        return loadTasks();
+      }
+    }
+    const cell = e.target;
+    const row = cell.closest("tr"); if(!row) return;
+    const taskId=+row.dataset.taskId;
 
-      seqDiv.appendChild(botDiv);
-    } catch (e) {
-      clearInterval(waitInterval);
-      waitingElem.textContent = "";
-      const botDiv = document.createElement("div");
-      botDiv.className = "chat-bot";
-      botDiv.textContent = "AI: Error occurred.";
-      seqDiv.appendChild(botDiv);
+    /* helper to inline edit */
+    function inlineEdit(newEl, saveCb){
+      cell.textContent=""; cell.appendChild(newEl); newEl.focus();
+      newEl.addEventListener("change", async ()=>{ await saveCb(newEl.value); await loadTasks(); });
+      newEl.addEventListener("blur", ()=>loadTasks());
     }
 
-    chatMessagesEl.appendChild(seqDiv);
-    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+    if(cell.classList.contains("priority-cell")){
+      const sel = document.createElement("select");["Low","Medium","High"].forEach(v=>{ const o=document.createElement("option");o.value=v;o.textContent=v;if(v===cell.textContent) o.selected=true;sel.appendChild(o); });
+      return inlineEdit(sel,v=>fetch("/api/tasks/priority",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:taskId,priority:v})}));
+    }
+    if(cell.classList.contains("status-cell")){
+      const sel=document.createElement("select");["Not Started","In Progress","Done"].forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v;if(v===cell.textContent) o.selected=true;sel.appendChild(o);});
+      return inlineEdit(sel,v=>fetch("/api/tasks/status",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:taskId,status:v})}));
+    }
+    if(cell.classList.contains("project-cell")){
+      const inp=document.createElement("input"); inp.type="text"; inp.value=cell.textContent;
+      return inlineEdit(inp,v=>fetch("/api/tasks/project",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:taskId,project:v})}));
+    }
+    if(cell.classList.contains("sprint-cell")){
+      const inp=document.createElement("input"); inp.type="text"; inp.value=cell.textContent;
+      return inlineEdit(inp,v=>fetch("/api/tasks/sprint",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:taskId,sprint:v})}));
+    }
+    if(cell.classList.contains("dependencies-cell")){
+      const inp=document.createElement("input"); inp.type="text"; inp.value=cell.textContent;
+      return inlineEdit(inp,v=>fetch("/api/tasks/dependencies",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:taskId,dependencies:v})}));
+    }
+    if(cell.classList.contains("blocking-cell")){
+      const inp=document.createElement("input"); inp.type="text"; inp.value=cell.textContent;
+      return inlineEdit(inp,v=>fetch("/api/tasks/blocking",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:taskId,blocking:v})}));
+    }
+    if(cell.classList.contains("title-cell")){
+      const inp=document.createElement("input"); inp.type="text"; inp.value=cell.textContent;
+      return inlineEdit(inp,v=>fetch("/api/tasks/rename",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:taskId,newTitle:v})}));
+    }
+  });
+
+  $("#showHidden").addEventListener("change", loadTasks);
+  $("#projectFilter").addEventListener("change", renderBody);
+  $("#sprintFilter").addEventListener("change", renderBody);
+
+  /* ------------------------------------------------------------------
+   * Modal hooking for instructions, repo, defaults, new task
+   * ------------------------------------------------------------------ */
+  $("#instrBtn").addEventListener("click", async ()=>{ const r=await fetch("/api/settings/agent_instructions"); if(r.ok){const {value}=await r.json();$("#instrText").value=value||"";} showModal($("#instrModal"));});
+  $("#instrSaveBtn").addEventListener("click", async ()=>{await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:"agent_instructions",value:$("#instrText").value})}); hideModal($("#instrModal"));});
+  $("#instrCancelBtn").addEventListener("click",()=>hideModal($("#instrModal")));
+
+  $("#repoBtn").addEventListener("click", async ()=>{ const r=await fetch("/api/settings/github_repo"); if(r.ok){const{value}=await r.json();$("#repoInput").value=value||"";} showModal($("#repoModal"));});
+  $("#repoSaveBtn").addEventListener("click", async ()=>{await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:"github_repo",value:$("#repoInput").value})}); hideModal($("#repoModal"));});
+  $("#repoCancelBtn").addEventListener("click",()=>hideModal($("#repoModal")));
+
+  $("#defaultsBtn").addEventListener("click", async ()=>{ let r=await fetch("/api/settings/default_project"); if(r.ok){const{value}=await r.json();$("#defProjectInput").value=value||"";} r=await fetch("/api/settings/default_sprint"); if(r.ok){const{value}=await r.json();$("#defSprintInput").value=value||"";} showModal($("#defaultsModal"));});
+  $("#defSaveBtn").addEventListener("click", async ()=>{await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:"default_project",value:$("#defProjectInput").value})}); await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({key:"default_sprint",value:$("#defSprintInput").value})}); hideModal($("#defaultsModal"));});
+  $("#defCancelBtn").addEventListener("click",()=>hideModal($("#defaultsModal")));
+
+  $("#addTaskBtn").addEventListener("click",()=>{ $("#newTaskTitle").value=""; $("#newTaskBody").value=""; showModal($("#newTaskModal")); });
+  $("#createTaskBtn").addEventListener("click", async ()=>{ const title=$("#newTaskTitle").value.trim(), body=$("#newTaskBody").value.trim(); if(!title){alert("Please enter a title for the new task."); return;} const res=await fetch("/api/tasks/new",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({title,body})}); if(!res.ok){alert("Error creating task. Check console/logs."); return;} hideModal($("#newTaskModal")); await loadTasks(); });
+  $("#cancelTaskBtn").addEventListener("click",()=>hideModal($("#newTaskModal")));
+
+  /* ------------------------------------------------------------------
+   * Chat logic with grouped bubbles + model display
+   * ------------------------------------------------------------------ */
+  const AI_MODEL = "o3-mini";
+  const chatMessagesEl = document.getElementById("chatMessages");
+  const chatInputEl = document.getElementById("chatInput");
+  const chatSendBtnEl = document.getElementById("chatSendBtn");
+
+  chatSendBtnEl.addEventListener("click", async () => {
+    const userMessage = chatInputEl.value.trim(); if(!userMessage) return;
+
+    // container
+    const seqDiv = document.createElement("div"); seqDiv.className = "chat-sequence";
+    const userDiv = document.createElement("div"); userDiv.className = "chat-user"; userDiv.textContent = "You: " + userMessage; seqDiv.appendChild(userDiv);
+    chatInputEl.value = "";
+
+    const waitingElem = document.getElementById("waitingCounter"); let waitTime=0; waitingElem.textContent = "Waiting: 0.0s";
+    const waitInterval = setInterval(()=>{ waitTime+=0.1; waitingElem.textContent = `Waiting: ${waitTime.toFixed(1)}s`; }, 100);
+
+    try {
+      const resp = await fetch("/api/chat",{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({message:userMessage}) });
+      clearInterval(waitInterval); waitingElem.textContent = "";
+      const botDiv = document.createElement("div"); botDiv.className = "chat-bot";
+      if(!resp.ok){ botDiv.textContent = `AI (${AI_MODEL}): Error contacting AI.`; }
+      else { const data = await resp.json(); botDiv.textContent = `AI (${AI_MODEL}): ${data.reply||""}`; }
+      seqDiv.appendChild(botDiv);
+    } catch(e) {
+      clearInterval(waitInterval); waitingElem.textContent = ""; const botDiv = document.createElement("div"); botDiv.className = "chat-bot"; botDiv.textContent = `AI (${AI_MODEL}): Error occurred.`; seqDiv.appendChild(botDiv);
+    }
+    chatMessagesEl.appendChild(seqDiv); chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
   });
 
   /* ------------------------------------------------------------------
    * Init sequence
    * ------------------------------------------------------------------ */
-  (async function init(){
-    await loadSettings();
-    await populateFilters();
-    await loadTasks();
-  })();
+  (async function init(){ await loadSettings(); await populateFilters(); await loadTasks(); })();
 </script>
-
 </body>
 </html>
