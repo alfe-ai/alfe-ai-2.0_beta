@@ -100,7 +100,13 @@
 <div id="instrModal" class="modal">
   <div class="modal-content">
     <h2>Agent Instructions</h2>
-    <textarea id="instrText" rows="10" style="width:100%;"></textarea>
+    <label>Agent Name:
+      <input type="text" id="agentNameInput" style="width:100%;" />
+    </label>
+    <br/><br/>
+    <label>Instructions:<br/>
+      <textarea id="instrText" rows="10" style="width:100%;"></textarea>
+    </label>
     <div class="modal-buttons">
       <button id="instrSaveBtn">Save</button>
       <button id="instrCancelBtn">Cancel</button>
@@ -187,19 +193,20 @@
   let tasksVisible = true;
   let chatTabs = [];
   let currentTabId = 1;
-  let chatHideMetadata = false; // new global for hiding expansions
+  let chatHideMetadata = false;
+  window.agentName = "AI"; // Default if not set
 
   const $  = (sel, ctx=document) => ctx.querySelector(sel);
   const $$ = (sel, ctx=document) => [...ctx.querySelectorAll(sel)];
 
-  // Show only hour and minute, e.g. 03:32 PM
   function formatTimestamp(isoStr){
     if(!isoStr) return "(no time)";
     const d = new Date(isoStr);
     return d.toLocaleTimeString([], {
       hour12: true,
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      second: '2-digit'
     });
   }
 
@@ -565,10 +572,19 @@
   $("#sprintFilter").addEventListener("change", renderBody);
 
   $("#instrBtn").addEventListener("click", async ()=>{
-    const r=await fetch("/api/settings/agent_instructions");
-    if(r.ok){
-      const {value}=await r.json();
-      $("#instrText").value=value||"";
+    {
+      const r=await fetch("/api/settings/agent_instructions");
+      if(r.ok){
+        const {value}=await r.json();
+        $("#instrText").value=value||"";
+      }
+    }
+    {
+      const r2=await fetch("/api/settings/agent_name");
+      if(r2.ok){
+        const {value}=await r2.json();
+        $("#agentNameInput").value=value||"";
+      }
     }
     showModal($("#instrModal"));
   });
@@ -577,6 +593,11 @@
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify({key:"agent_instructions",value:$("#instrText").value})
+    });
+    await fetch("/api/settings",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({key:"agent_name",value:$("#agentNameInput").value})
     });
     hideModal($("#instrModal"));
   });
@@ -734,7 +755,7 @@
   $("#newTabBtn").addEventListener("click", addNewTab);
 
   /* ------------------------------------------------------------------
-   * Single function to display a chat pair with minimal expansions
+   * Add chat messages
    * ------------------------------------------------------------------ */
   function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemContext, fullHistory) {
     const seqDiv = document.createElement("div");
@@ -747,14 +768,9 @@
       const userHead = document.createElement("div");
       userHead.className = "bubble-header";
       userHead.innerHTML = `
-        <img src="data:image/svg+xml;utf8,
-          <svg width='24' height='24' xmlns='http://www.w3.org/2000/svg'>
-            <rect width='24' height='24' fill='%2309f'/>
-            <text x='50%25' y='50%25' fill='%23fff' font-size='12'
-             font-family='Arial' dy='.3em' text-anchor='middle'>U</text>
-          </svg>" alt="User" style="border-radius:50%;">
+        <div class="name-oval name-oval-user">User</div>
+        <span style="opacity:0.8;">${formatTimestamp(userTs)}</span>
       `;
-      userHead.innerHTML += `<span style="opacity:0.8;">${formatTimestamp(userTs)}</span>`;
       userDiv.appendChild(userHead);
 
       const userBody = document.createElement("div");
@@ -770,14 +786,9 @@
       const botHead = document.createElement("div");
       botHead.className = "bubble-header";
       botHead.innerHTML = `
-        <img src="data:image/svg+xml;utf8,
-          <svg width='24' height='24' xmlns='http://www.w3.org/2000/svg'>
-            <rect width='24' height='24' fill='%23f90'/>
-            <text x='50%25' y='50%25' fill='%23fff' font-size='10'
-             font-family='Arial' dy='.3em' text-anchor='middle'>AI</text>
-          </svg>" alt="AI" style="border-radius:50%;">
+        <div class="name-oval name-oval-ai">${window.agentName}</div>
+        <span style="opacity:0.8;">${aiTs ? formatTimestamp(aiTs) : "…"}</span>
       `;
-      botHead.innerHTML += `<span style="opacity:0.8;">${aiTs ? formatTimestamp(aiTs) : "…"}</span>`;
       botDiv.appendChild(botHead);
 
       const botBody = document.createElement("div");
@@ -786,7 +797,6 @@
     }
     seqDiv.appendChild(botDiv);
 
-    /* Metadata block: multiple collapsible sections, collapsed by default */
     if(!chatHideMetadata){
       const metaContainer = document.createElement("div");
       metaContainer.style.fontSize = "0.8rem";
@@ -902,8 +912,6 @@
     const userTime = new Date().toISOString();
     chatInputEl.value = "";
 
-    // We'll show a simple user bubble + bot placeholder
-    // After streaming finishes, we reload from DB so it displays in final form
     const seqDiv = document.createElement("div");
     seqDiv.className = "chat-sequence";
 
@@ -914,15 +922,9 @@
       const userHead = document.createElement("div");
       userHead.className = "bubble-header";
       userHead.innerHTML = `
-        <img src="data:image/svg+xml;utf8,
-          <svg width='24' height='24' xmlns='http://www.w3.org/2000/svg'>
-            <rect width='24' height='24' fill='%2309f'/>
-            <text x='50%25' y='50%25' fill='%23fff' font-size='12'
-             font-family='Arial' dy='.3em' text-anchor='middle'>U</text>
-          </svg>" 
-          alt="User" style="border-radius:50%;">
+        <div class="name-oval name-oval-user">User</div>
+        <span style="opacity:0.8;">${formatTimestamp(userTime)}</span>
       `;
-      userHead.innerHTML += `<span style="opacity:0.8;">${formatTimestamp(userTime)}</span>`;
       userDiv.appendChild(userHead);
 
       const userBody = document.createElement("div");
@@ -938,15 +940,9 @@
       const botHead = document.createElement("div");
       botHead.className = "bubble-header";
       botHead.innerHTML = `
-        <img src="data:image/svg+xml;utf8,
-          <svg width='24' height='24' xmlns='http://www.w3.org/2000/svg'>
-            <rect width='24' height='24' fill='%23f90'/>
-            <text x='50%25' y='50%25' fill='%23fff' font-size='10'
-             font-family='Arial' dy='.3em' text-anchor='middle'>AI</text>
-          </svg>" 
-          alt="AI" style="border-radius:50%;">
+        <div class="name-oval name-oval-ai">${window.agentName}</div>
+        <span style="opacity:0.8;">…</span>
       `;
-      botHead.innerHTML += `<span style="opacity:0.8;">…</span>`;
       botDiv.appendChild(botHead);
 
       const botBody = document.createElement("div");
@@ -976,25 +972,25 @@
       waitingElem.textContent = "";
 
       if(!resp.ok){
-        botDiv.querySelector("div").textContent = "[Error contacting AI]";
-        botDiv.querySelector(".bubble-header span").textContent = formatTimestamp(new Date().toISOString());
+        botDiv.querySelector("div:nth-of-type(2)").textContent = "[Error contacting AI]";
+        botHead.querySelector("span").textContent = formatTimestamp(new Date().toISOString());
       } else {
         const reader = resp.body.getReader();
         while(true){
           const { value, done } = await reader.read();
           if(done) break;
           partialText += new TextDecoder().decode(value);
-          botDiv.querySelector("div").textContent = partialText;
+          botDiv.querySelector("div:nth-of-type(2)").textContent = partialText;
+          chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
         }
-        botDiv.querySelector(".bubble-header span").textContent = formatTimestamp(new Date().toISOString());
+        botHead.querySelector("span").textContent = formatTimestamp(new Date().toISOString());
       }
-      // Final load from DB to display everything in final format
       await loadChatHistory(currentTabId);
     } catch(e) {
       clearInterval(waitInterval);
       waitingElem.textContent = "";
-      botDiv.querySelector("div").textContent = "[Error occurred]";
-      botDiv.querySelector(".bubble-header span").textContent = formatTimestamp(new Date().toISOString());
+      botDiv.querySelector("div:nth-of-type(2)").textContent = "[Error occurred]";
+      botHead.querySelector("span").textContent = formatTimestamp(new Date().toISOString());
     }
     chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
   });
@@ -1098,7 +1094,16 @@
       window.agentInstructions = "";
     }
 
-    // Load chatHideMetadata setting
+    try {
+      const r4 = await fetch("/api/settings/agent_name");
+      if(r4.ok){
+        const { value } = await r4.json();
+        window.agentName = value || "AI";
+      }
+    } catch(e){
+      window.agentName = "AI";
+    }
+
     try {
       const r3 = await fetch("/api/settings/chat_hide_metadata");
       if(r3.ok){

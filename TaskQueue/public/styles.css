@@ -207,7 +207,24 @@ body {
   gap: 1rem;
 }
 
-/* Avatars inline with text. */
+/* Avatars replaced with name ovals */
+.name-oval {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  margin-right: 6px;
+  color: #fff;
+}
+
+.name-oval-user {
+  background: #09f;
+}
+
+.name-oval-ai {
+  background: #f90;
+}
+
+/* Bubble headers, containing name oval + timestamp */
 .bubble-header {
   display: flex;
   align-items: center;
@@ -216,7 +233,7 @@ body {
   font-size: 0.9rem;
 }
 
-/* User bubble: displayed on the right side now */
+/* User bubble: displayed on the right side */
 .chat-user {
   background: #3b3b3b;
   padding: 6px 8px;
