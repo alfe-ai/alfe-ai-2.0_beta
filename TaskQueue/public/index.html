@@ -648,7 +648,7 @@
   });
   $("#createTaskBtn").addEventListener("click", async ()=>{
     const title=$("#newTaskTitle").value.trim(),
-          body=$("#newTaskBody").value.trim();
+            body=$("#newTaskBody").value.trim();
     if(!title){
       alert("Please enter a title for the new task.");
       return;
@@ -709,7 +709,7 @@
       if(chatTabs.length>0){
         currentTabId = chatTabs[0].id;
       } else {
-        currentTabId=1; 
+        currentTabId=1;
       }
       renderTabs();
       await loadChatHistory(currentTabId);
@@ -758,10 +758,34 @@
     const seqDiv = document.createElement("div");
     seqDiv.className = "chat-sequence";
 
+    // Separate agent instructions from system info if possible
+    let agentInstructions = "";
+    let systemInfoText = "";
     if (systemContext) {
+      // Attempt to parse: "System Context:\n[ instructions ]\n\nModel: [modelVal]\nUserTime: [timeVal]"
+      const re = /System Context:\n([\s\S]*?)\n\nModel:\s*([^]+)\nUserTime:\s*([^]+)/;
+      const match = re.exec(systemContext);
+      if (match) {
+        agentInstructions = match[1].trim();
+        const modelVal = match[2].trim();
+        const timeVal = match[3].trim();
+        systemInfoText = `Model: ${modelVal}\nTime: ${timeVal}`;
+      } else {
+        systemInfoText = systemContext;
+      }
+    }
+
+    if (agentInstructions) {
+      const instrDiv = document.createElement("div");
+      instrDiv.className = "chat-instructions";
+      instrDiv.textContent = agentInstructions;
+      seqDiv.appendChild(instrDiv);
+    }
+
+    if (systemInfoText) {
       const sysDiv = document.createElement("div");
       sysDiv.className = "chat-system";
-      sysDiv.textContent = systemContext;
+      sysDiv.textContent = "System Info:\n" + systemInfoText;
       seqDiv.appendChild(sysDiv);
     }
 
@@ -785,13 +809,13 @@
       const pairs = await fetch(`/api/chat/history?tabId=${tabId}`).then(r => r.json());
       for (const p of pairs) {
         addChatMessage(
-          p.id,
-          p.user_text,
-          p.timestamp,
-          p.ai_text,
-          p.ai_timestamp,
-          p.model,
-          p.system_context
+                p.id,
+                p.user_text,
+                p.timestamp,
+                p.ai_text,
+                p.ai_timestamp,
+                p.model,
+                p.system_context
         );
       }
     } catch (err) {
@@ -810,30 +834,22 @@
     const userMessage = chatInputEl.value.trim();
     if(!userMessage) return;
 
-    // Locally computed user timestamp
     const userTime = new Date().toISOString();
 
-    // Immediately reflect user input
+    // A simple user bubble
     const seqDiv = document.createElement("div");
     seqDiv.className = "chat-sequence";
-
-    // Show system context bubble inline for new message
-    const sysContext = `System Context:\nModel: ${modelName}\nTimestamp: ${userTime}`;
-    const sysDiv = document.createElement("div");
-    sysDiv.className = "chat-system";
-    sysDiv.textContent = sysContext;
-    seqDiv.appendChild(sysDiv);
-
     const userDiv = document.createElement("div");
     userDiv.className = "chat-user";
     userDiv.innerHTML = `You (pending ID, ${formatTimestamp(userTime)}): ${userMessage}`;
     seqDiv.appendChild(userDiv);
 
+    // Bot bubble for partial response
     const botDiv = document.createElement("div");
     botDiv.className = "chat-bot";
     botDiv.textContent = `AI (model: ${modelName}, ...): `;
-
     seqDiv.appendChild(botDiv);
+
     chatMessagesEl.appendChild(seqDiv);
     chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
     chatInputEl.value = "";
@@ -867,6 +883,9 @@
           chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
         }
       }
+      // Reload the history to show final context + instructions
+      await loadChatHistory(currentTabId);
+
     } catch(e) {
       clearInterval(waitInterval);
       waitingElem.textContent = "";
@@ -892,7 +911,6 @@
     } catch(e){
       modelName = "unknown";
     }
-    // Display the model in the HUD
     $("#modelHud").textContent = "Model: " + modelName;
 
     // Load chat tabs
