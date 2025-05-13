@@ -20,8 +20,14 @@
     #addTaskBtn{margin-left:1rem;font-size:1.1rem;}
     #gearBtn,#instrBtn,#repoBtn,#defaultsBtn{margin-left:.6rem;font-size:1.2rem;}
     tr.hidden{opacity:.4;}
-    .project-cell,.sprint-cell,.priority-cell,.status-cell{cursor:pointer;color:#333;}
-    .project-cell:hover,.sprint-cell:hover,.priority-cell:hover,.status-cell:hover{text-decoration:underline dotted;}
+    .project-cell,.sprint-cell,.priority-cell,.status-cell,
+    .dependencies-cell,.blocking-cell {
+      cursor:pointer;color:#333;
+    }
+    .project-cell:hover,.sprint-cell:hover,.priority-cell:hover,.status-cell:hover,
+    .dependencies-cell:hover,.blocking-cell:hover {
+      text-decoration:underline dotted;
+    }
     .inline-input{width:100%;box-sizing:border-box;font:inherit;padding:4px;}
     #controls{margin-bottom:1rem;}
 
@@ -144,6 +150,8 @@ const columns = [
   { key: "visibility", label: ""       },
   { key: "priority",   label: "Prio"   },
   { key: "status",     label: "Status" },
+  { key: "dependencies", label: "Depends" },
+  { key: "blocking",   label: "Blocks" },
   { key: "slug",       label: "Slug"   },
   { key: "repo",       label: "Repo"   },
   { key: "number",     label: "#"      },
@@ -236,6 +244,14 @@ function renderBody(){
           td.textContent = t.status;
           td.className="status-cell";
           break;
+        case "dependencies":
+          td.textContent = t.dependencies;
+          td.className="dependencies-cell";
+          break;
+        case "blocking":
+          td.textContent = t.blocking;
+          td.className="blocking-cell";
+          break;
         case "slug":    td.textContent = t.task_id_slug; break;
         case "repo":    td.textContent = t.repository; break;
         case "reorder":
@@ -323,7 +339,7 @@ $("#colSaveBtn").addEventListener("click", async ()=>{
 $("#colCancelBtn").addEventListener("click", ()=>hideModal($("#colModal")));
 
 /* ------------------------------------------------------------------
- * Row interactions (visibility / reorder / priority / status / project / sprint)
+ * Row interactions
  * ------------------------------------------------------------------ */
 $("#tasks").addEventListener("click", async (e)=>{
   const btn = e.target.closest("button");
@@ -470,6 +486,64 @@ $("#tasks").addEventListener("click", async (e)=>{
       await loadTasks();
     });
   }
+
+  /* Dependencies cell click */
+  if(e.target.classList.contains("dependencies-cell")){
+    const row = e.target.closest("tr");
+    const taskId = +row.dataset.taskId;
+    const currentDeps = e.target.textContent.trim();
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = currentDeps;
+    input.className = "inline-input";
+    e.target.textContent = "";
+    e.target.appendChild(input);
+    input.focus();
+
+    input.addEventListener("change", async ()=>{
+      const chosen = input.value;
+      await fetch("/api/tasks/dependencies", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({id:taskId, dependencies:chosen})
+      });
+      await loadTasks();
+    });
+
+    input.addEventListener("blur", async ()=>{
+      await loadTasks();
+    });
+  }
+
+  /* Blocking cell click */
+  if(e.target.classList.contains("blocking-cell")){
+    const row = e.target.closest("tr");
+    const taskId = +row.dataset.taskId;
+    const currentBlocks = e.target.textContent.trim();
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = currentBlocks;
+    input.className = "inline-input";
+    e.target.textContent = "";
+    e.target.appendChild(input);
+    input.focus();
+
+    input.addEventListener("change", async ()=>{
+      const chosen = input.value;
+      await fetch("/api/tasks/blocking", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({id:taskId, blocking:chosen})
+      });
+      await loadTasks();
+    });
+
+    input.addEventListener("blur", async ()=>{
+      await loadTasks();
+    });
+  }
 });
 
 /* ------------------------------------------------------------------
@@ -600,3 +674,4 @@ $("#cancelTaskBtn").addEventListener("click", ()=>{
 </script>
 </body>
 </html>
+

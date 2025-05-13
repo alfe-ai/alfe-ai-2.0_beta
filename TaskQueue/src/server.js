@@ -134,6 +134,30 @@ app.post("/api/tasks/status", (req, res) => {
   }
 });
 
+// NEW: POST /api/tasks/dependencies
+app.post("/api/tasks/dependencies", (req, res) => {
+  try {
+    const { id, dependencies } = req.body;
+    db.setDependencies(id, dependencies);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[TaskQueue] /api/tasks/dependencies failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// NEW: POST /api/tasks/blocking
+app.post("/api/tasks/blocking", (req, res) => {
+  try {
+    const { id, blocking } = req.body;
+    db.setBlocking(id, blocking);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[TaskQueue] /api/tasks/blocking failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // --- Create new GitHub issue and upsert ---
 app.post("/api/tasks/new", async (req, res) => {
   try {
