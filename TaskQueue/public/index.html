@@ -300,7 +300,9 @@ function renderBody(){
           td.textContent = t.blocking;
           td.className="blocking-cell";
           break;
-        case "slug":    td.textContent = t.task_id_slug; break;
+        case "slug":
+          td.innerHTML = `<a href="${t.html_url}" target="_blank">${t.task_id_slug}</a>`;
+          break;
         case "repo":    td.textContent = t.repository; break;
         case "reorder":
           td.innerHTML = `
