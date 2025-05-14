@@ -357,7 +357,7 @@ app.get("/api/activity", (req, res) => {
   }
 });
 
-// Updated /api/chat for streaming completions; now with prior messages
+// Updated /api/chat for chunk-splitting logic
 app.post("/api/chat", async (req, res) => {
   try {
     const userMessage = req.body.message || "";
@@ -393,12 +393,11 @@ app.post("/api/chat", async (req, res) => {
     // Log user chat
     db.logActivity("User chat", JSON.stringify({ tabId: chatTabId, message: userMessage, userTime }));
 
-    // Start streaming the response
+    // Start streaming response
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.setHeader("Transfer-Encoding", "chunked");
 
     let assistantMessage = "";
-
     const stream = await openaiClient.chat.completions.create({
       model,
       messages: conversation,
@@ -406,18 +405,26 @@ app.post("/api/chat", async (req, res) => {
     });
 
     for await (const part of stream) {
-      const textChunk = part.choices?.[0]?.delta?.content || "";
-      if (textChunk) {
-        assistantMessage += textChunk;
-        res.write(textChunk);
+      const chunk = part.choices?.[0]?.delta?.content || "";
+      // Inspired by route.ts: split on new lines to handle potential "[DONE]"
+      const lines = chunk.split("\n");
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        if (trimmed === "[DONE]") {
+          // Stop reading further
+          break;
+        }
+        assistantMessage += trimmed;
+        res.write(trimmed);
       }
     }
 
+    // End response
     res.end();
 
-    // Finalize the chat pair with the complete AI response + AI timestamp
+    // Finalize the chat pair with the complete AI response
     db.finalizeChatPair(chatPairId, assistantMessage, model, new Date().toISOString());
-
     // Log AI chat
     db.logActivity("AI chat", JSON.stringify({ tabId: chatTabId, response: assistantMessage }));
 
@@ -566,4 +573,5 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
+
 
