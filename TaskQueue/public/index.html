@@ -192,6 +192,9 @@
   <div class="modal-content">
     <h2>Chat Settings</h2>
     <label><input type="checkbox" id="hideMetadataCheck" checked/> Hide metadata expansions</label>
+    <!-- NEW: Chat tab auto-naming checkbox -->
+    <br/>
+    <label><input type="checkbox" id="autoNamingCheck" /> Auto name new chat tabs using project</label>
     <div class="modal-buttons">
       <button id="chatSettingsSaveBtn">Save</button>
       <button id="chatSettingsCancelBtn">Cancel</button>
@@ -256,6 +259,8 @@
   let chatTabs = [];
   let currentTabId = 1;
   let chatHideMetadata = false;
+  // NEW: Track chat tab auto-naming
+  let chatTabAutoNaming = false;
   window.agentName = "Alfe";
 
   const defaultFavicon = "alfe_favicon_clean_64x64.ico";
@@ -1199,22 +1204,43 @@
   });
 
   $("#chatSettingsBtn").addEventListener("click", async () => {
+    // Load chat_hide_metadata
     const r = await fetch("/api/settings/chat_hide_metadata");
     if(r.ok){
       const { value } = await r.json();
       chatHideMetadata = !!value;
     }
+
+    // Load chat_tab_auto_naming
+    const r2 = await fetch("/api/settings/chat_tab_auto_naming");
+    if(r2.ok){
+      const { value } = await r2.json();
+      chatTabAutoNaming = !!value;
+    }
+
     $("#hideMetadataCheck").checked = chatHideMetadata;
+    $("#autoNamingCheck").checked = chatTabAutoNaming;
+
     showModal($("#chatSettingsModal"));
   });
 
   async function chatSettingsSaveFlow() {
     chatHideMetadata = $("#hideMetadataCheck").checked;
+    chatTabAutoNaming = $("#autoNamingCheck").checked;
+
     await fetch("/api/settings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ key: "chat_hide_metadata", value: chatHideMetadata })
     });
+
+    // Save chat_tab_auto_naming
+    await fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: "chat_tab_auto_naming", value: chatTabAutoNaming })
+    });
+
     hideModal($("#chatSettingsModal"));
     await loadChatHistory(currentTabId);
   }
@@ -1465,6 +1491,7 @@
     try {
       const r3 = await fetch("/api/settings/chat_hide_metadata");
       if (r3.ok){
+        // Just ensure it's set if absent
         chatHideMetadata = true;
         await fetch("/api/settings", {
           method: "POST",
@@ -1489,6 +1516,7 @@
       favElement.href = defaultFavicon;
     }
 
+    // Ensure chat settings are persisted
     await chatSettingsSaveFlow();
 
     // Load project and branch display
