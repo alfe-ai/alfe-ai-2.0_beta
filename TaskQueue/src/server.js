@@ -406,18 +406,12 @@ app.post("/api/chat", async (req, res) => {
 
     for await (const part of stream) {
       const chunk = part.choices?.[0]?.delta?.content || "";
-      // Inspired by route.ts: split on new lines to handle potential "[DONE]"
-      const lines = chunk.split("\n");
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed) continue;
-        if (trimmed === "[DONE]") {
-          // Stop reading further
-          break;
-        }
-        assistantMessage += trimmed;
-        res.write(trimmed);
+      // Check if chunk includes a "[DONE]" marker
+      if (chunk.includes("[DONE]")) {
+        break;
       }
+      assistantMessage += chunk;
+      res.write(chunk);
     }
 
     // End response
@@ -573,5 +567,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
-
-
