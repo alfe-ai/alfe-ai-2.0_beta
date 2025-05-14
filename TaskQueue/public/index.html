@@ -1008,7 +1008,8 @@
     showModal($("#chatSettingsModal"));
   });
 
-  $("#chatSettingsSaveBtn").addEventListener("click", async () => {
+  // Reusable function to run the same logic as Chat Settings "Save"
+  async function chatSettingsSaveFlow() {
     chatHideMetadata = $("#hideMetadataCheck").checked;
     await fetch("/api/settings", {
       method: "POST",
@@ -1017,7 +1018,9 @@
     });
     hideModal($("#chatSettingsModal"));
     await loadChatHistory(currentTabId);
-  });
+  }
+
+  $("#chatSettingsSaveBtn").addEventListener("click", chatSettingsSaveFlow);
 
   $("#chatSettingsCancelBtn").addEventListener("click", () => {
     hideModal($("#chatSettingsModal"));
@@ -1182,6 +1185,9 @@
 
     // Load file list on init
     await loadFileList();
+
+    // Automatically call the same logic as if we pressed "Save" in Chat Settings
+    await chatSettingsSaveFlow();
   })();
 </script>
 </body>
