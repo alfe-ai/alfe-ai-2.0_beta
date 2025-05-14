@@ -423,7 +423,6 @@ app.post("/api/chat", async (req, res) => {
 
     for await (const part of stream) {
       const chunk = part.choices?.[0]?.delta?.content || "";
-      // Check if chunk includes a "[DONE]" marker
       if (chunk.includes("[DONE]")) {
         break;
       }
@@ -431,7 +430,6 @@ app.post("/api/chat", async (req, res) => {
       res.write(chunk);
     }
 
-    // End response
     res.end();
 
     // Now let's calculate token usage
@@ -443,10 +441,7 @@ app.post("/api/chat", async (req, res) => {
       userTokens += countTokens(encoder, p.user_text);
       prevAssistantTokens += countTokens(encoder, p.ai_text || "");
     }
-    // The new user message
     userTokens += countTokens(encoder, userMessage);
-
-    // The newly generated assistant message
     const finalAssistantTokens = countTokens(encoder, assistantMessage);
 
     const total = systemTokens + userTokens + prevAssistantTokens + finalAssistantTokens;
@@ -458,10 +453,8 @@ app.post("/api/chat", async (req, res) => {
       total
     };
 
-    // Finalize the chat pair with the complete AI response & token info
     db.finalizeChatPair(chatPairId, assistantMessage, model, new Date().toISOString(), JSON.stringify(tokenInfo));
 
-    // Log AI chat
     db.logActivity("AI chat", JSON.stringify({ tabId: chatTabId, response: assistantMessage, tokenInfo }));
   } catch (err) {
     console.error("[TaskQueue] /api/chat (stream) error:", err);
@@ -575,7 +568,6 @@ app.post("/api/upload", upload.single("myfile"), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: "No file uploaded" });
   }
-  // Log activity
   db.logActivity("File upload", JSON.stringify({ filename: req.file.originalname }));
   res.json({ success: true, file: req.file });
 });
@@ -616,6 +608,12 @@ app.delete("/api/chat/pair/:id", (req, res) => {
     console.error("[TaskQueue] DELETE /api/chat/pair/:id error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
+});
+
+// New endpoint for "Create Sterling Chat"
+app.post("/api/createSterlingChat", (req, res) => {
+  db.logActivity("Create Sterling Chat", "User triggered createSterlingChat endpoint.");
+  res.json({ success: true, message: "Sterling chat created." });
 });
 
 // Start server

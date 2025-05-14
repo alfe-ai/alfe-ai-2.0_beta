@@ -72,6 +72,8 @@
       <div id="tabsContainer" style="flex-wrap: wrap; display: flex; gap: 0.5rem;"></div>
       <button id="newTabBtn">➕ Tab</button>
       <button id="scrollDownBtn">Scroll to Bottom</button>
+      <!-- New button: Create Sterling Chat -->
+      <button id="createSterlingChatBtn">Create Sterling Chat</button>
     </div>
 
     <div style="margin: 8px 0;">
@@ -260,7 +262,6 @@
     dividerEl.style.display = sidebarVisible ? "" : "none";
     $("#toggleSidebarBtn").textContent = sidebarVisible ? "Hide sidebar" : "Show sidebar";
 
-    // Show or hide the expandSidebarBtn
     const expandBtn = document.getElementById("expandSidebarBtn");
     expandBtn.style.display = sidebarVisible ? "none" : "block";
 
@@ -272,7 +273,6 @@
   }
   $("#toggleSidebarBtn").addEventListener("click", toggleSidebar);
 
-  // Expand sidebar button
   document.getElementById("expandSidebarBtn").addEventListener("click", () => {
     if(!sidebarVisible) {
       toggleSidebar();
@@ -815,6 +815,26 @@
   }
   $("#newTabBtn").addEventListener("click", addNewTab);
 
+  // New button for creating a "Sterling Chat"
+  document.getElementById("createSterlingChatBtn").addEventListener("click", async () => {
+    try {
+      const resp = await fetch("/api/createSterlingChat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({})
+      });
+      if(!resp.ok){
+        alert("Error creating sterling chat");
+        return;
+      }
+      const data = await resp.json();
+      alert("Sterling chat created: " + JSON.stringify(data));
+    } catch(e) {
+      console.error("CreateSterlingChat call failed:", e);
+      alert("Error creating sterling chat");
+    }
+  });
+
   function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemContext, fullHistory, tokenInfo) {
     const seqDiv = document.createElement("div");
     seqDiv.className = "chat-sequence";
@@ -891,7 +911,6 @@
         metaContainer.appendChild(fhDetails);
       }
 
-      // Add token usage in a details block
       if(tokenInfo){
         const tokObj = JSON.parse(tokenInfo);
         const tokDetails = document.createElement("details");
@@ -918,7 +937,6 @@
       seqDiv.appendChild(metaContainer);
     }
 
-    // Add "x" button to delete the segment
     const delBtn = document.createElement("button");
     delBtn.className = "delete-chat-btn";
     delBtn.textContent = "x";
@@ -1269,3 +1287,4 @@
 </script>
 </body>
 </html>
+
