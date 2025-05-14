@@ -477,20 +477,25 @@ app.post("/api/chat", async (req, res) => {
 
     // Now let's calculate token usage
     const encoder = getEncoding(model);
-    let systemTokens = countTokens(encoder, systemContext);
-    let userTokens = 0;
+    const systemTokens = countTokens(encoder, systemContext);
+
     let prevAssistantTokens = 0;
+    let historyTokens = 0;
     for (const p of priorPairs) {
-      userTokens += countTokens(encoder, p.user_text);
+      historyTokens += countTokens(encoder, p.user_text);
       prevAssistantTokens += countTokens(encoder, p.ai_text || "");
     }
-    userTokens += countTokens(encoder, userMessage);
+
+    const inputTokens = countTokens(encoder, userMessage);
     const finalAssistantTokens = countTokens(encoder, assistantMessage);
 
-    const total = systemTokens + userTokens + prevAssistantTokens + finalAssistantTokens;
+    const total =
+      systemTokens + historyTokens + inputTokens + prevAssistantTokens + finalAssistantTokens;
+
     const tokenInfo = {
       systemTokens,
-      userTokens,
+      historyTokens,
+      inputTokens,
       assistantTokens: prevAssistantTokens,
       finalAssistantTokens,
       total
