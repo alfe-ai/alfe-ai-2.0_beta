@@ -17,6 +17,9 @@ import OpenAI from "openai";
 // Token counting
 import { encoding_for_model } from "tiktoken";
 
+// Added axios import to fix require() error:
+import axios from "axios";
+
 const openaiClient = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || ""
 });
@@ -621,8 +624,6 @@ app.post("/api/createSterlingChat", (req, res) => {
    *   2) Run this test: node api_connector_test.js
    */
 
-  const axios = require('axios');
-
   (async () => {
     const baseURL = 'http://localhost:3444/api';
 
@@ -650,7 +651,6 @@ app.post("/api/createSterlingChat", (req, res) => {
     console.log('=== Test run completed. ===');
   })();
 
-
   res.json({ success: true, message: "Sterling chat created." });
 });
 
@@ -659,4 +659,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
-
