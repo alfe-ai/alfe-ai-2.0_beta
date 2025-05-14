@@ -38,7 +38,7 @@ body {
   display: flex;
   flex-direction: column;
   padding: 1rem;
-  overflow-y: auto;
+  /* Removed overflow-y: auto; */
   background-color: #1e1e1e;
   color: #ddd;
 }
