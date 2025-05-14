@@ -7,10 +7,10 @@
   <title>Alfe: Task Queue</title>
   <link rel="stylesheet" href="styles.css" />
   <link
-          id="favicon"
-          rel="icon"
-          type="image/x-icon"
-          href="alfe_favicon_clean_64x64.ico"
+    id="favicon"
+    rel="icon"
+    type="image/x-icon"
+    href="alfe_favicon_clean_64x64.ico"
   />
 </head>
 <body>
@@ -36,6 +36,8 @@
         <button id="gearBtn" title="Configure columns">⚙️</button>
         <button id="defaultsBtn" title="Default project/sprint">⭐</button>
         <button id="repoBtn" title="Edit Git repository">🔀</button>
+        <!-- NEW: Configure Projects button -->
+        <button id="projConfigBtn" title="Configure Projects">Configure Projects</button>
         <button id="toggleTasksBtn">Hide tasks</button>
         <button id="toggleSidebarBtn">Hide sidebar</button>
       </div>
@@ -59,8 +61,10 @@
 
   <div id="divider" class="divider"></div>
 
+  <!-- Added exclamation icon with tooltip -->
   <div class="exclamation-icon" title="Placeholder tooltip">!</div>
 
+  <!-- New button for re-expanding sidebar when hidden -->
   <div id="expandSidebarBtn" style="position: absolute; top: 60px; left: 8px; background: #444; color: #ddd; padding: 4px 8px; cursor: pointer; z-index: 999; display: none;">
     Show Sidebar
   </div>
@@ -184,6 +188,28 @@
     <div class="modal-buttons">
       <button id="chatSettingsSaveBtn">Save</button>
       <button id="chatSettingsCancelBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW: Project config modal -->
+<div id="projectsModal" class="modal">
+  <div class="modal-content">
+    <h2>Configure Projects</h2>
+    <p>Specify the base branch for each project.</p>
+    <table id="projectsTable" style="width:100%; border-collapse:collapse;">
+      <thead>
+        <tr>
+          <th>Project</th>
+          <th>Base Branch</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div class="modal-buttons">
+      <button id="projectsSaveBtn">Save</button>
+      <button id="projectsCancelBtn">Cancel</button>
     </div>
   </div>
 </div>
@@ -760,8 +786,8 @@
       renderTabs();
     }
   }
-  async function closeTab(tabId){
-    if(!confirm("Are you sure you want to close this tab?")) return;
+  async function deleteTab(tabId){
+    if(!confirm("Are you sure you want to delete this tab (and all its messages)?")) return;
     const r = await fetch(`/api/chat/tabs/${tabId}`, { method: "DELETE" });
     if(r.ok){
       await loadTabs();
@@ -772,8 +798,6 @@
       }
       renderTabs();
       await loadChatHistory(currentTabId);
-    } else {
-      alert("Error closing tab");
     }
   }
   function selectTab(tabId){
@@ -806,21 +830,10 @@
 
       tabBtn.addEventListener("contextmenu", e=>{
         e.preventDefault();
-        const choice = prompt("Type 'rename' to rename this tab:");
+        const choice = prompt("Type 'rename' or 'delete':", "");
         if(choice==="rename") renameTab(tab.id);
+        else if(choice==="delete") deleteTab(tab.id);
       });
-
-      // Add an X button
-      const closeBtn = document.createElement("button");
-      closeBtn.style.marginLeft = "6px";
-      closeBtn.textContent = "x";
-      closeBtn.title = "Close this chat tab";
-      closeBtn.addEventListener("click", (e)=>{
-        e.stopPropagation();
-        closeTab(tab.id);
-      });
-      tabBtn.appendChild(closeBtn);
-
       tc.appendChild(tabBtn);
     });
   }
@@ -1224,6 +1237,65 @@
     }
   });
 
+  // Projects modal handling
+  async function openProjectsModal(){
+    showModal($("#projectsModal"));
+    await renderProjectsTable();
+  }
+
+  async function renderProjectsTable(){
+    const tblBody = $("#projectsTable tbody");
+    tblBody.innerHTML = "";
+
+    // We'll gather known projects from /api/projects plus base branches from /api/projectBranches
+    const [projects, branches] = await Promise.all([
+      fetch("/api/projects").then(r=>r.json()),
+      fetch("/api/projectBranches").then(r=>r.json())
+    ]);
+    const branchMap = {};
+    branches.forEach(b => { branchMap[b.project] = b.base_branch; });
+
+    projects.forEach((p) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td style="border:1px solid #444; padding:2px 4px;">${p.project}</td>
+        <td style="border:1px solid #444; padding:2px 4px;"><input type="text" data-proj="${p.project}" class="projBranchInput" style="width:95%;"></td>
+        <td style="border:1px solid #444; padding:2px 4px;"></td>
+      `;
+      tblBody.appendChild(tr);
+    });
+
+    // For each row, populate the input's value from the map
+    $$(".projBranchInput", tblBody).forEach(inp => {
+      const proj = inp.dataset.proj;
+      inp.value = branchMap[proj] || "";
+    });
+  }
+
+  async function saveProjectBranches(){
+    // Collect edited data
+    const inps = $$(".projBranchInput");
+    const data = inps.map(inp => ({
+      project: inp.dataset.proj,
+      base_branch: inp.value.trim()
+    }));
+    // POST to /api/projectBranches
+    const resp = await fetch("/api/projectBranches", {
+      method:"POST",
+      headers: { "Content-Type":"application/json" },
+      body: JSON.stringify({ data })
+    });
+    if(!resp.ok) {
+      alert("Error saving project branches.");
+      return;
+    }
+    hideModal($("#projectsModal"));
+  }
+
+  $("#projConfigBtn").addEventListener("click", openProjectsModal);
+  $("#projectsSaveBtn").addEventListener("click", saveProjectBranches);
+  $("#projectsCancelBtn").addEventListener("click", ()=>hideModal($("#projectsModal")));
+
   (async function init(){
     await loadSettings();
     await populateFilters();
@@ -1298,3 +1370,5 @@
 </script>
 </body>
 </html>
+
+

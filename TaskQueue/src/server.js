@@ -70,8 +70,8 @@ const upload = multer({ storage });
 app.get("/api/tasks", (req, res) => {
   try {
     const includeHidden =
-        req.query.includeHidden === "1" ||
-        req.query.includeHidden === "true";
+      req.query.includeHidden === "1" ||
+      req.query.includeHidden === "true";
     res.json(db.listTasks(includeHidden));
   } catch (err) {
     console.error("[TaskQueue] /api/tasks failed:", err);
@@ -95,6 +95,46 @@ app.get("/api/sprints", (req, res) => {
     res.json(db.listSprints());
   } catch (err) {
     console.error("[TaskQueue] /api/sprints failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// New: Manage project base branches
+app.get("/api/projectBranches", (req, res) => {
+  try {
+    const result = db.listProjectBranches();
+    res.json(result);
+  } catch (err) {
+    console.error("[TaskQueue] GET /api/projectBranches error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/api/projectBranches", (req, res) => {
+  try {
+    const { data } = req.body; // expects { project, base_branch }
+    if (!Array.isArray(data)) {
+      return res.status(400).json({ error: "Must provide an array of branch data." });
+    }
+    data.forEach((entry) => {
+      db.upsertProjectBranch(entry.project, entry.base_branch || "");
+    });
+    db.logActivity("Update project branches", JSON.stringify(data));
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[TaskQueue] POST /api/projectBranches error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.delete("/api/projectBranches/:project", (req, res) => {
+  try {
+    const project = req.params.project;
+    db.deleteProjectBranch(project);
+    db.logActivity("Delete project branch", project);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[TaskQueue] DELETE /api/projectBranches/:project error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -194,8 +234,8 @@ app.post("/api/tasks/priority", (req, res) => {
     db.setPriority(id, priority);
 
     db.logActivity(
-        "Set priority",
-        JSON.stringify({ id, from: oldPriority, to: priority })
+      "Set priority",
+      JSON.stringify({ id, from: oldPriority, to: priority })
     );
 
     res.json({ success: true });
@@ -521,14 +561,13 @@ app.post("/api/chat/tabs/rename", (req, res) => {
   }
 });
 
-// Instead of deleting the tab from DB, we mark it as inactive
 app.delete("/api/chat/tabs/:id", (req, res) => {
   try {
     const tabId = parseInt(req.params.id, 10);
     if (!tabId) {
       return res.status(400).json({ error: "Invalid tabId" });
     }
-    db.closeChatTab(tabId);
+    db.deleteChatTab(tabId);
     res.json({ success: true });
   } catch (err) {
     console.error("[TaskQueue] DELETE /api/chat/tabs/:id error:", err);
@@ -653,3 +692,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
+
