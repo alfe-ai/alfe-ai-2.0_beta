@@ -62,6 +62,11 @@
   <!-- Added exclamation icon with tooltip -->
   <div class="exclamation-icon" title="Placeholder tooltip">!</div>
 
+  <!-- New button for re-expanding sidebar when hidden -->
+  <div id="expandSidebarBtn" style="position: absolute; top: 60px; left: 8px; background: #444; color: #ddd; padding: 4px 8px; cursor: pointer; z-index: 999; display: none;">
+    Show Sidebar
+  </div>
+
   <main class="chat-panel">
     <div id="chatTabs">
       <div id="tabsContainer" style="flex-wrap: wrap; display: flex; gap: 0.5rem;"></div>
@@ -254,6 +259,11 @@
     sidebarEl.style.display = sidebarVisible ? "" : "none";
     dividerEl.style.display = sidebarVisible ? "" : "none";
     $("#toggleSidebarBtn").textContent = sidebarVisible ? "Hide sidebar" : "Show sidebar";
+
+    // Show or hide the expandSidebarBtn
+    const expandBtn = document.getElementById("expandSidebarBtn");
+    expandBtn.style.display = sidebarVisible ? "none" : "block";
+
     await fetch("/api/settings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -261,6 +271,13 @@
     });
   }
   $("#toggleSidebarBtn").addEventListener("click", toggleSidebar);
+
+  // Expand sidebar button
+  document.getElementById("expandSidebarBtn").addEventListener("click", () => {
+    if(!sidebarVisible) {
+      toggleSidebar();
+    }
+  });
 
   async function loadSettings(){
     {
@@ -305,6 +322,7 @@
       $(".sidebar").style.display = sidebarVisible ? "" : "none";
       $("#divider").style.display = sidebarVisible ? "" : "none";
       $("#toggleSidebarBtn").textContent = sidebarVisible ? "Hide sidebar" : "Show sidebar";
+      document.getElementById("expandSidebarBtn").style.display = sidebarVisible ? "none" : "block";
     }
     {
       const r = await fetch("/api/settings/sidebar_width");
