@@ -1040,10 +1040,17 @@
         tokSum.textContent = "Token Usage";
         tokDetails.appendChild(tokSum);
 
-        const tokPre = document.createElement("pre");
-        tokPre.textContent = JSON.stringify(tokObj, null, 2);
-        tokDetails.appendChild(tokPre);
+        const usageDiv = document.createElement("div");
+        usageDiv.style.marginLeft = "1em";
+        usageDiv.textContent =
+                `System: ${tokObj.systemTokens}, ` +
+                `History: ${tokObj.historyTokens}, ` +
+                `Input: ${tokObj.inputTokens}, ` +
+                `Assistant: ${tokObj.assistantTokens}, ` +
+                `FinalAsst: ${tokObj.finalAssistantTokens}, ` +
+                `Total: ${tokObj.total}`;
 
+        tokDetails.appendChild(usageDiv);
         metaContainer.appendChild(tokDetails);
       }
 
