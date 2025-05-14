@@ -11,8 +11,8 @@ body {
 .app {
   display: flex;
   height: 100vh;
-  /* Removed overflow: hidden; to fix chat scrolling */
-  position: relative; /* Added for absolute positioning of exclamation icon */
+  overflow: hidden; /* Restored overflow hidden to allow separate scrolling areas */
+  position: relative; /* For absolute positioning of exclamation icon */
 }
 
 /* Sidebar */
@@ -22,7 +22,7 @@ body {
   padding: 1rem;
   overflow-y: auto;
   border-right: 1px solid #444;
-  flex: none; /* Keep fixed width, let the divider adjust. */
+  flex: none; /* Keep fixed width */
 }
 
 /* Draggable divider */
@@ -41,6 +41,8 @@ body {
   padding: 1rem;
   background-color: #1e1e1e;
   color: #ddd;
+  overflow: hidden; /* Hide overflow here */
+  min-height: 0;    /* Allow flex children to scroll properly */
 }
 
 /* The controls, tasks table, and other components end up in the sidebar. */
@@ -172,6 +174,7 @@ body {
   display: flex;
   flex-direction: column;
   flex: 1;
+  overflow: hidden;
 }
 
 #chatMessages {
@@ -180,6 +183,7 @@ body {
   border: 1px solid #444;
   padding: 8px;
   flex: 1 1 auto;
+  min-height: 0;
   color: #ddd;
 }
 
