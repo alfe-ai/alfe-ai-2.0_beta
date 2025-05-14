@@ -70,8 +70,8 @@ const upload = multer({ storage });
 app.get("/api/tasks", (req, res) => {
   try {
     const includeHidden =
-      req.query.includeHidden === "1" ||
-      req.query.includeHidden === "true";
+        req.query.includeHidden === "1" ||
+        req.query.includeHidden === "true";
     res.json(db.listTasks(includeHidden));
   } catch (err) {
     console.error("[TaskQueue] /api/tasks failed:", err);
@@ -194,8 +194,8 @@ app.post("/api/tasks/priority", (req, res) => {
     db.setPriority(id, priority);
 
     db.logActivity(
-      "Set priority",
-      JSON.stringify({ id, from: oldPriority, to: priority })
+        "Set priority",
+        JSON.stringify({ id, from: oldPriority, to: priority })
     );
 
     res.json({ success: true });
@@ -521,13 +521,14 @@ app.post("/api/chat/tabs/rename", (req, res) => {
   }
 });
 
+// Instead of deleting the tab from DB, we mark it as inactive
 app.delete("/api/chat/tabs/:id", (req, res) => {
   try {
     const tabId = parseInt(req.params.id, 10);
     if (!tabId) {
       return res.status(400).json({ error: "Invalid tabId" });
     }
-    db.deleteChatTab(tabId);
+    db.closeChatTab(tabId);
     res.json({ success: true });
   } catch (err) {
     console.error("[TaskQueue] DELETE /api/chat/tabs/:id error:", err);
@@ -616,13 +617,6 @@ app.delete("/api/chat/pair/:id", (req, res) => {
 // New endpoint for "Create Sterling Chat"
 app.post("/api/createSterlingChat", (req, res) => {
   db.logActivity("Create Sterling Chat", "User triggered createSterlingChat endpoint.");
-
-  /**
-   * Manual test for the endpoints in api_connector.js.
-   * Usage:
-   *   1) Make sure the server is running (e.g., node executable/server_webserver.js).
-   *   2) Run this test: node api_connector_test.js
-   */
 
   (async () => {
     const baseURL = 'http://localhost:3444/api';
