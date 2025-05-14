@@ -1185,21 +1185,23 @@
     try {
       const r3 = await fetch("/api/settings/chat_hide_metadata");
       if (r3.ok){
-        const { value } = await r3.json();
-        if (typeof value === 'undefined') {
-          // If the setting is not defined, default to true
-          chatHideMetadata = true;
-          await fetch("/api/settings", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ key: "chat_hide_metadata", value: chatHideMetadata })
-          });
-        } else {
-          chatHideMetadata = !!value;
-        }
+        // Even if there's a stored value, we override it to always be true
+        chatHideMetadata = true;
+        await fetch("/api/settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ key: "chat_hide_metadata", value: chatHideMetadata })
+        });
       }
     } catch(e) {
       console.error("Error loading chat_hide_metadata:", e);
+      chatHideMetadata = true;
+      // If an error occurs, still force storage to true
+      await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "chat_hide_metadata", value: chatHideMetadata })
+      });
     }
 
     // Load file list on init
