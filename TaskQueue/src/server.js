@@ -687,9 +687,26 @@ app.post("/api/createSterlingChat", (req, res) => {
   res.json({ success: true, message: "Sterling chat created." });
 });
 
+// New route: rename project
+app.post("/api/projects/rename", (req, res) => {
+  try {
+    const { oldProject, newProject } = req.body;
+    if (!oldProject || !newProject) {
+      return res.status(400).json({ error: "Missing oldProject or newProject" });
+    }
+    db.renameProject(oldProject, newProject);
+    db.logActivity("Rename project", JSON.stringify({ oldProject, newProject }));
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[TaskQueue] /api/projects/rename error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
+
 

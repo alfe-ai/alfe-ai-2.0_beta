@@ -568,5 +568,31 @@ export default class TaskDB {
   deleteProjectBranch(project) {
     this.db.prepare("DELETE FROM project_branches WHERE project=?").run(project);
   }
+
+  /* ------------------------------------------------------------------ */
+  /*  Rename Project (new)                                              */
+  /* ------------------------------------------------------------------ */
+  renameProject(oldProject, newProject) {
+    // If old project is recognized in project_branches, keep its base_branch
+    const row = this.db
+      .prepare("SELECT base_branch FROM project_branches WHERE project=?")
+      .get(oldProject);
+
+    const baseBranch = row ? row.base_branch : "";
+
+    // Remove old branch entry
+    this.deleteProjectBranch(oldProject);
+
+    // Insert new project with same branch (if newProject not empty)
+    if (newProject) {
+      this.upsertProjectBranch(newProject, baseBranch);
+    }
+
+    // Update issues
+    this.db
+      .prepare("UPDATE issues SET project=? WHERE project=?")
+      .run(newProject, oldProject);
+  }
 }
+
 

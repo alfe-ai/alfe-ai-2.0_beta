@@ -201,7 +201,7 @@
 <div id="projectsModal" class="modal">
   <div class="modal-content">
     <h2>Configure Projects</h2>
-    <p>Specify the base branch for each project.</p>
+    <p>Specify the base branch for each project. Click the project name cell to rename it globally.</p>
     <table id="projectsTable" style="width:100%; border-collapse:collapse;">
       <thead>
         <tr>
@@ -1263,7 +1263,7 @@
     projects.forEach((p) => {
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td style="border:1px solid #444; padding:2px 4px;">${p.project}</td>
+        <td class="project-rename-cell" style="border:1px solid #444; padding:2px 4px;" data-oldproj="${p.project}">${p.project}</td>
         <td style="border:1px solid #444; padding:2px 4px;"><input type="text" data-proj="${p.project}" class="projBranchInput" style="width:95%;"></td>
         <td style="border:1px solid #444; padding:2px 4px;"></td>
       `;
@@ -1300,6 +1300,48 @@
   $("#projConfigBtn").addEventListener("click", openProjectsModal);
   $("#projectsSaveBtn").addEventListener("click", saveProjectBranches);
   $("#projectsCancelBtn").addEventListener("click", ()=>hideModal($("#projectsModal")));
+
+  // Inline rename of project name
+  document.addEventListener("click", async (ev) => {
+    const cell = ev.target;
+    if (!cell.classList.contains("project-rename-cell")) return;
+    const oldName = cell.dataset.oldproj;
+    function inlineEdit(newEl, saveCb){
+      const original = cell.textContent;
+      cell.textContent = "";
+      cell.appendChild(newEl);
+      newEl.focus();
+      newEl.addEventListener("change", async ()=>{
+        await saveCb(newEl.value);
+      });
+      newEl.addEventListener("blur", ()=>{
+        renderProjectsTable();
+      });
+    }
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = oldName;
+    inlineEdit(input, async (val) => {
+      const newName = val.trim();
+      if (!newName || newName === oldName) {
+        cell.textContent = oldName;
+        return;
+      }
+      const resp = await fetch("/api/projects/rename", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ oldProject: oldName, newProject: newName })
+      });
+      if (!resp.ok){
+        alert("Error renaming project");
+        cell.textContent = oldName;
+        return;
+      }
+      cell.textContent = newName;
+      cell.dataset.oldproj = newName;
+      await renderProjectsTable();
+    });
+  });
 
   (async function init(){
     await loadSettings();
@@ -1375,3 +1417,4 @@
 </script>
 </body>
 </html>
+
