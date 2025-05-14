@@ -1,4 +1,3 @@
-/* Moved script logic from index.html to main.js */
 let columnsOrder = [
   { key: "drag",         label: "⠿"          },
   { key: "priority",     label: "Prio"       },
@@ -226,67 +225,67 @@ function renderBody(){
   const pj = $("#projectFilter").value;
   const sp = $("#sprintFilter").value;
   allTasks
-    .filter(t=>{
-      if(pj && t.project!==pj) return false;
-      if(sp && t.sprint!==sp) return false;
-      return true;
-    })
-    .forEach(t=>{
-      const tr = document.createElement("tr");
-      tr.dataset.taskId = t.id;
-      if(t.hidden) tr.classList.add("hidden");
-      [
-        "drag","priority","status","number","title",
-        "dependencies","project","created"
-      ].forEach(key=>{
-        if(!visibleCols.has(key)) return;
-        const td = document.createElement("td");
-        switch(key){
-          case "drag":
-            td.innerHTML = `<span class="drag-handle" draggable="true">⠿</span>`;
-            td.querySelector(".drag-handle").addEventListener("dragstart", handleDragStart);
-            break;
-          case "priority":
-            td.textContent = t.priority;
-            td.className="priority-cell";
-            break;
-          case "status":
-            td.textContent = t.status;
-            td.className="status-cell";
-            break;
-          case "number":
-            td.innerHTML = `<a href="${t.html_url}" target="_blank">#${t.number}</a>`;
-            break;
-          case "title":
-            td.textContent = t.title;
-            td.className="title-cell";
-            break;
-          case "dependencies":
-            td.textContent = t.dependencies;
-            td.className="dependencies-cell";
-            break;
-          case "project":
-            td.textContent = t.project;
-            td.className="project-cell";
-            break;
-          case "created":
-            td.textContent = isoDate(t.created_at);
-            break;
-          default:
-            td.textContent = t[key]||"";
-        }
-        tr.appendChild(td);
+      .filter(t=>{
+        if(pj && t.project!==pj) return false;
+        if(sp && t.sprint!==sp) return false;
+        return true;
+      })
+      .forEach(t=>{
+        const tr = document.createElement("tr");
+        tr.dataset.taskId = t.id;
+        if(t.hidden) tr.classList.add("hidden");
+        [
+          "drag","priority","status","number","title",
+          "dependencies","project","created"
+        ].forEach(key=>{
+          if(!visibleCols.has(key)) return;
+          const td = document.createElement("td");
+          switch(key){
+            case "drag":
+              td.innerHTML = `<span class="drag-handle" draggable="true">⠿</span>`;
+              td.querySelector(".drag-handle").addEventListener("dragstart", handleDragStart);
+              break;
+            case "priority":
+              td.textContent = t.priority;
+              td.className="priority-cell";
+              break;
+            case "status":
+              td.textContent = t.status;
+              td.className="status-cell";
+              break;
+            case "number":
+              td.innerHTML = `<a href="${t.html_url}" target="_blank">#${t.number}</a>`;
+              break;
+            case "title":
+              td.textContent = t.title;
+              td.className="title-cell";
+              break;
+            case "dependencies":
+              td.textContent = t.dependencies;
+              td.className="dependencies-cell";
+              break;
+            case "project":
+              td.textContent = t.project;
+              td.className="project-cell";
+              break;
+            case "created":
+              td.textContent = isoDate(t.created_at);
+              break;
+            default:
+              td.textContent = t[key]||"";
+          }
+          tr.appendChild(td);
+        });
+        ["dragover","dragleave","drop","dragend"].forEach(evt=>{
+          tr.addEventListener(evt, {
+            "dragover":handleDragOver,
+            "dragleave":handleDragLeave,
+            "drop":handleDrop,
+            "dragend":handleDragEnd
+          }[evt]);
+        });
+        tbody.appendChild(tr);
       });
-      ["dragover","dragleave","drop","dragend"].forEach(evt=>{
-        tr.addEventListener(evt, {
-          "dragover":handleDragOver,
-          "dragleave":handleDragLeave,
-          "drop":handleDrop,
-          "dragend":handleDragEnd
-        }[evt]);
-      });
-      tbody.appendChild(tr);
-    });
 }
 
 async function loadTasks(){
@@ -298,10 +297,10 @@ async function loadTasks(){
 async function populateFilters(){
   const pj = await (await fetch("/api/projects")).json();
   $("#projectFilter").innerHTML = '<option value="">All projects</option>' +
-    pj.map(p=>`<option value="${p.project}">${p.project}</option>`).join("");
+      pj.map(p=>`<option value="${p.project}">${p.project}</option>`).join("");
   const sp = await (await fetch("/api/sprints")).json();
   $("#sprintFilter").innerHTML = '<option value="">All sprints</option>' +
-    sp.map(s=>`<option value="${s.sprint}">${s.sprint}</option>`).join("");
+      sp.map(s=>`<option value="${s.sprint}">${s.sprint}</option>`).join("");
 }
 
 function openColModal(){
@@ -311,8 +310,8 @@ function openColModal(){
     const div = document.createElement("div");
     div.className="col-item";
     div.innerHTML = `<button class="col-move" data-idx="${i}" data-dir="up">⬆️</button>` +
-      `<button class="col-move" data-idx="${i}" data-dir="down">⬇️</button>` +
-      `<label><input type="checkbox" value="${c.key}" ${visibleCols.has(c.key)?"checked":""}/> ${c.label||c.key}</label>`;
+        `<button class="col-move" data-idx="${i}" data-dir="down">⬇️</button>` +
+        `<label><input type="checkbox" value="${c.key}" ${visibleCols.has(c.key)?"checked":""}/> ${c.label||c.key}</label>`;
     cnt.appendChild(div);
   });
   showModal($("#colModal"));
@@ -525,7 +524,7 @@ $("#addTaskBtn").addEventListener("click",()=>{
 });
 $("#createTaskBtn").addEventListener("click", async ()=>{
   const title=$("#newTaskTitle").value.trim(),
-        body=$("#newTaskBody").value.trim();
+      body=$("#newTaskBody").value.trim();
   if(!title){
     alert("Please enter a title for the new task.");
     return;
@@ -642,7 +641,7 @@ document.getElementById("createSterlingChatBtn").addEventListener("click", async
     const data = await resp.json();
     if (data.success && data.sterlingUrl) {
       document.getElementById("sterlingUrlLabel").innerHTML =
-        'Sterling chat: <a href="' + data.sterlingUrl + '" target="_blank">' + data.sterlingUrl + '</a>';
+          'Sterling chat: <a href="' + data.sterlingUrl + '" target="_blank">' + data.sterlingUrl + '</a>';
     }
   } catch(e) {
     console.error("CreateSterlingChat call failed:", e);
@@ -694,8 +693,8 @@ async function updateProjectInfo() {
     }
     if(projectName){
       $("#projectInfo").textContent = branch
-        ? `Project: ${projectName} (branch: ${branch})`
-        : `Project: ${projectName} (no branch set)`;
+          ? `Project: ${projectName} (branch: ${branch})`
+          : `Project: ${projectName} (no branch set)`;
     } else {
       $("#projectInfo").textContent = "(No project set)";
     }
@@ -781,10 +780,17 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
       metaContainer.appendChild(modelLabel);
     }
 
+    let tokObj = null;
+    try {
+      tokObj = tokenInfo ? JSON.parse(tokenInfo) : null;
+    } catch(e) {}
+
+    // System Context section
     if (systemContext) {
       const scDetails = document.createElement("details");
       const scSum = document.createElement("summary");
-      scSum.textContent = "System Context";
+      const scTok = tokObj?.systemTokens ?? '0';
+      scSum.textContent = `System Context (Tokens: ${scTok})`;
       scDetails.appendChild(scSum);
 
       const lines = systemContext.split(/\r?\n/);
@@ -796,14 +802,15 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
         lineBubble.textContent = line;
         scDetails.appendChild(lineBubble);
       });
-
       metaContainer.appendChild(scDetails);
     }
 
-    if(fullHistory) {
+    // Full History section
+    if (fullHistory) {
       const fhDetails = document.createElement("details");
       const fhSum = document.createElement("summary");
-      fhSum.textContent = "Full History";
+      const fhTok = tokObj?.historyTokens ?? '0';
+      fhSum.textContent = `Full History (Tokens: ${fhTok})`;
       fhDetails.appendChild(fhSum);
       const fhPre = document.createElement("pre");
       fhPre.textContent = JSON.stringify(fullHistory, null, 2);
@@ -811,39 +818,36 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
       metaContainer.appendChild(fhDetails);
     }
 
-    if(tokenInfo){
-      const tokObj = JSON.parse(tokenInfo);
-      const tokDetails = document.createElement("details");
-      const tokSum = document.createElement("summary");
-      tokSum.textContent = "Token Usage";
-      tokDetails.appendChild(tokSum);
+    // Token Usage
+    if(tokObj){
+      const tuDetails = document.createElement("details");
+      const tuSum = document.createElement("summary");
+      tuSum.textContent = `Token Usage (Tokens: ${tokObj.total || 0})`;
+      tuDetails.appendChild(tuSum);
 
       const usageDiv = document.createElement("div");
       usageDiv.style.marginLeft = "1em";
       usageDiv.textContent =
-        `System: ${tokObj.systemTokens}, ` +
-        `History: ${tokObj.historyTokens}, ` +
-        `Input: ${tokObj.inputTokens}, ` +
-        `Assistant: ${tokObj.assistantTokens}, ` +
-        `FinalAsst: ${tokObj.finalAssistantTokens}, ` +
-        `Total: ${tokObj.total}`;
+          `System: ${tokObj.systemTokens}, ` +
+          `History: ${tokObj.historyTokens}, ` +
+          `Input: ${tokObj.inputTokens}, ` +
+          `Assistant: ${tokObj.assistantTokens}, ` +
+          `FinalAsst: ${tokObj.finalAssistantTokens}, ` +
+          `Total: ${tokObj.total}`;
 
-      tokDetails.appendChild(usageDiv);
-      metaContainer.appendChild(tokDetails);
+      tuDetails.appendChild(usageDiv);
+      metaContainer.appendChild(tuDetails);
     }
 
-    const directDetails = document.createElement("details");
-    const ddSum = document.createElement("summary");
-    ddSum.textContent = "Direct Link";
-    directDetails.appendChild(ddSum);
-
+    // Direct Link
+    const directLinkDiv = document.createElement("div");
     const ddLink = document.createElement("a");
     ddLink.href = `/pair/${pairId}`;
     ddLink.target = "_blank";
-    ddLink.textContent = `/pair/${pairId}`;
-    directDetails.appendChild(ddLink);
+    ddLink.textContent = "Direct Link";
+    directLinkDiv.appendChild(ddLink);
+    metaContainer.appendChild(directLinkDiv);
 
-    metaContainer.appendChild(directDetails);
     seqDiv.appendChild(metaContainer);
   }
 
@@ -879,15 +883,15 @@ async function loadChatHistory(tabId = 1) {
       const pairDetail = await fetch(`/pair/${p.id}`).then(r=>r.json());
       p._history = pairDetail;
       addChatMessage(
-        p.id,
-        p.user_text,
-        p.timestamp,
-        p.ai_text,
-        p.ai_timestamp,
-        p.model,
-        p.system_context,
-        p._history,
-        p.token_info
+          p.id,
+          p.user_text,
+          p.timestamp,
+          p.ai_text,
+          p.ai_timestamp,
+          p.model,
+          p.system_context,
+          p._history,
+          p.token_info
       );
     }
   } catch (err) {
