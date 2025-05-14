@@ -13,6 +13,7 @@
   "license": "MIT",
   "dependencies": {
     "@octokit/rest": "^20.1.0",
+    "axios": "^1.9.0",
     "better-sqlite3": "^9.4.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.1",
@@ -22,4 +23,3 @@
     "tiktoken": "^1.0.4"
   }
 }
-
