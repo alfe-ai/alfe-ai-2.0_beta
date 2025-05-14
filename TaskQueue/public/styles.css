@@ -314,19 +314,17 @@ body {
   background: #0062cc;
 }
 
-/* Scroll to bottom button */
+/* Scroll to bottom button: now always visible inline */
 #scrollDownBtn {
-  position: absolute;
-  right: 1rem;
-  bottom: 4.5rem;
   background: #444;
   color: #ddd;
   border: 1px solid #666;
   padding: 6px 12px;
   border-radius: 4px;
   cursor: pointer;
-  display: none;
+  display: inline-block;
   z-index: 10;
+  margin-left: 0.5rem;
 }
 
 /* Collapsible menus in index */

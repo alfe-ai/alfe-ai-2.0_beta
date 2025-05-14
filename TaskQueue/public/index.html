@@ -889,15 +889,15 @@
         const pairDetail = await fetch(`/pair/${p.id}`).then(r=>r.json());
         p._history = pairDetail;
         addChatMessage(
-          p.id,
-          p.user_text,
-          p.timestamp,
-          p.ai_text,
-          p.ai_timestamp,
-          p.model,
-          p.system_context,
-          p._history,
-          p.token_info
+                p.id,
+                p.user_text,
+                p.timestamp,
+                p.ai_text,
+                p.ai_timestamp,
+                p.model,
+                p.system_context,
+                p._history,
+                p.token_info
         );
       }
     } catch (err) {
@@ -911,15 +911,6 @@
   const waitingElem = document.getElementById("waitingCounter");
   const scrollDownBtnEl = document.getElementById("scrollDownBtn");
 
-  function checkScroll() {
-    const bottomOffset = chatMessagesEl.scrollHeight - chatMessagesEl.scrollTop - chatMessagesEl.clientHeight;
-    if(bottomOffset > 80) {
-      scrollDownBtnEl.style.display = "block";
-    } else {
-      scrollDownBtnEl.style.display = "none";
-    }
-  }
-  chatMessagesEl.addEventListener("scroll", checkScroll);
   scrollDownBtnEl.addEventListener("click", ()=>{
     chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
   });
