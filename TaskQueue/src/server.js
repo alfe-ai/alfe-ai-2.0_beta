@@ -661,42 +661,34 @@ app.delete("/api/chat/pair/:id", (req, res) => {
   }
 });
 
-// New endpoint for "Create Sterling Chat"
-app.post("/api/createSterlingChat", (req, res) => {
+// New endpoint for "Create Sterling Chat" with single response
+app.post("/api/createSterlingChat", async (req, res) => {
   db.logActivity("Create Sterling Chat", "User triggered createSterlingChat endpoint.");
 
-  (async () => {
+  try {
     const baseURL = 'http://localhost:3444/api';
+    const projectName = "aurora_working-" + (db.getSetting("sterling_project") || "alfe-dev_test_repo");
 
-    try {
-      // Retrieve the user-specified sterling_project from settings
-      const projectName = "aurora_working-" + db.getSetting("sterling_project") || "alfe-dev_test_repo";
-
-      console.log('=== Testing createChat endpoint ===');
-      const createChatResponse = await axios.post(`${baseURL}/createChat`, {
-        repoName: projectName
-      });
-      console.log('Response from /createChat:', createChatResponse.data);
-      res.json({ success: true, message: createChatResponse.data });
-
-      // console.log('=== Testing createGenericChat endpoint ===');
-      // const createGenericChatResponse = await axios.post(`${baseURL}/createGenericChat`, {
-      //   message: 'Hello from test script!'
-      // });
-      // console.log('Response from /createGenericChat:', createGenericChatResponse.data);
-      //
-      // console.log('=== Testing createSterlingChat endpoint ===');
-      // const createSterlingResponse = await axios.post(`${baseURL}/createSterlingChat`, {});
-      // console.log('Response from /createSterlingChat:', createSterlingResponse.data);
-
-    } catch (error) {
-      console.error('Error during API tests:', error.message);
-    }
+    console.log('=== Testing createChat endpoint ===');
+    const createChatResponse = await axios.post(`${baseURL}/createChat`, {
+      repoName: projectName
+    });
+    console.log('Response from /createChat:', createChatResponse.data);
 
     console.log('=== Test run completed. ===');
-  })();
 
-  res.json({ success: true, message: "Sterling chat created." });
+    // Provide a Sterling chat URL in the response
+    res.json({
+      success: true,
+      message: "Sterling chat created.",
+      repoName: projectName,
+      newChatNumber: createChatResponse.data.newChatNumber,
+      sterlingUrl: `http://localhost:3444/sterlingChat?repo=${encodeURIComponent(projectName)}&chat=${createChatResponse.data.newChatNumber}`
+    });
+  } catch (error) {
+    console.error('Error during API tests:', error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 // New route: rename project

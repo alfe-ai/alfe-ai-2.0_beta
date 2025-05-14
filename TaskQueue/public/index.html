@@ -78,6 +78,7 @@
       <!-- NEW "Set Project" button -->
       <button id="setProjectBtn">Set Project</button>
       <button id="createSterlingChatBtn">Create Sterling Chat</button>
+      <span id="sterlingUrlLabel" style="margin-left:1rem; color:#0f0;"></span>
     </div>
 
     <div style="margin: 8px 0;">
@@ -879,7 +880,10 @@
         return;
       }
       const data = await resp.json();
-      alert("Sterling chat created: " + JSON.stringify(data));
+      if (data.success && data.sterlingUrl) {
+        document.getElementById("sterlingUrlLabel").innerHTML =
+          'Sterling chat: <a href="' + data.sterlingUrl + '" target="_blank">' + data.sterlingUrl + '</a>';
+      }
     } catch(e) {
       console.error("CreateSterlingChat call failed:", e);
       alert("Error creating sterling chat");
