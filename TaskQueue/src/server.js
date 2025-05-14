@@ -677,16 +677,17 @@ app.post("/api/createSterlingChat", (req, res) => {
         repoName: projectName
       });
       console.log('Response from /createChat:', createChatResponse.data);
+      res.json({ success: true, message: createChatResponse.data });
 
-      console.log('=== Testing createGenericChat endpoint ===');
-      const createGenericChatResponse = await axios.post(`${baseURL}/createGenericChat`, {
-        message: 'Hello from test script!'
-      });
-      console.log('Response from /createGenericChat:', createGenericChatResponse.data);
-
-      console.log('=== Testing createSterlingChat endpoint ===');
-      const createSterlingResponse = await axios.post(`${baseURL}/createSterlingChat`, {});
-      console.log('Response from /createSterlingChat:', createSterlingResponse.data);
+      // console.log('=== Testing createGenericChat endpoint ===');
+      // const createGenericChatResponse = await axios.post(`${baseURL}/createGenericChat`, {
+      //   message: 'Hello from test script!'
+      // });
+      // console.log('Response from /createGenericChat:', createGenericChatResponse.data);
+      //
+      // console.log('=== Testing createSterlingChat endpoint ===');
+      // const createSterlingResponse = await axios.post(`${baseURL}/createSterlingChat`, {});
+      // console.log('Response from /createSterlingChat:', createSterlingResponse.data);
 
     } catch (error) {
       console.error('Error during API tests:', error.message);
