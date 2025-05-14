@@ -669,9 +669,12 @@ app.post("/api/createSterlingChat", (req, res) => {
     const baseURL = 'http://localhost:3444/api';
 
     try {
+      // Retrieve the user-specified sterling_project from settings
+      const projectName = db.getSetting("sterling_project") || "alfe-dev_test_repo";
+
       console.log('=== Testing createChat endpoint ===');
       const createChatResponse = await axios.post(`${baseURL}/createChat`, {
-        repoName: 'alfe-dev_test_repo'
+        repoName: projectName
       });
       console.log('Response from /createChat:', createChatResponse.data);
 
@@ -716,4 +719,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
-
