@@ -547,9 +547,37 @@ async function loadTabs(){
   const res = await fetch("/api/chat/tabs");
   chatTabs = await res.json();
 }
-async function addNewTab(){
-  const name = prompt("Enter tab name:", "New Tab");
-  if(!name) return;
+async function addNewTab() {
+  // Ask for project name
+  const projectInput = prompt("Enter project name (or leave blank):", "");
+  if(projectInput){
+    await fetch("/api/settings", {
+      method:"POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ key: "sterling_project", value: projectInput })
+    });
+  }
+
+  // Check if auto naming is enabled
+  let autoNaming = false;
+  try {
+    const r = await fetch("/api/settings/chat_tab_auto_naming");
+    if(r.ok){
+      const obj = await r.json();
+      autoNaming = !!obj.value;
+    }
+  } catch(e) {
+    console.error("Error checking chat_tab_auto_naming:", e);
+  }
+
+  // If user provided a project and auto naming is on, skip name prompt
+  // Otherwise, prompt for tab name
+  let name = "";
+  if(!(projectInput && autoNaming)){
+    name = prompt("Enter tab name:", "New Tab");
+    if(!name) return;
+  }
+
   const r = await fetch("/api/chat/tabs/new", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
