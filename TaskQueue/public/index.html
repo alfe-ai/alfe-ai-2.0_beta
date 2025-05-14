@@ -264,6 +264,15 @@
       $("#tasks").style.display = tasksVisible ? "" : "none";
       $("#toggleTasksBtn").textContent = tasksVisible ? "Hide tasks" : "Show tasks";
     }
+    {
+      const r = await fetch("/api/settings/sidebar_width");
+      if(r.ok){
+        const { value } = await r.json();
+        if(typeof value !== 'undefined'){
+          $(".sidebar").style.width = value + "px";
+        }
+      }
+    }
   }
   async function saveSettings(){
     await fetch("/api/settings",{
@@ -770,7 +779,6 @@
     const botDiv = document.createElement("div");
     botDiv.className = "chat-bot";
 
-    // Make botHead accessible outside this block
     const botHead = document.createElement("div");
     botHead.className = "bubble-header";
     botHead.innerHTML = `
@@ -917,7 +925,6 @@
     const botDiv = document.createElement("div");
     botDiv.className = "chat-bot";
 
-    // Make botHead accessible throughout this function
     const botHead = document.createElement("div");
     botHead.className = "bubble-header";
     botHead.innerHTML = `
@@ -1005,12 +1012,14 @@
     let isDragging = false;
     let startX = 0;
     let startWidth = 0;
+    let finalWidth = 0;
 
     divider.addEventListener("mousedown", e => {
       e.preventDefault();
       isDragging = true;
       startX = e.clientX;
       startWidth = $(".sidebar").offsetWidth;
+      finalWidth = startWidth;
       document.body.style.userSelect = "none";
     });
 
@@ -1021,10 +1030,18 @@
       const minWidth = 150;
       if(newWidth >= minWidth) {
         $(".sidebar").style.width = newWidth + "px";
+        finalWidth = newWidth;
       }
     });
 
     document.addEventListener("mouseup", () => {
+      if(isDragging){
+        fetch("/api/settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ key: "sidebar_width", value: finalWidth })
+        });
+      }
       isDragging = false;
       document.body.style.userSelect = "";
     });
