@@ -1,4 +1,3 @@
-```javascript
 import Database from "better-sqlite3";
 
 export default class TaskDB {
@@ -614,4 +613,3 @@ export default class TaskDB {
       .run(newProject, oldProject);
   }
 }
-```

@@ -1,4 +1,3 @@
-```javascript
 /* =================================================================================
  *  MAIN APP JAVASCRIPT
  *  (merged: original file + new Sterling-URL enhancements)
@@ -670,4 +669,3 @@ document.getElementById("createSterlingChatBtn").addEventListener("click", async
 /* =================================================================================
  *  END OF FILE
  * ================================================================================= */
-```

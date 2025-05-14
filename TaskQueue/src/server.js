@@ -1,7 +1,3 @@
-Below is the complete, merged server.js file.  
-The only differences from the “Original” version are the enhancements inside the /api/createSterlingChat endpoint (now accepts tabId, stores the Sterling-chat URL on that tab and returns the updated tab).  Everything else is unchanged.
-
-```javascript
 /*****************************************************************
  *  server.js  – Combined file (Original + “New” modifications)
  *****************************************************************/
@@ -765,6 +761,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
-```
-
-This file contains the full original server logic with the new, enhanced /api/createSterlingChat implementation seamlessly merged in.
