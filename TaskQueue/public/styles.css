@@ -229,36 +229,40 @@ body {
 .bubble-header {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
+  gap: 8px; /* increased for better spacing */
+  margin-bottom: 6px; /* increased for a bit more breathing room */
   font-size: 0.9rem;
 }
 
 /* User bubble: displayed on the right side */
 .chat-user {
   background: #3b3b3b;
-  padding: 6px 8px;
+  padding: 10px 12px; /* slightly increased for spacing */
   border-radius: 12px;
-  margin-bottom: 6px;
+  margin-bottom: 12px; /* more vertical space between elements */
   align-self: flex-end;
   text-align: right;
   max-width: 70%;
-  word-wrap: break-word;
   color: #ddd;
   position: relative;
+  white-space: pre-wrap;       /* Allows multiline wrapping */
+  word-wrap: break-word;       /* Helps break long words */
+  overflow-wrap: break-word;   /* Additional safety for older browsers */
 }
 
 /* AI bubble: displayed on the left side */
 .chat-bot {
   background: #2a2a2a;
-  padding: 6px 8px;
+  padding: 10px 12px; /* slightly increased for spacing */
   border-radius: 12px;
-  margin-bottom: 6px;
+  margin-bottom: 12px;
   display: block;
   max-width: 70%;
-  word-wrap: break-word;
   color: #ddd;
   position: relative;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 /* Additional details styling */
