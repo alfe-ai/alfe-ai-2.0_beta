@@ -538,5 +538,12 @@ export default class TaskDB {
   getChatTab(tabId) {
     return this.db.prepare("SELECT * FROM chat_tabs WHERE id=?").get(tabId);
   }
+
+  /* ------------------------------------------------------------------ */
+  /*  Deletion methods (new)                                            */
+  /* ------------------------------------------------------------------ */
+  deleteChatPair(id) {
+    this.db.prepare("DELETE FROM chat_pairs WHERE id=?").run(id);
+  }
 }
 

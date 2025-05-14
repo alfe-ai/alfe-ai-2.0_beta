@@ -603,6 +603,21 @@ app.get("/activity", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/activity.html"));
 });
 
+// New route to delete a single chat pair
+app.delete("/api/chat/pair/:id", (req, res) => {
+  try {
+    const pairId = parseInt(req.params.id, 10);
+    if (Number.isNaN(pairId)) {
+      return res.status(400).json({ error: "Invalid pair ID" });
+    }
+    db.deleteChatPair(pairId);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[TaskQueue] DELETE /api/chat/pair/:id error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
