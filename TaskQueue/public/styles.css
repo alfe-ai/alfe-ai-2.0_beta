@@ -11,7 +11,7 @@ body {
 .app {
   display: flex;
   height: 100vh;
-  overflow: hidden;
+  /* Removed overflow: hidden; to fix chat scrolling */
 }
 
 /* Sidebar */
@@ -38,7 +38,6 @@ body {
   display: flex;
   flex-direction: column;
   padding: 1rem;
-  /* Removed overflow-y: auto; */
   background-color: #1e1e1e;
   color: #ddd;
 }
