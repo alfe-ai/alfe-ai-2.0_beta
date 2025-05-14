@@ -538,7 +538,15 @@ app.get("/api/chat/tabs", (req, res) => {
 
 app.post("/api/chat/tabs/new", (req, res) => {
   try {
-    const name = req.body.name || "Untitled";
+    let name = req.body.name || "Untitled";
+
+    // NEW: If chat_tab_auto_naming is enabled and we have a project name, auto-format
+    const autoNaming = db.getSetting("chat_tab_auto_naming");
+    const projectName = db.getSetting("sterling_project") || "";
+    if (autoNaming && projectName) {
+      name = `${projectName}: ${name}`;
+    }
+
     const tabId = db.createChatTab(name);
     res.json({ success: true, id: tabId });
   } catch (err) {
@@ -708,3 +716,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
+
