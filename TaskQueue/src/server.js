@@ -13,9 +13,26 @@ import multer from "multer";
 
 // Updated OpenAI SDK import and initialization
 import OpenAI from "openai";
+
+// Token counting
+import { encoding_for_model } from "tiktoken";
+
 const openaiClient = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || ""
 });
+
+function getEncoding(modelName) {
+  try {
+    return encoding_for_model(modelName);
+  } catch {
+    // fallback
+    return encoding_for_model("gpt-3.5-turbo");
+  }
+}
+
+function countTokens(encoder, text) {
+  return encoder.encode(text || "").length;
+}
 
 const db = new TaskDB();
 const app = express();
@@ -357,7 +374,7 @@ app.get("/api/activity", (req, res) => {
   }
 });
 
-// Updated /api/chat for chunk-splitting logic
+// Updated /api/chat for chunk-splitting logic & token counting
 app.post("/api/chat", async (req, res) => {
   try {
     const userMessage = req.body.message || "";
@@ -417,11 +434,35 @@ app.post("/api/chat", async (req, res) => {
     // End response
     res.end();
 
-    // Finalize the chat pair with the complete AI response
-    db.finalizeChatPair(chatPairId, assistantMessage, model, new Date().toISOString());
-    // Log AI chat
-    db.logActivity("AI chat", JSON.stringify({ tabId: chatTabId, response: assistantMessage }));
+    // Now let's calculate token usage
+    const encoder = getEncoding(model);
+    let systemTokens = countTokens(encoder, systemContext);
+    let userTokens = 0;
+    let prevAssistantTokens = 0;
+    for (const p of priorPairs) {
+      userTokens += countTokens(encoder, p.user_text);
+      prevAssistantTokens += countTokens(encoder, p.ai_text || "");
+    }
+    // The new user message
+    userTokens += countTokens(encoder, userMessage);
 
+    // The newly generated assistant message
+    const finalAssistantTokens = countTokens(encoder, assistantMessage);
+
+    const total = systemTokens + userTokens + prevAssistantTokens + finalAssistantTokens;
+    const tokenInfo = {
+      systemTokens,
+      userTokens,
+      assistantTokens: prevAssistantTokens,
+      finalAssistantTokens,
+      total
+    };
+
+    // Finalize the chat pair with the complete AI response & token info
+    db.finalizeChatPair(chatPairId, assistantMessage, model, new Date().toISOString(), JSON.stringify(tokenInfo));
+
+    // Log AI chat
+    db.logActivity("AI chat", JSON.stringify({ tabId: chatTabId, response: assistantMessage, tokenInfo }));
   } catch (err) {
     console.error("[TaskQueue] /api/chat (stream) error:", err);
     if (!res.headersSent) {
@@ -567,3 +608,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
+

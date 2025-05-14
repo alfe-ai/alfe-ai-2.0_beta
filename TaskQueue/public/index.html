@@ -755,7 +755,7 @@
   }
   $("#newTabBtn").addEventListener("click", addNewTab);
 
-  function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemContext, fullHistory) {
+  function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemContext, fullHistory, tokenInfo) {
     const seqDiv = document.createElement("div");
     seqDiv.className = "chat-sequence";
 
@@ -831,6 +831,21 @@
         metaContainer.appendChild(fhDetails);
       }
 
+      // Add token usage in a details block
+      if(tokenInfo){
+        const tokObj = JSON.parse(tokenInfo);
+        const tokDetails = document.createElement("details");
+        const tokSum = document.createElement("summary");
+        tokSum.textContent = "Token Usage";
+        tokDetails.appendChild(tokSum);
+
+        const tokPre = document.createElement("pre");
+        tokPre.textContent = JSON.stringify(tokObj, null, 2);
+        tokDetails.appendChild(tokPre);
+
+        metaContainer.appendChild(tokDetails);
+      }
+
       const directDetails = document.createElement("details");
       const ddSum = document.createElement("summary");
       ddSum.textContent = "Direct Link";
@@ -855,14 +870,15 @@
         const pairDetail = await fetch(`/pair/${p.id}`).then(r=>r.json());
         p._history = pairDetail;
         addChatMessage(
-                p.id,
-                p.user_text,
-                p.timestamp,
-                p.ai_text,
-                p.ai_timestamp,
-                p.model,
-                p.system_context,
-                p._history
+          p.id,
+          p.user_text,
+          p.timestamp,
+          p.ai_text,
+          p.ai_timestamp,
+          p.model,
+          p.system_context,
+          p._history,
+          p.token_info
         );
       }
     } catch (err) {

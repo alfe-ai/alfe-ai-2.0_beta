@@ -110,14 +110,6 @@ export default class TaskDB {
       );
     `);
 
-    // Add column for associating a chat tab with each pair
-    try {
-      this.db.exec(`ALTER TABLE chat_pairs ADD COLUMN chat_tab_id INTEGER DEFAULT 1;`);
-      console.debug("[TaskDB Debug] Added chat_tab_id column to chat_pairs.");
-    } catch(e) {
-      console.debug("[TaskDB Debug] chat_tab_id column likely exists. Skipped.", e.message);
-    }
-
     // New table for storing chat bubble pairs
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS chat_pairs (
@@ -137,6 +129,21 @@ export default class TaskDB {
       console.debug("[TaskDB Debug] Added system_context column to chat_pairs.");
     } catch(e) {
       console.debug("[TaskDB Debug] system_context column likely exists. Skipped.", e.message);
+    }
+
+    // Add chat_tab_id if missing
+    try {
+      this.db.exec(`ALTER TABLE chat_pairs ADD COLUMN chat_tab_id INTEGER DEFAULT 1;`);
+    } catch(e) {
+      // Usually means it already exists
+    }
+
+    // Add token_info column for storing token usage data
+    try {
+      this.db.exec(`ALTER TABLE chat_pairs ADD COLUMN token_info TEXT;`);
+      console.debug("[TaskDB Debug] Added token_info column to chat_pairs.");
+    } catch(e) {
+      console.debug("[TaskDB Debug] token_info column likely exists. Skipped.", e.message);
     }
 
     console.debug("[TaskDB Debug] Finished DB schema init.");
@@ -469,18 +476,20 @@ export default class TaskDB {
     return lastInsertRowid;
   }
 
-  finalizeChatPair(id, aiText, model, aiTimestamp) {
+  finalizeChatPair(id, aiText, model, aiTimestamp, tokenInfo=null) {
     this.db.prepare(`
       UPDATE chat_pairs
       SET ai_text = @ai_text,
           model = @model,
-          ai_timestamp = @ai_timestamp
+          ai_timestamp = @ai_timestamp,
+          token_info = @token_info
       WHERE id = @id
     `).run({
       id,
       ai_text: aiText,
       model,
-      ai_timestamp: aiTimestamp
+      ai_timestamp: aiTimestamp,
+      token_info: tokenInfo
     });
   }
 
@@ -530,6 +539,4 @@ export default class TaskDB {
     return this.db.prepare("SELECT * FROM chat_tabs WHERE id=?").get(tabId);
   }
 }
-
-
 

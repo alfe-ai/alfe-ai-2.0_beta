@@ -12,6 +12,3 @@ Agent Instructions (Alfe.TaskAgent.Thinking beta-0.70):
 
 </details>
 
-
-
-

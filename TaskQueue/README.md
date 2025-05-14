@@ -32,6 +32,3 @@ npm start
 
 The script prints matching open issues and the current queue size.
 
-
-
-
