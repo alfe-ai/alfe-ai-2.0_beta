@@ -1183,20 +1183,20 @@
     }
 
     try {
-      const r4 = await fetch("/api/settings/agent_name");
-      if(r4.ok){
-        const { value } = await r4.json();
-        window.agentName = value || "Alfe";
-      }
-    } catch(e){
-      window.agentName = "Alfe";
-    }
-
-    try {
       const r3 = await fetch("/api/settings/chat_hide_metadata");
-      if(r3.ok){
+      if (r3.ok){
         const { value } = await r3.json();
-        chatHideMetadata = !!value;
+        if (typeof value === 'undefined') {
+          // If the setting is not defined, default to true
+          chatHideMetadata = true;
+          await fetch("/api/settings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ key: "chat_hide_metadata", value: chatHideMetadata })
+          });
+        } else {
+          chatHideMetadata = !!value;
+        }
       }
     } catch(e) {
       console.error("Error loading chat_hide_metadata:", e);
@@ -1211,4 +1211,3 @@
 </script>
 </body>
 </html>
-
