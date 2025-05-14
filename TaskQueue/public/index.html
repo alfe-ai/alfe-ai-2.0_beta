@@ -1051,11 +1051,15 @@
       const ddSum = document.createElement("summary");
       ddSum.textContent = "Direct Link";
       directDetails.appendChild(ddSum);
-      const ddSpan = document.createElement("span");
-      ddSpan.textContent = `/pair/${pairId}`;
-      directDetails.appendChild(ddSpan);
-      metaContainer.appendChild(directDetails);
 
+      // Updated to make it a clickable link with target=_blank
+      const ddLink = document.createElement("a");
+      ddLink.href = `/pair/${pairId}`;
+      ddLink.target = "_blank";
+      ddLink.textContent = `/pair/${pairId}`;
+      directDetails.appendChild(ddLink);
+
+      metaContainer.appendChild(directDetails);
       seqDiv.appendChild(metaContainer);
     }
 
