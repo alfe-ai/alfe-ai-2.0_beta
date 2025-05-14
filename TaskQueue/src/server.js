@@ -670,7 +670,7 @@ app.post("/api/createSterlingChat", (req, res) => {
 
     try {
       // Retrieve the user-specified sterling_project from settings
-      const projectName = "aurora_working/" + db.getSetting("sterling_project") || "alfe-dev_test_repo";
+      const projectName = "aurora_working-" + db.getSetting("sterling_project") || "alfe-dev_test_repo";
 
       console.log('=== Testing createChat endpoint ===');
       const createChatResponse = await axios.post(`${baseURL}/createChat`, {
