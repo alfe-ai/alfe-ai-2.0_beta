@@ -793,70 +793,72 @@
 
     seqDiv.appendChild(botDiv);
 
-    if(!chatHideMetadata){
-      const metaContainer = document.createElement("div");
-      metaContainer.style.fontSize = "0.8rem";
-      metaContainer.style.color = "#aaa";
-      metaContainer.style.textAlign = "right";
+    // Always create metadata container, but close <details> if chatHideMetadata is true
+    const metaContainer = document.createElement("div");
+    metaContainer.style.fontSize = "0.8rem";
+    metaContainer.style.color = "#aaa";
+    metaContainer.style.textAlign = "right";
 
-      const pairLabel = document.createElement("div");
-      pairLabel.textContent = `Pair #${pairId}`;
-      metaContainer.appendChild(pairLabel);
+    const pairLabel = document.createElement("div");
+    pairLabel.textContent = `Pair #${pairId}`;
+    metaContainer.appendChild(pairLabel);
 
-      if(model) {
-        const modelLabel = document.createElement("div");
-        modelLabel.textContent = `Model: ${model}`;
-        metaContainer.appendChild(modelLabel);
-      }
-
-      if(systemContext) {
-        const scDetails = document.createElement("details");
-        const scSum = document.createElement("summary");
-        scSum.textContent = "System Context";
-        scDetails.appendChild(scSum);
-        const scPre = document.createElement("pre");
-        scPre.textContent = systemContext;
-        scDetails.appendChild(scPre);
-        metaContainer.appendChild(scDetails);
-      }
-
-      if(fullHistory) {
-        const fhDetails = document.createElement("details");
-        const fhSum = document.createElement("summary");
-        fhSum.textContent = "Full History";
-        fhDetails.appendChild(fhSum);
-        const fhPre = document.createElement("pre");
-        fhPre.textContent = JSON.stringify(fullHistory, null, 2);
-        fhDetails.appendChild(fhPre);
-        metaContainer.appendChild(fhDetails);
-      }
-
-      // Add token usage in a details block
-      if(tokenInfo){
-        const tokObj = JSON.parse(tokenInfo);
-        const tokDetails = document.createElement("details");
-        const tokSum = document.createElement("summary");
-        tokSum.textContent = "Token Usage";
-        tokDetails.appendChild(tokSum);
-
-        const tokPre = document.createElement("pre");
-        tokPre.textContent = JSON.stringify(tokObj, null, 2);
-        tokDetails.appendChild(tokPre);
-
-        metaContainer.appendChild(tokDetails);
-      }
-
-      const directDetails = document.createElement("details");
-      const ddSum = document.createElement("summary");
-      ddSum.textContent = "Direct Link";
-      directDetails.appendChild(ddSum);
-      const ddSpan = document.createElement("span");
-      ddSpan.textContent = `/pair/${pairId}`;
-      directDetails.appendChild(ddSpan);
-      metaContainer.appendChild(directDetails);
-
-      seqDiv.appendChild(metaContainer);
+    if(model) {
+      const modelLabel = document.createElement("div");
+      modelLabel.textContent = `Model: ${model}`;
+      metaContainer.appendChild(modelLabel);
     }
+
+    if(systemContext) {
+      const scDetails = document.createElement("details");
+      scDetails.open = !chatHideMetadata;
+      const scSum = document.createElement("summary");
+      scSum.textContent = "System Context";
+      scDetails.appendChild(scSum);
+      const scPre = document.createElement("pre");
+      scPre.textContent = systemContext;
+      scDetails.appendChild(scPre);
+      metaContainer.appendChild(scDetails);
+    }
+
+    if(fullHistory) {
+      const fhDetails = document.createElement("details");
+      fhDetails.open = !chatHideMetadata;
+      const fhSum = document.createElement("summary");
+      fhSum.textContent = "Full History";
+      fhDetails.appendChild(fhSum);
+      const fhPre = document.createElement("pre");
+      fhPre.textContent = JSON.stringify(fullHistory, null, 2);
+      fhDetails.appendChild(fhPre);
+      metaContainer.appendChild(fhDetails);
+    }
+
+    if(tokenInfo){
+      const tokObj = JSON.parse(tokenInfo);
+      const tokDetails = document.createElement("details");
+      tokDetails.open = !chatHideMetadata;
+      const tokSum = document.createElement("summary");
+      tokSum.textContent = "Token Usage";
+      tokDetails.appendChild(tokSum);
+
+      const tokPre = document.createElement("pre");
+      tokPre.textContent = JSON.stringify(tokObj, null, 2);
+      tokDetails.appendChild(tokPre);
+
+      metaContainer.appendChild(tokDetails);
+    }
+
+    const directDetails = document.createElement("details");
+    directDetails.open = !chatHideMetadata;
+    const ddSum = document.createElement("summary");
+    ddSum.textContent = "Direct Link";
+    directDetails.appendChild(ddSum);
+    const ddSpan = document.createElement("span");
+    ddSpan.textContent = `/pair/${pairId}`;
+    directDetails.appendChild(ddSpan);
+    metaContainer.appendChild(directDetails);
+
+    seqDiv.appendChild(metaContainer);
 
     chatMessagesEl.appendChild(seqDiv);
     chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
