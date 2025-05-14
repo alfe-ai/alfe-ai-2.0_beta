@@ -782,7 +782,7 @@
     const botHead = document.createElement("div");
     botHead.className = "bubble-header";
     botHead.innerHTML = `
-      <div class="name-oval name-oval-ai">${window.agentName} ${model || ""}</div>
+      <div class="name-oval name-oval-ai">${window.agentName} (${model || ""})</div>
       <span style="opacity:0.8;">${aiTs ? formatTimestamp(aiTs) : "…"}</span>
     `;
     botDiv.appendChild(botHead);
@@ -963,7 +963,7 @@
     const botHead = document.createElement("div");
     botHead.className = "bubble-header";
     botHead.innerHTML = `
-      <div class="name-oval name-oval-ai">${window.agentName} ${modelName}</div>
+      <div class="name-oval name-oval-ai">${window.agentName} (${modelName})</div>
       <span style="opacity:0.8;">…</span>
     `;
     botDiv.appendChild(botHead);
