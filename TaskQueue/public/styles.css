@@ -379,7 +379,6 @@ body {
 /* Token count indicator in bottom-right corner of subbubble */
 .token-indicator {
   position: absolute;
-  bottom: 4px;
   right: 8px;
   font-size: 0.75rem;
   color: #aaa;
