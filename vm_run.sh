@@ -68,4 +68,3 @@ exec qemu-system-x86_64 \
   -device virtio-net-pci,netdev=net0 \
   -serial mon:stdio \
   -nographic
-

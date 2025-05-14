@@ -31,4 +31,3 @@ npm start
    - Create new secret key and paste into `.env`
 
 The script prints matching open issues and the current queue size.
-

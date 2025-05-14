@@ -74,7 +74,8 @@
       <div id="tabsContainer" style="flex-wrap: wrap; display: flex; gap: 0.5rem;"></div>
       <button id="newTabBtn">➕ Tab</button>
       <button id="scrollDownBtn">Scroll to Bottom</button>
-      <!-- New button: Create Sterling Chat -->
+      <!-- NEW "Set Project" button -->
+      <button id="setProjectBtn">Set Project</button>
       <button id="createSterlingChatBtn">Create Sterling Chat</button>
     </div>
 
@@ -215,6 +216,21 @@
     <div class="modal-buttons">
       <button id="projectsSaveBtn">Save</button>
       <button id="projectsCancelBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW: Set project modal -->
+<div id="setProjectModal" class="modal">
+  <div class="modal-content">
+    <h2>Set Project</h2>
+    <label>
+      Project name: 
+      <input type="text" id="selectedProjectInput" style="width:100%;" />
+    </label>
+    <div class="modal-buttons">
+      <button id="setProjectSaveBtn">Save</button>
+      <button id="setProjectCancelBtn">Cancel</button>
     </div>
   </div>
 </div>
@@ -864,6 +880,30 @@
     }
   });
 
+  // NEW: Set Project button
+  document.getElementById("setProjectBtn").addEventListener("click", () => {
+    $("#selectedProjectInput").value = "";
+    showModal($("#setProjectModal"));
+  });
+  document.getElementById("setProjectSaveBtn").addEventListener("click", async () => {
+    const pName = $("#selectedProjectInput").value.trim();
+    if(!pName){
+      alert("Please enter a project name.");
+      return;
+    }
+    // For demonstration: just store in settings
+    await fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: "sterling_project", value: pName })
+    });
+    alert("Project set to: " + pName);
+    hideModal($("#setProjectModal"));
+  });
+  document.getElementById("setProjectCancelBtn").addEventListener("click", () => {
+    hideModal($("#setProjectModal"));
+  });
+
   function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemContext, fullHistory, tokenInfo) {
     const seqDiv = document.createElement("div");
     seqDiv.className = "chat-sequence";
@@ -1417,4 +1457,3 @@
 </script>
 </body>
 </html>
-
