@@ -998,20 +998,29 @@
       pairLabel.textContent = `Pair #${pairId}`;
       metaContainer.appendChild(pairLabel);
 
-      if(model) {
+      if (model) {
         const modelLabel = document.createElement("div");
         modelLabel.textContent = `Model: ${model}`;
         metaContainer.appendChild(modelLabel);
       }
 
-      if(systemContext) {
+      if (systemContext) {
         const scDetails = document.createElement("details");
         const scSum = document.createElement("summary");
         scSum.textContent = "System Context";
         scDetails.appendChild(scSum);
-        const scPre = document.createElement("pre");
-        scPre.textContent = systemContext;
-        scDetails.appendChild(scPre);
+
+        // Split systemContext into lines and present each as a chat bubble
+        const lines = systemContext.split(/\r?\n/);
+        lines.forEach(line => {
+          if (!line.trim()) return;
+          const lineBubble = document.createElement("div");
+          lineBubble.className = "chat-bot";
+          lineBubble.style.marginTop = "4px";
+          lineBubble.textContent = line;
+          scDetails.appendChild(lineBubble);
+        });
+
         metaContainer.appendChild(scDetails);
       }
 
