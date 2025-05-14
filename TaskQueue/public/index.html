@@ -7,10 +7,10 @@
   <title>Alfe: Task Queue</title>
   <link rel="stylesheet" href="styles.css" />
   <link
-    id="favicon"
-    rel="icon"
-    type="image/x-icon"
-    href="alfe_favicon_clean_64x64.ico"
+          id="favicon"
+          rel="icon"
+          type="image/x-icon"
+          href="alfe_favicon_clean_64x64.ico"
   />
 </head>
 <body>
@@ -89,11 +89,6 @@
     </div>
 
     <div id="chatPanel" style="position: relative;">
-      <!-- Newly added banner to indicate an updated chat UI -->
-      <div style="color: #ff3333; font-weight: bold; background: #222; padding: 4px; margin-bottom: 4px;">
-        <!--[Chat UI updated! - 10/2023]-->
-      </div>
-
       <div style="display: flex; align-items: center; gap: 0.5rem;">
         <div id="modelHud" style="font-size:0.9rem; color:#aaa; margin-bottom:4px;"></div>
         <button id="chatSettingsBtn" title="Chat Settings">⚙️</button>
@@ -210,11 +205,11 @@
     <p>Specify the base branch for each project. Click the project name cell to rename it globally.</p>
     <table id="projectsTable" style="width:100%; border-collapse:collapse;">
       <thead>
-        <tr>
-          <th>Project</th>
-          <th>Base Branch</th>
-          <th></th>
-        </tr>
+      <tr>
+        <th>Project</th>
+        <th>Base Branch</th>
+        <th></th>
+      </tr>
       </thead>
       <tbody></tbody>
     </table>
@@ -230,7 +225,7 @@
   <div class="modal-content">
     <h2>Set Project</h2>
     <label>
-      Project name: 
+      Project name:
       <input type="text" id="selectedProjectInput" style="width:100%;" />
     </label>
     <div class="modal-buttons">
@@ -274,19 +269,22 @@
   function formatTimestamp(isoStr){
     if(!isoStr) return "(no time)";
     const d = new Date(isoStr);
-    return d.toLocaleTimeString([], {
-      hour12: true,
+    return d.toLocaleString([], {
+      year: '2-digit',
+      month: '2-digit',
+      day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit'
+      second: '2-digit',
+      hour12: true
     });
   }
 
   function isoDate(d) {
     return new Date(d).toLocaleDateString([], {
-      year:"numeric",
-      month:"2-digit",
-      day:"2-digit"
+      year: "2-digit",
+      month: "2-digit",
+      day: "2-digit"
     });
   }
 
@@ -882,7 +880,7 @@
       const data = await resp.json();
       if (data.success && data.sterlingUrl) {
         document.getElementById("sterlingUrlLabel").innerHTML =
-          'Sterling chat: <a href="' + data.sterlingUrl + '" target="_blank">' + data.sterlingUrl + '</a>';
+                'Sterling chat: <a href="' + data.sterlingUrl + '" target="_blank">' + data.sterlingUrl + '</a>';
       }
     } catch(e) {
       console.error("CreateSterlingChat call failed:", e);
@@ -939,8 +937,8 @@
       // 3) Reflect in UI
       if(projectName){
         $("#projectInfo").textContent = branch
-          ? `Project: ${projectName} (branch: ${branch})`
-          : `Project: ${projectName} (no branch set)`;
+                ? `Project: ${projectName} (branch: ${branch})`
+                : `Project: ${projectName} (no branch set)`;
       } else {
         $("#projectInfo").textContent = "(No project set)";
       }
