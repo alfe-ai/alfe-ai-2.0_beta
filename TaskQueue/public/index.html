@@ -191,6 +191,9 @@
     <!-- NEW: Chat tab auto-naming checkbox -->
     <br/>
     <label><input type="checkbox" id="autoNamingCheck" /> Auto name new chat tabs using project</label>
+    <!-- NEW: Show token usage on subbubble -->
+    <br/>
+    <label><input type="checkbox" id="subbubbleTokenCheck" /> Show token usage on each subbubble</label>
     <div class="modal-buttons">
       <button id="chatSettingsSaveBtn">Save</button>
       <button id="chatSettingsCancelBtn">Cancel</button>
@@ -257,6 +260,8 @@
   let chatHideMetadata = false;
   // NEW: Track chat tab auto-naming
   let chatTabAutoNaming = false;
+  // NEW: Setting to show token usage in each subbubble
+  let showSubbubbleToken = false;
   window.agentName = "Alfe";
 
   const defaultFavicon = "alfe_favicon_clean_64x64.ico";
@@ -463,67 +468,67 @@
     const pj = $("#projectFilter").value;
     const sp = $("#sprintFilter").value;
     allTasks
-            .filter(t=>{
-              if(pj && t.project!==pj) return false;
-              if(sp && t.sprint!==sp) return false;
-              return true;
-            })
-            .forEach(t=>{
-              const tr = document.createElement("tr");
-              tr.dataset.taskId = t.id;
-              if(t.hidden) tr.classList.add("hidden");
-              [
-                "drag","priority","status","number","title",
-                "dependencies","project","created"
-              ].forEach(key=>{
-                if(!visibleCols.has(key)) return;
-                const td = document.createElement("td");
-                switch(key){
-                  case "drag":
-                    td.innerHTML = `<span class="drag-handle" draggable="true">⠿</span>`;
-                    td.querySelector(".drag-handle").addEventListener("dragstart", handleDragStart);
-                    break;
-                  case "priority":
-                    td.textContent = t.priority;
-                    td.className="priority-cell";
-                    break;
-                  case "status":
-                    td.textContent = t.status;
-                    td.className="status-cell";
-                    break;
-                  case "number":
-                    td.innerHTML = `<a href="${t.html_url}" target="_blank">#${t.number}</a>`;
-                    break;
-                  case "title":
-                    td.textContent = t.title;
-                    td.className="title-cell";
-                    break;
-                  case "dependencies":
-                    td.textContent = t.dependencies;
-                    td.className="dependencies-cell";
-                    break;
-                  case "project":
-                    td.textContent = t.project;
-                    td.className="project-cell";
-                    break;
-                  case "created":
-                    td.textContent = isoDate(t.created_at);
-                    break;
-                  default:
-                    td.textContent = t[key]||"";
-                }
-                tr.appendChild(td);
-              });
-              ["dragover","dragleave","drop","dragend"].forEach(evt=>{
-                tr.addEventListener(evt, {
-                  "dragover":handleDragOver,
-                  "dragleave":handleDragLeave,
-                  "drop":handleDrop,
-                  "dragend":handleDragEnd
-                }[evt]);
-              });
-              tbody.appendChild(tr);
-            });
+      .filter(t=>{
+        if(pj && t.project!==pj) return false;
+        if(sp && t.sprint!==sp) return false;
+        return true;
+      })
+      .forEach(t=>{
+        const tr = document.createElement("tr");
+        tr.dataset.taskId = t.id;
+        if(t.hidden) tr.classList.add("hidden");
+        [
+          "drag","priority","status","number","title",
+          "dependencies","project","created"
+        ].forEach(key=>{
+          if(!visibleCols.has(key)) return;
+          const td = document.createElement("td");
+          switch(key){
+            case "drag":
+              td.innerHTML = `<span class="drag-handle" draggable="true">⠿</span>`;
+              td.querySelector(".drag-handle").addEventListener("dragstart", handleDragStart);
+              break;
+            case "priority":
+              td.textContent = t.priority;
+              td.className="priority-cell";
+              break;
+            case "status":
+              td.textContent = t.status;
+              td.className="status-cell";
+              break;
+            case "number":
+              td.innerHTML = `<a href="${t.html_url}" target="_blank">#${t.number}</a>`;
+              break;
+            case "title":
+              td.textContent = t.title;
+              td.className="title-cell";
+              break;
+            case "dependencies":
+              td.textContent = t.dependencies;
+              td.className="dependencies-cell";
+              break;
+            case "project":
+              td.textContent = t.project;
+              td.className="project-cell";
+              break;
+            case "created":
+              td.textContent = isoDate(t.created_at);
+              break;
+            default:
+              td.textContent = t[key]||"";
+          }
+          tr.appendChild(td);
+        });
+        ["dragover","dragleave","drop","dragend"].forEach(evt=>{
+          tr.addEventListener(evt, {
+            "dragover":handleDragOver,
+            "dragleave":handleDragLeave,
+            "drop":handleDrop,
+            "dragend":handleDragEnd
+          }[evt]);
+        });
+        tbody.appendChild(tr);
+      });
   }
 
   async function loadTasks(){
@@ -535,10 +540,10 @@
   async function populateFilters(){
     const pj = await (await fetch("/api/projects")).json();
     $("#projectFilter").innerHTML = '<option value="">All projects</option>' +
-            pj.map(p=>`<option value="${p.project}">${p.project}</option>`).join("");
+      pj.map(p=>`<option value="${p.project}">${p.project}</option>`).join("");
     const sp = await (await fetch("/api/sprints")).json();
     $("#sprintFilter").innerHTML = '<option value="">All sprints</option>' +
-            sp.map(s=>`<option value="${s.sprint}">${s.sprint}</option>`).join("");
+      sp.map(s=>`<option value="${s.sprint}">${s.sprint}</option>`).join("");
   }
 
   function openColModal(){
@@ -548,8 +553,8 @@
       const div = document.createElement("div");
       div.className="col-item";
       div.innerHTML = `<button class="col-move" data-idx="${i}" data-dir="up">⬆️</button>` +
-              `<button class="col-move" data-idx="${i}" data-dir="down">⬇️</button>` +
-              `<label><input type="checkbox" value="${c.key}" ${visibleCols.has(c.key)?"checked":""}/> ${c.label||c.key}</label>`;
+        `<button class="col-move" data-idx="${i}" data-dir="down">⬇️</button>` +
+        `<label><input type="checkbox" value="${c.key}" ${visibleCols.has(c.key)?"checked":""}/> ${c.label||c.key}</label>`;
       cnt.appendChild(div);
     });
     showModal($("#colModal"));
@@ -762,7 +767,7 @@
   });
   $("#createTaskBtn").addEventListener("click", async ()=>{
     const title=$("#newTaskTitle").value.trim(),
-            body=$("#newTaskBody").value.trim();
+          body=$("#newTaskBody").value.trim();
     if(!title){
       alert("Please enter a title for the new task.");
       return;
@@ -880,7 +885,7 @@
       const data = await resp.json();
       if (data.success && data.sterlingUrl) {
         document.getElementById("sterlingUrlLabel").innerHTML =
-                'Sterling chat: <a href="' + data.sterlingUrl + '" target="_blank">' + data.sterlingUrl + '</a>';
+          'Sterling chat: <a href="' + data.sterlingUrl + '" target="_blank">' + data.sterlingUrl + '</a>';
       }
     } catch(e) {
       console.error("CreateSterlingChat call failed:", e);
@@ -937,8 +942,8 @@
       // 3) Reflect in UI
       if(projectName){
         $("#projectInfo").textContent = branch
-                ? `Project: ${projectName} (branch: ${branch})`
-                : `Project: ${projectName} (no branch set)`;
+          ? `Project: ${projectName} (branch: ${branch})`
+          : `Project: ${projectName} (no branch set)`;
       } else {
         $("#projectInfo").textContent = "(No project set)";
       }
@@ -966,6 +971,20 @@
       const userBody = document.createElement("div");
       userBody.textContent = userText;
       userDiv.appendChild(userBody);
+
+      // Show "In: X tokens" if configured
+      if(showSubbubbleToken && tokenInfo) {
+        try {
+          const tInfo = JSON.parse(tokenInfo);
+          const inTokens = tInfo.inputTokens || 0;
+          const userTokDiv = document.createElement("div");
+          userTokDiv.className = "token-indicator";
+          userTokDiv.textContent = `In: ${inTokens}`;
+          userDiv.appendChild(userTokDiv);
+        } catch(e) {
+          // ignore parse error
+        }
+      }
     }
     seqDiv.appendChild(userDiv);
 
@@ -983,6 +1002,20 @@
     const botBody = document.createElement("div");
     botBody.textContent = aiText || "";
     botDiv.appendChild(botBody);
+
+    // Show "Out: X tokens" if configured
+    if(showSubbubbleToken && tokenInfo) {
+      try {
+        const tInfo = JSON.parse(tokenInfo);
+        const outTokens = tInfo.finalAssistantTokens || 0;
+        const botTokDiv = document.createElement("div");
+        botTokDiv.className = "token-indicator";
+        botTokDiv.textContent = `Out: ${outTokens}`;
+        botDiv.appendChild(botTokDiv);
+      } catch(e) {
+        // ignore parse error
+      }
+    }
 
     seqDiv.appendChild(botDiv);
 
@@ -1043,12 +1076,12 @@
         const usageDiv = document.createElement("div");
         usageDiv.style.marginLeft = "1em";
         usageDiv.textContent =
-                `System: ${tokObj.systemTokens}, ` +
-                `History: ${tokObj.historyTokens}, ` +
-                `Input: ${tokObj.inputTokens}, ` +
-                `Assistant: ${tokObj.assistantTokens}, ` +
-                `FinalAsst: ${tokObj.finalAssistantTokens}, ` +
-                `Total: ${tokObj.total}`;
+          `System: ${tokObj.systemTokens}, ` +
+          `History: ${tokObj.historyTokens}, ` +
+          `Input: ${tokObj.inputTokens}, ` +
+          `Assistant: ${tokObj.assistantTokens}, ` +
+          `FinalAsst: ${tokObj.finalAssistantTokens}, ` +
+          `Total: ${tokObj.total}`;
 
         tokDetails.appendChild(usageDiv);
         metaContainer.appendChild(tokDetails);
@@ -1100,15 +1133,15 @@
         const pairDetail = await fetch(`/pair/${p.id}`).then(r=>r.json());
         p._history = pairDetail;
         addChatMessage(
-                p.id,
-                p.user_text,
-                p.timestamp,
-                p.ai_text,
-                p.ai_timestamp,
-                p.model,
-                p.system_context,
-                p._history,
-                p.token_info
+          p.id,
+          p.user_text,
+          p.timestamp,
+          p.ai_text,
+          p.ai_timestamp,
+          p.model,
+          p.system_context,
+          p._history,
+          p.token_info
         );
       }
     } catch (err) {
@@ -1240,8 +1273,16 @@
       chatTabAutoNaming = !!value;
     }
 
+    // Load show_subbubble_token_count
+    const r3 = await fetch("/api/settings/show_subbubble_token_count");
+    if(r3.ok){
+      const { value } = await r3.json();
+      showSubbubbleToken = !!value;
+    }
+
     $("#hideMetadataCheck").checked = chatHideMetadata;
     $("#autoNamingCheck").checked = chatTabAutoNaming;
+    $("#subbubbleTokenCheck").checked = showSubbubbleToken;
 
     showModal($("#chatSettingsModal"));
   });
@@ -1249,6 +1290,7 @@
   async function chatSettingsSaveFlow() {
     chatHideMetadata = $("#hideMetadataCheck").checked;
     chatTabAutoNaming = $("#autoNamingCheck").checked;
+    showSubbubbleToken = $("#subbubbleTokenCheck").checked;
 
     await fetch("/api/settings", {
       method: "POST",
@@ -1261,6 +1303,13 @@
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ key: "chat_tab_auto_naming", value: chatTabAutoNaming })
+    });
+
+    // Save show_subbubble_token_count
+    await fetch("/api/settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: "show_subbubble_token_count", value: showSubbubbleToken })
     });
 
     hideModal($("#chatSettingsModal"));
@@ -1528,6 +1577,30 @@
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ key: "chat_hide_metadata", value: chatHideMetadata })
+      });
+    }
+
+    // Similarly ensure subbubble token usage setting is loaded
+    try {
+      const r4 = await fetch("/api/settings/show_subbubble_token_count");
+      if(r4.ok){
+        const { value } = await r4.json();
+        showSubbubbleToken = !!value;
+      } else {
+        showSubbubbleToken = false;
+        await fetch("/api/settings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ key: "show_subbubble_token_count", value: showSubbubbleToken })
+        });
+      }
+    } catch(e) {
+      console.error("Error loading show_subbubble_token_count:", e);
+      showSubbubbleToken = false;
+      await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "show_subbubble_token_count", value: showSubbubbleToken })
       });
     }
 
