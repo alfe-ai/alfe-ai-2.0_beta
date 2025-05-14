@@ -94,6 +94,8 @@
 
       <div style="display: flex; align-items: center; gap: 0.5rem;">
         <div id="modelHud" style="font-size:0.9rem; color:#aaa; margin-bottom:4px;"></div>
+        <!-- New project info region -->
+        <div id="projectInfo" style="font-size:0.9rem; color:#aaa; margin-bottom:4px;"></div>
         <button id="chatSettingsBtn" title="Chat Settings">⚙️</button>
       </div>
 
@@ -891,7 +893,6 @@
       alert("Please enter a project name.");
       return;
     }
-    // For demonstration: just store in settings
     await fetch("/api/settings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -899,10 +900,47 @@
     });
     alert("Project set to: " + pName);
     hideModal($("#setProjectModal"));
+    await updateProjectInfo();
   });
   document.getElementById("setProjectCancelBtn").addEventListener("click", () => {
     hideModal($("#setProjectModal"));
   });
+
+  // Fetch and display the current project and branch
+  async function updateProjectInfo() {
+    try {
+      let projectName = "";
+      let branch = "";
+      // 1) Get sterling_project from settings
+      const r1 = await fetch("/api/settings/sterling_project");
+      if(r1.ok){
+        const data = await r1.json();
+        projectName = data.value || "";
+      }
+      // 2) If we have a project, look up its branch
+      if(projectName){
+        const r2 = await fetch("/api/projectBranches");
+        if(r2.ok){
+          const branches = await r2.json();
+          const found = branches.find(b => b.project === projectName);
+          if(found){
+            branch = found.base_branch || "";
+          }
+        }
+      }
+      // 3) Reflect in UI
+      if(projectName){
+        $("#projectInfo").textContent = branch
+          ? `Project: ${projectName} (branch: ${branch})`
+          : `Project: ${projectName} (no branch set)`;
+      } else {
+        $("#projectInfo").textContent = "(No project set)";
+      }
+    } catch(e) {
+      console.error("Error updating project info:", e);
+      $("#projectInfo").textContent = "(No project set)";
+    }
+  }
 
   function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemContext, fullHistory, tokenInfo) {
     const seqDiv = document.createElement("div");
@@ -1453,6 +1491,9 @@
     }
 
     await chatSettingsSaveFlow();
+
+    // Load project and branch display
+    await updateProjectInfo();
   })();
 </script>
 </body>
