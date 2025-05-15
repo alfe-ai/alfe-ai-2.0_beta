@@ -19,6 +19,7 @@ let currentTabId = 1;
 let chatHideMetadata = false;
 let chatTabAutoNaming = false;
 let showSubbubbleToken = false;
+let sterlingChatUrlVisible = true;
 window.agentName = "Alfe";
 
 const defaultFavicon = "alfe_favicon_clean_64x64.ico";
@@ -1053,9 +1054,17 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
     const { value } = await r3.json();
     showSubbubbleToken = !!value;
   }
+  const r4 = await fetch("/api/settings/sterling_chat_url_visible");
+  if(r4.ok){
+    const { value } = await r4.json();
+    sterlingChatUrlVisible = value !== false;
+  }
+
   $("#hideMetadataCheck").checked = chatHideMetadata;
   $("#autoNamingCheck").checked = chatTabAutoNaming;
   $("#subbubbleTokenCheck").checked = showSubbubbleToken;
+  $("#sterlingUrlCheck").checked = sterlingChatUrlVisible;
+
   showModal($("#chatSettingsModal"));
 });
 
@@ -1063,6 +1072,7 @@ async function chatSettingsSaveFlow() {
   chatHideMetadata = $("#hideMetadataCheck").checked;
   chatTabAutoNaming = $("#autoNamingCheck").checked;
   showSubbubbleToken = $("#subbubbleTokenCheck").checked;
+  sterlingChatUrlVisible = $("#sterlingUrlCheck").checked;
 
   await fetch("/api/settings", {
     method: "POST",
@@ -1079,9 +1089,15 @@ async function chatSettingsSaveFlow() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ key: "show_subbubble_token_count", value: showSubbubbleToken })
   });
+  await fetch("/api/settings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ key: "sterling_chat_url_visible", value: sterlingChatUrlVisible })
+  });
 
   hideModal($("#chatSettingsModal"));
   await loadChatHistory(currentTabId);
+  toggleSterlingUrlVisibility(sterlingChatUrlVisible);
 }
 
 $("#chatSettingsSaveBtn").addEventListener("click", chatSettingsSaveFlow);
@@ -1089,6 +1105,12 @@ $("#chatSettingsSaveBtn").addEventListener("click", chatSettingsSaveFlow);
 $("#chatSettingsCancelBtn").addEventListener("click", () => {
   hideModal($("#chatSettingsModal"));
 });
+
+function toggleSterlingUrlVisibility(visible) {
+  const el = document.getElementById("sterlingUrlLabel");
+  if(!el) return;
+  el.style.display = visible ? "inline" : "none";
+}
 
 (function installDividerDrag(){
   const divider = $("#divider");
@@ -1446,4 +1468,5 @@ document.getElementById("fileTreeCloseBtn").addEventListener("click", () => {
   } catch(e){
     console.error("Error fetching sterling_chat_url:", e);
   }
+  toggleSterlingUrlVisibility(sterlingChatUrlVisible);
 })();
