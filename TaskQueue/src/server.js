@@ -39,7 +39,10 @@ function countTokens(encoder, text) {
 
 const db = new TaskDB();
 const app = express();
-app.use(cors());
+
+// Explicit CORS configuration for MissingAllowOriginHeader error:
+app.use(cors({ origin: "*" }));
+
 app.use(bodyParser.json());
 
 // Determine uploads directory
@@ -721,4 +724,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
-
