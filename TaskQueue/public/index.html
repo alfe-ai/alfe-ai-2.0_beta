@@ -74,6 +74,7 @@
       <div id="projectInfo" style="font-size:0.9rem; color:#aaa; margin-bottom:4px;"></div>
       <button id="setProjectBtn">Set Project</button>
       <button id="createSterlingChatBtn">Create Sterling Chat</button>
+      <button id="showFileTreeBtn">Show File Tree</button>
       <span id="sterlingUrlLabel" style="margin-left:1rem; color:#0f0;"></span>
     </div>
 
@@ -226,6 +227,17 @@
     <div class="modal-buttons">
       <button id="setProjectSaveBtn">Save</button>
       <button id="setProjectCancelBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- New modal: File Tree -->
+<div id="fileTreeModal" class="modal">
+  <div class="modal-content">
+    <h2>Sterling Chat File Tree</h2>
+    <pre id="fileTreeOutput" style="white-space: pre-wrap; background: #333; border: 1px solid #444; padding: 8px;"></pre>
+    <div class="modal-buttons">
+      <button id="fileTreeCloseBtn">Close</button>
     </div>
   </div>
 </div>

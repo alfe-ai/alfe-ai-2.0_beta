@@ -1289,6 +1289,54 @@ document.addEventListener("click", async (ev) => {
   });
 });
 
+document.getElementById("showFileTreeBtn").addEventListener("click", async () => {
+  const fileTreeModal = $("#fileTreeModal");
+  const output = $("#fileTreeOutput");
+  output.textContent = "(loading...)";
+  showModal(fileTreeModal);
+
+  try {
+    // Attempt to read the previously stored Sterling URL
+    const r = await fetch("/api/settings/sterling_chat_url");
+    if(!r.ok){
+      output.textContent = "No stored sterling_chat_url found. Create a chat first.";
+      return;
+    }
+    const { value: urlVal } = await r.json();
+    if(!urlVal){
+      output.textContent = "No sterling_chat_url set. Create a chat first.";
+      return;
+    }
+
+    // Example: urlVal might be http://localhost:3444/aurora_working-alfe-dev_test_repo/chat/2
+    // parse the project from the path and the chat number from the last segment
+    const splitted = urlVal.split("/");
+    const chatNumber = splitted.pop();
+    splitted.pop(); // remove "chat"
+    const repoName = decodeURIComponent(splitted.pop()).replace("aurora_working-", "");
+
+    // fetch file tree
+    const treeRes = await fetch(`http://localhost:3444/api/listFileTree/${repoName}/${chatNumber}`);
+    if(!treeRes.ok){
+      output.textContent = `Error fetching file tree for /${repoName}/${chatNumber}`;
+      return;
+    }
+    const treeData = await treeRes.json();
+    if(!treeData.success){
+      output.textContent = "Error: " + JSON.stringify(treeData);
+      return;
+    }
+
+    output.textContent = JSON.stringify(treeData.tree, null, 2);
+  } catch(err) {
+    output.textContent = `Error: ${err.message}`;
+  }
+});
+
+document.getElementById("fileTreeCloseBtn").addEventListener("click", () => {
+  hideModal($("#fileTreeModal"));
+});
+
 (async function init(){
   await loadSettings();
   await populateFilters();
