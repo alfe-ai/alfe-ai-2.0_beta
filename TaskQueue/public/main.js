@@ -55,15 +55,26 @@ function showModal(m){ m.style.display = "flex"; }
 function hideModal(m){ m.style.display = "none"; }
 $$(".modal").forEach(m => m.addEventListener("click", e => { if(e.target===m) hideModal(m); }));
 
+async function setSetting(key, value){
+  await fetch("/api/settings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ key, value })
+  });
+}
+
+async function getSetting(key){
+  const r = await fetch(`/api/settings/${key}`);
+  if(!r.ok) return undefined;
+  const { value } = await r.json();
+  return value;
+}
+
 async function toggleTasks(){
   tasksVisible = !tasksVisible;
   $("#tasks").style.display = tasksVisible ? "" : "none";
   $("#toggleTasksBtn").textContent = tasksVisible ? "Hide tasks" : "Show tasks";
-  await fetch("/api/settings", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ key: "tasks_visible", value: tasksVisible })
-  });
+  await setSetting("tasks_visible", tasksVisible);
 }
 $("#toggleTasksBtn").addEventListener("click", toggleTasks);
 
@@ -78,11 +89,7 @@ async function toggleSidebar(){
   const expandBtn = document.getElementById("expandSidebarBtn");
   expandBtn.style.display = sidebarVisible ? "none" : "block";
 
-  await fetch("/api/settings", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ key: "sidebar_visible", value: sidebarVisible })
-  });
+  await setSetting("sidebar_visible", sidebarVisible);
 }
 $("#toggleSidebarBtn").addEventListener("click", toggleSidebar);
 
@@ -615,8 +622,9 @@ async function deleteTab(tabId){
     await loadChatHistory(currentTabId);
   }
 }
-function selectTab(tabId){
+async function selectTab(tabId){
   currentTabId = tabId;
+  await setSetting("last_chat_tab", tabId);
   loadChatHistory(tabId);
   renderTabs();
   renderSidebarTabs();
@@ -1114,26 +1122,10 @@ async function chatSettingsSaveFlow() {
   showSubbubbleToken = $("#subbubbleTokenCheck").checked;
   sterlingChatUrlVisible = $("#sterlingUrlCheck").checked;
 
-  await fetch("/api/settings", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ key: "chat_hide_metadata", value: chatHideMetadata })
-  });
-  await fetch("/api/settings", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ key: "chat_tab_auto_naming", value: chatTabAutoNaming })
-  });
-  await fetch("/api/settings", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ key: "show_subbubble_token_count", value: showSubbubbleToken })
-  });
-  await fetch("/api/settings", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ key: "sterling_chat_url_visible", value: sterlingChatUrlVisible })
-  });
+  await setSetting("chat_hide_metadata", chatHideMetadata);
+  await setSetting("chat_tab_auto_naming", chatTabAutoNaming);
+  await setSetting("show_subbubble_token_count", showSubbubbleToken);
+  await setSetting("sterling_chat_url_visible", sterlingChatUrlVisible);
 
   hideModal($("#chatSettingsModal"));
   await loadChatHistory(currentTabId);
@@ -1371,6 +1363,7 @@ function showTasksPanel(){
   $("#navFileTreeBtn").classList.remove("active");
   $("#navChatTabsBtn").classList.remove("active");
   $("#navActivityIframeBtn").classList.remove("active");
+  setSetting("last_sidebar_view", "tasks");
 }
 
 function showUploaderPanel(){
@@ -1384,6 +1377,7 @@ function showUploaderPanel(){
   $("#navFileTreeBtn").classList.remove("active");
   $("#navChatTabsBtn").classList.remove("active");
   $("#navActivityIframeBtn").classList.remove("active");
+  setSetting("last_sidebar_view", "uploader");
 }
 
 function showFileTreePanel(){
@@ -1397,6 +1391,7 @@ function showFileTreePanel(){
   $("#navFileTreeBtn").classList.add("active");
   $("#navChatTabsBtn").classList.remove("active");
   $("#navActivityIframeBtn").classList.remove("active");
+  setSetting("last_sidebar_view", "fileTree");
   loadFileTree();
 }
 
@@ -1411,6 +1406,7 @@ function showChatTabsPanel(){
   $("#navFileTreeBtn").classList.remove("active");
   $("#navChatTabsBtn").classList.add("active");
   $("#navActivityIframeBtn").classList.remove("active");
+  setSetting("last_sidebar_view", "chatTabs");
   renderSidebarTabs();
 }
 
@@ -1425,6 +1421,7 @@ function showActivityIframePanel(){
   $("#navFileTreeBtn").classList.remove("active");
   $("#navChatTabsBtn").classList.remove("active");
   $("#navActivityIframeBtn").classList.add("active");
+  setSetting("last_sidebar_view", "activity");
 }
 
 /**
@@ -1568,16 +1565,25 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
   $("#modelHud").textContent = "Model: " + modelName;
 
   await loadTabs();
-  if(chatTabs.length>0){
-    currentTabId = chatTabs[0].id;
+
+  // If stored last chat tab is valid, use it. Otherwise fallback.
+  const lastChatTab = await getSetting("last_chat_tab");
+  if(lastChatTab) {
+    const foundTab = chatTabs.find(t => t.id === parseInt(lastChatTab,10));
+    if(foundTab) currentTabId = foundTab.id;
+    else if(chatTabs.length>0) currentTabId=chatTabs[0].id;
   } else {
-    await fetch("/api/chat/tabs/new", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: "Main" })
-    });
-    await loadTabs();
-    currentTabId = chatTabs[0].id;
+    if(chatTabs.length>0){
+      currentTabId = chatTabs[0].id;
+    } else {
+      await fetch("/api/chat/tabs/new", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "Main" })
+      });
+      await loadTabs();
+      currentTabId = chatTabs[0].id;
+    }
   }
   renderTabs();
   renderSidebarTabs();
@@ -1599,20 +1605,12 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     const r3 = await fetch("/api/settings/chat_hide_metadata");
     if (r3.ok){
       chatHideMetadata = true;
-      await fetch("/api/settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: "chat_hide_metadata", value: chatHideMetadata })
-      });
+      await setSetting("chat_hide_metadata", chatHideMetadata);
     }
   } catch(e) {
     console.error("Error loading chat_hide_metadata:", e);
     chatHideMetadata = true;
-    await fetch("/api/settings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key: "chat_hide_metadata", value: chatHideMetadata })
-    });
+    await setSetting("chat_hide_metadata", chatHideMetadata);
   }
 
   try {
@@ -1622,20 +1620,12 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
       showSubbubbleToken = !!value;
     } else {
       showSubbubbleToken = false;
-      await fetch("/api/settings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: "show_subbubble_token_count", value: showSubbubbleToken })
-      });
+      await setSetting("show_subbubble_token_count", showSubbubbleToken);
     }
   } catch(e) {
     console.error("Error loading show_subbubble_token_count:", e);
     showSubbubbleToken = false;
-    await fetch("/api/settings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key: "show_subbubble_token_count", value: showSubbubbleToken })
-    });
+    await setSetting("show_subbubble_token_count", showSubbubbleToken);
   }
 
   await loadFileList();
@@ -1662,5 +1652,14 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
   }
   toggleSterlingUrlVisibility(sterlingChatUrlVisible);
 
-  showTasksPanel();
+  // On load, open the last known sidebar panel
+  let lastView = await getSetting("last_sidebar_view");
+  if(!lastView) lastView = "tasks";
+  switch(lastView){
+    case "uploader": showUploaderPanel(); break;
+    case "fileTree": showFileTreePanel(); break;
+    case "chatTabs": showChatTabsPanel(); break;
+    case "activity": showActivityIframePanel(); break;
+    default: showTasksPanel(); break;
+  }
 })();
