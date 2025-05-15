@@ -549,7 +549,6 @@ async function loadTabs(){
   chatTabs = await res.json();
 }
 async function addNewTab() {
-  // Ask for project name
   const projectInput = prompt("Enter project name (or leave blank):", "");
   if(projectInput){
     await fetch("/api/settings", {
@@ -559,7 +558,6 @@ async function addNewTab() {
     });
   }
 
-  // Check if auto naming is enabled
   let autoNaming = false;
   try {
     const r = await fetch("/api/settings/chat_tab_auto_naming");
@@ -571,8 +569,6 @@ async function addNewTab() {
     console.error("Error checking chat_tab_auto_naming:", e);
   }
 
-  // If user provided a project and auto naming is on, skip name prompt
-  // Otherwise, prompt for tab name
   let name = "";
   if(!(projectInput && autoNaming)){
     name = prompt("Enter tab name:", "New Tab");
@@ -814,7 +810,6 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
       tokObj = tokenInfo ? JSON.parse(tokenInfo) : null;
     } catch(e) {}
 
-    // System Context section
     if (systemContext) {
       const scDetails = document.createElement("details");
       const scSum = document.createElement("summary");
@@ -834,7 +829,6 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
       metaContainer.appendChild(scDetails);
     }
 
-    // Full History section
     if (fullHistory) {
       const fhDetails = document.createElement("details");
       const fhSum = document.createElement("summary");
@@ -847,7 +841,6 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
       metaContainer.appendChild(fhDetails);
     }
 
-    // Token Usage
     if(tokObj){
       const tuDetails = document.createElement("details");
       const tuSum = document.createElement("summary");
@@ -868,7 +861,6 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
       metaContainer.appendChild(tuDetails);
     }
 
-    // Direct Link
     const directLinkDiv = document.createElement("div");
     const ddLink = document.createElement("a");
     ddLink.href = `/pair/${pairId}`;
@@ -1252,7 +1244,6 @@ async function openProjectsModal(){
   await renderProjectsTable();
 }
 
-// Updated to display both tasks-based projects and branches from DB
 async function renderProjectsTable(){
   const tblBody = $("#projectsTable tbody");
   tblBody.innerHTML = "";
@@ -1265,7 +1256,6 @@ async function renderProjectsTable(){
   const branchMap = {};
   branches.forEach(b => { branchMap[b.project] = b.base_branch; });
 
-  // Gather all project names from tasks + branch table
   const projNamesSet = new Set();
   projects.forEach(p => projNamesSet.add(p.project));
   branches.forEach(b => projNamesSet.add(b.project));
@@ -1311,77 +1301,146 @@ $("#projConfigBtn").addEventListener("click", openProjectsModal);
 $("#projectsSaveBtn").addEventListener("click", saveProjectBranches);
 $("#projectsCancelBtn").addEventListener("click", ()=>hideModal($("#projectsModal")));
 
-document.getElementById("showFileTreeBtn").addEventListener("click", async () => {
-  const fileTreeModal = $("#fileTreeModal");
-  const output = $("#fileTreeOutput");
-  output.textContent = "(loading...)";
-  showModal(fileTreeModal);
+/* ====================== */
+/* --- New File Tree ---- */
+/* ====================== */
+const navFileTreeBtn = document.getElementById("navFileTreeBtn");
+const sidebarViewFileTree = document.getElementById("sidebarViewFileTree");
+const sidebarViewTasks = document.getElementById("sidebarViewTasks");
+const sidebarViewUploader = document.getElementById("sidebarViewUploader");
+const fileTreeContainer = document.getElementById("fileTreeContainer");
 
+function showTasksPanel(){
+  sidebarViewTasks.style.display = "";
+  sidebarViewUploader.style.display = "none";
+  sidebarViewFileTree.style.display = "none";
+  $("#navTasksBtn").classList.add("active");
+  $("#navUploaderBtn").classList.remove("active");
+  $("#navFileTreeBtn").classList.remove("active");
+}
+
+function showUploaderPanel(){
+  sidebarViewTasks.style.display = "none";
+  sidebarViewUploader.style.display = "";
+  sidebarViewFileTree.style.display = "none";
+  $("#navTasksBtn").classList.remove("active");
+  $("#navUploaderBtn").classList.add("active");
+  $("#navFileTreeBtn").classList.remove("active");
+}
+
+function showFileTreePanel(){
+  sidebarViewTasks.style.display = "none";
+  sidebarViewUploader.style.display = "none";
+  sidebarViewFileTree.style.display = "";
+  $("#navTasksBtn").classList.remove("active");
+  $("#navUploaderBtn").classList.remove("active");
+  $("#navFileTreeBtn").classList.add("active");
+  loadFileTree();
+}
+
+/**
+ * Recursively render the file tree structure, with expand/collapse
+ * directories and checkboxes for files.
+ */
+function createTreeNode(node) {
+  const li = document.createElement("li");
+
+  if(node.type === "directory") {
+    const expander = document.createElement("span");
+    expander.textContent = "[+] ";
+    expander.style.cursor = "pointer";
+    li.appendChild(expander);
+
+    const label = document.createElement("span");
+    label.textContent = node.name;
+    label.style.fontWeight = "bold";
+    li.appendChild(label);
+
+    const ul = document.createElement("ul");
+    ul.style.display = "none";
+    li.appendChild(ul);
+
+    expander.addEventListener("click", () => {
+      if(ul.style.display === "none"){
+        ul.style.display = "";
+        expander.textContent = "[-] ";
+      } else {
+        ul.style.display = "none";
+        expander.textContent = "[+] ";
+      }
+    });
+
+    if(Array.isArray(node.children)){
+      node.children.forEach(child => {
+        ul.appendChild(createTreeNode(child));
+      });
+    }
+
+  } else {
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = !!node.isAttached;
+    li.appendChild(cb);
+
+    const label = document.createElement("span");
+    label.textContent = " " + node.name;
+    li.appendChild(label);
+  }
+
+  return li;
+}
+
+async function loadFileTree(){
+  fileTreeContainer.innerHTML = "Loading file tree...";
   try {
-    // Attempt to read the previously stored Sterling URL
     const r = await fetch("/api/settings/sterling_chat_url");
     if(!r.ok){
-      output.textContent = "No stored sterling_chat_url found. Create a chat first.";
+      fileTreeContainer.textContent = "No sterling_chat_url found. Create a chat first.";
       return;
     }
     const { value: urlVal } = await r.json();
     if(!urlVal){
-      output.textContent = "No sterling_chat_url set. Create a chat first.";
+      fileTreeContainer.textContent = "No sterling_chat_url set. Create a chat first.";
       return;
     }
 
-    // Example: urlVal might be http://localhost:3444/aurora_working-alfe-dev_test_repo/chat/2
-    // parse the project from the path and the chat number from the last segment
     const splitted = urlVal.split("/");
     const chatNumber = splitted.pop();
-    splitted.pop(); // remove "chat"
+    splitted.pop(); 
     const repoName = decodeURIComponent(splitted.pop());
 
-    // fetch file tree
     const treeRes = await fetch(`http://localhost:3444/api/listFileTree/${repoName}/${chatNumber}`);
     if(!treeRes.ok){
-      output.textContent = `Error fetching file tree for /${repoName}/${chatNumber}`;
+      fileTreeContainer.textContent = "Error fetching file tree from Sterling.";
       return;
     }
-    const treeData = await treeRes.json();
-    if(!treeData.success){
-      output.textContent = "Error: " + JSON.stringify(treeData);
+    const data = await treeRes.json();
+    if(!data.success){
+      fileTreeContainer.textContent = "Sterling error: " + JSON.stringify(data);
       return;
     }
 
-    output.textContent = JSON.stringify(treeData.tree, null, 2);
+    fileTreeContainer.innerHTML = "";
+    const rootUl = document.createElement("ul");
+    data.tree.children.forEach(childNode => {
+      rootUl.appendChild(createTreeNode(childNode));
+    });
+    fileTreeContainer.appendChild(rootUl);
+
   } catch(err) {
-    output.textContent = `Error: ${err.message}`;
+    fileTreeContainer.textContent = "Error: " + err.message;
   }
-});
-
-document.getElementById("fileTreeCloseBtn").addEventListener("click", () => {
-  hideModal($("#fileTreeModal"));
-});
+}
 
 /**
  * Sidebar nav toggling
  */
-const tasksPanel = document.getElementById("sidebarViewTasks");
-const uploaderPanel = document.getElementById("sidebarViewUploader");
 const btnTasks = document.getElementById("navTasksBtn");
 const btnUploader = document.getElementById("navUploaderBtn");
 
-function showTasksPanel(){
-  tasksPanel.style.display = "";
-  uploaderPanel.style.display = "none";
-  btnTasks.classList.add("active");
-  btnUploader.classList.remove("active");
-}
-function showUploaderPanel(){
-  tasksPanel.style.display = "none";
-  uploaderPanel.style.display = "";
-  btnUploader.classList.add("active");
-  btnTasks.classList.remove("active");
-}
-
 btnTasks.addEventListener("click", showTasksPanel);
 btnUploader.addEventListener("click", showUploaderPanel);
+navFileTreeBtn.addEventListener("click", showFileTreePanel);
 
 (async function init(){
   await loadSettings();
@@ -1478,7 +1537,6 @@ btnUploader.addEventListener("click", showUploaderPanel);
   await chatSettingsSaveFlow();
   await updateProjectInfo();
 
-  // NEW: Load Sterling chat URL from settings if present
   try {
     const r = await fetch("/api/settings/sterling_chat_url");
     if(r.ok){
@@ -1493,6 +1551,5 @@ btnUploader.addEventListener("click", showUploaderPanel);
   }
   toggleSterlingUrlVisibility(sterlingChatUrlVisible);
 
-  // Default to showing tasks panel
   showTasksPanel();
 })();
