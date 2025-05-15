@@ -40,8 +40,21 @@ function countTokens(encoder, text) {
 const db = new TaskDB();
 const app = express();
 
-// Explicit CORS configuration for MissingAllowOriginHeader error:
-app.use(cors({ origin: "*" }));
+// Explicit CORS configuration for robust cross-origin handling:
+app.use(cors({
+  origin: "*",
+  methods: ["GET","POST","PUT","DELETE","OPTIONS","HEAD"],
+  allowedHeaders: ["Content-Type","Authorization","Accept","X-Requested-With","Origin"]
+}));
+
+// Handle preflight requests on all routes
+app.options("*", cors({
+  origin: "*",
+  methods: ["GET","POST","PUT","DELETE","OPTIONS","HEAD"],
+  allowedHeaders: ["Content-Type","Authorization","Accept","X-Requested-With","Origin"]
+}), (req, res) => {
+  res.sendStatus(200);
+});
 
 app.use(bodyParser.json());
 
