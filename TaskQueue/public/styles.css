@@ -303,6 +303,7 @@ body {
   resize: none;
   min-height: 40px;
   overflow-y: auto;
+  font-family: monospace; /* Added to match chat bubbles */
 }
 
 .chat-input-container textarea::placeholder {
@@ -410,4 +411,3 @@ body {
   border-color: #aaa;
   color: #fff;
 }
-
