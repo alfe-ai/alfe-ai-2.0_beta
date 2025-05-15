@@ -677,6 +677,18 @@ function renderSidebarTabs(){
 
 document.getElementById("newSideTabBtn").addEventListener("click", addNewTab);
 
+// New: Button to toggle top chat tabs bar
+document.getElementById("toggleTopChatTabsBtn").addEventListener("click", () => {
+  const topTabs = document.getElementById("chatTabs");
+  if (topTabs.style.display === "none") {
+    topTabs.style.display = "";
+    document.getElementById("toggleTopChatTabsBtn").textContent = "Hide chat tabs bar";
+  } else {
+    topTabs.style.display = "none";
+    document.getElementById("toggleTopChatTabsBtn").textContent = "Show chat tabs bar";
+  }
+});
+
 document.getElementById("createSterlingChatBtn").addEventListener("click", async () => {
   try {
     const resp = await fetch("/api/createSterlingChat", {
