@@ -1342,7 +1342,7 @@ function showFileTreePanel(){
  * Recursively render the file tree structure, with expand/collapse
  * directories and checkboxes for files.
  */
-function createTreeNode(node) {
+function createTreeNode(node, repoName, chatNumber) {
   const li = document.createElement("li");
 
   if(node.type === "directory") {
@@ -1372,7 +1372,7 @@ function createTreeNode(node) {
 
     if(Array.isArray(node.children)){
       node.children.forEach(child => {
-        ul.appendChild(createTreeNode(child));
+        ul.appendChild(createTreeNode(child, repoName, chatNumber));
       });
     }
 
@@ -1385,6 +1385,20 @@ function createTreeNode(node) {
     const label = document.createElement("span");
     label.textContent = " " + node.name;
     li.appendChild(label);
+
+    cb.addEventListener("change", async () => {
+      try {
+        const resp = await fetch(`http://localhost:3444/api/${repoName}/chat/${chatNumber}/toggle_attached`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filePath: node.path })
+        });
+        const data = await resp.json();
+        console.log("toggle_attached response:", data);
+      } catch(err) {
+        console.error("Error toggling file attachment:", err);
+      }
+    });
   }
 
   return li;
@@ -1406,7 +1420,7 @@ async function loadFileTree(){
 
     const splitted = urlVal.split("/");
     const chatNumber = splitted.pop();
-    splitted.pop(); 
+    splitted.pop(); // remove "chat"
     const repoName = decodeURIComponent(splitted.pop());
 
     const treeRes = await fetch(`http://localhost:3444/api/listFileTree/${repoName}/${chatNumber}`);
@@ -1423,7 +1437,7 @@ async function loadFileTree(){
     fileTreeContainer.innerHTML = "";
     const rootUl = document.createElement("ul");
     data.tree.children.forEach(childNode => {
-      rootUl.appendChild(createTreeNode(childNode));
+      rootUl.appendChild(createTreeNode(childNode, repoName, chatNumber));
     });
     fileTreeContainer.appendChild(rootUl);
 
@@ -1553,3 +1567,4 @@ navFileTreeBtn.addEventListener("click", showFileTreePanel);
 
   showTasksPanel();
 })();
+
