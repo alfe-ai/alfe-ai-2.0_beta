@@ -17,45 +17,54 @@
 
 <div class="app">
   <aside class="sidebar">
-    <h2 style="font-size:1.2rem; margin-top:0;">Tasks</h2>
-    <p><a href="/activity" target="_blank">Activity timeline</a></p>
-    <p><a href="/test_projects" target="_blank">API test page</a></p>
+    <!-- Navigation bar in the sidebar -->
+    <nav class="sidebar-nav">
+      <button id="navTasksBtn" class="nav-button active">Tasks</button>
+      <button id="navUploaderBtn" class="nav-button">Uploader</button>
+    </nav>
 
-    <details id="toolbarCollapsible" open>
-      <summary>Toolbar & Filters</summary>
-      <div id="controls">
-        <label><input type="checkbox" id="showHidden" /> Show hidden tasks</label>
-        <label style="margin-left:1rem;">Project:
-          <select id="projectFilter"><option value="">All projects</option></select>
-        </label>
-        <label style="margin-left:1rem;">Sprint:
-          <select id="sprintFilter"><option value="">All sprints</option></select>
-        </label>
-        <button id="addTaskBtn" style="margin-top:4px;">➕ New Task</button>
-        <button id="instrBtn" title="Agent instructions">📝</button>
-        <button id="gearBtn" title="Configure columns">⚙️</button>
-        <button id="defaultsBtn" title="Default project/sprint">⭐</button>
-        <button id="repoBtn" title="Edit Git repository">🔀</button>
-        <button id="projConfigBtn" title="Configure Projects">Configure Projects</button>
-        <button id="toggleTasksBtn">Hide tasks</button>
-        <button id="toggleSidebarBtn">Hide sidebar</button>
-      </div>
-    </details>
+    <!-- Tasks view panel -->
+    <div id="sidebarViewTasks">
+      <h2 style="font-size:1.2rem; margin-top:0;">Tasks</h2>
+      <p><a href="/activity" target="_blank">Activity timeline</a></p>
+      <p><a href="/test_projects" target="_blank">API test page</a></p>
 
-    <table id="tasks">
-      <thead><tr id="headerRow"></tr></thead>
-      <tbody></tbody>
-    </table>
+      <details id="toolbarCollapsible" open>
+        <summary>Toolbar & Filters</summary>
+        <div id="controls">
+          <label><input type="checkbox" id="showHidden" /> Show hidden tasks</label>
+          <label style="margin-left:1rem;">Project:
+            <select id="projectFilter"><option value="">All projects</option></select>
+          </label>
+          <label style="margin-left:1rem;">Sprint:
+            <select id="sprintFilter"><option value="">All sprints</option></select>
+          </label>
+          <button id="addTaskBtn" style="margin-top:4px;">➕ New Task</button>
+          <button id="instrBtn" title="Agent instructions">📝</button>
+          <button id="gearBtn" title="Configure columns">⚙️</button>
+          <button id="defaultsBtn" title="Default project/sprint">⭐</button>
+          <button id="repoBtn" title="Edit Git repository">🔀</button>
+          <button id="projConfigBtn" title="Configure Projects">Configure Projects</button>
+          <button id="toggleTasksBtn">Hide tasks</button>
+          <button id="toggleSidebarBtn">Hide sidebar</button>
+        </div>
+      </details>
 
-    <hr/>
-    <section class="secure-uploader">
+      <table id="tasks">
+        <thead><tr id="headerRow"></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <!-- Uploader view panel (hidden by default) -->
+    <div id="sidebarViewUploader" style="display:none;">
       <h2>Secure File Uploader</h2>
       <form id="secureUploadForm" enctype="multipart/form-data" method="POST">
         <input type="file" id="fileInput"/>
         <button type="submit">Upload</button>
       </form>
       <ul id="secureFilesList"></ul>
-    </section>
+    </div>
   </aside>
 
   <div id="divider" class="divider"></div>

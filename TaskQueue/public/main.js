@@ -525,7 +525,7 @@ $("#addTaskBtn").addEventListener("click",()=>{
 });
 $("#createTaskBtn").addEventListener("click", async ()=>{
   const title=$("#newTaskTitle").value.trim(),
-        body=$("#newTaskBody").value.trim();
+      body=$("#newTaskBody").value.trim();
   if(!title){
     alert("Please enter a title for the new task.");
     return;
@@ -1206,6 +1206,47 @@ $("#secureUploadForm").addEventListener("submit", async e => {
   }
 });
 
+document.addEventListener("click", async (ev) => {
+  const cell = ev.target;
+  if (!cell.classList.contains("project-rename-cell")) return;
+  const oldName = cell.dataset.oldproj;
+  function inlineEdit(newEl, saveCb){
+    const original = cell.textContent;
+    cell.textContent = "";
+    cell.appendChild(newEl);
+    newEl.focus();
+    newEl.addEventListener("change", async ()=>{
+      await saveCb(newEl.value);
+    });
+    newEl.addEventListener("blur", ()=>{
+      renderProjectsTable();
+    });
+  }
+  const input = document.createElement("input");
+  input.type = "text";
+  input.value = oldName;
+  inlineEdit(input, async (val) => {
+    const newName = val.trim();
+    if (!newName || newName === oldName) {
+      cell.textContent = oldName;
+      return;
+    }
+    const resp = await fetch("/api/projects/rename", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ oldProject: oldName, newProject: newName })
+    });
+    if (!resp.ok){
+      alert("Error renaming project");
+      cell.textContent = oldName;
+      return;
+    }
+    cell.textContent = newName;
+    cell.dataset.oldproj = newName;
+    await renderProjectsTable();
+  });
+});
+
 async function openProjectsModal(){
   showModal($("#projectsModal"));
   await renderProjectsTable();
@@ -1270,47 +1311,6 @@ $("#projConfigBtn").addEventListener("click", openProjectsModal);
 $("#projectsSaveBtn").addEventListener("click", saveProjectBranches);
 $("#projectsCancelBtn").addEventListener("click", ()=>hideModal($("#projectsModal")));
 
-document.addEventListener("click", async (ev) => {
-  const cell = ev.target;
-  if (!cell.classList.contains("project-rename-cell")) return;
-  const oldName = cell.dataset.oldproj;
-  function inlineEdit(newEl, saveCb){
-    const original = cell.textContent;
-    cell.textContent = "";
-    cell.appendChild(newEl);
-    newEl.focus();
-    newEl.addEventListener("change", async ()=>{
-      await saveCb(newEl.value);
-    });
-    newEl.addEventListener("blur", ()=>{
-      renderProjectsTable();
-    });
-  }
-  const input = document.createElement("input");
-  input.type = "text";
-  input.value = oldName;
-  inlineEdit(input, async (val) => {
-    const newName = val.trim();
-    if (!newName || newName === oldName) {
-      cell.textContent = oldName;
-      return;
-    }
-    const resp = await fetch("/api/projects/rename", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ oldProject: oldName, newProject: newName })
-    });
-    if (!resp.ok){
-      alert("Error renaming project");
-      cell.textContent = oldName;
-      return;
-    }
-    cell.textContent = newName;
-    cell.dataset.oldproj = newName;
-    await renderProjectsTable();
-  });
-});
-
 document.getElementById("showFileTreeBtn").addEventListener("click", async () => {
   const fileTreeModal = $("#fileTreeModal");
   const output = $("#fileTreeOutput");
@@ -1335,7 +1335,6 @@ document.getElementById("showFileTreeBtn").addEventListener("click", async () =>
     const splitted = urlVal.split("/");
     const chatNumber = splitted.pop();
     splitted.pop(); // remove "chat"
-    //const repoName = decodeURIComponent(splitted.pop()).replace("aurora_working-", "");
     const repoName = decodeURIComponent(splitted.pop());
 
     // fetch file tree
@@ -1359,6 +1358,30 @@ document.getElementById("showFileTreeBtn").addEventListener("click", async () =>
 document.getElementById("fileTreeCloseBtn").addEventListener("click", () => {
   hideModal($("#fileTreeModal"));
 });
+
+/**
+ * Sidebar nav toggling
+ */
+const tasksPanel = document.getElementById("sidebarViewTasks");
+const uploaderPanel = document.getElementById("sidebarViewUploader");
+const btnTasks = document.getElementById("navTasksBtn");
+const btnUploader = document.getElementById("navUploaderBtn");
+
+function showTasksPanel(){
+  tasksPanel.style.display = "";
+  uploaderPanel.style.display = "none";
+  btnTasks.classList.add("active");
+  btnUploader.classList.remove("active");
+}
+function showUploaderPanel(){
+  tasksPanel.style.display = "none";
+  uploaderPanel.style.display = "";
+  btnUploader.classList.add("active");
+  btnTasks.classList.remove("active");
+}
+
+btnTasks.addEventListener("click", showTasksPanel);
+btnUploader.addEventListener("click", showUploaderPanel);
 
 (async function init(){
   await loadSettings();
@@ -1462,11 +1485,14 @@ document.getElementById("fileTreeCloseBtn").addEventListener("click", () => {
       const { value } = await r.json();
       if(value){
         document.getElementById("sterlingUrlLabel").innerHTML =
-          'Sterling chat: <a href="' + value + '" target="_blank">' + value + '</a>';
+            'Sterling chat: <a href="' + value + '" target="_blank">' + value + '</a>';
       }
     }
   } catch(e){
     console.error("Error fetching sterling_chat_url:", e);
   }
   toggleSterlingUrlVisibility(sterlingChatUrlVisible);
+
+  // Default to showing tasks panel
+  showTasksPanel();
 })();
