@@ -597,6 +597,7 @@ async function renameTab(tabId){
   if(r.ok){
     await loadTabs();
     renderTabs();
+    renderSidebarTabs();
   }
 }
 async function deleteTab(tabId){
@@ -610,6 +611,7 @@ async function deleteTab(tabId){
       currentTabId=1;
     }
     renderTabs();
+    renderSidebarTabs();
     await loadChatHistory(currentTabId);
   }
 }
@@ -617,6 +619,7 @@ function selectTab(tabId){
   currentTabId = tabId;
   loadChatHistory(tabId);
   renderTabs();
+  renderSidebarTabs();
 }
 function renderTabs(){
   const tc = $("#tabsContainer");
@@ -650,7 +653,29 @@ function renderTabs(){
     tc.appendChild(tabBtn);
   });
 }
-$("#newTabBtn").addEventListener("click", addNewTab);
+
+// New function to render vertical chat tabs in sidebar
+function renderSidebarTabs(){
+  const container = document.getElementById("verticalTabsContainer");
+  container.innerHTML="";
+  chatTabs.forEach(tab=>{
+    const b = document.createElement("button");
+    b.textContent = tab.name;
+    if(tab.id===currentTabId){
+      b.classList.add("active");
+    }
+    b.addEventListener("click", ()=>selectTab(tab.id));
+    b.addEventListener("contextmenu", e=>{
+      e.preventDefault();
+      const choice=prompt("Type 'rename' or 'delete':","");
+      if(choice==="rename") renameTab(tab.id);
+      else if(choice==="delete") deleteTab(tab.id);
+    });
+    container.appendChild(b);
+  });
+}
+
+document.getElementById("newSideTabBtn").addEventListener("click", addNewTab);
 
 document.getElementById("createSterlingChatBtn").addEventListener("click", async () => {
   try {
@@ -1308,34 +1333,53 @@ const navFileTreeBtn = document.getElementById("navFileTreeBtn");
 const sidebarViewFileTree = document.getElementById("sidebarViewFileTree");
 const sidebarViewTasks = document.getElementById("sidebarViewTasks");
 const sidebarViewUploader = document.getElementById("sidebarViewUploader");
+const sidebarViewChatTabs = document.getElementById("sidebarViewChatTabs");
 const fileTreeContainer = document.getElementById("fileTreeContainer");
 
 function showTasksPanel(){
   sidebarViewTasks.style.display = "";
   sidebarViewUploader.style.display = "none";
   sidebarViewFileTree.style.display = "none";
+  sidebarViewChatTabs.style.display = "none";
   $("#navTasksBtn").classList.add("active");
   $("#navUploaderBtn").classList.remove("active");
   $("#navFileTreeBtn").classList.remove("active");
+  $("#navChatTabsBtn").classList.remove("active");
 }
 
 function showUploaderPanel(){
   sidebarViewTasks.style.display = "none";
   sidebarViewUploader.style.display = "";
   sidebarViewFileTree.style.display = "none";
+  sidebarViewChatTabs.style.display = "none";
   $("#navTasksBtn").classList.remove("active");
   $("#navUploaderBtn").classList.add("active");
   $("#navFileTreeBtn").classList.remove("active");
+  $("#navChatTabsBtn").classList.remove("active");
 }
 
 function showFileTreePanel(){
   sidebarViewTasks.style.display = "none";
   sidebarViewUploader.style.display = "none";
   sidebarViewFileTree.style.display = "";
+  sidebarViewChatTabs.style.display = "none";
   $("#navTasksBtn").classList.remove("active");
   $("#navUploaderBtn").classList.remove("active");
   $("#navFileTreeBtn").classList.add("active");
+  $("#navChatTabsBtn").classList.remove("active");
   loadFileTree();
+}
+
+function showChatTabsPanel(){
+  sidebarViewTasks.style.display = "none";
+  sidebarViewUploader.style.display = "none";
+  sidebarViewFileTree.style.display = "none";
+  sidebarViewChatTabs.style.display = "";
+  $("#navTasksBtn").classList.remove("active");
+  $("#navUploaderBtn").classList.remove("active");
+  $("#navFileTreeBtn").classList.remove("active");
+  $("#navChatTabsBtn").classList.add("active");
+  renderSidebarTabs();
 }
 
 /**
@@ -1454,10 +1498,12 @@ async function loadFileTree(){
  */
 const btnTasks = document.getElementById("navTasksBtn");
 const btnUploader = document.getElementById("navUploaderBtn");
+const btnChatTabs = document.getElementById("navChatTabsBtn");
 
 btnTasks.addEventListener("click", showTasksPanel);
 btnUploader.addEventListener("click", showUploaderPanel);
 navFileTreeBtn.addEventListener("click", showFileTreePanel);
+btnChatTabs.addEventListener("click", showChatTabsPanel);
 
 (async function init(){
   await loadSettings();
@@ -1487,6 +1533,7 @@ navFileTreeBtn.addEventListener("click", showFileTreePanel);
     currentTabId = chatTabs[0].id;
   }
   renderTabs();
+  renderSidebarTabs();
   await loadChatHistory(currentTabId);
 
   try {

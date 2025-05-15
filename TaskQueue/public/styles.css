@@ -386,3 +386,28 @@ body {
   color: #aaa;
   margin-top: 10px;
 }
+
+/* Additional styling for the new Chat Tabs sidebar panel */
+#sidebarViewChatTabs {
+  margin-top: 1rem;
+}
+
+#verticalTabsContainer button {
+  display: inline-flex;
+  background-color: #333;
+  border: 1px solid #444;
+  color: #ddd;
+  padding: 4px 6px;
+  cursor: pointer;
+  align-items: center;
+  text-align: left;
+  width: 100%;
+  border-radius: 2px;
+}
+
+#verticalTabsContainer button.active {
+  background-color: #555;
+  border-color: #aaa;
+  color: #fff;
+}
+

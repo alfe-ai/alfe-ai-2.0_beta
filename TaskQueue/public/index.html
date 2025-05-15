@@ -22,6 +22,7 @@
       <button id="navTasksBtn" class="nav-button active">Tasks</button>
       <button id="navUploaderBtn" class="nav-button">Uploader</button>
       <button id="navFileTreeBtn" class="nav-button">File Tree</button>
+      <button id="navChatTabsBtn" class="nav-button">Chat Tabs</button>
       <button id="toggleSidebarBtn" class="nav-button">Hide sidebar</button>
     </nav>
 
@@ -72,6 +73,13 @@
       <h2>Sterling File Tree</h2>
       <p>Expand or collapse directories. Select files with checkboxes.</p>
       <div id="fileTreeContainer" style="margin-top:1rem; max-height:60vh; overflow:auto;"></div>
+    </div>
+
+    <!-- New Chat Tabs view panel -->
+    <div id="sidebarViewChatTabs" style="display:none;">
+      <h2>Chat Tabs</h2>
+      <div id="verticalTabsContainer" style="display:flex;flex-direction:column;gap:4px;"></div>
+      <button id="newSideTabBtn">➕ Tab</button>
     </div>
   </aside>
 
