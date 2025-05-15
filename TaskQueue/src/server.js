@@ -683,13 +683,16 @@ app.post("/api/createSterlingChat", async (req, res) => {
 
     console.log('=== Test run completed. ===');
 
+    const sterlingUrl = `http://localhost:3444/${encodeURIComponent(projectName)}/chat/${createChatResponse.data.newChatNumber}`;
+    db.setSetting("sterling_chat_url", sterlingUrl);
+
     // Provide a Sterling chat URL in the response
     res.json({
       success: true,
       message: "Sterling chat created.",
       repoName: projectName,
       newChatNumber: createChatResponse.data.newChatNumber,
-      sterlingUrl: `http://localhost:3444/${encodeURIComponent(projectName)}/chat/${createChatResponse.data.newChatNumber}`
+      sterlingUrl
     });
   } catch (error) {
     console.error('Error during API tests:', error.message);
@@ -718,3 +721,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
+

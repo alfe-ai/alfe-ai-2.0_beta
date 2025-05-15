@@ -1383,4 +1383,18 @@ document.addEventListener("click", async (ev) => {
 
   await chatSettingsSaveFlow();
   await updateProjectInfo();
+
+  // NEW: Load Sterling chat URL from settings if present
+  try {
+    const r = await fetch("/api/settings/sterling_chat_url");
+    if(r.ok){
+      const { value } = await r.json();
+      if(value){
+        document.getElementById("sterlingUrlLabel").innerHTML =
+          'Sterling chat: <a href="' + value + '" target="_blank">' + value + '</a>';
+      }
+    }
+  } catch(e){
+    console.error("Error fetching sterling_chat_url:", e);
+  }
 })();
