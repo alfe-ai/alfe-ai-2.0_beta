@@ -524,7 +524,7 @@ $("#addTaskBtn").addEventListener("click",()=>{
 });
 $("#createTaskBtn").addEventListener("click", async ()=>{
   const title=$("#newTaskTitle").value.trim(),
-      body=$("#newTaskBody").value.trim();
+        body=$("#newTaskBody").value.trim();
   if(!title){
     alert("Please enter a title for the new task.");
     return;
@@ -1189,6 +1189,7 @@ async function openProjectsModal(){
   await renderProjectsTable();
 }
 
+// Updated to display both tasks-based projects and branches from DB
 async function renderProjectsTable(){
   const tblBody = $("#projectsTable tbody");
   tblBody.innerHTML = "";
@@ -1197,14 +1198,23 @@ async function renderProjectsTable(){
     fetch("/api/projects").then(r=>r.json()),
     fetch("/api/projectBranches").then(r=>r.json())
   ]);
+
   const branchMap = {};
   branches.forEach(b => { branchMap[b.project] = b.base_branch; });
 
-  projects.forEach((p) => {
+  // Gather all project names from tasks + branch table
+  const projNamesSet = new Set();
+  projects.forEach(p => projNamesSet.add(p.project));
+  branches.forEach(b => projNamesSet.add(b.project));
+  const allProjectNames = [...projNamesSet].sort();
+
+  allProjectNames.forEach(projectName => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td class="project-rename-cell" style="border:1px solid #444; padding:2px 4px;" data-oldproj="${p.project}">${p.project}</td>
-      <td style="border:1px solid #444; padding:2px 4px;"><input type="text" data-proj="${p.project}" class="projBranchInput" style="width:95%;"></td>
+      <td class="project-rename-cell" style="border:1px solid #444; padding:2px 4px;" data-oldproj="${projectName}">${projectName}</td>
+      <td style="border:1px solid #444; padding:2px 4px;">
+        <input type="text" data-proj="${projectName}" class="projBranchInput" style="width:95%;" />
+      </td>
       <td style="border:1px solid #444; padding:2px 4px;"></td>
     `;
     tblBody.appendChild(tr);
