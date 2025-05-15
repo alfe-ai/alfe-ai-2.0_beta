@@ -1387,14 +1387,16 @@ function createTreeNode(node, repoName, chatNumber) {
     li.appendChild(label);
 
     cb.addEventListener("change", async () => {
+      console.debug(`[FileTree Debug] Checkbox changed for: ${node.path}, new checked state: ${cb.checked}`);
       try {
+        console.debug(`[FileTree Debug] Sending POST to toggle attachment for file: ${node.path}`);
         const resp = await fetch(`http://localhost:3444/api/${repoName}/chat/${chatNumber}/toggle_attached`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ filePath: node.path })
         });
         const data = await resp.json();
-        console.log("toggle_attached response:", data);
+        console.debug("[FileTree Debug] toggle_attached response:", data);
       } catch(err) {
         console.error("Error toggling file attachment:", err);
       }
@@ -1567,4 +1569,3 @@ navFileTreeBtn.addEventListener("click", showFileTreePanel);
 
   showTasksPanel();
 })();
-
