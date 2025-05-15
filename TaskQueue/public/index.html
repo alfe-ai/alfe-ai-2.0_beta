@@ -23,6 +23,7 @@
       <button id="navUploaderBtn" class="nav-button">Uploader</button>
       <button id="navFileTreeBtn" class="nav-button">File Tree</button>
       <button id="navChatTabsBtn" class="nav-button">Chat Tabs</button>
+      <button id="navActivityIframeBtn" class="nav-button">Activity IFrame</button>
       <button id="toggleSidebarBtn" class="nav-button">Hide sidebar</button>
     </nav>
 
@@ -80,6 +81,12 @@
       <h2>Chat Tabs</h2>
       <div id="verticalTabsContainer" style="display:flex;flex-direction:column;gap:4px;"></div>
       <button id="newSideTabBtn">➕ Tab</button>
+    </div>
+
+    <!-- New Activity IFrame panel -->
+    <div id="sidebarViewActivityIframe" style="display:none;">
+      <h2>Activity IFrame</h2>
+      <iframe src="http://localhost:3000/activity" style="width:100%; height:800px; border:none;"></iframe>
     </div>
   </aside>
 

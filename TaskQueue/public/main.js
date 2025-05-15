@@ -1334,6 +1334,7 @@ const sidebarViewFileTree = document.getElementById("sidebarViewFileTree");
 const sidebarViewTasks = document.getElementById("sidebarViewTasks");
 const sidebarViewUploader = document.getElementById("sidebarViewUploader");
 const sidebarViewChatTabs = document.getElementById("sidebarViewChatTabs");
+const sidebarViewActivityIframe = document.getElementById("sidebarViewActivityIframe");
 const fileTreeContainer = document.getElementById("fileTreeContainer");
 
 function showTasksPanel(){
@@ -1341,10 +1342,12 @@ function showTasksPanel(){
   sidebarViewUploader.style.display = "none";
   sidebarViewFileTree.style.display = "none";
   sidebarViewChatTabs.style.display = "none";
+  sidebarViewActivityIframe.style.display = "none";
   $("#navTasksBtn").classList.add("active");
   $("#navUploaderBtn").classList.remove("active");
   $("#navFileTreeBtn").classList.remove("active");
   $("#navChatTabsBtn").classList.remove("active");
+  $("#navActivityIframeBtn").classList.remove("active");
 }
 
 function showUploaderPanel(){
@@ -1352,10 +1355,12 @@ function showUploaderPanel(){
   sidebarViewUploader.style.display = "";
   sidebarViewFileTree.style.display = "none";
   sidebarViewChatTabs.style.display = "none";
+  sidebarViewActivityIframe.style.display = "none";
   $("#navTasksBtn").classList.remove("active");
   $("#navUploaderBtn").classList.add("active");
   $("#navFileTreeBtn").classList.remove("active");
   $("#navChatTabsBtn").classList.remove("active");
+  $("#navActivityIframeBtn").classList.remove("active");
 }
 
 function showFileTreePanel(){
@@ -1363,10 +1368,12 @@ function showFileTreePanel(){
   sidebarViewUploader.style.display = "none";
   sidebarViewFileTree.style.display = "";
   sidebarViewChatTabs.style.display = "none";
+  sidebarViewActivityIframe.style.display = "none";
   $("#navTasksBtn").classList.remove("active");
   $("#navUploaderBtn").classList.remove("active");
   $("#navFileTreeBtn").classList.add("active");
   $("#navChatTabsBtn").classList.remove("active");
+  $("#navActivityIframeBtn").classList.remove("active");
   loadFileTree();
 }
 
@@ -1375,11 +1382,26 @@ function showChatTabsPanel(){
   sidebarViewUploader.style.display = "none";
   sidebarViewFileTree.style.display = "none";
   sidebarViewChatTabs.style.display = "";
+  sidebarViewActivityIframe.style.display = "none";
   $("#navTasksBtn").classList.remove("active");
   $("#navUploaderBtn").classList.remove("active");
   $("#navFileTreeBtn").classList.remove("active");
   $("#navChatTabsBtn").classList.add("active");
+  $("#navActivityIframeBtn").classList.remove("active");
   renderSidebarTabs();
+}
+
+function showActivityIframePanel(){
+  sidebarViewTasks.style.display = "none";
+  sidebarViewUploader.style.display = "none";
+  sidebarViewFileTree.style.display = "none";
+  sidebarViewChatTabs.style.display = "none";
+  sidebarViewActivityIframe.style.display = "";
+  $("#navTasksBtn").classList.remove("active");
+  $("#navUploaderBtn").classList.remove("active");
+  $("#navFileTreeBtn").classList.remove("active");
+  $("#navChatTabsBtn").classList.remove("active");
+  $("#navActivityIframeBtn").classList.add("active");
 }
 
 /**
@@ -1499,11 +1521,13 @@ async function loadFileTree(){
 const btnTasks = document.getElementById("navTasksBtn");
 const btnUploader = document.getElementById("navUploaderBtn");
 const btnChatTabs = document.getElementById("navChatTabsBtn");
+const btnActivityIframe = document.getElementById("navActivityIframeBtn");
 
 btnTasks.addEventListener("click", showTasksPanel);
 btnUploader.addEventListener("click", showUploaderPanel);
 navFileTreeBtn.addEventListener("click", showFileTreePanel);
 btnChatTabs.addEventListener("click", showChatTabsPanel);
+btnActivityIframe.addEventListener("click", showActivityIframePanel);
 
 (async function init(){
   await loadSettings();
