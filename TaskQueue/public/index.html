@@ -17,14 +17,37 @@
 
 <div class="app">
   <aside class="sidebar">
-    <!-- Navigation bar in the sidebar -->
-    <nav class="sidebar-nav">
-      <button id="navTasksBtn" class="nav-button active">Tasks</button>
-      <button id="navUploaderBtn" class="nav-button">Uploader</button>
-      <button id="navFileTreeBtn" class="nav-button">File Tree</button>
-      <button id="navChatTabsBtn" class="nav-button">Chat Tabs</button>
-      <button id="navActivityIframeBtn" class="nav-button">Activity IFrame</button>
-      <button id="toggleSidebarBtn" class="nav-button">Hide sidebar</button>
+    <!-- Tree-style menu with sections -->
+    <nav class="tree-menu">
+      <ul>
+        <li>
+          <details open>
+            <summary>Project Tools</summary>
+            <ul>
+              <li><button id="navTasksBtn" class="tree-button active">Tasks</button></li>
+              <li><button id="navUploaderBtn" class="tree-button">Uploader</button></li>
+              <li><button id="navFileTreeBtn" class="tree-button">File Tree</button></li>
+            </ul>
+          </details>
+        </li>
+        <li>
+          <details>
+            <summary>Collaboration</summary>
+            <ul>
+              <li><button id="navChatTabsBtn" class="tree-button">Chat Tabs</button></li>
+              <li><button id="navActivityIframeBtn" class="tree-button">Activity IFrame</button></li>
+            </ul>
+          </details>
+        </li>
+        <li>
+          <details>
+            <summary>Options</summary>
+            <ul>
+              <li><button id="toggleSidebarBtn" class="tree-button">Hide sidebar</button></li>
+            </ul>
+          </details>
+        </li>
+      </ul>
     </nav>
 
     <!-- Tasks view panel -->
