@@ -1313,7 +1313,8 @@ document.getElementById("showFileTreeBtn").addEventListener("click", async () =>
     const splitted = urlVal.split("/");
     const chatNumber = splitted.pop();
     splitted.pop(); // remove "chat"
-    const repoName = decodeURIComponent(splitted.pop()).replace("aurora_working-", "");
+    //const repoName = decodeURIComponent(splitted.pop()).replace("aurora_working-", "");
+    const repoName = decodeURIComponent(splitted.pop());
 
     // fetch file tree
     const treeRes = await fetch(`http://localhost:3444/api/listFileTree/${repoName}/${chatNumber}`);
