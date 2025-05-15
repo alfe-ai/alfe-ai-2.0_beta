@@ -1379,6 +1379,7 @@ function createTreeNode(node, repoName, chatNumber) {
   } else {
     const cb = document.createElement("input");
     cb.type = "checkbox";
+    cb.id = `checkbox_${node.path}`;
     cb.checked = !!node.isAttached;
     li.appendChild(cb);
 
