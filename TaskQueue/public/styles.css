@@ -248,6 +248,7 @@ body {
   white-space: pre-wrap;       /* Allows multiline wrapping */
   word-wrap: break-word;       /* Helps break long words */
   overflow-wrap: break-word;   /* Additional safety for older browsers */
+  font-family: monospace;      /* Changed to monospaced */
 }
 
 /* AI bubble: displayed on the left side */
@@ -263,6 +264,7 @@ body {
   white-space: pre-wrap;
   word-wrap: break-word;
   overflow-wrap: break-word;
+  font-family: monospace;      /* Changed to monospaced */
 }
 
 /* Additional details styling */
