@@ -100,6 +100,13 @@
   </div>
 
   <main class="chat-panel">
+    <!-- flyUI panel + divider -->
+    <div id="flyUIPanel" style="display:none;">
+      <h3 style="margin:0; padding:4px;">flyUI Panel</h3>
+      <div>(blank for now)</div>
+    </div>
+    <div id="flyUIDivider" class="fly-divider" style="display:none;"></div>
+
     <div id="chatTabs">
       <div id="tabsContainer" style="flex-wrap: wrap; display: flex; gap: 0.5rem;"></div>
       <button id="newTabBtn">➕ Tab</button>
@@ -216,6 +223,9 @@
     <label><input type="checkbox" id="subbubbleTokenCheck" checked/> Show token usage on each subbubble</label>
     <br/>
     <label><input type="checkbox" id="sterlingUrlCheck"/> Show Sterling chat URL</label>
+    <br/>
+    <label><input type="checkbox" id="showFlyPanelCheck"/> Show flyUI panel</label>
+
     <div class="modal-buttons">
       <button id="chatSettingsSaveBtn">Save</button>
       <button id="chatSettingsCancelBtn">Cancel</button>

@@ -20,6 +20,7 @@ let chatHideMetadata = false;
 let chatTabAutoNaming = false;
 let showSubbubbleToken = false;
 let sterlingChatUrlVisible = true;
+let chatShowFlyPanel = false;
 window.agentName = "Alfe";
 
 const defaultFavicon = "alfe_favicon_clean_64x64.ico";
@@ -1107,11 +1108,17 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
     const { value } = await r4.json();
     sterlingChatUrlVisible = value !== false;
   }
+  const r5 = await fetch("/api/settings/chat_show_fly_panel");
+  if(r5.ok){
+    const { value } = await r5.json();
+    chatShowFlyPanel = !!value;
+  }
 
   $("#hideMetadataCheck").checked = chatHideMetadata;
   $("#autoNamingCheck").checked = chatTabAutoNaming;
   $("#subbubbleTokenCheck").checked = showSubbubbleToken;
   $("#sterlingUrlCheck").checked = sterlingChatUrlVisible;
+  $("#showFlyPanelCheck").checked = chatShowFlyPanel;
 
   showModal($("#chatSettingsModal"));
 });
@@ -1121,15 +1128,18 @@ async function chatSettingsSaveFlow() {
   chatTabAutoNaming = $("#autoNamingCheck").checked;
   showSubbubbleToken = $("#subbubbleTokenCheck").checked;
   sterlingChatUrlVisible = $("#sterlingUrlCheck").checked;
+  chatShowFlyPanel = $("#showFlyPanelCheck").checked;
 
   await setSetting("chat_hide_metadata", chatHideMetadata);
   await setSetting("chat_tab_auto_naming", chatTabAutoNaming);
   await setSetting("show_subbubble_token_count", showSubbubbleToken);
   await setSetting("sterling_chat_url_visible", sterlingChatUrlVisible);
+  await setSetting("chat_show_fly_panel", chatShowFlyPanel);
 
   hideModal($("#chatSettingsModal"));
   await loadChatHistory(currentTabId);
   toggleSterlingUrlVisibility(sterlingChatUrlVisible);
+  toggleFlyPanelVisibility(chatShowFlyPanel);
 }
 
 $("#chatSettingsSaveBtn").addEventListener("click", chatSettingsSaveFlow);
@@ -1144,6 +1154,21 @@ function toggleSterlingUrlVisibility(visible) {
   el.style.display = visible ? "inline" : "none";
 }
 
+function toggleFlyPanelVisibility(visible){
+  const panel = $("#flyUIPanel");
+  const divider = $("#flyUIDivider");
+  if(visible){
+    panel.style.display = "";
+    divider.style.display = "";
+  } else {
+    panel.style.display = "none";
+    divider.style.display = "none";
+  }
+}
+
+/**
+ * Horizontal divider for sidebar
+ */
 (function installDividerDrag(){
   const divider = $("#divider");
   let isDragging = false;
@@ -1181,6 +1206,43 @@ function toggleSterlingUrlVisibility(visible) {
     }
     isDragging = false;
     document.body.style.userSelect = "";
+  });
+})();
+
+/**
+ * Vertical divider for flyUI panel
+ */
+(function installFlyDividerDrag(){
+  const divider = $("#flyUIDivider");
+  let isDragging = false;
+  let startY = 0;
+  let startHeight = 0;
+  let finalHeight = 0;
+
+  divider.addEventListener("mousedown", e => {
+    if(divider.style.display==="none") return;
+    e.preventDefault();
+    isDragging = true;
+    startY = e.clientY;
+    startHeight = $("#flyUIPanel").offsetHeight;
+    finalHeight = startHeight;
+    document.body.style.userSelect = "none";
+  });
+
+  document.addEventListener("mousemove", e => {
+    if(!isDragging) return;
+    const dy = e.clientY - startY;
+    const newHeight = startHeight + dy;
+    if(newHeight >= 40 && newHeight <= 600){
+      $("#flyUIPanel").style.height = newHeight + "px";
+      finalHeight = newHeight;
+    }
+  });
+
+  document.addEventListener("mouseup", async () => {
+    isDragging = false;
+    document.body.style.userSelect = "";
+    await setSetting("fly_panel_height", finalHeight);
   });
 })();
 
@@ -1341,9 +1403,7 @@ $("#projConfigBtn").addEventListener("click", openProjectsModal);
 $("#projectsSaveBtn").addEventListener("click", saveProjectBranches);
 $("#projectsCancelBtn").addEventListener("click", ()=>hideModal($("#projectsModal")));
 
-/* ====================== */
-/* --- New File Tree ---- */
-/* ====================== */
+/* Navigation among sidebar panels */
 const navFileTreeBtn = document.getElementById("navFileTreeBtn");
 const sidebarViewFileTree = document.getElementById("sidebarViewFileTree");
 const sidebarViewTasks = document.getElementById("sidebarViewTasks");
@@ -1424,9 +1484,14 @@ function showActivityIframePanel(){
   setSetting("last_sidebar_view", "activity");
 }
 
+btnTasks.addEventListener("click", showTasksPanel);
+btnUploader.addEventListener("click", showUploaderPanel);
+navFileTreeBtn.addEventListener("click", showFileTreePanel);
+btnChatTabs.addEventListener("click", showChatTabsPanel);
+btnActivityIframe.addEventListener("click", showActivityIframePanel);
+
 /**
- * Recursively render the file tree structure, with expand/collapse
- * directories and checkboxes for files.
+ * Recursively render the file tree structure
  */
 function createTreeNode(node, repoName, chatNumber) {
   const li = document.createElement("li");
@@ -1535,20 +1600,6 @@ async function loadFileTree(){
   }
 }
 
-/**
- * Sidebar nav toggling
- */
-const btnTasks = document.getElementById("navTasksBtn");
-const btnUploader = document.getElementById("navUploaderBtn");
-const btnChatTabs = document.getElementById("navChatTabsBtn");
-const btnActivityIframe = document.getElementById("navActivityIframeBtn");
-
-btnTasks.addEventListener("click", showTasksPanel);
-btnUploader.addEventListener("click", showUploaderPanel);
-navFileTreeBtn.addEventListener("click", showFileTreePanel);
-btnChatTabs.addEventListener("click", showChatTabsPanel);
-btnActivityIframe.addEventListener("click", showActivityIframePanel);
-
 (async function init(){
   await loadSettings();
   await populateFilters();
@@ -1566,7 +1617,6 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
 
   await loadTabs();
 
-  // If stored last chat tab is valid, use it. Otherwise fallback.
   const lastChatTab = await getSetting("last_chat_tab");
   if(lastChatTab) {
     const foundTab = chatTabs.find(t => t.id === parseInt(lastChatTab,10));
@@ -1593,7 +1643,7 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     const r2 = await fetch("/api/settings/agent_instructions");
     if(r2.ok){
       const { value } = await r2.json();
-      $("#displayedInstructions").textContent = value || "(none)";
+      $("#displayedInstructions") && ($("#displayedInstructions").textContent = value || "(none)");
       window.agentInstructions = value || "";
     }
   } catch(e){
@@ -1652,7 +1702,6 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
   }
   toggleSterlingUrlVisibility(sterlingChatUrlVisible);
 
-  // On load, open the last known sidebar panel
   let lastView = await getSetting("last_sidebar_view");
   if(!lastView) lastView = "tasks";
   switch(lastView){
@@ -1661,5 +1710,10 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     case "chatTabs": showChatTabsPanel(); break;
     case "activity": showActivityIframePanel(); break;
     default: showTasksPanel(); break;
+  }
+
+  const phR = await getSetting("fly_panel_height");
+  if(phR){
+    $("#flyUIPanel").style.height = phR + "px";
   }
 })();
