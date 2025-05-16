@@ -1,3 +1,4 @@
 #!/bin/bash
 
-./TaskQueue/run_full.sh
+bash -c "cd TaskQueue && ./run_full.sh"
+
