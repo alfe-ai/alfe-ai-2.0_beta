@@ -1113,7 +1113,51 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
   $("#subbubbleTokenCheck").checked = showSubbubbleToken;
   $("#sterlingUrlCheck").checked = sterlingChatUrlVisible;
 
+  // Populate AI service and model selects
+  try {
+    const service = await getSetting("ai_service");
+    const model = await getSetting("ai_model");
+    if(service) $("#aiServiceSelect").value = service;
+    const modelListResp = await fetch("/api/ai/models");
+    if(modelListResp.ok){
+      const modelData = await modelListResp.json();
+      const aiServiceSelect = $("#aiServiceSelect").value;
+      const relevantModels = aiServiceSelect==="openrouter" ? modelData.openrouter : modelData.openai;
+      const aiModelSelect = $("#aiModelSelect");
+      aiModelSelect.innerHTML = "";
+      relevantModels.forEach(m=>{
+        const opt=document.createElement("option");
+        opt.value=m; opt.textContent=m;
+        aiModelSelect.appendChild(opt);
+      });
+      if(model) aiModelSelect.value = model;
+    }
+  } catch(e){
+    console.error("Error populating AI service/model lists:", e);
+  }
+
   showModal($("#chatSettingsModal"));
+});
+
+// React when AI service changes
+$("#aiServiceSelect").addEventListener("change", async ()=>{
+  try {
+    const modelListResp = await fetch("/api/ai/models");
+    if(modelListResp.ok){
+      const modelData = await modelListResp.json();
+      const aiServiceSelect = $("#aiServiceSelect").value;
+      const relevantModels = aiServiceSelect==="openrouter" ? modelData.openrouter : modelData.openai;
+      const aiModelSelect = $("#aiModelSelect");
+      aiModelSelect.innerHTML = "";
+      relevantModels.forEach(m=>{
+        const opt=document.createElement("option");
+        opt.value=m; opt.textContent=m;
+        aiModelSelect.appendChild(opt);
+      });
+    }
+  } catch(e){
+    console.error("Error changing AI service:", e);
+  }
 });
 
 async function chatSettingsSaveFlow() {
@@ -1126,6 +1170,12 @@ async function chatSettingsSaveFlow() {
   await setSetting("chat_tab_auto_naming", chatTabAutoNaming);
   await setSetting("show_subbubble_token_count", showSubbubbleToken);
   await setSetting("sterling_chat_url_visible", sterlingChatUrlVisible);
+
+  // Save AI service & model
+  const serviceSel = $("#aiServiceSelect").value;
+  const modelSel = $("#aiModelSelect").value;
+  await setSetting("ai_service", serviceSel);
+  await setSetting("ai_model", modelSel);
 
   hideModal($("#chatSettingsModal"));
   await loadChatHistory(currentTabId);
@@ -1341,9 +1391,6 @@ $("#projConfigBtn").addEventListener("click", openProjectsModal);
 $("#projectsSaveBtn").addEventListener("click", saveProjectBranches);
 $("#projectsCancelBtn").addEventListener("click", ()=>hideModal($("#projectsModal")));
 
-/* ====================== */
-/* --- New File Tree ---- */
-/* ====================== */
 const navFileTreeBtn = document.getElementById("navFileTreeBtn");
 const sidebarViewFileTree = document.getElementById("sidebarViewFileTree");
 const sidebarViewTasks = document.getElementById("sidebarViewTasks");
@@ -1425,8 +1472,7 @@ function showActivityIframePanel(){
 }
 
 /**
- * Recursively render the file tree structure, with expand/collapse
- * directories and checkboxes for files.
+ * Recursively render the file tree structure
  */
 function createTreeNode(node, repoName, chatNumber) {
   const li = document.createElement("li");
@@ -1566,7 +1612,6 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
 
   await loadTabs();
 
-  // If stored last chat tab is valid, use it. Otherwise fallback.
   const lastChatTab = await getSetting("last_chat_tab");
   if(lastChatTab) {
     const foundTab = chatTabs.find(t => t.id === parseInt(lastChatTab,10));
@@ -1652,7 +1697,6 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
   }
   toggleSterlingUrlVisibility(sterlingChatUrlVisible);
 
-  // On load, open the last known sidebar panel
   let lastView = await getSetting("last_sidebar_view");
   if(!lastView) lastView = "tasks";
   switch(lastView){

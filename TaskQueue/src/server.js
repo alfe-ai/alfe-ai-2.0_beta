@@ -11,7 +11,7 @@ import TaskDB from "./taskDb.js";
 import GitHubClient from "./githubClient.js";
 import multer from "multer";
 
-// Updated OpenAI SDK import and initialization
+// Updated OpenAI SDK import
 import OpenAI from "openai";
 
 // Token counting
@@ -20,9 +20,33 @@ import { encoding_for_model } from "tiktoken";
 // Added axios import to fix require() error:
 import axios from "axios";
 
-const openaiClient = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || ""
-});
+const db = new TaskDB();
+const app = express();
+
+/**
+ * Returns a configured OpenAI client, depending on "ai_service" setting.
+ */
+function getOpenAiClient() {
+  const service = db.getSetting("ai_service") || "openai";
+  const openAiKey = process.env.OPENAI_API_KEY || "";
+  const openRouterKey = process.env.OPENROUTER_API_KEY || "";
+  if (service === "openrouter") {
+    // Use openrouter.ai
+    return new OpenAI({
+      apiKey: openRouterKey,
+      baseURL: "https://openrouter.ai/api/v1",
+      defaultHeaders: {
+        "HTTP-Referer": "Alfe-DevAgent",
+        "X-Title": "Alfe Dev",
+      },
+    });
+  } else {
+    // Default to openai
+    return new OpenAI({
+      apiKey: openAiKey,
+    });
+  }
+}
 
 function getEncoding(modelName) {
   try {
@@ -37,17 +61,14 @@ function countTokens(encoder, text) {
   return encoder.encode(text || "").length;
 }
 
-const db = new TaskDB();
-const app = express();
-
-// Explicit CORS configuration for robust cross-origin handling:
+// Explicit CORS configuration
 app.use(cors({
   origin: "*",
   methods: ["GET","POST","PUT","DELETE","OPTIONS","HEAD"],
   allowedHeaders: ["Content-Type","Authorization","Accept","X-Requested-With","Origin"]
 }));
 
-// Handle preflight requests on all routes
+// Handle preflight requests
 app.options("*", cors({
   origin: "*",
   methods: ["GET","POST","PUT","DELETE","OPTIONS","HEAD"],
@@ -68,10 +89,10 @@ try {
   console.error("[Server Debug] Error creating uploads folder:", err);
 }
 
-// Serve static files from /uploads so they can be opened in the browser
+// Serve static files
 app.use("/uploads", express.static(uploadsDir));
 
-// Multer storage (keep file extension)
+// Multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadsDir),
   filename: (req, file, cb) => {
@@ -115,7 +136,7 @@ app.get("/api/sprints", (req, res) => {
   }
 });
 
-// New: Manage project base branches
+// Manage project base branches
 app.get("/api/projectBranches", (req, res) => {
   try {
     const result = db.listProjectBranches();
@@ -433,7 +454,18 @@ app.get("/api/activity", (req, res) => {
   }
 });
 
-// Updated /api/chat for chunk-splitting logic & token counting
+// New route: GET /api/ai/models
+app.get("/api/ai/models", (req, res) => {
+  // Hard-coded example lists
+  const openaiModels = ["gpt-3.5-turbo", "gpt-4"];
+  const openrouterModels = ["openrouter-gpt-3.5", "openrouter-gpt-4"];
+  res.json({
+    openai: openaiModels,
+    openrouter: openrouterModels
+  });
+});
+
+// Updated /api/chat for chunk-splitting & token counting
 app.post("/api/chat", async (req, res) => {
   try {
     const userMessage = req.body.message || "";
@@ -444,15 +476,17 @@ app.post("/api/chat", async (req, res) => {
       return res.status(400).send("Missing message");
     }
 
-    // Gather entire conversation history
+    // Gather entire conversation
     const priorPairs = db.getAllChatPairs(chatTabId);
-    const model = process.env.OPENAI_MODEL || "o3-mini";
+    let model = db.getSetting("ai_model");
+    if (!model) {
+      model = process.env.OPENAI_MODEL || "o3-mini";
+    }
     const savedInstructions = db.getSetting("agent_instructions") || "";
     const systemContext = `System Context:\n${savedInstructions}\n\nModel: ${model}\nUserTime: ${userTime}\nTimeZone: Central`;
 
     const conversation = [{ role: "system", content: systemContext }];
 
-    // Add all previous user/assistant messages
     for (const p of priorPairs) {
       conversation.push({ role: "user", content: p.user_text });
       if (p.ai_text) {
@@ -460,18 +494,16 @@ app.post("/api/chat", async (req, res) => {
       }
     }
 
-    // Insert user message into chat_pairs table (pending AI response)
+    // Insert user message
     const chatPairId = db.createChatPair(userMessage, chatTabId, systemContext);
-
-    // Finally, push the latest user message
     conversation.push({ role: "user", content: userMessage });
-
-    // Log user chat
     db.logActivity("User chat", JSON.stringify({ tabId: chatTabId, message: userMessage, userTime }));
 
-    // Start streaming response
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.setHeader("Transfer-Encoding", "chunked");
+
+    // Use chosen client
+    const openaiClient = getOpenAiClient();
 
     let assistantMessage = "";
     const stream = await openaiClient.chat.completions.create({
@@ -491,7 +523,7 @@ app.post("/api/chat", async (req, res) => {
 
     res.end();
 
-    // Now let's calculate token usage
+    // Token usage
     const encoder = getEncoding(model);
     const systemTokens = countTokens(encoder, systemContext);
 
@@ -518,7 +550,6 @@ app.post("/api/chat", async (req, res) => {
     };
 
     db.finalizeChatPair(chatPairId, assistantMessage, model, new Date().toISOString(), JSON.stringify(tokenInfo));
-
     db.logActivity("AI chat", JSON.stringify({ tabId: chatTabId, response: assistantMessage, tokenInfo }));
   } catch (err) {
     console.error("[TaskQueue] /api/chat (stream) error:", err);
@@ -528,7 +559,7 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
-// New route: get all stored chat pairs for a tab
+// GET /api/chat/history
 app.get("/api/chat/history", (req, res) => {
   try {
     const tabId = parseInt(req.query.tabId || "1", 10);
@@ -540,13 +571,16 @@ app.get("/api/chat/history", (req, res) => {
   }
 });
 
-// Provide the current openai model
+// Provide the current model
 app.get("/api/model", (req, res) => {
-  const model = process.env.OPENAI_MODEL || "o3-mini";
-  res.json({ model });
+  let m = db.getSetting("ai_model");
+  if (!m) {
+    m = process.env.OPENAI_MODEL || "o3-mini";
+  }
+  res.json({ model: m });
 });
 
-// Chat tabs API
+// Chat tabs
 app.get("/api/chat/tabs", (req, res) => {
   try {
     const tabs = db.listChatTabs();
@@ -561,7 +595,6 @@ app.post("/api/chat/tabs/new", (req, res) => {
   try {
     let name = req.body.name || "Untitled";
 
-    // NEW: If chat_tab_auto_naming is enabled and we have a project name, auto-format
     const autoNaming = db.getSetting("chat_tab_auto_naming");
     const projectName = db.getSetting("sterling_project") || "";
     if (autoNaming && projectName) {
@@ -604,7 +637,7 @@ app.delete("/api/chat/tabs/:id", (req, res) => {
   }
 });
 
-// Modified route: returns the entire conversation for this pair's tab
+// Return entire conversation for a pair
 app.get("/pair/:id", (req, res) => {
   const pairId = parseInt(req.params.id, 10);
   if (Number.isNaN(pairId)) return res.status(400).send("Invalid pair ID");
@@ -617,7 +650,7 @@ app.get("/pair/:id", (req, res) => {
   });
 });
 
-// FIX: New route that returns server time in 12-hour format
+// GET /api/time
 app.get("/api/time", (req, res) => {
   const now = new Date();
   res.json({
@@ -667,7 +700,7 @@ app.get("/activity", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/activity.html"));
 });
 
-// New route to delete a single chat pair
+// Delete a single chat pair
 app.delete("/api/chat/pair/:id", (req, res) => {
   try {
     const pairId = parseInt(req.params.id, 10);
@@ -682,7 +715,7 @@ app.delete("/api/chat/pair/:id", (req, res) => {
   }
 });
 
-// New endpoint for "Create Sterling Chat" with single response
+// "Create Sterling Chat" single response
 app.post("/api/createSterlingChat", async (req, res) => {
   db.logActivity("Create Sterling Chat", "User triggered createSterlingChat endpoint.");
 
@@ -702,7 +735,6 @@ app.post("/api/createSterlingChat", async (req, res) => {
     const sterlingUrl = `http://localhost:3444/${encodeURIComponent(projectName)}/chat/${createChatResponse.data.newChatNumber}`;
     db.setSetting("sterling_chat_url", sterlingUrl);
 
-    // Provide a Sterling chat URL in the response
     res.json({
       success: true,
       message: "Sterling chat created.",
@@ -716,7 +748,7 @@ app.post("/api/createSterlingChat", async (req, res) => {
   }
 });
 
-// New route: rename project
+// Rename project
 app.post("/api/projects/rename", (req, res) => {
   try {
     const { oldProject, newProject } = req.body;

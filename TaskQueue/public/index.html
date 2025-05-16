@@ -239,6 +239,22 @@
     <label><input type="checkbox" id="subbubbleTokenCheck" checked/> Show token usage on each subbubble</label>
     <br/>
     <label><input type="checkbox" id="sterlingUrlCheck"/> Show Sterling chat URL</label>
+    <br/>
+    <div style="margin-top:8px;">
+      <label>AI Service:
+        <select id="aiServiceSelect">
+          <option value="openai">OpenAI</option>
+          <option value="openrouter">OpenRouter</option>
+        </select>
+      </label>
+    </div>
+    <div style="margin-top:8px;">
+      <label>AI Model:
+        <select id="aiModelSelect">
+          <!-- populated dynamically -->
+        </select>
+      </label>
+    </div>
     <div class="modal-buttons">
       <button id="chatSettingsSaveBtn">Save</button>
       <button id="chatSettingsCancelBtn">Cancel</button>
