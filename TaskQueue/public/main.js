@@ -834,87 +834,63 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
 
   seqDiv.appendChild(botDiv);
 
+  // Modified to place a single summary line that expands to full details
   if(!chatHideMetadata){
-    const metaContainer = document.createElement("div");
-    metaContainer.style.fontSize = "0.8rem";
-    metaContainer.style.color = "#aaa";
-    metaContainer.style.textAlign = "right";
-
-    const pairLabel = document.createElement("div");
-    pairLabel.textContent = `Pair #${pairId}`;
-    metaContainer.appendChild(pairLabel);
-
-    if (model) {
-      const modelLabel = document.createElement("div");
-      modelLabel.textContent = `Model: ${model}`;
-      metaContainer.appendChild(modelLabel);
-    }
-
     let tokObj = null;
     try {
       tokObj = tokenInfo ? JSON.parse(tokenInfo) : null;
     } catch(e) {}
 
+    const totalTokens = tokObj?.total ?? "???";
+
+    const detailsEl = document.createElement("details");
+    const summaryEl = document.createElement("summary");
+    summaryEl.textContent = `Pair #${pairId} - Model: ${model} - Total Tokens: ${totalTokens}`;
+    detailsEl.appendChild(summaryEl);
+
+    // Show line: Pair #
+    const linePair = document.createElement("div");
+    linePair.textContent = `Pair #${pairId}`;
+    detailsEl.appendChild(linePair);
+
+    // Show line: Model
+    const lineModel = document.createElement("div");
+    lineModel.textContent = `Model: ${model}`;
+    detailsEl.appendChild(lineModel);
+
+    // System context
     if (systemContext) {
-      const scDetails = document.createElement("details");
-      const scSum = document.createElement("summary");
-      const scTok = tokObj?.systemTokens ?? '0';
-      scSum.textContent = `System Context (Tokens: ${scTok})`;
-      scDetails.appendChild(scSum);
-
-      const lines = systemContext.split(/\r?\n/);
-      lines.forEach(line => {
-        if (!line.trim()) return;
-        const lineBubble = document.createElement("div");
-        lineBubble.className = "chat-bot";
-        lineBubble.style.marginTop = "4px";
-        lineBubble.textContent = line;
-        scDetails.appendChild(lineBubble);
-      });
-      metaContainer.appendChild(scDetails);
+      const sc = document.createElement("div");
+      const scTok = tokObj?.systemTokens ?? 0;
+      sc.textContent = `System Context (Tokens: ${scTok})`;
+      detailsEl.appendChild(sc);
     }
 
+    // Full history
     if (fullHistory) {
-      const fhDetails = document.createElement("details");
-      const fhSum = document.createElement("summary");
-      const fhTok = tokObj?.historyTokens ?? '0';
-      fhSum.textContent = `Full History (Tokens: ${fhTok})`;
-      fhDetails.appendChild(fhSum);
-      const fhPre = document.createElement("pre");
-      fhPre.textContent = JSON.stringify(fullHistory, null, 2);
-      fhDetails.appendChild(fhPre);
-      metaContainer.appendChild(fhDetails);
+      const fhLine = document.createElement("div");
+      const fhTok = tokObj?.historyTokens ?? 0;
+      fhLine.textContent = `Full History (Tokens: ${fhTok})`;
+      detailsEl.appendChild(fhLine);
     }
 
+    // Token usage
     if(tokObj){
-      const tuDetails = document.createElement("details");
-      const tuSum = document.createElement("summary");
-      tuSum.textContent = `Token Usage (Tokens: ${tokObj.total || 0})`;
-      tuDetails.appendChild(tuSum);
-
-      const usageDiv = document.createElement("div");
-      usageDiv.style.marginLeft = "1em";
-      usageDiv.textContent =
-          `System: ${tokObj.systemTokens}, ` +
-          `History: ${tokObj.historyTokens}, ` +
-          `Input: ${tokObj.inputTokens}, ` +
-          `Assistant: ${tokObj.assistantTokens}, ` +
-          `FinalAsst: ${tokObj.finalAssistantTokens}, ` +
-          `Total: ${tokObj.total}`;
-
-      tuDetails.appendChild(usageDiv);
-      metaContainer.appendChild(tuDetails);
+      const tuLine = document.createElement("div");
+      tuLine.textContent = `Token Usage (Tokens: ${tokObj.total})`;
+      detailsEl.appendChild(tuLine);
     }
 
-    const directLinkDiv = document.createElement("div");
+    // Direct link
+    const linkDiv = document.createElement("div");
     const ddLink = document.createElement("a");
     ddLink.href = `/pair/${pairId}`;
     ddLink.target = "_blank";
     ddLink.textContent = "Direct Link";
-    directLinkDiv.appendChild(ddLink);
-    metaContainer.appendChild(directLinkDiv);
+    linkDiv.appendChild(ddLink);
+    detailsEl.appendChild(linkDiv);
 
-    seqDiv.appendChild(metaContainer);
+    seqDiv.appendChild(detailsEl);
   }
 
   const delBtn = document.createElement("button");
