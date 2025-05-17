@@ -628,7 +628,7 @@ app.get("/api/chat/history", (req, res) => {
 
 // Provide the current model
 app.get("/api/model", (req, res) => {
-  let m = db.getSetting("ai_model");
+  let m = db.getSetting("ai_model") || "gpt-3.5-turbo";
   res.json({ model: m });
 });
 
