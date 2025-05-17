@@ -752,6 +752,11 @@ app.get("/activity", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/activity.html"));
 });
 
+// Serve new AI Models page
+app.get("/ai_models", (req, res) => {
+  res.sendFile(path.join(__dirname, "../public/ai_models.html"));
+});
+
 // Delete a single chat pair
 app.delete("/api/chat/pair/:id", (req, res) => {
   try {
