@@ -454,15 +454,32 @@ app.get("/api/activity", (req, res) => {
   }
 });
 
-// New route: GET /api/ai/models
-app.get("/api/ai/models", (req, res) => {
-  // Hard-coded example lists
-  const openaiModels = ["gpt-3.5-turbo", "gpt-4"];
-  const openrouterModels = ["openrouter-gpt-3.5", "openrouter-gpt-4"];
-  res.json({
-    openai: openaiModels,
-    openrouter: openrouterModels
-  });
+// Updated route: GET /api/ai/models
+app.get("/api/ai/models", async (req, res) => {
+  try {
+    const service = db.getSetting("ai_service") || "openai";
+    if (service === "openai") {
+      const openaiClient = getOpenAiClient();
+      const modelList = await openaiClient.models.list();
+      const modelIds = modelList.data.map((m) => m.id);
+      res.json({ service: "openai", models: modelIds });
+    } else {
+      // Fallback or for openrouter
+      const openRouterKey = process.env.OPENROUTER_API_KEY || "";
+      const orResp = await axios.get("https://openrouter.ai/api/v1/models", {
+        headers: {
+          Authorization: `Bearer ${openRouterKey}`,
+          "HTTP-Referer": "Alfe-DevAgent",
+          "X-Title": "Alfe Dev",
+        },
+      });
+      const modelIds = orResp.data?.data?.map((m) => m.id) || [];
+      res.json({ service: "openrouter", models: modelIds });
+    }
+  } catch (err) {
+    console.error("[TaskQueue] /api/ai/models error:", err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Updated /api/chat for chunk-splitting & token counting
