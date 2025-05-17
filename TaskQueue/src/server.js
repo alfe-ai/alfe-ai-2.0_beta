@@ -516,7 +516,7 @@ app.post("/api/chat", async (req, res) => {
     const priorPairs = db.getAllChatPairs(chatTabId);
     let model = db.getSetting("ai_model");
     if (!model) {
-      model = process.env.OPENAI_MODEL || "o3-mini";
+      model = process.env.OPENAI_MODEL || "gpt-3.5-turbo";
     }
     const savedInstructions = db.getSetting("agent_instructions") || "";
     const systemContext = `System Context:\n${savedInstructions}\n\nModel: ${model}\nUserTime: ${userTime}\nTimeZone: Central`;
@@ -611,7 +611,7 @@ app.get("/api/chat/history", (req, res) => {
 app.get("/api/model", (req, res) => {
   let m = db.getSetting("ai_model");
   if (!m) {
-    m = process.env.OPENAI_MODEL || "o3-mini";
+    m = process.env.OPENAI_MODEL || "gpt-3.5-turbo";
   }
   res.json({ model: m });
 });
