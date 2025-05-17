@@ -835,11 +835,27 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
   seqDiv.appendChild(botDiv);
 
   if(!chatHideMetadata){
+    const metaContainer = document.createElement("div");
+    metaContainer.style.fontSize = "0.8rem";
+    metaContainer.style.color = "#aaa";
+    metaContainer.style.textAlign = "right";
+
+    const pairLabel = document.createElement("div");
+    pairLabel.textContent = `Pair #${pairId}`;
+    metaContainer.appendChild(pairLabel);
+
+    if (model) {
+      const modelLabel = document.createElement("div");
+      modelLabel.textContent = `Model: ${model}`;
+      metaContainer.appendChild(modelLabel);
+    }
+
     let tokObj = null;
     try {
       tokObj = tokenInfo ? JSON.parse(tokenInfo) : null;
     } catch(e) {}
 
+<<<<<<< HEAD
     const totalTokens = tokObj?.total ?? "???";
 
     const detailsEl = document.createElement("details");
@@ -855,35 +871,72 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
     lineModel.textContent = `Model: ${model}`;
     detailsEl.appendChild(lineModel);
 
+=======
+>>>>>>> parent of 1bf7e81 (• Updated the section that displays metadata for each chat pair so that it shows one collapsed line in the form "Pair # - Model - Total Tokens" and, when clicked, expands to reveal the full details (Pair #, Model, System Context, Full History, Token Usage, Direct Link).)
     if (systemContext) {
-      const sc = document.createElement("div");
-      const scTok = tokObj?.systemTokens ?? 0;
-      sc.textContent = `System Context (Tokens: ${scTok})`;
-      detailsEl.appendChild(sc);
+      const scDetails = document.createElement("details");
+      const scSum = document.createElement("summary");
+      const scTok = tokObj?.systemTokens ?? '0';
+      scSum.textContent = `System Context (Tokens: ${scTok})`;
+      scDetails.appendChild(scSum);
+
+      const lines = systemContext.split(/\r?\n/);
+      lines.forEach(line => {
+        if (!line.trim()) return;
+        const lineBubble = document.createElement("div");
+        lineBubble.className = "chat-bot";
+        lineBubble.style.marginTop = "4px";
+        lineBubble.textContent = line;
+        scDetails.appendChild(lineBubble);
+      });
+      metaContainer.appendChild(scDetails);
     }
 
     if (fullHistory) {
-      const fhLine = document.createElement("div");
-      const fhTok = tokObj?.historyTokens ?? 0;
-      fhLine.textContent = `Full History (Tokens: ${fhTok})`;
-      detailsEl.appendChild(fhLine);
+      const fhDetails = document.createElement("details");
+      const fhSum = document.createElement("summary");
+      const fhTok = tokObj?.historyTokens ?? '0';
+      fhSum.textContent = `Full History (Tokens: ${fhTok})`;
+      fhDetails.appendChild(fhSum);
+      const fhPre = document.createElement("pre");
+      fhPre.textContent = JSON.stringify(fullHistory, null, 2);
+      fhDetails.appendChild(fhPre);
+      metaContainer.appendChild(fhDetails);
     }
 
     if(tokObj){
-      const tuLine = document.createElement("div");
-      tuLine.textContent = `Token Usage (Tokens: ${tokObj.total})`;
-      detailsEl.appendChild(tuLine);
+      const tuDetails = document.createElement("details");
+      const tuSum = document.createElement("summary");
+      tuSum.textContent = `Token Usage (Tokens: ${tokObj.total || 0})`;
+      tuDetails.appendChild(tuSum);
+
+      const usageDiv = document.createElement("div");
+      usageDiv.style.marginLeft = "1em";
+      usageDiv.textContent =
+          `System: ${tokObj.systemTokens}, ` +
+          `History: ${tokObj.historyTokens}, ` +
+          `Input: ${tokObj.inputTokens}, ` +
+          `Assistant: ${tokObj.assistantTokens}, ` +
+          `FinalAsst: ${tokObj.finalAssistantTokens}, ` +
+          `Total: ${tokObj.total}`;
+
+      tuDetails.appendChild(usageDiv);
+      metaContainer.appendChild(tuDetails);
     }
 
+<<<<<<< HEAD
     const linkDiv = document.createElement("div");
+=======
+    const directLinkDiv = document.createElement("div");
+>>>>>>> parent of 1bf7e81 (• Updated the section that displays metadata for each chat pair so that it shows one collapsed line in the form "Pair # - Model - Total Tokens" and, when clicked, expands to reveal the full details (Pair #, Model, System Context, Full History, Token Usage, Direct Link).)
     const ddLink = document.createElement("a");
     ddLink.href = `/pair/${pairId}`;
     ddLink.target = "_blank";
     ddLink.textContent = "Direct Link";
-    linkDiv.appendChild(ddLink);
-    detailsEl.appendChild(linkDiv);
+    directLinkDiv.appendChild(ddLink);
+    metaContainer.appendChild(directLinkDiv);
 
-    seqDiv.appendChild(detailsEl);
+    seqDiv.appendChild(metaContainer);
   }
 
   const delBtn = document.createElement("button");
