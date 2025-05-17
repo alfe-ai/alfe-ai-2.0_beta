@@ -77,35 +77,24 @@
 (async function(){
   const modelsTbody = document.querySelector("#modelsTable tbody");
   try {
-    // Fetch model list from the server
     const res = await fetch("/api/ai/models");
     if(!res.ok) {
       modelsTbody.innerHTML = "<tr><td colspan='2'>Error fetching models.</td></tr>";
       return;
     }
     const data = await res.json();
-    const service = data.service || "openai";
-    const modelIds = data.models || [];
+    const modelList = data.models || [];
 
-    // Approximate token limits
-    // Expand as needed for more known models
-    const knownLimits = {
-      "gpt-3.5-turbo": 4096,
-      "gpt-4": 8192,
-      "gpt-4-32k": 32768
-    };
-
-    if(modelIds.length < 1) {
+    if(modelList.length < 1) {
       modelsTbody.innerHTML = "<tr><td colspan='2'>No models found.</td></tr>";
       return;
     }
 
     let html = "";
-    modelIds.forEach(m => {
-      const limit = knownLimits[m] || "varies";
+    modelList.forEach(m => {
       html += `<tr>
-                <td>${m}</td>
-                <td>${limit}</td>
+                 <td>${m.id}</td>
+                 <td>${m.tokenLimit}</td>
                </tr>`;
     });
     modelsTbody.innerHTML = html;
