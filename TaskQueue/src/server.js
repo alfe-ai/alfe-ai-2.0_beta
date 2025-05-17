@@ -21,6 +21,15 @@ import { encoding_for_model } from "tiktoken";
 import axios from "axios";
 
 const db = new TaskDB();
+console.debug("[Server Debug] Checking or setting default 'ai_model' in DB...");
+const currentModel = db.getSetting("ai_model");
+if (!currentModel) {
+  console.debug("[Server Debug] 'ai_model' is missing in DB, setting default to 'gpt-3.5-turbo'.");
+  db.setSetting("ai_model", "gpt-3.5-turbo");
+} else {
+  console.debug("[Server Debug] 'ai_model' found =>", currentModel);
+}
+
 const app = express();
 
 /**
@@ -32,6 +41,8 @@ function getOpenAiClient() {
   const openAiKey = process.env.OPENAI_API_KEY || "";
   const openRouterKey = process.env.OPENROUTER_API_KEY || "";
 
+  console.debug("[Server Debug] Creating OpenAI client with service =", service);
+
   if (service === "openrouter") {
     if (!openRouterKey) {
       throw new Error(
@@ -39,6 +50,7 @@ function getOpenAiClient() {
       );
     }
     // Use openrouter.ai
+    console.debug("[Server Debug] Using openrouter.ai with provided OPENROUTER_API_KEY.");
     return new OpenAI({
       apiKey: openRouterKey,
       baseURL: "https://openrouter.ai/api/v1",
@@ -54,6 +66,7 @@ function getOpenAiClient() {
       );
     }
     // Default to openai
+    console.debug("[Server Debug] Using openai with provided OPENAI_API_KEY.");
     return new OpenAI({
       apiKey: openAiKey,
     });
@@ -61,10 +74,11 @@ function getOpenAiClient() {
 }
 
 function getEncoding(modelName) {
+  console.debug("[Server Debug] Attempting to load tokenizer for model =>", modelName);
   try {
     return encoding_for_model(modelName);
-  } catch {
-    // fallback
+  } catch (e) {
+    console.debug("[Server Debug] Tokenizer load failed, falling back to gpt-3.5-turbo =>", e.message);
     return encoding_for_model("gpt-3.5-turbo");
   }
 }
@@ -117,11 +131,15 @@ const upload = multer({ storage });
 
 // GET /api/tasks
 app.get("/api/tasks", (req, res) => {
+  console.debug("[Server Debug] GET /api/tasks called.");
   try {
     const includeHidden =
       req.query.includeHidden === "1" ||
       req.query.includeHidden === "true";
-    res.json(db.listTasks(includeHidden));
+    console.debug("[Server Debug] includeHidden =", includeHidden);
+    const tasks = db.listTasks(includeHidden);
+    console.debug("[Server Debug] Found tasks =>", tasks.length);
+    res.json(tasks);
   } catch (err) {
     console.error("[TaskQueue] /api/tasks failed:", err);
     res.status(500).json({ error: "Internal server error" });
@@ -130,8 +148,11 @@ app.get("/api/tasks", (req, res) => {
 
 // GET /api/projects
 app.get("/api/projects", (req, res) => {
+  console.debug("[Server Debug] GET /api/projects called.");
   try {
-    res.json(db.listProjects());
+    const projects = db.listProjects();
+    console.debug("[Server Debug] Found projects =>", projects.length);
+    res.json(projects);
   } catch (err) {
     console.error("[TaskQueue] /api/projects failed:", err);
     res.status(500).json({ error: "Internal server error" });
@@ -140,8 +161,11 @@ app.get("/api/projects", (req, res) => {
 
 // GET /api/sprints
 app.get("/api/sprints", (req, res) => {
+  console.debug("[Server Debug] GET /api/sprints called.");
   try {
-    res.json(db.listSprints());
+    const sprints = db.listSprints();
+    console.debug("[Server Debug] Found sprints =>", sprints.length);
+    res.json(sprints);
   } catch (err) {
     console.error("[TaskQueue] /api/sprints failed:", err);
     res.status(500).json({ error: "Internal server error" });
@@ -150,8 +174,10 @@ app.get("/api/sprints", (req, res) => {
 
 // Manage project base branches
 app.get("/api/projectBranches", (req, res) => {
+  console.debug("[Server Debug] GET /api/projectBranches called.");
   try {
     const result = db.listProjectBranches();
+    console.debug("[Server Debug] Found projectBranches =>", result.length);
     res.json(result);
   } catch (err) {
     console.error("[TaskQueue] GET /api/projectBranches error:", err);
@@ -160,9 +186,11 @@ app.get("/api/projectBranches", (req, res) => {
 });
 
 app.post("/api/projectBranches", (req, res) => {
+  console.debug("[Server Debug] POST /api/projectBranches called.");
   try {
     const { data } = req.body; // expects { project, base_branch }
     if (!Array.isArray(data)) {
+      console.debug("[Server Debug] Provided data is not an array =>", data);
       return res.status(400).json({ error: "Must provide an array of branch data." });
     }
     data.forEach((entry) => {
@@ -177,6 +205,7 @@ app.post("/api/projectBranches", (req, res) => {
 });
 
 app.delete("/api/projectBranches/:project", (req, res) => {
+  console.debug("[Server Debug] DELETE /api/projectBranches called =>", req.params.project);
   try {
     const project = req.params.project;
     db.deleteProjectBranch(project);
@@ -190,6 +219,7 @@ app.delete("/api/projectBranches/:project", (req, res) => {
 
 // POST /api/tasks/hidden
 app.post("/api/tasks/hidden", (req, res) => {
+  console.debug("[Server Debug] POST /api/tasks/hidden called => body:", req.body);
   try {
     const { id, hidden } = req.body;
     db.setHidden(id, hidden);
@@ -203,6 +233,7 @@ app.post("/api/tasks/hidden", (req, res) => {
 
 // POST /api/tasks/reorder
 app.post("/api/tasks/reorder", (req, res) => {
+  console.debug("[Server Debug] POST /api/tasks/reorder => body:", req.body);
   try {
     const { id, direction } = req.body;
     const ok = db.reorderTask(id, direction);
@@ -220,6 +251,7 @@ app.post("/api/tasks/reorder", (req, res) => {
 
 // POST /api/tasks/reorderAll
 app.post("/api/tasks/reorderAll", (req, res) => {
+  console.debug("[Server Debug] POST /api/tasks/reorderAll => body:", req.body);
   try {
     const { orderedIds } = req.body;
     if (!Array.isArray(orderedIds)) {
@@ -236,6 +268,7 @@ app.post("/api/tasks/reorderAll", (req, res) => {
 
 // POST /api/tasks/points
 app.post("/api/tasks/points", (req, res) => {
+  console.debug("[Server Debug] POST /api/tasks/points => body:", req.body);
   try {
     const { id, points } = req.body;
     db.setPoints(id, points);
@@ -249,6 +282,7 @@ app.post("/api/tasks/points", (req, res) => {
 
 // POST /api/tasks/project
 app.post("/api/tasks/project", (req, res) => {
+  console.debug("[Server Debug] POST /api/tasks/project => body:", req.body);
   try {
     const { id, project } = req.body;
     db.setProject(id, project);
@@ -262,6 +296,7 @@ app.post("/api/tasks/project", (req, res) => {
 
 // POST /api/tasks/sprint
 app.post("/api/tasks/sprint", (req, res) => {
+  console.debug("[Server Debug] POST /api/tasks/sprint => body:", req.body);
   try {
     const { id, sprint } = req.body;
     db.setSprint(id, sprint);
@@ -275,6 +310,7 @@ app.post("/api/tasks/sprint", (req, res) => {
 
 // POST /api/tasks/priority
 app.post("/api/tasks/priority", (req, res) => {
+  console.debug("[Server Debug] POST /api/tasks/priority => body:", req.body);
   try {
     const { id, priority } = req.body;
     const oldTask = db.getTaskById(id);
@@ -296,6 +332,7 @@ app.post("/api/tasks/priority", (req, res) => {
 
 // POST /api/tasks/status
 app.post("/api/tasks/status", (req, res) => {
+  console.debug("[Server Debug] POST /api/tasks/status => body:", req.body);
   try {
     const { id, status } = req.body;
     db.setStatus(id, status);
@@ -309,6 +346,7 @@ app.post("/api/tasks/status", (req, res) => {
 
 // POST /api/tasks/dependencies
 app.post("/api/tasks/dependencies", (req, res) => {
+  console.debug("[Server Debug] POST /api/tasks/dependencies => body:", req.body);
   try {
     const { id, dependencies } = req.body;
     db.setDependencies(id, dependencies);
@@ -322,6 +360,7 @@ app.post("/api/tasks/dependencies", (req, res) => {
 
 // POST /api/tasks/blocking
 app.post("/api/tasks/blocking", (req, res) => {
+  console.debug("[Server Debug] POST /api/tasks/blocking => body:", req.body);
   try {
     const { id, blocking } = req.body;
     db.setBlocking(id, blocking);
@@ -335,6 +374,7 @@ app.post("/api/tasks/blocking", (req, res) => {
 
 // Create new GitHub issue and upsert
 app.post("/api/tasks/new", async (req, res) => {
+  console.debug("[Server Debug] POST /api/tasks/new => body:", req.body);
   try {
     const { title, body } = req.body;
     if (!title) {
@@ -365,6 +405,7 @@ app.post("/api/tasks/new", async (req, res) => {
 
 // GET /api/settings/:key
 app.get("/api/settings/:key", (req, res) => {
+  console.debug("[Server Debug] GET /api/settings/:key =>", req.params.key);
   try {
     const val = db.getSetting(req.params.key);
     res.json({ key: req.params.key, value: val });
@@ -376,6 +417,7 @@ app.get("/api/settings/:key", (req, res) => {
 
 // POST /api/settings
 app.post("/api/settings", (req, res) => {
+  console.debug("[Server Debug] POST /api/settings => body:", req.body);
   try {
     const { key, value } = req.body;
     db.setSetting(key, value);
@@ -388,6 +430,7 @@ app.post("/api/settings", (req, res) => {
 
 // GET /api/tasks/:id
 app.get("/api/tasks/:id", (req, res) => {
+  console.debug("[Server Debug] GET /api/tasks/:id =>", req.params.id);
   try {
     const taskId = parseInt(req.params.id, 10);
     if (Number.isNaN(taskId)) {
@@ -406,6 +449,7 @@ app.get("/api/tasks/:id", (req, res) => {
 
 // GET /api/projects/:project
 app.get("/api/projects/:project", (req, res) => {
+  console.debug("[Server Debug] GET /api/projects/:project =>", req.params.project);
   try {
     const tasks = db.listTasksByProject(req.params.project);
     res.json(tasks);
@@ -417,6 +461,7 @@ app.get("/api/projects/:project", (req, res) => {
 
 // GET /api/sprints/:sprint
 app.get("/api/sprints/:sprint", (req, res) => {
+  console.debug("[Server Debug] GET /api/sprints/:sprint =>", req.params.sprint);
   try {
     const tasks = db.listTasksBySprint(req.params.sprint);
     res.json(tasks);
@@ -428,6 +473,7 @@ app.get("/api/sprints/:sprint", (req, res) => {
 
 // POST /api/tasks/rename
 app.post("/api/tasks/rename", async (req, res) => {
+  console.debug("[Server Debug] POST /api/tasks/rename => body:", req.body);
   try {
     const { id, newTitle } = req.body;
     if (!id || !newTitle) {
@@ -457,6 +503,7 @@ app.post("/api/tasks/rename", async (req, res) => {
 
 // GET /api/activity
 app.get("/api/activity", (req, res) => {
+  console.debug("[Server Debug] GET /api/activity called.");
   try {
     const activity = db.getActivity();
     res.json(activity);
@@ -468,12 +515,12 @@ app.get("/api/activity", (req, res) => {
 
 // Updated route: GET /api/ai/models
 app.get("/api/ai/models", async (req, res) => {
+  console.debug("[Server Debug] GET /api/ai/models called.");
   try {
     const service = db.getSetting("ai_service") || "openai";
     if (service === "openai") {
       const openaiClient = getOpenAiClient();
       const modelList = await openaiClient.models.list();
-      // Sort models alphabetically
       const modelIds = modelList.data.map((m) => m.id).sort();
       res.json({ service: "openai", models: modelIds });
     } else {
@@ -491,7 +538,6 @@ app.get("/api/ai/models", async (req, res) => {
           "X-Title": "Alfe Dev",
         },
       });
-      // Sort models alphabetically
       const modelIds = orResp.data?.data?.map((m) => m.id).sort() || [];
       res.json({ service: "openrouter", models: modelIds });
     }
@@ -503,6 +549,7 @@ app.get("/api/ai/models", async (req, res) => {
 
 // Updated /api/chat for chunk-splitting & token counting
 app.post("/api/chat", async (req, res) => {
+  console.debug("[Server Debug] POST /api/chat => body:", req.body);
   try {
     const userMessage = req.body.message || "";
     const chatTabId = req.body.tabId || 1;
@@ -535,11 +582,14 @@ app.post("/api/chat", async (req, res) => {
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.setHeader("Transfer-Encoding", "chunked");
 
-    // Token usage check (truncate older messages if needed)
+    console.debug("[Server Debug] Chat conversation assembled with length =>", conversation.length);
+
     const openaiClient = getOpenAiClient();
     if (!model) {
-      model = "gpt-3.5-turbo";
+      model = "unknown"; // Reverted fallback to gpt-3.5-turbo
     }
+
+    console.debug("[Server Debug] Using model =>", model);
     const encoder = getEncoding(model);
 
     // We'll measure tokens until it's under ~7000
@@ -551,23 +601,24 @@ app.post("/api/chat", async (req, res) => {
     const remainder = conversation.slice(1).reverse();
 
     for (const msg of remainder) {
-      const chunkTokens = countTokens(encoder, msg.content) + 4; 
-      // (approx extra tokens for role metadata)
+      const chunkTokens = countTokens(encoder, msg.content) + 4;
       if ((convTokens + chunkTokens) > 7000) {
-        // stop
         break;
       }
       truncatedConversation.unshift(msg);
       convTokens += chunkTokens;
     }
 
-    // Now truncatedConversation is within ~7000 tokens
+    console.debug("[Server Debug] Truncated conversation length =>", truncatedConversation.length);
+
     let assistantMessage = "";
     const stream = await openaiClient.chat.completions.create({
       model,
       messages: truncatedConversation,
       stream: true
     });
+
+    console.debug("[Server Debug] AI streaming started...");
 
     for await (const part of stream) {
       const chunk = part.choices?.[0]?.delta?.content || "";
@@ -579,6 +630,7 @@ app.post("/api/chat", async (req, res) => {
     }
 
     res.end();
+    console.debug("[Server Debug] AI streaming finished, total length =>", assistantMessage.length);
 
     // Final token counting
     const systemTokens = countTokens(encoder, systemContext);
@@ -616,6 +668,7 @@ app.post("/api/chat", async (req, res) => {
 
 // GET /api/chat/history
 app.get("/api/chat/history", (req, res) => {
+  console.debug("[Server Debug] GET /api/chat/history =>", req.query);
   try {
     const tabId = parseInt(req.query.tabId || "1", 10);
     const chatPairs = db.getAllChatPairs(tabId);
@@ -628,12 +681,15 @@ app.get("/api/chat/history", (req, res) => {
 
 // Provide the current model
 app.get("/api/model", (req, res) => {
+  console.debug("[Server Debug] GET /api/model called.");
   let m = db.getSetting("ai_model");
+  // Reverted fallback: no forced "gpt-3.5-turbo" here
   res.json({ model: m });
 });
 
 // Chat tabs
 app.get("/api/chat/tabs", (req, res) => {
+  console.debug("[Server Debug] GET /api/chat/tabs => listing all tabs.");
   try {
     const tabs = db.listChatTabs();
     res.json(tabs);
@@ -644,6 +700,7 @@ app.get("/api/chat/tabs", (req, res) => {
 });
 
 app.post("/api/chat/tabs/new", (req, res) => {
+  console.debug("[Server Debug] POST /api/chat/tabs/new =>", req.body);
   try {
     let name = req.body.name || "Untitled";
 
@@ -662,6 +719,7 @@ app.post("/api/chat/tabs/new", (req, res) => {
 });
 
 app.post("/api/chat/tabs/rename", (req, res) => {
+  console.debug("[Server Debug] POST /api/chat/tabs/rename =>", req.body);
   try {
     const { tabId, newName } = req.body;
     if (!tabId || !newName) {
@@ -676,6 +734,7 @@ app.post("/api/chat/tabs/rename", (req, res) => {
 });
 
 app.delete("/api/chat/tabs/:id", (req, res) => {
+  console.debug("[Server Debug] DELETE /api/chat/tabs =>", req.params.id);
   try {
     const tabId = parseInt(req.params.id, 10);
     if (!tabId) {
@@ -691,6 +750,7 @@ app.delete("/api/chat/tabs/:id", (req, res) => {
 
 // Return entire conversation for a pair
 app.get("/pair/:id", (req, res) => {
+  console.debug("[Server Debug] GET /pair/:id =>", req.params.id);
   const pairId = parseInt(req.params.id, 10);
   if (Number.isNaN(pairId)) return res.status(400).send("Invalid pair ID");
   const pair = db.getPairById(pairId);
@@ -704,6 +764,7 @@ app.get("/pair/:id", (req, res) => {
 
 // GET /api/time
 app.get("/api/time", (req, res) => {
+  console.debug("[Server Debug] GET /api/time => returning server time.");
   const now = new Date();
   res.json({
     time: now.toLocaleString("en-US", {
@@ -721,7 +782,7 @@ app.get("/api/time", (req, res) => {
 
 // Implement file upload
 app.post("/api/upload", upload.single("myfile"), (req, res) => {
-  console.log("[Server Debug] File upload request:", req.file);
+  console.debug("[Server Debug] POST /api/upload => File info:", req.file);
   if (!req.file) {
     return res.status(400).json({ error: "No file uploaded" });
   }
@@ -731,6 +792,7 @@ app.post("/api/upload", upload.single("myfile"), (req, res) => {
 
 // Provide list of uploaded files
 app.get("/api/upload/list", (req, res) => {
+  console.debug("[Server Debug] GET /api/upload/list => listing files.");
   try {
     const fileNames = fs.readdirSync(uploadsDir);
     res.json(fileNames);
@@ -744,21 +806,25 @@ app.use(express.static(path.join(__dirname, "../public")));
 
 // Serve test_projects page
 app.get("/test_projects", (req, res) => {
+  console.debug("[Server Debug] GET /test_projects => Serving test_projects.html");
   res.sendFile(path.join(__dirname, "../public/test_projects.html"));
 });
 
 // Serve activity page
 app.get("/activity", (req, res) => {
+  console.debug("[Server Debug] GET /activity => Serving activity.html");
   res.sendFile(path.join(__dirname, "../public/activity.html"));
 });
 
 // Serve new AI Models page
 app.get("/ai_models", (req, res) => {
+  console.debug("[Server Debug] GET /ai_models => Serving ai_models.html");
   res.sendFile(path.join(__dirname, "../public/ai_models.html"));
 });
 
 // Delete a single chat pair
 app.delete("/api/chat/pair/:id", (req, res) => {
+  console.debug("[Server Debug] DELETE /api/chat/pair =>", req.params.id);
   try {
     const pairId = parseInt(req.params.id, 10);
     if (Number.isNaN(pairId)) {
@@ -807,6 +873,7 @@ app.post("/api/createSterlingChat", async (req, res) => {
 
 // Rename project
 app.post("/api/projects/rename", (req, res) => {
+  console.debug("[Server Debug] POST /api/projects/rename =>", req.body);
   try {
     const { oldProject, newProject } = req.body;
     if (!oldProject || !newProject) {

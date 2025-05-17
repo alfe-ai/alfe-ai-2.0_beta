@@ -23,10 +23,6 @@ const axios = require('axios');
     });
     console.log('Response from /createGenericChat:', createGenericChatResponse.data);
 
-    console.log('=== Testing createSterlingChat endpoint ===');
-    const createSterlingResponse = await axios.post(`${baseURL}/createSterlingChat`, {});
-    console.log('Response from /createSterlingChat:', createSterlingResponse.data);
-
   } catch (error) {
     console.error('Error during API tests:', error.message);
   }

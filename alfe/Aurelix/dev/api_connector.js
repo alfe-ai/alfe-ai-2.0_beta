@@ -3,7 +3,6 @@ const cors = require('cors');
 const router = express.Router();
 const path = require('path');
 const fs = require('fs');
-const axios = require('axios');
 const { OpenAI } = require('openai'); // Added for AI integration
 
 // Import helpers for loading/saving the repo JSON
@@ -336,64 +335,11 @@ router.post('/submitNewChatInput', async (req, res) => {
     return res.json({
       success: true,
       assistantReply,
-      fullAIResponse: response
+      fullAIResponse: response // Return entire response if needed
     });
   } catch (error) {
     console.error('[ERROR] /submitNewChatInput =>', error);
     return res.status(500).json({ error: 'An error occurred while processing the request.' });
-  }
-});
-
-/**
- * New route: First check if userMessage is a code change request.
- * If yes, call /submitNewChatInput. Else, respond with message that it's not a code change request.
- */
-router.post('/submitAlfeRequest', async (req, res) => {
-  try {
-    const { repoName, chatNumber, userMessage } = req.body;
-    if (!repoName || !chatNumber || !userMessage) {
-      return res.status(400).json({ error: 'repoName, chatNumber, and userMessage are required.' });
-    }
-
-    // We'll use OpenAI to classify the user message
-    const classifierClient = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY || '',
-      dangerouslyAllowBrowser: true
-    });
-
-    // Simple classification prompt
-    const classificationMessages = [
-      { role: 'system', content: 'You are a classifier. Reply with "code-change" or "not-code-change".' },
-      { role: 'user', content: `User message: ${userMessage}` }
-    ];
-
-    const classificationResp = await classifierClient.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: classificationMessages,
-      max_tokens: 10
-    });
-
-    const classificationText = classificationResp.choices?.[0]?.message?.content?.trim().toLowerCase() || '';
-    console.log('[DEBUG] Classification result =>', classificationText);
-
-    if (classificationText.includes('code-change')) {
-      // If code-change, pass the userMessage on to /submitNewChatInput
-      const forwardResp = await axios.post('http://localhost:3444/api/submitNewChatInput', {
-        repoName,
-        chatNumber,
-        userMessage
-      });
-      return res.json({
-        success: true,
-        classification: 'code-change',
-        forwardData: forwardResp.data
-      });
-    }
-    // Otherwise, respond "not code change"
-    return res.json({ success: true, classification: 'not-code-change' });
-  } catch (err) {
-    console.error('[ERROR] /submitAlfeRequest =>', err);
-    return res.status(500).json({ error: 'Error processing submitAlfeRequest.' });
   }
 });
 
