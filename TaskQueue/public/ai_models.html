@@ -1,67 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>AI Models</title>
+  <meta charset="UTF-8" />
+  <title>AI Models & Limits</title>
   <style>
     body {
-      color: #ddd;
       background-color: #1e1e1e;
+      color: #ddd;
       font-family: sans-serif;
-      margin: 2rem;
+      margin: 0;
+      padding: 1rem;
     }
+
     h1 {
-      margin-top: 0;
+      margin-bottom: 0.5rem;
     }
+
     table {
       border-collapse: collapse;
       width: 100%;
-      max-width: 500px;
+      max-width: 600px;
+      margin-bottom: 2rem;
     }
     th, td {
       border: 1px solid #444;
-      padding: 6px 8px;
+      padding: 8px;
     }
     th {
-      background: #3a3a3a;
+      background: #333;
       text-align: left;
     }
     tr:nth-child(even) {
       background: #2a2a2a;
     }
+
+    a {
+      color: #08f;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .links {
+      margin-top: 1rem;
+    }
   </style>
 </head>
 <body>
-<h1>AI Models & Limits</h1>
-<p>This page lists some common AI models and their approximate token limits.</p>
+<div class="container">
+  <h1>AI Models & Limits</h1>
+  <p>This page queries the OpenAI/OpenRouter API to list available models and displays approximate token limits.</p>
 
-<table>
-  <thead>
-    <tr>
-      <th>Model</th>
-      <th>Token Limit</th>
-      <th>Notes</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>gpt-3.5-turbo</td>
-      <td>4,096</td>
-      <td>OpenAI's 3.5 series</td>
-    </tr>
-    <tr>
-      <td>gpt-4</td>
-      <td>8,192 / 32,768</td>
-      <td>Different contexts available</td>
-    </tr>
-    <tr>
-      <td>Other</td>
-      <td>varies</td>
-      <td>Depends on provider</td>
-    </tr>
-  </tbody>
-</table>
+  <table id="modelsTable">
+    <thead>
+      <tr>
+        <th>Model</th>
+        <th>Token Limit</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td colspan="2" style="text-align:center;">Loading...</td></tr>
+    </tbody>
+  </table>
 
-<p><a href="/">Back to Home</a></p>
+  <div class="links">
+    <a href="/">Back to Home</a>
+  </div>
+</div>
+
+<script>
+(async function(){
+  const modelsTbody = document.querySelector("#modelsTable tbody");
+  try {
+    // Fetch model list from the server
+    const res = await fetch("/api/ai/models");
+    if(!res.ok) {
+      modelsTbody.innerHTML = "<tr><td colspan='2'>Error fetching models.</td></tr>";
+      return;
+    }
+    const data = await res.json();
+    const service = data.service || "openai";
+    const modelIds = data.models || [];
+
+    // Approximate token limits
+    // Expand as needed for more known models
+    const knownLimits = {
+      "gpt-3.5-turbo": 4096,
+      "gpt-4": 8192,
+      "gpt-4-32k": 32768
+    };
+
+    if(modelIds.length < 1) {
+      modelsTbody.innerHTML = "<tr><td colspan='2'>No models found.</td></tr>";
+      return;
+    }
+
+    let html = "";
+    modelIds.forEach(m => {
+      const limit = knownLimits[m] || "varies";
+      html += `<tr>
+                <td>${m}</td>
+                <td>${limit}</td>
+               </tr>`;
+    });
+    modelsTbody.innerHTML = html;
+  } catch(e) {
+    console.error("Error loading models:", e);
+    modelsTbody.innerHTML = "<tr><td colspan='2'>Error loading models.</td></tr>";
+  }
+})();
+</script>
 </body>
 </html>
