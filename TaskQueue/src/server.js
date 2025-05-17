@@ -25,12 +25,19 @@ const app = express();
 
 /**
  * Returns a configured OpenAI client, depending on "ai_service" setting.
+ * Added checks to help diagnose missing or invalid API keys.
  */
 function getOpenAiClient() {
   const service = db.getSetting("ai_service") || "openai";
   const openAiKey = process.env.OPENAI_API_KEY || "";
   const openRouterKey = process.env.OPENROUTER_API_KEY || "";
+
   if (service === "openrouter") {
+    if (!openRouterKey) {
+      throw new Error(
+        "Missing OPENROUTER_API_KEY environment variable, please set it before using OpenRouter."
+      );
+    }
     // Use openrouter.ai
     return new OpenAI({
       apiKey: openRouterKey,
@@ -41,6 +48,11 @@ function getOpenAiClient() {
       },
     });
   } else {
+    if (!openAiKey) {
+      throw new Error(
+        "Missing OPENAI_API_KEY environment variable, please set it before using OpenAI."
+      );
+    }
     // Default to openai
     return new OpenAI({
       apiKey: openAiKey,
@@ -467,6 +479,11 @@ app.get("/api/ai/models", async (req, res) => {
     } else {
       // Fallback or for openrouter
       const openRouterKey = process.env.OPENROUTER_API_KEY || "";
+      if (!openRouterKey) {
+        return res.status(500).json({
+          error: "Missing OPENROUTER_API_KEY environment variable; cannot list models."
+        });
+      }
       const orResp = await axios.get("https://openrouter.ai/api/v1/models", {
         headers: {
           Authorization: `Bearer ${openRouterKey}`,
