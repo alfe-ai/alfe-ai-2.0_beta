@@ -535,13 +535,37 @@ app.post("/api/chat", async (req, res) => {
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.setHeader("Transfer-Encoding", "chunked");
 
-    // Use chosen client
+    // Token usage check (truncate older messages if needed)
     const openaiClient = getOpenAiClient();
+    if (!model) {
+      model = "gpt-3.5-turbo";
+    }
+    const encoder = getEncoding(model);
 
+    // We'll measure tokens until it's under ~7000
+    let convTokens = 0;
+    let truncatedConversation = [];
+    // We'll keep the systemContext pinned
+    truncatedConversation.push(conversation[0]);
+    // Then accumulate from the last pairs
+    const remainder = conversation.slice(1).reverse();
+
+    for (const msg of remainder) {
+      const chunkTokens = countTokens(encoder, msg.content) + 4; 
+      // (approx extra tokens for role metadata)
+      if ((convTokens + chunkTokens) > 7000) {
+        // stop
+        break;
+      }
+      truncatedConversation.unshift(msg);
+      convTokens += chunkTokens;
+    }
+
+    // Now truncatedConversation is within ~7000 tokens
     let assistantMessage = "";
     const stream = await openaiClient.chat.completions.create({
       model,
-      messages: conversation,
+      messages: truncatedConversation,
       stream: true
     });
 
@@ -556,10 +580,8 @@ app.post("/api/chat", async (req, res) => {
 
     res.end();
 
-    // Token usage
-    const encoder = getEncoding(model);
+    // Final token counting
     const systemTokens = countTokens(encoder, systemContext);
-
     let prevAssistantTokens = 0;
     let historyTokens = 0;
     for (const p of priorPairs) {
