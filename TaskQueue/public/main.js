@@ -1173,6 +1173,14 @@ async function chatSettingsSaveFlow() {
   await setSetting("ai_service", serviceSel);
   await setSetting("ai_model", modelSel);
 
+  // FETCH the updated model from /api/model to refresh display
+  const updatedModelResp = await fetch("/api/model");
+  if(updatedModelResp.ok){
+    const updatedModelData = await updatedModelResp.json();
+    modelName = updatedModelData.model || "unknown";
+    document.getElementById("modelHud").textContent = "Model: " + modelName;
+  }
+
   hideModal($("#chatSettingsModal"));
   await loadChatHistory(currentTabId);
   toggleSterlingUrlVisibility(sterlingChatUrlVisible);
