@@ -855,24 +855,6 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
       tokObj = tokenInfo ? JSON.parse(tokenInfo) : null;
     } catch(e) {}
 
-<<<<<<< HEAD
-    const totalTokens = tokObj?.total ?? "???";
-
-    const detailsEl = document.createElement("details");
-    const summaryEl = document.createElement("summary");
-    summaryEl.textContent = `Pair #${pairId} - Model: ${model} - Total Tokens: ${totalTokens}`;
-    detailsEl.appendChild(summaryEl);
-
-    const linePair = document.createElement("div");
-    linePair.textContent = `Pair #${pairId}`;
-    detailsEl.appendChild(linePair);
-
-    const lineModel = document.createElement("div");
-    lineModel.textContent = `Model: ${model}`;
-    detailsEl.appendChild(lineModel);
-
-=======
->>>>>>> parent of 1bf7e81 (• Updated the section that displays metadata for each chat pair so that it shows one collapsed line in the form "Pair # - Model - Total Tokens" and, when clicked, expands to reveal the full details (Pair #, Model, System Context, Full History, Token Usage, Direct Link).)
     if (systemContext) {
       const scDetails = document.createElement("details");
       const scSum = document.createElement("summary");
@@ -924,11 +906,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
       metaContainer.appendChild(tuDetails);
     }
 
-<<<<<<< HEAD
-    const linkDiv = document.createElement("div");
-=======
     const directLinkDiv = document.createElement("div");
->>>>>>> parent of 1bf7e81 (• Updated the section that displays metadata for each chat pair so that it shows one collapsed line in the form "Pair # - Model - Total Tokens" and, when clicked, expands to reveal the full details (Pair #, Model, System Context, Full History, Token Usage, Direct Link).)
     const ddLink = document.createElement("a");
     ddLink.href = `/pair/${pairId}`;
     ddLink.target = "_blank";
