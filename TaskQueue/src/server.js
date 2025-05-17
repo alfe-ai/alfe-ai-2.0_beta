@@ -513,16 +513,42 @@ app.get("/api/activity", (req, res) => {
   }
 });
 
-// Updated route: GET /api/ai/models
+/*
+  Updated /api/ai/models to try returning known token limits for recognized models
+  and "varies" as fallback.
+*/
 app.get("/api/ai/models", async (req, res) => {
   console.debug("[Server Debug] GET /api/ai/models called.");
+
+  // A short dictionary of known approximate token limits
+  const knownTokenLimits = {
+    // GPT-3.5
+    "gpt-3.5-turbo": 4096,
+    "gpt-3.5-turbo-16k": 16384,
+    // GPT-4
+    "gpt-4": 8192,
+    "gpt-4-32k": 32768,
+    // Others
+    "davinci-002": 4000,
+    "babbage-002": 2048,
+    "davinci": 2048,    // older model
+    "babbage": 2048,    // older model
+    "code-davinci-002": 8000,
+    "text-embedding-ada-002": 8191 // can vary
+  };
+
   try {
     const service = db.getSetting("ai_service") || "openai";
     if (service === "openai") {
       const openaiClient = getOpenAiClient();
       const modelList = await openaiClient.models.list();
       const modelIds = modelList.data.map((m) => m.id).sort();
-      res.json({ service: "openai", models: modelIds });
+      // Return array of objects with {id, tokenLimit}
+      const modelData = modelIds.map((id) => ({
+        id,
+        tokenLimit: knownTokenLimits[id] !== undefined ? knownTokenLimits[id] : "varies"
+      }));
+      res.json({ service: "openai", models: modelData });
     } else {
       // Fallback or for openrouter
       const openRouterKey = process.env.OPENROUTER_API_KEY || "";
@@ -538,8 +564,12 @@ app.get("/api/ai/models", async (req, res) => {
           "X-Title": "Alfe Dev",
         },
       });
-      const modelIds = orResp.data?.data?.map((m) => m.id).sort() || [];
-      res.json({ service: "openrouter", models: modelIds });
+      const rawModels = orResp.data?.data?.map((m) => m.id).sort() || [];
+      const modelData = rawModels.map((id) => ({
+        id,
+        tokenLimit: knownTokenLimits[id] !== undefined ? knownTokenLimits[id] : "varies"
+      }));
+      res.json({ service: "openrouter", models: modelData });
     }
   } catch (err) {
     console.error("[TaskQueue] /api/ai/models error:", err);
