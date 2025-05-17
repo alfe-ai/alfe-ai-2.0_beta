@@ -461,7 +461,8 @@ app.get("/api/ai/models", async (req, res) => {
     if (service === "openai") {
       const openaiClient = getOpenAiClient();
       const modelList = await openaiClient.models.list();
-      const modelIds = modelList.data.map((m) => m.id);
+      // Sort models alphabetically
+      const modelIds = modelList.data.map((m) => m.id).sort();
       res.json({ service: "openai", models: modelIds });
     } else {
       // Fallback or for openrouter
@@ -473,7 +474,8 @@ app.get("/api/ai/models", async (req, res) => {
           "X-Title": "Alfe Dev",
         },
       });
-      const modelIds = orResp.data?.data?.map((m) => m.id) || [];
+      // Sort models alphabetically
+      const modelIds = orResp.data?.data?.map((m) => m.id).sort() || [];
       res.json({ service: "openrouter", models: modelIds });
     }
   } catch (err) {
