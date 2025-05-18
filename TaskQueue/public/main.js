@@ -959,9 +959,9 @@ async function loadChatHistory(tabId = 1, reset=false) {
     if(reset){
       for (const p of pairs) {
         addChatMessage(
-          p.id, p.user_text, p.timestamp,
-          p.ai_text, p.ai_timestamp,
-          p.model, p.system_context, null, p.token_info
+            p.id, p.user_text, p.timestamp,
+            p.ai_text, p.ai_timestamp,
+            p.model, p.system_context, null, p.token_info
         );
       }
     } else {
@@ -1202,17 +1202,35 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
     const modelListResp = await fetch("/api/ai/models");
     if(modelListResp.ok){
       const modelData = await modelListResp.json();
+      window.allAiModels = modelData.models || [];
+
       const aiModelSelect = $("#aiModelSelect");
       aiModelSelect.innerHTML = "";
-      const relevantModels = modelData.models || [];
-      relevantModels.forEach(m=>{
-        aiModelSelect.appendChild(
-          new Option(
-            `${m.id} (limit ${m.tokenLimit}, in ${m.inputCost}, out ${m.outputCost})`,
-            m.id
-          )
-        );
+
+      // We'll define a function to repopulate the modelSelect according to "FavoritesOnly"
+      function updateAiModelSelect() {
+        aiModelSelect.innerHTML = "";
+        const filterFav = $("#favoritesOnlyModelCheck").checked;
+        const filtered = filterFav
+            ? window.allAiModels.filter(m => m.favorite)
+            : window.allAiModels.slice();
+        filtered.forEach(m => {
+          aiModelSelect.appendChild(
+              new Option(
+                  `${m.id} (limit ${m.tokenLimit}, in ${m.inputCost}, out ${m.outputCost})`,
+                  m.id
+              )
+          );
+        });
+      }
+
+      updateAiModelSelect();
+
+      // Add event to the new checkbox
+      $("#favoritesOnlyModelCheck").addEventListener("change", () => {
+        updateAiModelSelect();
       });
+
       const currentModel = await getSetting("ai_model");
       if(currentModel) aiModelSelect.value = currentModel;
     }
@@ -1229,17 +1247,30 @@ $("#aiServiceSelect").addEventListener("change", async ()=>{
     const modelListResp = await fetch("/api/ai/models");
     if(modelListResp.ok){
       const modelData = await modelListResp.json();
+      window.allAiModels = modelData.models || [];
+
       const aiModelSelect = $("#aiModelSelect");
       aiModelSelect.innerHTML = "";
-      const relevantModels = modelData.models || [];
-      relevantModels.forEach(m=>{
-        aiModelSelect.appendChild(
-          new Option(
-            `${m.id} (limit ${m.tokenLimit}, in ${m.inputCost}, out ${m.outputCost})`,
-            m.id
-          )
-        );
-      });
+
+      function updateAiModelSelect() {
+        aiModelSelect.innerHTML = "";
+        const filterFav = $("#favoritesOnlyModelCheck").checked;
+        const filtered = filterFav
+            ? window.allAiModels.filter(m => m.favorite)
+            : window.allAiModels.slice();
+        filtered.forEach(m => {
+          aiModelSelect.appendChild(
+              new Option(
+                  `${m.id} (limit ${m.tokenLimit}, in ${m.inputCost}, out ${m.outputCost})`,
+                  m.id
+              )
+          );
+        });
+      }
+      updateAiModelSelect();
+
+      const currentModel = await getSetting("ai_model");
+      if(currentModel) aiModelSelect.value = currentModel;
     }
   } catch(e){
     console.error("Error populating AI service/model lists:", e);
