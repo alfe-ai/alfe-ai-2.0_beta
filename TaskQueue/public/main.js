@@ -1122,8 +1122,8 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
       const relevantModels = modelData.models || [];
       relevantModels.forEach(m=>{
         const opt=document.createElement("option");
-        opt.value=m;
-        opt.textContent=m;
+        opt.value = m.id;
+        opt.textContent = m.id + " (" + m.tokenLimit + ")";
         aiModelSelect.appendChild(opt);
       });
       const currentModel = await getSetting("ai_model");
@@ -1147,8 +1147,8 @@ $("#aiServiceSelect").addEventListener("change", async ()=>{
       const relevantModels = modelData.models || [];
       relevantModels.forEach(m=>{
         const opt=document.createElement("option");
-        opt.value=m; 
-        opt.textContent=m;
+        opt.value = m.id;
+        opt.textContent = m.id + " (" + m.tokenLimit + ")";
         aiModelSelect.appendChild(opt);
       });
     }
