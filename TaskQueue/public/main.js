@@ -829,6 +829,14 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
       botTokDiv.className = "token-indicator";
       botTokDiv.textContent = `Out: ${outTokens}`;
       botDiv.appendChild(botTokDiv);
+
+      // Add response time if present
+      if (typeof tInfo.responseTime === "number") {
+        const rtDiv = document.createElement("div");
+        rtDiv.className = "token-indicator";
+        rtDiv.textContent = `Time: ${tInfo.responseTime.toFixed(2)}s`;
+        botDiv.appendChild(rtDiv);
+      }
     } catch(e) {}
   }
 
@@ -1722,3 +1730,4 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     default: showTasksPanel(); break;
   }
 })();
+

@@ -816,6 +816,10 @@ app.post("/api/chat", async (req, res) => {
     console.debug("[Server Debug] Truncated conversation length =>", truncatedConversation.length);
 
     let assistantMessage = "";
+
+    // Measure AI response time
+    let requestStartTime = Date.now();
+
     const stream = await openaiClient.chat.completions.create({
       model: modelForOpenAI,
       messages: truncatedConversation,
@@ -835,6 +839,12 @@ app.post("/api/chat", async (req, res) => {
 
     res.end();
     console.debug("[Server Debug] AI streaming finished, total length =>", assistantMessage.length);
+
+    let requestEndTime = Date.now();
+    let diffMs = requestEndTime - requestStartTime;
+    // Ceil to 2 decimals
+    let responseTime = Math.ceil(diffMs * 0.01) / 100; // -> 2 decimal ceil
+    // e.g. 1.321 => *100 => 132.1 => ceil => 133 => /100 => 1.33
 
     const systemTokens = countTokens(encoder, systemContext);
     let prevAssistantTokens = 0;
@@ -856,7 +866,8 @@ app.post("/api/chat", async (req, res) => {
       inputTokens,
       assistantTokens: prevAssistantTokens,
       finalAssistantTokens,
-      total
+      total,
+      responseTime // in seconds, 2-decimal ceil
     };
 
     db.finalizeChatPair(chatPairId, assistantMessage, model, new Date().toISOString(), JSON.stringify(tokenInfo));
