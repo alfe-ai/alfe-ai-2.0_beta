@@ -863,7 +863,7 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
-// Updated endpoint to return paged pairs
+// Updated endpoint to return paged pairs, plus running token sums for input/output
 app.get("/api/chat/history", (req, res) => {
   console.debug("[Server Debug] GET /api/chat/history =>", req.query);
   try {
@@ -876,7 +876,39 @@ app.get("/api/chat/history", (req, res) => {
 
     // Reverse results so they're ascending for display
     const pairsAsc = pairsDesc.slice().reverse();
-    res.json(pairsAsc);
+
+    // Summation of input & output tokens
+    let totalInputTokens = 0;
+    let totalOutputTokens = 0;
+
+    // Also refine each pair's token_info
+    for (const pair of pairsAsc) {
+      if (!pair.token_info) continue;
+      try {
+        const tInfo = JSON.parse(pair.token_info);
+        // input tokens = systemTokens + historyTokens + inputTokens
+        const inputT = (tInfo.systemTokens || 0) + (tInfo.historyTokens || 0) + (tInfo.inputTokens || 0);
+        // output tokens = assistantTokens + finalAssistantTokens
+        const outputT = (tInfo.assistantTokens || 0) + (tInfo.finalAssistantTokens || 0);
+
+        totalInputTokens += inputT;
+        totalOutputTokens += outputT;
+
+        // Attach new info for the client
+        pair._tokenSections = {
+          input: inputT,
+          output: outputT
+        };
+      } catch (e) {
+        console.debug("[Server Debug] Could not parse token_info for pair =>", pair.id, e.message);
+      }
+    }
+
+    res.json({
+      pairs: pairsAsc,
+      totalInputTokens,
+      totalOutputTokens
+    });
   } catch (err) {
     console.error("[TaskQueue] /api/chat/history error:", err);
     res.status(500).json({ error: "Internal server error" });
