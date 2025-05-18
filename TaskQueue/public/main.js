@@ -1180,8 +1180,10 @@ async function chatSettingsSaveFlow() {
 
   // FETCH the updated model from /api/model to refresh display
   const updatedModelResp = await fetch("/api/model");
+  console.debug("[Client Debug] /api/model => status:", updatedModelResp.status);
   if(updatedModelResp.ok){
     const updatedModelData = await updatedModelResp.json();
+    console.debug("[Client Debug] /api/model data =>", updatedModelData);
     modelName = updatedModelData.model || "unknown";
     document.getElementById("modelHud").textContent = "Model: " + modelName;
   }
@@ -1610,8 +1612,10 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
   await loadTasks();
   try {
     const r = await fetch("/api/model");
+    console.debug("[Client Debug] /api/model => status:", r.status);
     if(r.ok){
       const data = await r.json();
+      console.debug("[Client Debug] /api/model data =>", data);
       modelName = data.model || "unknown";
     }
   } catch(e){
@@ -1719,3 +1723,4 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     default: showTasksPanel(); break;
   }
 })();
+

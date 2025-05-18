@@ -805,6 +805,7 @@ app.get("/api/chat/history", (req, res) => {
 app.get("/api/model", (req, res) => {
   console.debug("[Server Debug] GET /api/model called.");
   let m = db.getSetting("ai_model");
+  console.debug(`[Server Debug] DB returned ai_model => ${m}`);
   res.json({ model: m });
 });
 
@@ -1003,3 +1004,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
+
