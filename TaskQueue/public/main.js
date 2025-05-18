@@ -858,7 +858,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
     if (systemContext) {
       const scDetails = document.createElement("details");
       const scSum = document.createElement("summary");
-      const scTok = tokObj?.systemTokens ?? '0';
+      const scTok = tokObj?.systemTokens || '0';
       scSum.textContent = `System Context (Tokens: ${scTok})`;
       scDetails.appendChild(scSum);
 
@@ -877,7 +877,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
     if (fullHistory) {
       const fhDetails = document.createElement("details");
       const fhSum = document.createElement("summary");
-      const fhTok = tokObj?.historyTokens ?? '0';
+      const fhTok = tokObj?.historyTokens || '0';
       fhSum.textContent = `Full History (Tokens: ${fhTok})`;
       fhDetails.appendChild(fhSum);
       const fhPre = document.createElement("pre");
@@ -944,20 +944,19 @@ async function loadChatHistory(tabId = 1) {
   const chatMessagesEl = document.getElementById("chatMessages");
   chatMessagesEl.innerHTML="";
   try {
-    const pairs = await fetch(`/api/chat/history?tabId=${tabId}`).then(r => r.json());
+    const data = await fetch(`/api/chat/history?tabId=${tabId}`).then(r => r.json());
+    const pairs = data.pairs || [];
     for (const p of pairs) {
-      const pairDetail = await fetch(`/pair/${p.id}`).then(r=>r.json());
-      p._history = pairDetail;
       addChatMessage(
-          p.id,
-          p.user_text,
-          p.timestamp,
-          p.ai_text,
-          p.ai_timestamp,
-          p.model,
-          p.system_context,
-          p._history,
-          p.token_info
+        p.id,
+        p.user_text,
+        p.timestamp,
+        p.ai_text,
+        p.ai_timestamp,
+        p.model,
+        p.system_context,
+        null,
+        p.token_info
       );
     }
   } catch (err) {
