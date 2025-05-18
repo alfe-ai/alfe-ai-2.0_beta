@@ -794,6 +794,21 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
     userBody.textContent = userText;
     userDiv.appendChild(userBody);
   }
+
+  // Add incoming token usage under user bubble if available
+  if(tokenInfo){
+    try {
+      const tInfo = JSON.parse(tokenInfo);
+      const userInTokens = (tInfo.systemTokens || 0) + (tInfo.historyTokens || 0) + (tInfo.inputTokens || 0);
+      const userTokenDiv = document.createElement("div");
+      userTokenDiv.className = "token-indicator";
+      userTokenDiv.textContent = `In: ${userInTokens}`;
+      userDiv.appendChild(userTokenDiv);
+    } catch(e) {
+      console.debug("[Server Debug] Could not parse token_info for user subbubble =>", e.message);
+    }
+  }
+
   seqDiv.appendChild(userDiv);
 
   const botDiv = document.createElement("div");
@@ -815,7 +830,6 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
     try {
       const tInfo = JSON.parse(tokenInfo);
       const outTokens = tInfo.finalAssistantTokens || 0;
-      // Combine out tokens + time in one line to avoid overlap:
       const combinedDiv = document.createElement("div");
       combinedDiv.className = "token-indicator";
       combinedDiv.textContent = `Out: ${outTokens} (Time: ${tInfo.responseTime?.toFixed(2) || "?"}s)`;
@@ -986,6 +1000,21 @@ async function loadChatHistory(tabId = 1, reset=false) {
           userBody.textContent = p.user_text;
           userDiv.appendChild(userBody);
         }
+
+        // user token info
+        if(p.token_info){
+          try {
+            const tInfo = JSON.parse(p.token_info);
+            const userInTokens = (tInfo.systemTokens||0) + (tInfo.historyTokens||0) + (tInfo.inputTokens||0);
+            const userTokenDiv = document.createElement("div");
+            userTokenDiv.className = "token-indicator";
+            userTokenDiv.textContent = `In: ${userInTokens}`;
+            userDiv.appendChild(userTokenDiv);
+          } catch(e){
+            console.debug("[Server Debug] Could not parse token_info for prepended pair =>", e);
+          }
+        }
+
         seqDiv.appendChild(userDiv);
 
         const botDiv = document.createElement("div");
@@ -1012,7 +1041,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
             combinedDiv.textContent = `Out: ${outTokens} (Time: ${tInfo.responseTime?.toFixed(2) || "?"}s)`;
             botDiv.appendChild(combinedDiv);
           } catch(e){
-            console.debug("Error parsing token_info for prepended pair =>", e);
+            console.debug("[Server Debug] Could not parse token_info for prepended pair =>", e.message);
           }
         }
 
@@ -1656,7 +1685,7 @@ function createTreeNode(node, repoName, chatNumber) {
       console.debug(`[FileTree Debug] Checkbox changed for: ${node.path}, new checked state: ${cb.checked}`);
       try {
         console.debug(`[FileTree Debug] Sending POST to toggle attachment for file: ${node.path}`);
-        const resp = await axios.post(`http://localhost:3444/api/${repoName}/chat/${chatNumber}/toggle_attached`, {
+        const resp = await axios.post(`https://openrouter.ai/api/v1/${repoName}/chat/${chatNumber}/toggle_attached`, {
           filePath: node.path
         });
         console.debug("[FileTree Debug] toggle_attached response:", resp.data);
