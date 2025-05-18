@@ -792,17 +792,6 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
     const userBody = document.createElement("div");
     userBody.textContent = userText;
     userDiv.appendChild(userBody);
-
-    if(showSubbubbleToken && tokenInfo) {
-      try {
-        const tInfo = JSON.parse(tokenInfo);
-        const inTokens = tInfo.inputTokens || 0;
-        const userTokDiv = document.createElement("div");
-        userTokDiv.className = "token-indicator";
-        userTokDiv.textContent = `In: ${inTokens}`;
-        userDiv.appendChild(userTokDiv);
-      } catch(e) {}
-    }
   }
   seqDiv.appendChild(userDiv);
 
@@ -821,24 +810,33 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
   botBody.textContent = aiText || "";
   botDiv.appendChild(botBody);
 
-  if(showSubbubbleToken && tokenInfo) {
+  // ------------------
+  // Always show response time if present
+  // ------------------
+  if(tokenInfo){
     try {
       const tInfo = JSON.parse(tokenInfo);
-      const outTokens = tInfo.finalAssistantTokens || 0;
-      const botTokDiv = document.createElement("div");
-      botTokDiv.className = "token-indicator";
-      botTokDiv.textContent = `Out: ${outTokens}`;
-      botDiv.appendChild(botTokDiv);
 
-      // Add response time if present
-      if (typeof tInfo.responseTime === "number") {
+      // We still keep subbubble token usage behind showSubbubbleToken
+      if(showSubbubbleToken) {
+        const outTokens = tInfo.finalAssistantTokens || 0;
+        const botTokDiv = document.createElement("div");
+        botTokDiv.className = "token-indicator";
+        botTokDiv.textContent = `Out: ${outTokens}`;
+        botDiv.appendChild(botTokDiv);
+      }
+
+      if(typeof tInfo.responseTime === "number") {
         const rtDiv = document.createElement("div");
         rtDiv.className = "token-indicator";
         rtDiv.textContent = `Time: ${tInfo.responseTime.toFixed(2)}s`;
         botDiv.appendChild(rtDiv);
       }
-    } catch(e) {}
+    } catch(e) {
+      console.debug("[Server Debug] Could not parse token_info for pair =>", pairId, e.message);
+    }
   }
+  // ------------------
 
   seqDiv.appendChild(botDiv);
 
@@ -1730,4 +1728,3 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     default: showTasksPanel(); break;
   }
 })();
-
