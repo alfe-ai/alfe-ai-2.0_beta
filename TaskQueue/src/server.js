@@ -515,26 +515,51 @@ app.get("/api/activity", (req, res) => {
 
 /*
   Updated /api/ai/models to try returning known token limits for recognized models
-  and "varies" as fallback.
+  and "N/A" as fallback instead of "varies".
 */
 app.get("/api/ai/models", async (req, res) => {
   console.debug("[Server Debug] GET /api/ai/models called.");
 
-  // A short dictionary of known approximate token limits
+  // A dictionary of known approximate token limits
   const knownTokenLimits = {
-    // GPT-3.5
-    "gpt-3.5-turbo": 4096,
-    "gpt-3.5-turbo-16k": 16384,
-    // GPT-4
-    "gpt-4": 8192,
-    "gpt-4-32k": 32768,
-    // Others
-    "davinci-002": 4000,
-    "babbage-002": 2048,
-    "davinci": 2048,    // older model
-    "babbage": 2048,    // older model
-    "code-davinci-002": 8000,
-    "text-embedding-ada-002": 8191 // can vary
+    "openai/codex-mini": 200000,
+    "openai/o4-mini-high": 200000,
+    "openai/o3": 200000,
+    "openai/o4-mini": 200000,
+    "openai/gpt-4.1": 1047576,
+    "openai/gpt-4.1-mini": 1047576,
+    "openai/gpt-4.1-nano": 1047576,
+    "openai/o1-pro": 200000,
+    "openai/gpt-4o-mini-search-preview": 128000,
+    "openai/gpt-4o-search-preview": 128000,
+    "openai/gpt-4.5-preview": 128000,
+    "openai/o3-mini-high": 200000,
+    "openai/o3-mini": 200000,
+    "openai/o1": 200000,
+    "openai/gpt-4o-2024-11-20": 128000,
+    "openai/o1-preview": 128000,
+    "openai/o1-preview-2024-09-12": 128000,
+    "openai/o1-mini": 128000,
+    "openai/o1-mini-2024-09-12": 128000,
+    "openai/chatgpt-4o-latest": 128000,
+    "openai/gpt-4o-2024-08-06": 128000,
+    "openai/gpt-4o-mini": 128000,
+    "openai/gpt-4o-mini-2024-07-18": 128000,
+    "openai/gpt-4o": 128000,
+    "openai/gpt-4o:extended": 128000,
+    "openai/gpt-4o-2024-05-13": 128000,
+    "openai/gpt-4-turbo": 128000,
+    "openai/gpt-4-turbo-preview": 128000,
+    "openai/gpt-3.5-turbo-1106": 16385,
+    "openai/gpt-4-1106-preview": 128000,
+    "openai/gpt-3.5-turbo-instruct": 4095,
+    "openai/gpt-3.5-turbo-16k": 16385,
+    "openai/gpt-4-32k": 32767,
+    "openai/gpt-4-32k-0314": 32767,
+    "openai/gpt-3.5-turbo": 16385,
+    "openai/gpt-3.5-turbo-0125": 16385,
+    "openai/gpt-4": 8191,
+    "openai/gpt-4-0314": 8191
   };
 
   try {
@@ -543,10 +568,10 @@ app.get("/api/ai/models", async (req, res) => {
       const openaiClient = getOpenAiClient();
       const modelList = await openaiClient.models.list();
       const modelIds = modelList.data.map((m) => m.id).sort();
-      // Return array of objects with {id, tokenLimit}
+      // Return array of objects with { id, tokenLimit }
       const modelData = modelIds.map((id) => ({
         id,
-        tokenLimit: knownTokenLimits[id] !== undefined ? knownTokenLimits[id] : "varies"
+        tokenLimit: knownTokenLimits[id] !== undefined ? knownTokenLimits[id] : "N/A"
       }));
       res.json({ service: "openai", models: modelData });
     } else {
@@ -567,7 +592,7 @@ app.get("/api/ai/models", async (req, res) => {
       const rawModels = orResp.data?.data?.map((m) => m.id).sort() || [];
       const modelData = rawModels.map((id) => ({
         id,
-        tokenLimit: knownTokenLimits[id] !== undefined ? knownTokenLimits[id] : "varies"
+        tokenLimit: knownTokenLimits[id] !== undefined ? knownTokenLimits[id] : "N/A"
       }));
       res.json({ service: "openrouter", models: modelData });
     }
