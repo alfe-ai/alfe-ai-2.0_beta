@@ -741,6 +741,12 @@ app.get("/api/ai/models", async (req, res) => {
     // Combine them into a single array
     const combinedModels = [...openAIModelData, ...openRouterModelData].sort((a, b) => a.id.localeCompare(b.id));
 
+    // Retrieve favorites from settings
+    const favorites = db.getSetting("favorite_ai_models") || [];
+    for (const m of combinedModels) {
+      m.favorite = favorites.includes(m.id);
+    }
+
     res.json({ models: combinedModels });
   } catch (err) {
     console.error("[TaskQueue] /api/ai/models error:", err);
@@ -1109,6 +1115,36 @@ app.post("/api/projects/rename", (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error("[TaskQueue] /api/projects/rename error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// New route to toggle favorites
+app.post("/api/ai/favorites", (req, res) => {
+  try {
+    const { modelId, favorite } = req.body;
+    if (!modelId || typeof favorite !== "boolean") {
+      return res.status(400).json({ error: "Missing modelId or favorite boolean" });
+    }
+    let favList = db.getSetting("favorite_ai_models") || [];
+    const index = favList.indexOf(modelId);
+
+    if (favorite) {
+      // add if not present
+      if (index < 0) {
+        favList.push(modelId);
+      }
+    } else {
+      // remove if present
+      if (index >= 0) {
+        favList.splice(index, 1);
+      }
+    }
+
+    db.setSetting("favorite_ai_models", favList);
+    res.json({ success: true, favorites: favList });
+  } catch (err) {
+    console.error("Error in /api/ai/favorites:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
