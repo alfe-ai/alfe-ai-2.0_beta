@@ -585,56 +585,94 @@ app.get("/api/activity", (req, res) => {
 app.get("/api/ai/models", async (req, res) => {
   console.debug("[Server Debug] GET /api/ai/models called.");
 
-  // Hardcoded known token limits for reference
+  // Updated known token limits based on user-provided data
   const knownTokenLimits = {
+    "openai/gpt-4o-mini": 128000,
+    "openai/gpt-4.1": 1047576,
+    "openai/gpt-4.1-mini": 1047576,
+    "openai/gpt-4.1-nano": 1047576,
+    "openai/o4-mini": 200000,
+    "openai/gpt-4o": 128000,
+    "openai/gpt-4o-2024-11-20": 128000,
+    "openai/o4-mini-high": 200000,
+    "openai/gpt-4o-mini-2024-07-18": 128000,
+    "openai/o3-mini": 200000,
+    "openai/chatgpt-4o-latest": 128000,
+    "openai/gpt-4o-2024-08-06": 128000,
+    "openai/o3": 200000,
     "openai/gpt-3.5-turbo": 16385,
-    "openai/gpt-3.5-turbo-16k": 16385,
+    "openai/o3-mini-high": 200000,
+    "openai/o1": 200000,
+    "openai/gpt-4o-search-preview": 128000,
+    "openai/gpt-4-turbo": 128000,
+    "openai/gpt-4.5-preview": 128000,
+    "openai/o1-mini": 128000,
+    "openai/gpt-4o-2024-05-13": 128000,
+    "openai/gpt-3.5-turbo-0125": 16385,
+    "openai/gpt-4-1106-preview": 128000,
     "openai/gpt-4": 8191,
+    "openai/gpt-4o-mini-search-preview": 128000,
+    "openai/gpt-3.5-turbo-1106": 16385,
+    "openai/codex-mini": 200000,
+    "openai/o1-preview-2024-09-12": 128000,
+    "openai/gpt-3.5-turbo-0613": 4095,
+    "openai/gpt-4-turbo-preview": 128000,
+    "openai/o1-preview": 128000,
+    "openai/gpt-3.5-turbo-instruct": 4095,
+    "openai/o1-mini-2024-09-12": 128000,
+    "openai/gpt-4o:extended": 128000,
+    "openai/gpt-3.5-turbo-16k": 16385,
     "openai/gpt-4-32k": 32767,
-
-    // Additional approximate expansions for new openai/ names
-    "openai/gpt-4o-latest": 8191,
-    "openai/codex-mini-latest": 4096,
-    "openai/gpt-4.1": 8191,
-    "openai/gpt-4.1-mini": 8191,
-    "openai/gpt-4.1-nano": 8191,
-    "openai/gpt-4.5-preview": 8191,
-    "openai/gpt-4o": 8191,
-    "openai/gpt-4o-mini": 8191,
-    "openai/gpt-4o-mini-search-preview": 8191,
-    "openai/gpt-4o-search-preview": 8191,
-    "openai/o1": 8192,
-    "openai/o1-mini": 4096,
-    "openai/o1-preview": 8192,
-    "openai/o3": 8192,
-    "openai/o3-mini": 4096,
-    "openai/o4-mini": 4096
+    "openai/o1-pro": 200000,
+    "openai/gpt-4-0314": 8191,
+    "openai/gpt-4-32k-0314": 32767,
+    "openai/gpt-4-vision-preview": 128000,
+    "openai/gpt-3.5-turbo-0301": 4095
   };
 
-  // Hardcoded known costs for reference
+  // Updated known costs based on user-provided data
   const knownCosts = {
+    "openai/gpt-4o-mini": { input: "$0.15", output: "$0.60" },
+    "openai/gpt-4.1": { input: "$2", output: "$8" },
+    "openai/gpt-4.1-mini": { input: "$0.40", output: "$1.60" },
+    "openai/gpt-4.1-nano": { input: "$0.10", output: "$0.40" },
+    "openai/o4-mini": { input: "$1.10", output: "$4.40" },
+    "openai/gpt-4o": { input: "$2.50", output: "$10" },
+    "openai/gpt-4o-2024-11-20": { input: "$2.50", output: "$10" },
+    "openai/o4-mini-high": { input: "$1.10", output: "$4.40" },
+    "openai/gpt-4o-mini-2024-07-18": { input: "$0.15", output: "$0.60" },
+    "openai/o3-mini": { input: "$1.10", output: "$4.40" },
+    "openai/chatgpt-4o-latest": { input: "$5", output: "$15" },
+    "openai/gpt-4o-2024-08-06": { input: "$2.50", output: "$10" },
+    "openai/o3": { input: "$10", output: "$40" },
     "openai/gpt-3.5-turbo": { input: "$0.50", output: "$1.50" },
-    "openai/gpt-3.5-turbo-16k": { input: "$3", output: "$4" },
+    "openai/o3-mini-high": { input: "$1.10", output: "$4.40" },
+    "openai/o1": { input: "$15", output: "$60" },
+    "openai/gpt-4o-search-preview": { input: "$2.50", output: "$10" },
+    "openai/gpt-4-turbo": { input: "$10", output: "$30" },
+    "openai/gpt-4.5-preview": { input: "$75", output: "$150" },
+    "openai/o1-mini": { input: "$1.10", output: "$4.40" },
+    "openai/gpt-4o-2024-05-13": { input: "$5", output: "$15" },
+    "openai/gpt-3.5-turbo-0125": { input: "$0.50", output: "$1.50" },
+    "openai/gpt-4-1106-preview": { input: "$10", output: "$30" },
     "openai/gpt-4": { input: "$30", output: "$60" },
+    "openai/gpt-4o-mini-search-preview": { input: "$0.15", output: "$0.60" },
+    "openai/gpt-3.5-turbo-1106": { input: "$1", output: "$2" },
+    "openai/codex-mini": { input: "$1.50", output: "$6" },
+    "openai/o1-preview-2024-09-12": { input: "$15", output: "$60" },
+    "openai/gpt-3.5-turbo-0613": { input: "$1", output: "$2" },
+    "openai/gpt-4-turbo-preview": { input: "$10", output: "$30" },
+    "openai/o1-preview": { input: "$15", output: "$60" },
+    "openai/gpt-3.5-turbo-instruct": { input: "$1.50", output: "$2" },
+    "openai/o1-mini-2024-09-12": { input: "$1.10", output: "$4.40" },
+    "openai/gpt-4o:extended": { input: "$6", output: "$18" },
+    "openai/gpt-3.5-turbo-16k": { input: "$3", output: "$4" },
     "openai/gpt-4-32k": { input: "$60", output: "$120" },
-
-    // Additional approximate expansions
-    "openai/gpt-4o-latest": { input: "$32", output: "$64" },
-    "openai/codex-mini-latest": { input: "$0.15", output: "$0.30" },
-    "openai/gpt-4.1": { input: "$30", output: "$60" },
-    "openai/gpt-4.1-mini": { input: "$30", output: "$60" },
-    "openai/gpt-4.1-nano": { input: "$30", output: "$60" },
-    "openai/gpt-4.5-preview": { input: "$30", output: "$60" },
-    "openai/gpt-4o": { input: "$30", output: "$60" },
-    "openai/gpt-4o-mini": { input: "$30", output: "$60" },
-    "openai/gpt-4o-mini-search-preview": { input: "$30", output: "$60" },
-    "openai/gpt-4o-search-preview": { input: "$30", output: "$60" },
-    "openai/o1": { input: "$0.10", output: "$0.20" },
-    "openai/o1-mini": { input: "$0.08", output: "$0.15" },
-    "openai/o1-preview": { input: "$0.10", output: "$0.20" },
-    "openai/o3": { input: "$0.10", output: "$0.20" },
-    "openai/o3-mini": { input: "$0.08", output: "$0.15" },
-    "openai/o4-mini": { input: "$0.08", output: "$0.15" }
+    "openai/o1-pro": { input: "$150", output: "$600" },
+    "openai/gpt-4-0314": { input: "$30", output: "$60" },
+    "openai/gpt-4-32k-0314": { input: "$60", output: "$120" },
+    "openai/gpt-4-vision-preview": { input: "--", output: "--" },
+    "openai/gpt-3.5-turbo-0301": { input: "--", output: "--" },
   };
 
   let openAIModelData = [];
@@ -684,7 +722,7 @@ app.get("/api/ai/models", async (req, res) => {
         const rawModels = orResp.data?.data?.map((m) => m.id).sort() || [];
         openRouterModelData = rawModels.map((id) => {
           const combinedId = "openrouter/" + id;
-          // For now, just mark them as "N/A" in this example
+          // For demonstration, mark them as "N/A"
           return {
             id: combinedId,
             provider: "openrouter",
@@ -701,8 +739,7 @@ app.get("/api/ai/models", async (req, res) => {
     console.error("[TaskQueue] /api/ai/models error:", err);
   }
 
-  // Hardcode a set of DeepSeek models from the user-provided list
-  // (Just as a demonstration – real code might fetch from an API.)
+  // Hardcode a set of DeepSeek models
   const deepseekModelData = [
     {
       id: "deepseek/deepseek-chat-v3-0324:free",
