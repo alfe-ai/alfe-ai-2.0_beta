@@ -1,23 +1,95 @@
 import dotenv from "dotenv";
+import fs from "fs";
+import path from "path";
+import GitHubClient from "./githubClient.js";
+import TaskQueue from "./taskQueue.js";
+import TaskDB from "./taskDb.js";
+
 dotenv.config();
+
+/**
+ * Create a timestamped backup of issues.sqlite (if it exists).
+ */
+function backupDb() {
+  const dbPath = path.resolve("issues.sqlite");
+  if (!fs.existsSync(dbPath)) {
+    console.log("[TaskQueue] No existing DB to backup (first run).");
+    return;
+  }
+
+  const backupsDir = path.resolve("backups");
+  fs.mkdirSync(backupsDir, { recursive: true });
+
+  // ISO string is filesystem-friendly after removing colon/period characters.
+  const ts = new Date().toISOString().replace(/[:.]/g, "-");
+  const backupPath = path.join(backupsDir, `issues-${ts}.sqlite`);
+
+  fs.copyFileSync(dbPath, backupPath);
+  console.log(`[TaskQueue] Backup created: ${backupPath}`);
+}
+
+async function main() {
+  try {
+    // ------------------------------------------------------------------
+    // 0. Safety first – create backup
+    // ------------------------------------------------------------------
+    backupDb();
+
+    const client = new GitHubClient({
+      token: process.env.GITHUB_TOKEN,
+      owner: process.env.GITHUB_OWNER,
+      repo: process.env.GITHUB_REPO
+    });
+
+    const db = new TaskDB(); // creates/open issues.sqlite in cwd
+    const queue = new TaskQueue();
+
+    const label = process.env.GITHUB_LABEL;
+    console.log(
+      `[TaskQueue] Fetching tasks from GitHub ${
+        label ? `(label='${label}')` : "(all open issues)"
+      } …`
+    );
+
+    const issues = await client.fetchOpenIssues(label?.trim() || undefined);
+
+    // Build full repository slug once
+    const repositorySlug = `${client.owner}/${client.repo}`;
+
+    // ------------------------------------------------------------------
+    // 1. Synchronise local DB
+    // ------------------------------------------------------------------
+    issues.forEach((iss) => db.upsertIssue(iss, repositorySlug));
+
+    // Closed issue detection
+    const openIds = issues.map((i) => i.id);
+    db.markClosedExcept(openIds);
+
+    // ------------------------------------------------------------------
+    // 2. Populate in-memory queue (only open issues)
+    // ------------------------------------------------------------------
+    issues.forEach((issue) => queue.enqueue(issue));
+
+    console.log(`[TaskQueue] ${queue.size()} task(s) in queue.`);
+    queue.print();
+
+    // Debug: show DB snapshot (can be removed)
+    console.debug("[TaskQueue] Current DB state:", db.dump());
+  } catch (err) {
+    console.error("Fatal:", err.message);
+    process.exit(1);
+  }
+}
+
+main();
 
 import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
-import path from "path";
-import fs from "fs";
-import { fileURLToPath } from "url";
-import TaskDB from "./taskDb.js";
-import GitHubClient from "./githubClient.js";
 import multer from "multer";
-
-// Updated OpenAI SDK import
+import { fileURLToPath } from "url";
 import OpenAI from "openai";
-
-// Token counting
 import { encoding_for_model } from "tiktoken";
-
-// Added axios import to fix require() error:
 import axios from "axios";
 
 const db = new TaskDB();
@@ -510,7 +582,6 @@ app.get("/api/activity", (req, res) => {
   prefixing IDs with "openai/" or "openrouter/",
   returning a single combined array in "models".
 */
-
 app.get("/api/ai/models", async (req, res) => {
   console.debug("[Server Debug] GET /api/ai/models called.");
 
@@ -792,12 +863,20 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
+// Updated endpoint to return paged pairs
 app.get("/api/chat/history", (req, res) => {
   console.debug("[Server Debug] GET /api/chat/history =>", req.query);
   try {
     const tabId = parseInt(req.query.tabId || "1", 10);
-    const chatPairs = db.getAllChatPairs(tabId);
-    res.json(chatPairs);
+    const limit = parseInt(req.query.limit || "10", 10);
+    const offset = parseInt(req.query.offset || "0", 10);
+
+    // Retrieve in descending order
+    const pairsDesc = db.getChatPairsPage(tabId, limit, offset);
+
+    // Reverse results so they're ascending for display
+    const pairsAsc = pairsDesc.slice().reverse();
+    res.json(pairsAsc);
   } catch (err) {
     console.error("[TaskQueue] /api/chat/history error:", err);
     res.status(500).json({ error: "Internal server error" });

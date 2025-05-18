@@ -507,6 +507,16 @@ export default class TaskDB {
       .all(tabId);
   }
 
+  getChatPairsPage(tabId = 1, limit = 10, offset = 0) {
+    return this.db.prepare(`
+      SELECT * FROM chat_pairs
+      WHERE chat_tab_id = ?
+      ORDER BY id DESC
+      LIMIT ?
+      OFFSET ?
+    `).all(tabId, limit, offset);
+  }
+
   getPairById(id) {
     return this.db
       .prepare("SELECT * FROM chat_pairs WHERE id = ?")
@@ -594,3 +604,4 @@ export default class TaskDB {
       .run(newProject, oldProject);
   }
 }
+
