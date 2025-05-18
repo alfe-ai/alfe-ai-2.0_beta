@@ -44,7 +44,7 @@
     }
 
     .container {
-      max-width: 800px;
+      max-width: 1000px;
       margin: 0 auto;
     }
     .links {
@@ -61,12 +61,39 @@
     .unstarred {
       color: #777;
     }
+
+    /* New style for provider filter & favorites checkbox. */
+    #filtersContainer {
+      margin-bottom: 1rem;
+    }
+    #providerFilter {
+      background: #333;
+      color: #ddd;
+      border: 1px solid #444;
+      margin-left: 8px;
+      margin-right: 16px;
+    }
+    #favoritesOnlyCheck {
+      margin-right: 8px;
+    }
   </style>
 </head>
 <body>
 <div class="container">
   <h1>AI Models & Limits</h1>
-  <p>This page queries the OpenAI/OpenRouter API to list available models, showing approximate token limits, provider, and costs.</p>
+  <p>This page queries the OpenAI/OpenRouter APIs plus static DeepSeek data to list available models, showing approximate token limits, provider, and costs.</p>
+
+  <div id="filtersContainer">
+    <label>Provider:
+      <select id="providerFilter">
+        <option value="">All Providers</option>
+        <option value="openai">openai</option>
+        <option value="deepseek">deepseek</option>
+        <option value="openrouter">openrouter</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="favoritesOnlyCheck"/> Favorites Only</label>
+  </div>
 
   <table id="modelsTable">
     <thead>
@@ -94,12 +121,22 @@
   let currentSortCol = null;
   let currentSortDir = 1; // 1 = ascending, -1 = descending
 
+  const providerFilterEl = document.getElementById("providerFilter");
+  const favoritesOnlyCheckEl = document.getElementById("favoritesOnlyCheck");
+
   document.addEventListener('DOMContentLoaded', async () => {
     const tableHead = document.querySelector('#modelsTable thead');
     tableHead.addEventListener('click', (e) => {
       const th = e.target.closest('th');
       if (!th || !th.dataset.column) return;
       sortByColumn(th.dataset.column);
+    });
+
+    providerFilterEl.addEventListener("change", () => {
+      applyFiltersAndRender();
+    });
+    favoritesOnlyCheckEl.addEventListener("change", () => {
+      applyFiltersAndRender();
     });
 
     await loadModels();
@@ -119,18 +156,33 @@
         modelsTbody.innerHTML = "<tr><td colspan='6'>No models found.</td></tr>";
         return;
       }
-      renderTable();
+      applyFiltersAndRender();
     } catch(e) {
       console.error("Error loading models:", e);
-      const modelsTbody = document.querySelector("#modelsTable tbody");
       modelsTbody.innerHTML = "<tr><td colspan='6'>Error loading models.</td></tr>";
     }
   }
 
-  function renderTable() {
+  function applyFiltersAndRender() {
+    let filtered = modelList.slice();
+    const selectedProvider = providerFilterEl.value;
+    if(selectedProvider) {
+      filtered = filtered.filter(m => m.provider === selectedProvider);
+    }
+    if(favoritesOnlyCheckEl.checked) {
+      filtered = filtered.filter(m => m.favorite);
+    }
+    renderTable(filtered);
+  }
+
+  function renderTable(data) {
     const tbody = document.querySelector("#modelsTable tbody");
+    if(!data || data.length === 0) {
+      tbody.innerHTML = "<tr><td colspan='6'>No models to display.</td></tr>";
+      return;
+    }
     let html = "";
-    modelList.forEach(m => {
+    data.forEach(m => {
       const starClass = m.favorite ? "favorite-star starred" : "favorite-star unstarred";
       const starChar  = m.favorite ? "★" : "☆";
       html += `<tr>
@@ -166,12 +218,10 @@
             console.error("Failed toggling favorite:", resp.status);
             return;
           }
-          // Update local data
           star.classList.toggle("starred", newFavorite);
           star.classList.toggle("unstarred", !newFavorite);
           star.textContent = newFavorite ? "★" : "☆";
 
-          // Also update modelList
           const idx = modelList.findIndex(x => x.id === modelId);
           if(idx >= 0) {
             modelList[idx].favorite = newFavorite;
@@ -184,7 +234,6 @@
   }
 
   function sortByColumn(colKey) {
-    // Toggle sort direction if same column is clicked again
     if(colKey === currentSortCol) {
       currentSortDir *= -1;
     } else {
@@ -196,14 +245,12 @@
       let valA = a[colKey];
       let valB = b[colKey];
 
-      // If sorting by favorite, treat true as 1, false as 0
       if(colKey === "favorite") {
         valA = a.favorite ? 1 : 0;
         valB = b.favorite ? 1 : 0;
         return (valA - valB) * currentSortDir;
       }
 
-      // Try numeric sort if it looks numeric
       const asNumA = parseFloat(String(valA).replace(/[^0-9.-]+/g,"")) || 0;
       const asNumB = parseFloat(String(valB).replace(/[^0-9.-]+/g,"")) || 0;
 
@@ -215,9 +262,8 @@
       return 0;
     });
 
-    renderTable();
+    applyFiltersAndRender();
   }
 </script>
 </body>
 </html>
-

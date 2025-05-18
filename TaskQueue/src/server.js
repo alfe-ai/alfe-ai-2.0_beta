@@ -580,98 +580,26 @@ app.get("/api/activity", (req, res) => {
 /*
   We combine both OpenAI and OpenRouter models (if available),
   prefixing IDs with "openai/" or "openrouter/",
-  returning a single combined array in "models".
+  plus a static set of DeepSeek models for demonstration.
 */
 app.get("/api/ai/models", async (req, res) => {
   console.debug("[Server Debug] GET /api/ai/models called.");
 
+  // Hardcoded known token limits for reference
   const knownTokenLimits = {
-    "openai/codex-mini": 200000,
-    "openai/codex-mini-latest": 200000,
-    "openai/o4-mini-high": 200000,
-    "openai/o3": 200000,
-    "openai/o4-mini": 200000,
-    "openai/gpt-4.1": 1047576,
-    "openai/gpt-4.1-mini": 1047576,
-    "openai/gpt-4.1-nano": 1047576,
-    "openai/o1-pro": 200000,
-    "openai/gpt-4o-mini-search-preview": 128000,
-    "openai/gpt-4o-search-preview": 128000,
-    "openai/gpt-4.5-preview": 128000,
-    "openai/o3-mini-high": 200000,
-    "openai/o3-mini": 200000,
-    "openai/o1": 200000,
-    "openai/gpt-4o-2024-11-20": 128000,
-    "openai/o1-preview": 128000,
-    "openai/o1-preview-2024-09-12": 128000,
-    "openai/o1-mini": 128000,
-    "openai/o1-mini-2024-09-12": 128000,
-    "openai/chatgpt-4o-latest": 128000,
-    "openai/gpt-4o-2024-08-06": 128000,
-    "openai/gpt-4o-mini": 128000,
-    "openai/gpt-4o-mini-2024-07-18": 128000,
-    "openai/gpt-4o": 128000,
-    "openai/gpt-4o:extended": 128000,
-    "openai/gpt-4o-2024-05-13": 128000,
-    "openai/gpt-4-turbo": 128000,
-    "openai/gpt-4-turbo-preview": 128000,
-    "openai/gpt-3.5-turbo-1106": 16385,
-    "openai/gpt-3.5-turbo-instruct": 4095,
-    "openai/gpt-3.5-turbo-16k": 16385,
-    "openai/gpt-4-32k": 32767,
-    "openai/gpt-4-32k-0314": 32767,
     "openai/gpt-3.5-turbo": 16385,
-    "openai/gpt-3.5-turbo-0125": 16385,
+    "openai/gpt-3.5-turbo-16k": 16385,
     "openai/gpt-4": 8191,
-    "openai/gpt-4-0314": 8191
+    "openai/gpt-4-32k": 32767
   };
 
-  // Hardcoded costs for demonstration
+  // Hardcoded known costs for reference
   const knownCosts = {
-    "openai/codex-mini": { input: "$1.50", output: "$6" },
-    "openai/codex-mini-latest": { input: "$1.50", output: "$6" },
-    "openai/o4-mini-high": { input: "$1.10", output: "$4.40" },
-    "openai/o3": { input: "$10", output: "$40" },
-    "openai/o4-mini": { input: "$1.10", output: "$4.40" },
-    "openai/gpt-4.1": { input: "$2", output: "$8" },
-    "openai/gpt-4.1-mini": { input: "$0.40", output: "$1.60" },
-    "openai/gpt-4.1-nano": { input: "$0.10", output: "$0.40" },
-    "openai/o1-pro": { input: "$150", output: "$600" },
-    "openai/gpt-4o-mini-search-preview": { input: "$0.15", output: "$0.60" },
-    "openai/gpt-4o-search-preview": { input: "$2.50", output: "$10" },
-    "openai/gpt-4.5-preview": { input: "$75", output: "$150" },
-    "openai/o3-mini-high": { input: "$1.10", output: "$4.40" },
-    "openai/o3-mini": { input: "$1.10", output: "$4.40" },
-    "openai/o1": { input: "$15", output: "$60" },
-    "openai/gpt-4o-2024-11-20": { input: "$2.50", output: "$10" },
-    "openai/o1-preview": { input: "$15", output: "$60" },
-    "openai/o1-preview-2024-09-12": { input: "$15", output: "$60" },
-    "openai/o1-mini": { input: "$1.10", output: "$4.40" },
-    "openai/o1-mini-2024-09-12": { input: "$1.10", output: "$4.40" },
-    "openai/chatgpt-4o-latest": { input: "$5", output: "$15" },
-    "openai/gpt-4o-2024-08-06": { input: "$2.50", output: "$10" },
-    "openai/gpt-4o-mini": { input: "$0.15", output: "$0.60" },
-    "openai/gpt-4o-mini-2024-07-18": { input: "$0.15", output: "$0.60" },
-    "openai/gpt-4o": { input: "$2.50", output: "$10" },
-    "openai/gpt-4o:extended": { input: "$6", output: "$18" },
-    "openai/gpt-4o-2024-05-13": { input: "$5", output: "$15" },
-    "openai/gpt-4-turbo": { input: "$10", output: "$30" },
-    "openai/gpt-4-turbo-preview": { input: "$10", output: "$30" },
-    "openai/gpt-3.5-turbo-1106": { input: "$1", output: "$2" },
-    "openai/gpt-3.5-turbo-instruct": { input: "$1.50", output: "$2" },
-    "openai/gpt-3.5-turbo-16k": { input: "$3", output: "$4" },
-    "openai/gpt-4-32k": { input: "$60", output: "$120" },
-    "openai/gpt-4-32k-0314": { input: "$60", output: "$120" },
     "openai/gpt-3.5-turbo": { input: "$0.50", output: "$1.50" },
-    "openai/gpt-3.5-turbo-0125": { input: "$0.50", output: "$1.50" },
+    "openai/gpt-3.5-turbo-16k": { input: "$3", output: "$4" },
     "openai/gpt-4": { input: "$30", output: "$60" },
-    "openai/gpt-4-0314": { input: "$30", output: "$60" }
+    "openai/gpt-4-32k": { input: "$60", output: "$120" }
   };
-
-  // Helper for prefixing
-  function prefixId(provider, modelId) {
-    return provider + "/" + modelId;
-  }
 
   let openAIModelData = [];
   let openRouterModelData = [];
@@ -685,11 +613,10 @@ app.get("/api/ai/models", async (req, res) => {
       try {
         console.debug("[Server Debug] Fetching OpenAI model list...");
         const openaiClient = new OpenAI({ apiKey: openAiKey });
-        // listing
         const modelList = await openaiClient.models.list();
         const modelIds = modelList.data.map(m => m.id).sort();
         openAIModelData = modelIds.map(id => {
-          const combinedId = prefixId("openai", id);
+          const combinedId = "openai/" + id;
           const limit = knownTokenLimits[combinedId] || "N/A";
           const cInfo = knownCosts[combinedId]
             ? knownCosts[combinedId]
@@ -720,38 +647,190 @@ app.get("/api/ai/models", async (req, res) => {
         });
         const rawModels = orResp.data?.data?.map((m) => m.id).sort() || [];
         openRouterModelData = rawModels.map((id) => {
-          const combinedId = prefixId("openrouter", id);
-          const limit = knownTokenLimits[combinedId] || "N/A";
-          const cInfo = knownCosts[combinedId]
-            ? knownCosts[combinedId]
-            : { input: "N/A", output: "N/A" };
+          const combinedId = "openrouter/" + id;
+          // For now, just mark them as "N/A" in this example
           return {
             id: combinedId,
             provider: "openrouter",
-            tokenLimit: limit,
-            inputCost: cInfo.input,
-            outputCost: cInfo.output
+            tokenLimit: "N/A",
+            inputCost: "N/A",
+            outputCost: "N/A",
           };
         });
       } catch (err) {
         console.error("[TaskQueue] Error fetching OpenRouter models:", err);
       }
     }
-
-    // Combine them into a single array
-    const combinedModels = [...openAIModelData, ...openRouterModelData].sort((a, b) => a.id.localeCompare(b.id));
-
-    // Retrieve favorites from settings
-    const favorites = db.getSetting("favorite_ai_models") || [];
-    for (const m of combinedModels) {
-      m.favorite = favorites.includes(m.id);
-    }
-
-    res.json({ models: combinedModels });
   } catch (err) {
     console.error("[TaskQueue] /api/ai/models error:", err);
-    res.status(500).json({ error: err.message });
   }
+
+  // Hardcode a set of DeepSeek models from the user-provided list
+  // (Just as a demonstration – real code might fetch from an API.)
+  const deepseekModelData = [
+    {
+      id: "deepseek/deepseek-chat-v3-0324:free",
+      provider: "deepseek",
+      tokenLimit: 163840,
+      inputCost: "$0",
+      outputCost: "$0"
+    },
+    {
+      id: "deepseek/deepseek-chat-v3-0324",
+      provider: "deepseek",
+      tokenLimit: 163840,
+      inputCost: "$0.30",
+      outputCost: "$0.88"
+    },
+    {
+      id: "deepseek/deepseek-r1:free",
+      provider: "deepseek",
+      tokenLimit: 163840,
+      inputCost: "$0",
+      outputCost: "$0"
+    },
+    {
+      id: "deepseek/deepseek-chat",
+      provider: "deepseek",
+      tokenLimit: 163840,
+      inputCost: "$0.38",
+      outputCost: "$0.89"
+    },
+    {
+      id: "deepseek/deepseek-r1",
+      provider: "deepseek",
+      tokenLimit: 163840,
+      inputCost: "$0.50",
+      outputCost: "$2.18"
+    },
+    {
+      id: "deepseek/deepseek-r1-distill-llama-70b",
+      provider: "deepseek",
+      tokenLimit: 131072,
+      inputCost: "$0.10",
+      outputCost: "$0.40"
+    },
+    {
+      id: "deepseek/deepseek-chat:free",
+      provider: "deepseek",
+      tokenLimit: 163840,
+      inputCost: "$0",
+      outputCost: "$0"
+    },
+    {
+      id: "tngtech/deepseek-r1t-chimera:free",
+      provider: "deepseek",
+      tokenLimit: 163840,
+      inputCost: "$0",
+      outputCost: "$0"
+    },
+    {
+      id: "deepseek/deepseek-prover-v2:free",
+      provider: "deepseek",
+      tokenLimit: 163840,
+      inputCost: "$0",
+      outputCost: "$0"
+    },
+    {
+      id: "deepseek/deepseek-r1-distill-llama-70b:free",
+      provider: "deepseek",
+      tokenLimit: 8192,
+      inputCost: "$0",
+      outputCost: "$0"
+    },
+    {
+      id: "deepseek/deepseek-prover-v2",
+      provider: "deepseek",
+      tokenLimit: 131072,
+      inputCost: "$0.50",
+      outputCost: "$2.18"
+    },
+    {
+      id: "deepseek/deepseek-r1-zero:free",
+      provider: "deepseek",
+      tokenLimit: 128000,
+      inputCost: "$0",
+      outputCost: "$0"
+    },
+    {
+      id: "deepseek/deepseek-v3-base:free",
+      provider: "deepseek",
+      tokenLimit: 163840,
+      inputCost: "$0",
+      outputCost: "$0"
+    },
+    {
+      id: "deepseek/deepseek-r1-distill-qwen-32b",
+      provider: "deepseek",
+      tokenLimit: 131072,
+      inputCost: "$0.12",
+      outputCost: "$0.18"
+    },
+    {
+      id: "deepseek/deepseek-r1-distill-llama-8b",
+      provider: "deepseek",
+      tokenLimit: 32000,
+      inputCost: "$0.04",
+      outputCost: "$0.04"
+    },
+    {
+      id: "deepseek/deepseek-r1-distill-qwen-32b:free",
+      provider: "deepseek",
+      tokenLimit: 16000,
+      inputCost: "$0",
+      outputCost: "$0"
+    },
+    {
+      id: "deepseek/deepseek-r1-distill-qwen-1.5b",
+      provider: "deepseek",
+      tokenLimit: 131072,
+      inputCost: "$0.18",
+      outputCost: "$0.18"
+    },
+    {
+      id: "deepseek/deepseek-r1-distill-qwen-14b",
+      provider: "deepseek",
+      tokenLimit: 64000,
+      inputCost: "$0.15",
+      outputCost: "$0.15"
+    },
+    {
+      id: "deepseek/deepseek-r1-distill-qwen-14b:free",
+      provider: "deepseek",
+      tokenLimit: 64000,
+      inputCost: "$0",
+      outputCost: "$0"
+    },
+    {
+      id: "deepseek/deepseek-coder",
+      provider: "deepseek",
+      tokenLimit: 128000,
+      inputCost: "$0.04",
+      outputCost: "$0.12"
+    },
+    {
+      id: "deepseek/deepseek-chat-v2.5",
+      provider: "deepseek",
+      tokenLimit: 128000,
+      inputCost: "--",
+      outputCost: "--"
+    }
+  ];
+
+  // Combine them into a single array
+  const combinedModels = [
+    ...openAIModelData,
+    ...openRouterModelData,
+    ...deepseekModelData
+  ].sort((a, b) => a.id.localeCompare(b.id));
+
+  // Retrieve favorites from settings
+  const favorites = db.getSetting("favorite_ai_models") || [];
+  for (const m of combinedModels) {
+    m.favorite = favorites.includes(m.id);
+  }
+
+  res.json({ models: combinedModels });
 });
 
 app.post("/api/chat", async (req, res) => {
@@ -842,9 +921,7 @@ app.post("/api/chat", async (req, res) => {
 
     let requestEndTime = Date.now();
     let diffMs = requestEndTime - requestStartTime;
-    // Ceil to 2 decimals
-    let responseTime = Math.ceil(diffMs * 0.01) / 100; // -> 2 decimal ceil
-    // e.g. 1.321 => *100 => 132.1 => ceil => 133 => /100 => 1.33
+    let responseTime = Math.ceil(diffMs * 0.01) / 100; // 2-decimal ceiling
 
     const systemTokens = countTokens(encoder, systemContext);
     let prevAssistantTokens = 0;
@@ -867,7 +944,7 @@ app.post("/api/chat", async (req, res) => {
       assistantTokens: prevAssistantTokens,
       finalAssistantTokens,
       total,
-      responseTime // in seconds, 2-decimal ceil
+      responseTime
     };
 
     db.finalizeChatPair(chatPairId, assistantMessage, model, new Date().toISOString(), JSON.stringify(tokenInfo));
@@ -888,30 +965,22 @@ app.get("/api/chat/history", (req, res) => {
     const limit = parseInt(req.query.limit || "10", 10);
     const offset = parseInt(req.query.offset || "0", 10);
 
-    // Retrieve in descending order
     const pairsDesc = db.getChatPairsPage(tabId, limit, offset);
-
-    // Reverse results so they're ascending for display
     const pairsAsc = pairsDesc.slice().reverse();
 
-    // Summation of input & output tokens
     let totalInputTokens = 0;
     let totalOutputTokens = 0;
 
-    // Also refine each pair's token_info
     for (const pair of pairsAsc) {
       if (!pair.token_info) continue;
       try {
         const tInfo = JSON.parse(pair.token_info);
-        // input tokens = systemTokens + historyTokens + inputTokens
         const inputT = (tInfo.systemTokens || 0) + (tInfo.historyTokens || 0) + (tInfo.inputTokens || 0);
-        // output tokens = assistantTokens + finalAssistantTokens
         const outputT = (tInfo.assistantTokens || 0) + (tInfo.finalAssistantTokens || 0);
 
         totalInputTokens += inputT;
         totalOutputTokens += outputT;
 
-        // Attach new info for the client
         pair._tokenSections = {
           input: inputT,
           output: outputT
@@ -1141,12 +1210,10 @@ app.post("/api/ai/favorites", (req, res) => {
     const index = favList.indexOf(modelId);
 
     if (favorite) {
-      // add if not present
       if (index < 0) {
         favList.push(modelId);
       }
     } else {
-      // remove if present
       if (index >= 0) {
         favList.splice(index, 1);
       }

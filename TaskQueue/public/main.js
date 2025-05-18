@@ -619,13 +619,13 @@ async function deleteTab(tabId){
     }
     renderTabs();
     renderSidebarTabs();
-    await loadChatHistory(currentTabId);
+    await loadChatHistory(currentTabId, true);
   }
 }
 async function selectTab(tabId){
   currentTabId = tabId;
   await setSetting("last_chat_tab", tabId);
-  loadChatHistory(tabId);
+  loadChatHistory(tabId, true);
   renderTabs();
   renderSidebarTabs();
 }
@@ -810,33 +810,19 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
   botBody.textContent = aiText || "";
   botDiv.appendChild(botBody);
 
-  // ------------------
-  // Always show response time if present
-  // ------------------
   if(tokenInfo){
     try {
       const tInfo = JSON.parse(tokenInfo);
-
-      // We still keep subbubble token usage behind showSubbubbleToken
-      if(showSubbubbleToken) {
-        const outTokens = tInfo.finalAssistantTokens || 0;
-        const botTokDiv = document.createElement("div");
-        botTokDiv.className = "token-indicator";
-        botTokDiv.textContent = `Out: ${outTokens}`;
-        botDiv.appendChild(botTokDiv);
-      }
-
-      if(typeof tInfo.responseTime === "number") {
-        const rtDiv = document.createElement("div");
-        rtDiv.className = "token-indicator";
-        rtDiv.textContent = `Time: ${tInfo.responseTime.toFixed(2)}s`;
-        botDiv.appendChild(rtDiv);
-      }
+      const outTokens = tInfo.finalAssistantTokens || 0;
+      // Combine out tokens + time in one line to avoid overlap:
+      const combinedDiv = document.createElement("div");
+      combinedDiv.className = "token-indicator";
+      combinedDiv.textContent = `Out: ${outTokens} (Time: ${tInfo.responseTime?.toFixed(2) || "?"}s)`;
+      botDiv.appendChild(combinedDiv);
     } catch(e) {
       console.debug("[Server Debug] Could not parse token_info for pair =>", pairId, e.message);
     }
   }
-  // ------------------
 
   seqDiv.appendChild(botDiv);
 
@@ -864,8 +850,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
     if (systemContext) {
       const scDetails = document.createElement("details");
       const scSum = document.createElement("summary");
-      const scTok = tokObj?.systemTokens || '0';
-      scSum.textContent = `System Context (Tokens: ${scTok})`;
+      scSum.textContent = `System Context`;
       scDetails.appendChild(scSum);
 
       const lines = systemContext.split(/\r?\n/);
@@ -883,8 +868,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
     if (fullHistory) {
       const fhDetails = document.createElement("details");
       const fhSum = document.createElement("summary");
-      const fhTok = tokObj?.historyTokens || '0';
-      fhSum.textContent = `Full History (Tokens: ${fhTok})`;
+      fhSum.textContent = `Full History`;
       fhDetails.appendChild(fhSum);
       const fhPre = document.createElement("pre");
       fhPre.textContent = JSON.stringify(fullHistory, null, 2);
@@ -895,7 +879,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
     if(tokObj){
       const tuDetails = document.createElement("details");
       const tuSum = document.createElement("summary");
-      tuSum.textContent = `Token Usage (Tokens: ${tokObj.total || 0})`;
+      tuSum.textContent = `Token Usage`;
       tuDetails.appendChild(tuSum);
 
       const usageDiv = document.createElement("div");
@@ -906,8 +890,8 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
           `Input: ${tokObj.inputTokens}, ` +
           `Assistant: ${tokObj.assistantTokens}, ` +
           `FinalAssistantTokens: ${tokObj.finalAssistantTokens}, ` +
-          `Total: ${tokObj.total}`;
-
+          `Total: ${tokObj.total}, ` +
+          `Time: ${tokObj.responseTime ?? "?"}s`;
       tuDetails.appendChild(usageDiv);
       metaContainer.appendChild(tuDetails);
     }
@@ -946,28 +930,124 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
   chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
 }
 
-async function loadChatHistory(tabId = 1) {
+let chatHistoryOffset = 0; // how many have we loaded so far
+let chatHasMore = true;
+
+async function loadChatHistory(tabId = 1, reset=false) {
   const chatMessagesEl = document.getElementById("chatMessages");
-  chatMessagesEl.innerHTML="";
+  if(reset){
+    chatMessagesEl.innerHTML="";
+    chatHistoryOffset = 0;
+    chatHasMore = true;
+  }
   try {
-    const data = await fetch(`/api/chat/history?tabId=${tabId}`).then(r => r.json());
+    const resp = await fetch(`/api/chat/history?tabId=${tabId}&limit=10&offset=${chatHistoryOffset}`);
+    if(!resp.ok){
+      console.error("Error loading chat history from server");
+      return;
+    }
+    const data = await resp.json();
     const pairs = data.pairs || [];
-    for (const p of pairs) {
-      addChatMessage(
-        p.id,
-        p.user_text,
-        p.timestamp,
-        p.ai_text,
-        p.ai_timestamp,
-        p.model,
-        p.system_context,
-        null,
-        p.token_info
-      );
+    if(pairs.length<10){
+      chatHasMore = false;
+    }
+    chatHistoryOffset += pairs.length;
+
+    // We want oldest at top, but we are appending at the top in reverse
+    // We'll insert them in a reversed way, or we can just at the end for simplicity
+    // For "reset===true", we do normal ascending. For subsequent loads, we prepend.
+    if(reset){
+      for (const p of pairs) {
+        addChatMessage(
+          p.id, p.user_text, p.timestamp,
+          p.ai_text, p.ai_timestamp,
+          p.model, p.system_context, null, p.token_info
+        );
+      }
+    } else {
+      // Prepend logic:
+      const scrollPos = chatMessagesEl.scrollHeight;
+      const fragment = document.createDocumentFragment();
+      for (let i = pairs.length-1; i>=0; i--){
+        const p = pairs[i];
+        const seqDiv = document.createElement("div");
+        seqDiv.className = "chat-sequence";
+
+        const userDiv = document.createElement("div");
+        userDiv.className = "chat-user";
+        {
+          const userHead = document.createElement("div");
+          userHead.className = "bubble-header";
+          userHead.innerHTML = `
+            <div class="name-oval name-oval-user">User</div>
+            <span style="opacity:0.8;">${formatTimestamp(p.timestamp)}</span>
+          `;
+          userDiv.appendChild(userHead);
+
+          const userBody = document.createElement("div");
+          userBody.textContent = p.user_text;
+          userDiv.appendChild(userBody);
+        }
+        seqDiv.appendChild(userDiv);
+
+        const botDiv = document.createElement("div");
+        botDiv.className = "chat-bot";
+
+        const botHead = document.createElement("div");
+        botHead.className = "bubble-header";
+        botHead.innerHTML = `
+          <div class="name-oval name-oval-ai">${window.agentName} (${p.model || ""})</div>
+          <span style="opacity:0.8;">${p.ai_timestamp ? formatTimestamp(p.ai_timestamp) : "…"}</span>
+        `;
+        botDiv.appendChild(botHead);
+
+        const botBody = document.createElement("div");
+        botBody.textContent = p.ai_text || "";
+        botDiv.appendChild(botBody);
+
+        // fix overlap
+        if(p.token_info){
+          try {
+            const tInfo = JSON.parse(p.token_info);
+            const outTokens = tInfo.finalAssistantTokens || 0;
+            const combinedDiv = document.createElement("div");
+            combinedDiv.className = "token-indicator";
+            combinedDiv.textContent = `Out: ${outTokens} (Time: ${tInfo.responseTime?.toFixed(2) || "?"}s)`;
+            botDiv.appendChild(combinedDiv);
+          } catch(e){
+            console.debug("Error parsing token_info for prepended pair =>", e);
+          }
+        }
+
+        seqDiv.appendChild(botDiv);
+        fragment.appendChild(seqDiv);
+      }
+      // Insert at the top:
+      if(chatMessagesEl.firstChild){
+        chatMessagesEl.insertBefore(fragment, chatMessagesEl.firstChild);
+      } else {
+        chatMessagesEl.appendChild(fragment);
+      }
+      chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight - scrollPos;
     }
   } catch (err) {
     console.error("Error loading chat history:", err);
   }
+}
+
+function initChatScrollLoading(){
+  const chatMessagesEl = document.getElementById("chatMessages");
+  if(!chatMessagesEl) return;
+
+  chatMessagesEl.addEventListener("scroll", async ()=>{
+    if(chatMessagesEl.scrollTop < 50){ // near top
+      if(chatHasMore){
+        // load next page
+        console.debug("Scrolled near top => loading older messages...");
+        await loadChatHistory(currentTabId, false);
+      }
+    }
+  });
 }
 
 const chatInputEl = document.getElementById("chatInput");
@@ -1078,7 +1158,7 @@ chatSendBtnEl.addEventListener("click", async () => {
       })
     });
 
-    await loadChatHistory(currentTabId);
+    await loadChatHistory(currentTabId, true);
   } catch(e) {
     clearInterval(waitInterval);
     waitingElem.textContent = "";
@@ -1180,13 +1260,10 @@ async function chatSettingsSaveFlow() {
   const serviceSel = $("#aiServiceSelect").value;
   const modelSel = $("#aiModelSelect").value;
   await setSetting("ai_service", serviceSel);
-
-  // Only update ai_model if not empty:
   if (modelSel.trim()) {
     await setSetting("ai_model", modelSel.trim());
   }
 
-  // FETCH the updated model from /api/model to refresh display
   const updatedModelResp = await fetch("/api/model");
   console.debug("[Client Debug] /api/model => status:", updatedModelResp.status);
   if(updatedModelResp.ok){
@@ -1197,7 +1274,7 @@ async function chatSettingsSaveFlow() {
   }
 
   hideModal($("#chatSettingsModal"));
-  await loadChatHistory(currentTabId);
+  await loadChatHistory(currentTabId, true);
   toggleSterlingUrlVisibility(sterlingChatUrlVisible);
 }
 
@@ -1597,9 +1674,6 @@ async function loadFileTree(){
   }
 }
 
-/**
- * Sidebar nav toggling
- */
 const btnTasks = document.getElementById("navTasksBtn");
 const btnUploader = document.getElementById("navUploaderBtn");
 const btnChatTabs = document.getElementById("navChatTabsBtn");
@@ -1650,7 +1724,7 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
   }
   renderTabs();
   renderSidebarTabs();
-  await loadChatHistory(currentTabId);
+  await loadChatHistory(currentTabId, true);
 
   try {
     const r2 = await fetch("/api/settings/agent_instructions");
@@ -1669,7 +1743,7 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
 
   try {
     const r3 = await fetch("/api/settings/chat_hide_metadata");
-    if (r3.ok){
+    if(r3.ok){
       chatHideMetadata = true;
       await setSetting("chat_hide_metadata", chatHideMetadata);
     }
@@ -1727,4 +1801,6 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     case "activity": showActivityIframePanel(); break;
     default: showTasksPanel(); break;
   }
+
+  initChatScrollLoading(); // enables scrolling up for more messages
 })();
