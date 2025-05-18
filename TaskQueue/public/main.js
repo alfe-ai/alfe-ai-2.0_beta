@@ -862,10 +862,16 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
       tokObj = tokenInfo ? JSON.parse(tokenInfo) : null;
     } catch(e) {}
 
+    // Updated snippet below:
     if (systemContext) {
       const scDetails = document.createElement("details");
       const scSum = document.createElement("summary");
-      scSum.textContent = `System Context`;
+      // Add system token count to summary text if available
+      if (tokObj && tokObj.systemTokens !== undefined) {
+        scSum.textContent = `System Context (${tokObj.systemTokens})`;
+      } else {
+        scSum.textContent = `System Context`;
+      }
       scDetails.appendChild(scSum);
 
       const lines = systemContext.split(/\r?\n/);
@@ -891,10 +897,11 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
       metaContainer.appendChild(fhDetails);
     }
 
-    if(tokObj){
+    if (tokObj) {
       const tuDetails = document.createElement("details");
       const tuSum = document.createElement("summary");
-      tuSum.textContent = `Token Usage`;
+      // Add total token count to summary text
+      tuSum.textContent = `Token Usage (${tokObj.total})`;
       tuDetails.appendChild(tuSum);
 
       const usageDiv = document.createElement("div");
