@@ -795,8 +795,8 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
     userDiv.appendChild(userBody);
   }
 
-  // Add incoming token usage under user bubble if available
-  if(tokenInfo){
+  // Add incoming token usage under user bubble if available, only if showSubbubbleToken is true
+  if(tokenInfo && showSubbubbleToken){
     try {
       const tInfo = JSON.parse(tokenInfo);
       const userInTokens = (tInfo.systemTokens || 0) + (tInfo.historyTokens || 0) + (tInfo.inputTokens || 0);
@@ -826,7 +826,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
   botBody.textContent = aiText || "";
   botDiv.appendChild(botBody);
 
-  if(tokenInfo){
+  if(tokenInfo && showSubbubbleToken){
     try {
       const tInfo = JSON.parse(tokenInfo);
       const outTokens = tInfo.finalAssistantTokens || 0;
@@ -945,7 +945,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
   chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
 }
 
-let chatHistoryOffset = 0; // how many have we loaded so far
+let chatHistoryOffset = 0;
 let chatHasMore = true;
 
 async function loadChatHistory(tabId = 1, reset=false) {
@@ -977,7 +977,6 @@ async function loadChatHistory(tabId = 1, reset=false) {
         );
       }
     } else {
-      // Prepend logic:
       const scrollPos = chatMessagesEl.scrollHeight;
       const fragment = document.createDocumentFragment();
       for (let i = pairs.length-1; i>=0; i--){
@@ -1001,8 +1000,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
           userDiv.appendChild(userBody);
         }
 
-        // user token info
-        if(p.token_info){
+        if(p.token_info && showSubbubbleToken){
           try {
             const tInfo = JSON.parse(p.token_info);
             const userInTokens = (tInfo.systemTokens||0) + (tInfo.historyTokens||0) + (tInfo.inputTokens||0);
@@ -1032,7 +1030,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
         botBody.textContent = p.ai_text || "";
         botDiv.appendChild(botBody);
 
-        if(p.token_info){
+        if(p.token_info && showSubbubbleToken){
           try {
             const tInfo = JSON.parse(p.token_info);
             const outTokens = tInfo.finalAssistantTokens || 0;
@@ -1209,13 +1207,18 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
   if(r3.ok){
     const { value } = await r3.json();
     showSubbubbleToken = !!value;
+  } else {
+    showSubbubbleToken = true;
+    await setSetting("show_subbubble_token_count", showSubbubbleToken);
   }
   const r4 = await fetch("/api/settings/sterling_chat_url_visible");
   if(r4.ok){
     const { value } = await r4.json();
     sterlingChatUrlVisible = value !== false;
+  } else {
+    sterlingChatUrlVisible = true;
+    await setSetting("sterling_chat_url_visible", sterlingChatUrlVisible);
   }
-  // New fetch for chat_streaming
   try {
     const r5 = await fetch("/api/settings/chat_streaming");
     if(r5.ok){
@@ -1315,7 +1318,7 @@ async function chatSettingsSaveFlow() {
   chatTabAutoNaming = $("#autoNamingCheck").checked;
   showSubbubbleToken = $("#subbubbleTokenCheck").checked;
   sterlingChatUrlVisible = $("#sterlingUrlCheck").checked;
-  chatStreaming = $("#chatStreamingCheck").checked; // new
+  chatStreaming = $("#chatStreamingCheck").checked;
 
   await setSetting("chat_hide_metadata", chatHideMetadata);
   await setSetting("chat_tab_auto_naming", chatTabAutoNaming);
@@ -1825,12 +1828,12 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
       const { value } = await r4.json();
       showSubbubbleToken = !!value;
     } else {
-      showSubbubbleToken = false;
+      showSubbubbleToken = true;
       await setSetting("show_subbubble_token_count", showSubbubbleToken);
     }
   } catch(e) {
     console.error("Error loading show_subbubble_token_count:", e);
-    showSubbubbleToken = false;
+    showSubbubbleToken = true;
     await setSetting("show_subbubble_token_count", showSubbubbleToken);
   }
 
