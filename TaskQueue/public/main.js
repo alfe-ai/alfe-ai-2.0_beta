@@ -775,6 +775,18 @@ async function updateProjectInfo() {
   }
 }
 
+function parseProviderModel(model) {
+  if(!model) return { provider: "Unknown", shortModel: "Unknown" };
+  if(model.startsWith("openai/")) {
+    return { provider: "OpenAI", shortModel: model.replace(/^openai\//,'') };
+  } else if(model.startsWith("openrouter/")) {
+    return { provider: "OpenRouter", shortModel: model.replace(/^openrouter\//,'') };
+  } else if(model.startsWith("deepseek/")) {
+    return { provider: "DeepSeek", shortModel: model.replace(/^deepseek\//,'') };
+  }
+  return { provider: "Unknown", shortModel: model };
+}
+
 function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemContext, fullHistory, tokenInfo) {
   const seqDiv = document.createElement("div");
   seqDiv.className = "chat-sequence";
@@ -816,8 +828,9 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
 
   const botHead = document.createElement("div");
   botHead.className = "bubble-header";
+  const { provider, shortModel } = parseProviderModel(model);
   botHead.innerHTML = `
-    <div class="name-oval name-oval-ai">${window.agentName} (${model || ""})</div>
+    <div class="name-oval name-oval-ai">${window.agentName} (${provider} / ${shortModel})</div>
     <span style="opacity:0.8;">${aiTs ? formatTimestamp(aiTs) : "…"}</span>
   `;
   botDiv.appendChild(botHead);
@@ -866,7 +879,6 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
     if (systemContext) {
       const scDetails = document.createElement("details");
       const scSum = document.createElement("summary");
-      // Add system token count to summary text if available
       if (tokObj && tokObj.systemTokens !== undefined) {
         scSum.textContent = `System Context (${tokObj.systemTokens})`;
       } else {
@@ -900,7 +912,6 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
     if (tokObj) {
       const tuDetails = document.createElement("details");
       const tuSum = document.createElement("summary");
-      // Add total token count to summary text
       tuSum.textContent = `Token Usage (${tokObj.total})`;
       tuDetails.appendChild(tuSum);
 
@@ -1027,8 +1038,10 @@ async function loadChatHistory(tabId = 1, reset=false) {
 
         const botHead = document.createElement("div");
         botHead.className = "bubble-header";
+
+        const { provider, shortModel } = parseProviderModel(p.model);
         botHead.innerHTML = `
-          <div class="name-oval name-oval-ai">${window.agentName} (${p.model || ""})</div>
+          <div class="name-oval name-oval-ai">${window.agentName} (${provider} / ${shortModel})</div>
           <span style="opacity:0.8;">${p.ai_timestamp ? formatTimestamp(p.ai_timestamp) : "…"}</span>
         `;
         botDiv.appendChild(botHead);
