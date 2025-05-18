@@ -561,6 +561,7 @@ app.get("/api/ai/models", async (req, res) => {
   // Hardcoded costs for demonstration
   const knownCosts = {
     "openai/codex-mini": { input: "$1.50", output: "$6" },
+    "openai/codex-mini-latest": { input: "$1.50", output: "$6" },
     "openai/o4-mini-high": { input: "$1.10", output: "$4.40" },
     "openai/o3": { input: "$10", output: "$40" },
     "openai/o4-mini": { input: "$1.10", output: "$4.40" },
