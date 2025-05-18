@@ -1121,10 +1121,13 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
       aiModelSelect.innerHTML = "";
       const relevantModels = modelData.models || [];
       relevantModels.forEach(m=>{
-        const opt=document.createElement("option");
-        opt.value = m.id;
-        opt.textContent = m.id + " (" + m.tokenLimit + ")";
-        aiModelSelect.appendChild(opt);
+        // Insert model + token limit + cost
+        aiModelSelect.appendChild(
+          new Option(
+            `${m.id} (limit ${m.tokenLimit}, in ${m.inputCost}, out ${m.outputCost})`,
+            m.id
+          )
+        );
       });
       const currentModel = await getSetting("ai_model");
       if(currentModel) aiModelSelect.value = currentModel;
@@ -1146,10 +1149,12 @@ $("#aiServiceSelect").addEventListener("change", async ()=>{
       aiModelSelect.innerHTML = "";
       const relevantModels = modelData.models || [];
       relevantModels.forEach(m=>{
-        const opt=document.createElement("option");
-        opt.value = m.id;
-        opt.textContent = m.id + " (" + m.tokenLimit + ")";
-        aiModelSelect.appendChild(opt);
+        aiModelSelect.appendChild(
+          new Option(
+            `${m.id} (limit ${m.tokenLimit}, in ${m.inputCost}, out ${m.outputCost})`,
+            m.id
+          )
+        );
       });
     }
   } catch(e){
@@ -1711,3 +1716,4 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     default: showTasksPanel(); break;
   }
 })();
+

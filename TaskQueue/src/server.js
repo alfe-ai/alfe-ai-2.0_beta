@@ -494,9 +494,10 @@ app.get("/api/activity", (req, res) => {
 });
 
 /*
-  Updated /api/ai/models to try returning known token limits for recognized models
-  and "N/A" as fallback instead of "varies".
+  Updated /api/ai/models to return known token limits AND costs for recognized models
+  and "N/A" as fallback if not found.
 */
+
 function resolveModelKey(originalId, knownTokenLimits) {
   const attempt = (id) => `openai/${id}`;
   if (knownTokenLimits[attempt(originalId)] !== undefined) {
@@ -557,6 +558,47 @@ app.get("/api/ai/models", async (req, res) => {
     "openai/gpt-4-0314": 8191
   };
 
+  // Hardcoded costs for demonstration
+  const knownCosts = {
+    "openai/codex-mini": { input: "$1.50", output: "$6" },
+    "openai/o4-mini-high": { input: "$1.10", output: "$4.40" },
+    "openai/o3": { input: "$10", output: "$40" },
+    "openai/o4-mini": { input: "$1.10", output: "$4.40" },
+    "openai/gpt-4.1": { input: "$2", output: "$8" },
+    "openai/gpt-4.1-mini": { input: "$0.40", output: "$1.60" },
+    "openai/gpt-4.1-nano": { input: "$0.10", output: "$0.40" },
+    "openai/o1-pro": { input: "$150", output: "$600" },
+    "openai/gpt-4o-mini-search-preview": { input: "$0.15", output: "$0.60" },
+    "openai/gpt-4o-search-preview": { input: "$2.50", output: "$10" },
+    "openai/gpt-4.5-preview": { input: "$75", output: "$150" },
+    "openai/o3-mini-high": { input: "$1.10", output: "$4.40" },
+    "openai/o3-mini": { input: "$1.10", output: "$4.40" },
+    "openai/o1": { input: "$15", output: "$60" },
+    "openai/gpt-4o-2024-11-20": { input: "$2.50", output: "$10" },
+    "openai/o1-preview": { input: "$15", output: "$60" },
+    "openai/o1-preview-2024-09-12": { input: "$15", output: "$60" },
+    "openai/o1-mini": { input: "$1.10", output: "$4.40" },
+    "openai/o1-mini-2024-09-12": { input: "$1.10", output: "$4.40" },
+    "openai/chatgpt-4o-latest": { input: "$5", output: "$15" },
+    "openai/gpt-4o-2024-08-06": { input: "$2.50", output: "$10" },
+    "openai/gpt-4o-mini": { input: "$0.15", output: "$0.60" },
+    "openai/gpt-4o-mini-2024-07-18": { input: "$0.15", output: "$0.60" },
+    "openai/gpt-4o": { input: "$2.50", output: "$10" },
+    "openai/gpt-4o:extended": { input: "$6", output: "$18" },
+    "openai/gpt-4o-2024-05-13": { input: "$5", output: "$15" },
+    "openai/gpt-4-turbo": { input: "$10", output: "$30" },
+    "openai/gpt-4-turbo-preview": { input: "$10", output: "$30" },
+    "openai/gpt-3.5-turbo-1106": { input: "$1", output: "$2" },
+    "openai/gpt-3.5-turbo-instruct": { input: "$1.50", output: "$2" },
+    "openai/gpt-3.5-turbo-16k": { input: "$3", output: "$4" },
+    "openai/gpt-4-32k": { input: "$60", output: "$120" },
+    "openai/gpt-4-32k-0314": { input: "$60", output: "$120" },
+    "openai/gpt-3.5-turbo": { input: "$0.50", output: "$1.50" },
+    "openai/gpt-3.5-turbo-0125": { input: "$0.50", output: "$1.50" },
+    "openai/gpt-4": { input: "$30", output: "$60" },
+    "openai/gpt-4-0314": { input: "$30", output: "$60" }
+  };
+
   try {
     const service = db.getSetting("ai_service") || "openai";
     if (service === "openai") {
@@ -565,9 +607,15 @@ app.get("/api/ai/models", async (req, res) => {
       const modelIds = modelList.data.map((m) => m.id).sort();
       const modelData = modelIds.map((id) => {
         const found = resolveModelKey(id, knownTokenLimits);
+        const limit = found ? knownTokenLimits[found] : "N/A";
+        const costInfo = found && knownCosts[found]
+          ? { inputCost: knownCosts[found].input, outputCost: knownCosts[found].output }
+          : { inputCost: "N/A", outputCost: "N/A" };
         return {
           id,
-          tokenLimit: found ? knownTokenLimits[found] : "N/A"
+          tokenLimit: limit,
+          inputCost: costInfo.inputCost,
+          outputCost: costInfo.outputCost
         };
       });
       res.json({ service: "openai", models: modelData });
@@ -588,9 +636,15 @@ app.get("/api/ai/models", async (req, res) => {
       const rawModels = orResp.data?.data?.map((m) => m.id).sort() || [];
       const modelData = rawModels.map((id) => {
         const found = resolveModelKey(id, knownTokenLimits);
+        const limit = found ? knownTokenLimits[found] : "N/A";
+        const costInfo = found && knownCosts[found]
+          ? { inputCost: knownCosts[found].input, outputCost: knownCosts[found].output }
+          : { inputCost: "N/A", outputCost: "N/A" };
         return {
           id,
-          tokenLimit: found ? knownTokenLimits[found] : "N/A"
+          tokenLimit: limit,
+          inputCost: costInfo.inputCost,
+          outputCost: costInfo.outputCost
         };
       });
       res.json({ service: "openrouter", models: modelData });
@@ -784,6 +838,7 @@ app.delete("/api/chat/tabs/:id", (req, res) => {
       return res.status(400).json({ error: "Invalid tabId" });
     }
     db.deleteChatTab(tabId);
+    db.prepare("DELETE FROM chat_pairs WHERE chat_tab_id=?").run(tabId);
     res.json({ success: true });
   } catch (err) {
     console.error("[TaskQueue] DELETE /api/chat/tabs/:id error:", err);
@@ -925,3 +980,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
+
