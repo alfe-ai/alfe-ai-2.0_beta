@@ -87,6 +87,18 @@ function countTokens(encoder, text) {
   return encoder.encode(text || "").length;
 }
 
+// Helper to strip prefix like "openai/" or "openrouter/"
+function stripModelPrefix(model) {
+  if (!model) return "gpt-3.5-turbo";
+  let result = model;
+  if (model.startsWith("openai/")) {
+    result = model.substring("openai/".length);
+  } else if (model.startsWith("openrouter/")) {
+    result = model.substring("openrouter/".length);
+  }
+  return result;
+}
+
 // Explicit CORS configuration
 app.use(cors({
   origin: "*",
@@ -702,8 +714,11 @@ app.post("/api/chat", async (req, res) => {
       model = "unknown";
     }
 
-    console.debug("[Server Debug] Using model =>", model);
-    const encoder = getEncoding(model);
+    // Apply prefix stripping
+    const modelForOpenAI = stripModelPrefix(model);
+
+    console.debug("[Server Debug] Using model =>", model, " (stripped =>", modelForOpenAI, ")");
+    const encoder = getEncoding(modelForOpenAI);
 
     let convTokens = 0;
     let truncatedConversation = [];
@@ -723,7 +738,7 @@ app.post("/api/chat", async (req, res) => {
 
     let assistantMessage = "";
     const stream = await openaiClient.chat.completions.create({
-      model,
+      model: modelForOpenAI,
       messages: truncatedConversation,
       stream: true
     });
