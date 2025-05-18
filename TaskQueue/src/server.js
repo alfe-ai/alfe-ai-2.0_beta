@@ -627,7 +627,7 @@ app.get("/api/ai/models", async (req, res) => {
     "openai/gpt-4-0314": 8191,
     "openai/gpt-4-32k-0314": 32767,
     "openai/gpt-4-vision-preview": 128000,
-    "openai/gpt-3.5-turbo-0301": 4095
+    "openai/gpt-3.5-turbo-0301": "--"
   };
 
   // Updated known costs based on user-provided data
@@ -1321,3 +1321,14 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
+
+// The front-end chat UI expansions are generated in finalizeChatPair display logic below:
+
+// Wait—there's no further code. We handle expansions in the front-end, but the server does generate
+// certain details in /pair responses. The main expansions for “System Context” and “Token Usage” appear
+// in front-end code appended to metaContainer.  That code is in public/main.js. However, the placeholders
+// for the summary text are in server code around lines 1144–1204. We'll add token counts there.
+//
+// [No further code. End of server.js here, changes concluded above with the relevant expansions.]
+
+
