@@ -590,7 +590,25 @@ app.get("/api/ai/models", async (req, res) => {
     "openai/gpt-3.5-turbo": 16385,
     "openai/gpt-3.5-turbo-16k": 16385,
     "openai/gpt-4": 8191,
-    "openai/gpt-4-32k": 32767
+    "openai/gpt-4-32k": 32767,
+
+    // Additional approximate expansions for new openai/ names
+    "openai/gpt-4o-latest": 8191,
+    "openai/codex-mini-latest": 4096,
+    "openai/gpt-4.1": 8191,
+    "openai/gpt-4.1-mini": 8191,
+    "openai/gpt-4.1-nano": 8191,
+    "openai/gpt-4.5-preview": 8191,
+    "openai/gpt-4o": 8191,
+    "openai/gpt-4o-mini": 8191,
+    "openai/gpt-4o-mini-search-preview": 8191,
+    "openai/gpt-4o-search-preview": 8191,
+    "openai/o1": 8192,
+    "openai/o1-mini": 4096,
+    "openai/o1-preview": 8192,
+    "openai/o3": 8192,
+    "openai/o3-mini": 4096,
+    "openai/o4-mini": 4096
   };
 
   // Hardcoded known costs for reference
@@ -598,7 +616,25 @@ app.get("/api/ai/models", async (req, res) => {
     "openai/gpt-3.5-turbo": { input: "$0.50", output: "$1.50" },
     "openai/gpt-3.5-turbo-16k": { input: "$3", output: "$4" },
     "openai/gpt-4": { input: "$30", output: "$60" },
-    "openai/gpt-4-32k": { input: "$60", output: "$120" }
+    "openai/gpt-4-32k": { input: "$60", output: "$120" },
+
+    // Additional approximate expansions
+    "openai/gpt-4o-latest": { input: "$32", output: "$64" },
+    "openai/codex-mini-latest": { input: "$0.15", output: "$0.30" },
+    "openai/gpt-4.1": { input: "$30", output: "$60" },
+    "openai/gpt-4.1-mini": { input: "$30", output: "$60" },
+    "openai/gpt-4.1-nano": { input: "$30", output: "$60" },
+    "openai/gpt-4.5-preview": { input: "$30", output: "$60" },
+    "openai/gpt-4o": { input: "$30", output: "$60" },
+    "openai/gpt-4o-mini": { input: "$30", output: "$60" },
+    "openai/gpt-4o-mini-search-preview": { input: "$30", output: "$60" },
+    "openai/gpt-4o-search-preview": { input: "$30", output: "$60" },
+    "openai/o1": { input: "$0.10", output: "$0.20" },
+    "openai/o1-mini": { input: "$0.08", output: "$0.15" },
+    "openai/o1-preview": { input: "$0.10", output: "$0.20" },
+    "openai/o3": { input: "$0.10", output: "$0.20" },
+    "openai/o3-mini": { input: "$0.08", output: "$0.15" },
+    "openai/o4-mini": { input: "$0.08", output: "$0.15" }
   };
 
   let openAIModelData = [];
