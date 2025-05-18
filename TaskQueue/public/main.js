@@ -20,6 +20,7 @@ let chatHideMetadata = false;
 let chatTabAutoNaming = false;
 let showSubbubbleToken = false;
 let sterlingChatUrlVisible = true;
+let chatStreaming = true; // new toggle for streaming
 window.agentName = "Alfe";
 
 const defaultFavicon = "alfe_favicon_clean_64x64.ico";
@@ -953,9 +954,6 @@ async function loadChatHistory(tabId = 1, reset=false) {
     }
     chatHistoryOffset += pairs.length;
 
-    // We want oldest at top, but we are appending at the top in reverse
-    // We'll insert them in a reversed way, or we can just at the end for simplicity
-    // For "reset===true", we do normal ascending. For subsequent loads, we prepend.
     if(reset){
       for (const p of pairs) {
         addChatMessage(
@@ -1005,7 +1003,6 @@ async function loadChatHistory(tabId = 1, reset=false) {
         botBody.textContent = p.ai_text || "";
         botDiv.appendChild(botBody);
 
-        // fix overlap
         if(p.token_info){
           try {
             const tInfo = JSON.parse(p.token_info);
@@ -1022,7 +1019,6 @@ async function loadChatHistory(tabId = 1, reset=false) {
         seqDiv.appendChild(botDiv);
         fragment.appendChild(seqDiv);
       }
-      // Insert at the top:
       if(chatMessagesEl.firstChild){
         chatMessagesEl.insertBefore(fragment, chatMessagesEl.firstChild);
       } else {
@@ -1040,10 +1036,8 @@ function initChatScrollLoading(){
   if(!chatMessagesEl) return;
 
   chatMessagesEl.addEventListener("scroll", async ()=>{
-    if(chatMessagesEl.scrollTop < 50){ // near top
+    if(chatMessagesEl.scrollTop < 50){
       if(chatHasMore){
-        // load next page
-        console.debug("Scrolled near top => loading older messages...");
         await loadChatHistory(currentTabId, false);
       }
     }
@@ -1192,6 +1186,18 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
     const { value } = await r4.json();
     sterlingChatUrlVisible = value !== false;
   }
+  // New fetch for chat_streaming
+  try {
+    const r5 = await fetch("/api/settings/chat_streaming");
+    if(r5.ok){
+      const { value } = await r5.json();
+      chatStreaming = (value !== false);
+    }
+    $("#chatStreamingCheck").checked = chatStreaming;
+  } catch(e) {
+    console.error("Error loading chat_streaming:", e);
+    chatStreaming = true;
+  }
 
   $("#hideMetadataCheck").checked = chatHideMetadata;
   $("#autoNamingCheck").checked = chatTabAutoNaming;
@@ -1207,7 +1213,6 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
       const aiModelSelect = $("#aiModelSelect");
       aiModelSelect.innerHTML = "";
 
-      // We'll define a function to repopulate the modelSelect according to "FavoritesOnly"
       function updateAiModelSelect() {
         aiModelSelect.innerHTML = "";
         const filterFav = $("#favoritesOnlyModelCheck").checked;
@@ -1226,7 +1231,6 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
 
       updateAiModelSelect();
 
-      // Add event to the new checkbox
       $("#favoritesOnlyModelCheck").addEventListener("change", () => {
         updateAiModelSelect();
       });
@@ -1282,11 +1286,13 @@ async function chatSettingsSaveFlow() {
   chatTabAutoNaming = $("#autoNamingCheck").checked;
   showSubbubbleToken = $("#subbubbleTokenCheck").checked;
   sterlingChatUrlVisible = $("#sterlingUrlCheck").checked;
+  chatStreaming = $("#chatStreamingCheck").checked; // new
 
   await setSetting("chat_hide_metadata", chatHideMetadata);
   await setSetting("chat_tab_auto_naming", chatTabAutoNaming);
   await setSetting("show_subbubble_token_count", showSubbubbleToken);
   await setSetting("sterling_chat_url_visible", sterlingChatUrlVisible);
+  await setSetting("chat_streaming", chatStreaming);
 
   const serviceSel = $("#aiServiceSelect").value;
   const modelSel = $("#aiModelSelect").value;
@@ -1833,5 +1839,5 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     default: showTasksPanel(); break;
   }
 
-  initChatScrollLoading(); // enables scrolling up for more messages
+  initChatScrollLoading();
 })();
