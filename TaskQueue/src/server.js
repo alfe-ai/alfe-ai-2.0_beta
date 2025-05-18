@@ -494,25 +494,10 @@ app.get("/api/activity", (req, res) => {
 });
 
 /*
-  Updated /api/ai/models to return known token limits AND costs for recognized models
-  and "N/A" as fallback if not found.
+  We combine both OpenAI and OpenRouter models (if available),
+  prefixing IDs with "openai/" or "openrouter/", 
+  returning a single combined array in "models".
 */
-
-function resolveModelKey(originalId, knownTokenLimits) {
-  const attempt = (id) => `openai/${id}`;
-  if (knownTokenLimits[attempt(originalId)] !== undefined) {
-    return attempt(originalId);
-  }
-  const segments = originalId.split("-");
-  while (segments.length > 1) {
-    segments.pop();
-    const test = segments.join("-");
-    if (knownTokenLimits[attempt(test)] !== undefined) {
-      return attempt(test);
-    }
-  }
-  return null;
-}
 
 app.get("/api/ai/models", async (req, res) => {
   console.debug("[Server Debug] GET /api/ai/models called.");
@@ -600,56 +585,78 @@ app.get("/api/ai/models", async (req, res) => {
     "openai/gpt-4-0314": { input: "$30", output: "$60" }
   };
 
+  // Helper for prefixing
+  function prefixId(provider, modelId) {
+    return provider + "/" + modelId;
+  }
+
+  let openAIModelData = [];
+  let openRouterModelData = [];
+
   try {
-    const service = db.getSetting("ai_service") || "openai";
-    if (service === "openai") {
-      const openaiClient = getOpenAiClient();
-      const modelList = await openaiClient.models.list();
-      const modelIds = modelList.data.map((m) => m.id).sort();
-      const modelData = modelIds.map((id) => {
-        const found = resolveModelKey(id, knownTokenLimits);
-        const limit = found ? knownTokenLimits[found] : "N/A";
-        const costInfo = found && knownCosts[found]
-          ? { inputCost: knownCosts[found].input, outputCost: knownCosts[found].output }
-          : { inputCost: "N/A", outputCost: "N/A" };
-        return {
-          id,
-          tokenLimit: limit,
-          inputCost: costInfo.inputCost,
-          outputCost: costInfo.outputCost
-        };
-      });
-      res.json({ service: "openai", models: modelData });
-    } else {
-      const openRouterKey = process.env.OPENROUTER_API_KEY || "";
-      if (!openRouterKey) {
-        return res.status(500).json({
-          error: "Missing OPENROUTER_API_KEY environment variable; cannot list models."
+    const openAiKey = process.env.OPENAI_API_KEY || "";
+    const openRouterKey = process.env.OPENROUTER_API_KEY || "";
+
+    // If we have OpenAI key, fetch from OpenAI
+    if (openAiKey) {
+      try {
+        console.debug("[Server Debug] Fetching OpenAI model list...");
+        const openaiClient = new OpenAI({ apiKey: openAiKey });
+        // listing
+        const modelList = await openaiClient.models.list();
+        const modelIds = modelList.data.map(m => m.id).sort();
+        openAIModelData = modelIds.map(id => {
+          const combinedId = prefixId("openai", id);
+          const limit = knownTokenLimits[combinedId] || "N/A";
+          const cInfo = knownCosts[combinedId]
+            ? knownCosts[combinedId]
+            : { input: "N/A", output: "N/A" };
+          return {
+            id: combinedId,
+            tokenLimit: limit,
+            inputCost: cInfo.input,
+            outputCost: cInfo.output
+          };
         });
+      } catch (err) {
+        console.error("[TaskQueue] Error listing OpenAI models:", err);
       }
-      const orResp = await axios.get("https://openrouter.ai/api/v1/models", {
-        headers: {
-          Authorization: `Bearer ${openRouterKey}`,
-          "HTTP-Referer": "Alfe-DevAgent",
-          "X-Title": "Alfe Dev",
-        },
-      });
-      const rawModels = orResp.data?.data?.map((m) => m.id).sort() || [];
-      const modelData = rawModels.map((id) => {
-        const found = resolveModelKey(id, knownTokenLimits);
-        const limit = found ? knownTokenLimits[found] : "N/A";
-        const costInfo = found && knownCosts[found]
-          ? { inputCost: knownCosts[found].input, outputCost: knownCosts[found].output }
-          : { inputCost: "N/A", outputCost: "N/A" };
-        return {
-          id,
-          tokenLimit: limit,
-          inputCost: costInfo.inputCost,
-          outputCost: costInfo.outputCost
-        };
-      });
-      res.json({ service: "openrouter", models: modelData });
     }
+
+    // If we have OpenRouter key, fetch from OpenRouter
+    if (openRouterKey) {
+      try {
+        console.debug("[Server Debug] Fetching OpenRouter model list...");
+        const orResp = await axios.get("https://openrouter.ai/api/v1/models", {
+          headers: {
+            Authorization: `Bearer ${openRouterKey}`,
+            "HTTP-Referer": "Alfe-DevAgent",
+            "X-Title": "Alfe Dev",
+          },
+        });
+        const rawModels = orResp.data?.data?.map((m) => m.id).sort() || [];
+        openRouterModelData = rawModels.map((id) => {
+          const combinedId = prefixId("openrouter", id);
+          const limit = knownTokenLimits[combinedId] || "N/A";
+          const cInfo = knownCosts[combinedId]
+            ? knownCosts[combinedId]
+            : { input: "N/A", output: "N/A" };
+          return {
+            id: combinedId,
+            tokenLimit: limit,
+            inputCost: cInfo.input,
+            outputCost: cInfo.output
+          };
+        });
+      } catch (err) {
+        console.error("[TaskQueue] Error fetching OpenRouter models:", err);
+      }
+    }
+
+    // Combine them into a single array
+    const combinedModels = [...openAIModelData, ...openRouterModelData].sort((a, b) => a.id.localeCompare(b.id));
+
+    res.json({ models: combinedModels });
   } catch (err) {
     console.error("[TaskQueue] /api/ai/models error:", err);
     res.status(500).json({ error: err.message });
@@ -981,4 +988,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
-
