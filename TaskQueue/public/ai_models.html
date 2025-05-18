@@ -55,19 +55,20 @@
 <body>
 <div class="container">
   <h1>AI Models & Limits</h1>
-  <p>This page queries the OpenAI/OpenRouter API to list available models, showing approximate token limits and costs.</p>
+  <p>This page queries the OpenAI/OpenRouter API to list available models, showing approximate token limits, provider, and costs.</p>
 
   <table id="modelsTable">
     <thead>
     <tr>
       <th data-column="id">Model</th>
+      <th data-column="provider">Provider</th>
       <th data-column="tokenLimit">Token Limit</th>
       <th data-column="inputCost">Input Cost</th>
       <th data-column="outputCost">Output Cost</th>
     </tr>
     </thead>
     <tbody>
-    <tr><td colspan="4" style="text-align:center;">Loading...</td></tr>
+    <tr><td colspan="5" style="text-align:center;">Loading...</td></tr>
     </tbody>
   </table>
 
@@ -97,19 +98,19 @@
     try {
       const res = await fetch("/api/ai/models");
       if(!res.ok) {
-        modelsTbody.innerHTML = "<tr><td colspan='4'>Error fetching models.</td></tr>";
+        modelsTbody.innerHTML = "<tr><td colspan='5'>Error fetching models.</td></tr>";
         return;
       }
       const data = await res.json();
       modelList = data.models || [];
       if(modelList.length < 1) {
-        modelsTbody.innerHTML = "<tr><td colspan='4'>No models found.</td></tr>";
+        modelsTbody.innerHTML = "<tr><td colspan='5'>No models found.</td></tr>";
         return;
       }
       renderTable();
     } catch(e) {
       console.error("Error loading models:", e);
-      modelsTbody.innerHTML = "<tr><td colspan='4'>Error loading models.</td></tr>";
+      modelsTbody.innerHTML = "<tr><td colspan='5'>Error loading models.</td></tr>";
     }
   }
 
@@ -119,6 +120,7 @@
     modelList.forEach(m => {
       html += `<tr>
                  <td>${m.id}</td>
+                 <td>${m.provider}</td>
                  <td>${m.tokenLimit}</td>
                  <td>${m.inputCost}</td>
                  <td>${m.outputCost}</td>

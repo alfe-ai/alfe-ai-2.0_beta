@@ -507,7 +507,7 @@ app.get("/api/activity", (req, res) => {
 
 /*
   We combine both OpenAI and OpenRouter models (if available),
-  prefixing IDs with "openai/" or "openrouter/", 
+  prefixing IDs with "openai/" or "openrouter/",
   returning a single combined array in "models".
 */
 
@@ -625,6 +625,7 @@ app.get("/api/ai/models", async (req, res) => {
             : { input: "N/A", output: "N/A" };
           return {
             id: combinedId,
+            provider: "openai",
             tokenLimit: limit,
             inputCost: cInfo.input,
             outputCost: cInfo.output
@@ -655,6 +656,7 @@ app.get("/api/ai/models", async (req, res) => {
             : { input: "N/A", output: "N/A" };
           return {
             id: combinedId,
+            provider: "openrouter",
             tokenLimit: limit,
             inputCost: cInfo.input,
             outputCost: cInfo.output
