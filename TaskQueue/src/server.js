@@ -568,11 +568,13 @@ app.get("/api/ai/models", async (req, res) => {
       const openaiClient = getOpenAiClient();
       const modelList = await openaiClient.models.list();
       const modelIds = modelList.data.map((m) => m.id).sort();
-      // Return array of objects with { id, tokenLimit }
-      const modelData = modelIds.map((id) => ({
-        id,
-        tokenLimit: knownTokenLimits[id] !== undefined ? knownTokenLimits[id] : "N/A"
-      }));
+      const modelData = modelIds.map((id) => {
+        const modelKey = "openai/" + id;
+        return {
+          id,
+          tokenLimit: knownTokenLimits[modelKey] !== undefined ? knownTokenLimits[modelKey] : "N/A"
+        };
+      });
       res.json({ service: "openai", models: modelData });
     } else {
       // Fallback or for openrouter
@@ -590,10 +592,13 @@ app.get("/api/ai/models", async (req, res) => {
         },
       });
       const rawModels = orResp.data?.data?.map((m) => m.id).sort() || [];
-      const modelData = rawModels.map((id) => ({
-        id,
-        tokenLimit: knownTokenLimits[id] !== undefined ? knownTokenLimits[id] : "N/A"
-      }));
+      const modelData = rawModels.map((id) => {
+        const modelKey = "openai/" + id;
+        return {
+          id,
+          tokenLimit: knownTokenLimits[modelKey] !== undefined ? knownTokenLimits[modelKey] : "N/A"
+        };
+      });
       res.json({ service: "openrouter", models: modelData });
     }
   } catch (err) {
