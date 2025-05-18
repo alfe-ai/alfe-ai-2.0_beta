@@ -109,11 +109,18 @@ const app = express();
  * Added checks to help diagnose missing or invalid API keys.
  */
 function getOpenAiClient() {
-  const service = db.getSetting("ai_service") || "openai";
+  let service = db.getSetting("ai_service") || "openai";
   const openAiKey = process.env.OPENAI_API_KEY || "";
   const openRouterKey = process.env.OPENROUTER_API_KEY || "";
 
   console.debug("[Server Debug] Creating OpenAI client with service =", service);
+
+  // NEW override for DeepSeek models:
+  const modelForCheck = db.getSetting("ai_model") || "";
+  if (modelForCheck.startsWith("deepseek/")) {
+    console.debug("[Server Debug] Overriding service to 'openrouter' for deepseek model =>", modelForCheck);
+    service = "openrouter";
+  }
 
   if (service === "openrouter") {
     if (!openRouterKey) {
@@ -1323,12 +1330,6 @@ app.listen(PORT, () => {
 });
 
 // The front-end chat UI expansions are generated in finalizeChatPair display logic below:
-
-// Wait—there's no further code. We handle expansions in the front-end, but the server does generate
-// certain details in /pair responses. The main expansions for “System Context” and “Token Usage” appear
-// in front-end code appended to metaContainer.  That code is in public/main.js. However, the placeholders
-// for the summary text are in server code around lines 1144–1204. We'll add token counts there.
 //
 // [No further code. End of server.js here, changes concluded above with the relevant expansions.]
-
 
