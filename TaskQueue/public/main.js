@@ -899,7 +899,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
           `History: ${tokObj.historyTokens}, ` +
           `Input: ${tokObj.inputTokens}, ` +
           `Assistant: ${tokObj.assistantTokens}, ` +
-          `FinalAsst: ${tokObj.finalAssistantTokens}, ` +
+          `FinalAssistantTokens: ${tokObj.finalAssistantTokens}, ` +
           `Total: ${tokObj.total}`;
 
       tuDetails.appendChild(usageDiv);
@@ -1121,7 +1121,6 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
       aiModelSelect.innerHTML = "";
       const relevantModels = modelData.models || [];
       relevantModels.forEach(m=>{
-        // Insert model + token limit + cost
         aiModelSelect.appendChild(
           new Option(
             `${m.id} (limit ${m.tokenLimit}, in ${m.inputCost}, out ${m.outputCost})`,
@@ -1176,7 +1175,11 @@ async function chatSettingsSaveFlow() {
   const serviceSel = $("#aiServiceSelect").value;
   const modelSel = $("#aiModelSelect").value;
   await setSetting("ai_service", serviceSel);
-  await setSetting("ai_model", modelSel);
+
+  // Only update ai_model if not empty:
+  if (modelSel.trim()) {
+    await setSetting("ai_model", modelSel.trim());
+  }
 
   // FETCH the updated model from /api/model to refresh display
   const updatedModelResp = await fetch("/api/model");
@@ -1534,13 +1537,10 @@ function createTreeNode(node, repoName, chatNumber) {
       console.debug(`[FileTree Debug] Checkbox changed for: ${node.path}, new checked state: ${cb.checked}`);
       try {
         console.debug(`[FileTree Debug] Sending POST to toggle attachment for file: ${node.path}`);
-        const resp = await fetch(`http://localhost:3444/api/${repoName}/chat/${chatNumber}/toggle_attached`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ filePath: node.path })
+        const resp = await axios.post(`http://localhost:3444/api/${repoName}/chat/${chatNumber}/toggle_attached`, {
+          filePath: node.path
         });
-        const data = await resp.json();
-        console.debug("[FileTree Debug] toggle_attached response:", data);
+        console.debug("[FileTree Debug] toggle_attached response:", resp.data);
       } catch(err) {
         console.error("Error toggling file attachment:", err);
       }
@@ -1723,4 +1723,3 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     default: showTasksPanel(); break;
   }
 })();
-
