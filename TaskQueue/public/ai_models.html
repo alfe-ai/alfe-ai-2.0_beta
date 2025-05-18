@@ -76,9 +76,6 @@
     #favoritesOnlyCheck {
       margin-right: 8px;
     }
-    #favoritexOnlyCheck {
-      margin-right: 8px;
-    }
   </style>
 </head>
 <body>
@@ -96,7 +93,6 @@
       </select>
     </label>
     <label><input type="checkbox" id="favoritesOnlyCheck"/> Favorites Only</label>
-    <label><input type="checkbox" id="favoritexOnlyCheck"/> Favoritex Only</label>
   </div>
 
   <table id="modelsTable">
@@ -127,7 +123,6 @@
 
   const providerFilterEl = document.getElementById("providerFilter");
   const favoritesOnlyCheckEl = document.getElementById("favoritesOnlyCheck");
-  const favoritexOnlyCheckEl = document.getElementById("favoritexOnlyCheck");
 
   document.addEventListener('DOMContentLoaded', async () => {
     const tableHead = document.querySelector('#modelsTable thead');
@@ -141,9 +136,6 @@
       applyFiltersAndRender();
     });
     favoritesOnlyCheckEl.addEventListener("change", () => {
-      applyFiltersAndRender();
-    });
-    favoritexOnlyCheckEl.addEventListener("change", () => {
       applyFiltersAndRender();
     });
 
@@ -180,9 +172,6 @@
     if(favoritesOnlyCheckEl.checked) {
       filtered = filtered.filter(m => m.favorite);
     }
-    if(favoritexOnlyCheckEl.checked) {
-      filtered = filtered.filter(m => m.favoritex);
-    }
     renderTable(filtered);
   }
 
@@ -194,7 +183,6 @@
     }
     let html = "";
     data.forEach(m => {
-      // For the new "favoritex" property, do nothing special except filter above
       const starClass = m.favorite ? "favorite-star starred" : "favorite-star unstarred";
       const starChar  = m.favorite ? "★" : "☆";
       html += `<tr>
