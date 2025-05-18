@@ -523,6 +523,7 @@ app.get("/api/ai/models", async (req, res) => {
   // A dictionary of known approximate token limits
   const knownTokenLimits = {
     "openai/codex-mini": 200000,
+    "openai/codex-mini-latest": 200000,
     "openai/o4-mini-high": 200000,
     "openai/o3": 200000,
     "openai/o4-mini": 200000,
