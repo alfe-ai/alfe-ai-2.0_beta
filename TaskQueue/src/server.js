@@ -129,7 +129,8 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// GET /api/tasks
+// Database calls and API routes
+
 app.get("/api/tasks", (req, res) => {
   console.debug("[Server Debug] GET /api/tasks called.");
   try {
@@ -146,7 +147,6 @@ app.get("/api/tasks", (req, res) => {
   }
 });
 
-// GET /api/projects
 app.get("/api/projects", (req, res) => {
   console.debug("[Server Debug] GET /api/projects called.");
   try {
@@ -159,7 +159,6 @@ app.get("/api/projects", (req, res) => {
   }
 });
 
-// GET /api/sprints
 app.get("/api/sprints", (req, res) => {
   console.debug("[Server Debug] GET /api/sprints called.");
   try {
@@ -172,7 +171,6 @@ app.get("/api/sprints", (req, res) => {
   }
 });
 
-// Manage project base branches
 app.get("/api/projectBranches", (req, res) => {
   console.debug("[Server Debug] GET /api/projectBranches called.");
   try {
@@ -217,7 +215,6 @@ app.delete("/api/projectBranches/:project", (req, res) => {
   }
 });
 
-// POST /api/tasks/hidden
 app.post("/api/tasks/hidden", (req, res) => {
   console.debug("[Server Debug] POST /api/tasks/hidden called => body:", req.body);
   try {
@@ -231,7 +228,6 @@ app.post("/api/tasks/hidden", (req, res) => {
   }
 });
 
-// POST /api/tasks/reorder
 app.post("/api/tasks/reorder", (req, res) => {
   console.debug("[Server Debug] POST /api/tasks/reorder => body:", req.body);
   try {
@@ -249,7 +245,6 @@ app.post("/api/tasks/reorder", (req, res) => {
   }
 });
 
-// POST /api/tasks/reorderAll
 app.post("/api/tasks/reorderAll", (req, res) => {
   console.debug("[Server Debug] POST /api/tasks/reorderAll => body:", req.body);
   try {
@@ -266,7 +261,6 @@ app.post("/api/tasks/reorderAll", (req, res) => {
   }
 });
 
-// POST /api/tasks/points
 app.post("/api/tasks/points", (req, res) => {
   console.debug("[Server Debug] POST /api/tasks/points => body:", req.body);
   try {
@@ -280,7 +274,6 @@ app.post("/api/tasks/points", (req, res) => {
   }
 });
 
-// POST /api/tasks/project
 app.post("/api/tasks/project", (req, res) => {
   console.debug("[Server Debug] POST /api/tasks/project => body:", req.body);
   try {
@@ -294,7 +287,6 @@ app.post("/api/tasks/project", (req, res) => {
   }
 });
 
-// POST /api/tasks/sprint
 app.post("/api/tasks/sprint", (req, res) => {
   console.debug("[Server Debug] POST /api/tasks/sprint => body:", req.body);
   try {
@@ -308,7 +300,6 @@ app.post("/api/tasks/sprint", (req, res) => {
   }
 });
 
-// POST /api/tasks/priority
 app.post("/api/tasks/priority", (req, res) => {
   console.debug("[Server Debug] POST /api/tasks/priority => body:", req.body);
   try {
@@ -330,7 +321,6 @@ app.post("/api/tasks/priority", (req, res) => {
   }
 });
 
-// POST /api/tasks/status
 app.post("/api/tasks/status", (req, res) => {
   console.debug("[Server Debug] POST /api/tasks/status => body:", req.body);
   try {
@@ -344,7 +334,6 @@ app.post("/api/tasks/status", (req, res) => {
   }
 });
 
-// POST /api/tasks/dependencies
 app.post("/api/tasks/dependencies", (req, res) => {
   console.debug("[Server Debug] POST /api/tasks/dependencies => body:", req.body);
   try {
@@ -358,7 +347,6 @@ app.post("/api/tasks/dependencies", (req, res) => {
   }
 });
 
-// POST /api/tasks/blocking
 app.post("/api/tasks/blocking", (req, res) => {
   console.debug("[Server Debug] POST /api/tasks/blocking => body:", req.body);
   try {
@@ -372,7 +360,6 @@ app.post("/api/tasks/blocking", (req, res) => {
   }
 });
 
-// Create new GitHub issue and upsert
 app.post("/api/tasks/new", async (req, res) => {
   console.debug("[Server Debug] POST /api/tasks/new => body:", req.body);
   try {
@@ -403,7 +390,6 @@ app.post("/api/tasks/new", async (req, res) => {
   }
 });
 
-// GET /api/settings/:key
 app.get("/api/settings/:key", (req, res) => {
   console.debug("[Server Debug] GET /api/settings/:key =>", req.params.key);
   try {
@@ -415,7 +401,6 @@ app.get("/api/settings/:key", (req, res) => {
   }
 });
 
-// POST /api/settings
 app.post("/api/settings", (req, res) => {
   console.debug("[Server Debug] POST /api/settings => body:", req.body);
   try {
@@ -428,7 +413,6 @@ app.post("/api/settings", (req, res) => {
   }
 });
 
-// GET /api/tasks/:id
 app.get("/api/tasks/:id", (req, res) => {
   console.debug("[Server Debug] GET /api/tasks/:id =>", req.params.id);
   try {
@@ -447,7 +431,6 @@ app.get("/api/tasks/:id", (req, res) => {
   }
 });
 
-// GET /api/projects/:project
 app.get("/api/projects/:project", (req, res) => {
   console.debug("[Server Debug] GET /api/projects/:project =>", req.params.project);
   try {
@@ -459,7 +442,6 @@ app.get("/api/projects/:project", (req, res) => {
   }
 });
 
-// GET /api/sprints/:sprint
 app.get("/api/sprints/:sprint", (req, res) => {
   console.debug("[Server Debug] GET /api/sprints/:sprint =>", req.params.sprint);
   try {
@@ -471,7 +453,6 @@ app.get("/api/sprints/:sprint", (req, res) => {
   }
 });
 
-// POST /api/tasks/rename
 app.post("/api/tasks/rename", async (req, res) => {
   console.debug("[Server Debug] POST /api/tasks/rename => body:", req.body);
   try {
@@ -501,7 +482,6 @@ app.post("/api/tasks/rename", async (req, res) => {
   }
 });
 
-// GET /api/activity
 app.get("/api/activity", (req, res) => {
   console.debug("[Server Debug] GET /api/activity called.");
   try {
@@ -517,10 +497,25 @@ app.get("/api/activity", (req, res) => {
   Updated /api/ai/models to try returning known token limits for recognized models
   and "N/A" as fallback instead of "varies".
 */
+function resolveModelKey(originalId, knownTokenLimits) {
+  const attempt = (id) => `openai/${id}`;
+  if (knownTokenLimits[attempt(originalId)] !== undefined) {
+    return attempt(originalId);
+  }
+  const segments = originalId.split("-");
+  while (segments.length > 1) {
+    segments.pop();
+    const test = segments.join("-");
+    if (knownTokenLimits[attempt(test)] !== undefined) {
+      return attempt(test);
+    }
+  }
+  return null;
+}
+
 app.get("/api/ai/models", async (req, res) => {
   console.debug("[Server Debug] GET /api/ai/models called.");
 
-  // A dictionary of known approximate token limits
   const knownTokenLimits = {
     "openai/codex-mini": 200000,
     "openai/codex-mini-latest": 200000,
@@ -552,7 +547,6 @@ app.get("/api/ai/models", async (req, res) => {
     "openai/gpt-4-turbo": 128000,
     "openai/gpt-4-turbo-preview": 128000,
     "openai/gpt-3.5-turbo-1106": 16385,
-    "openai/gpt-4-1106-preview": 128000,
     "openai/gpt-3.5-turbo-instruct": 4095,
     "openai/gpt-3.5-turbo-16k": 16385,
     "openai/gpt-4-32k": 32767,
@@ -570,15 +564,14 @@ app.get("/api/ai/models", async (req, res) => {
       const modelList = await openaiClient.models.list();
       const modelIds = modelList.data.map((m) => m.id).sort();
       const modelData = modelIds.map((id) => {
-        const modelKey = "openai/" + id;
+        const found = resolveModelKey(id, knownTokenLimits);
         return {
           id,
-          tokenLimit: knownTokenLimits[modelKey] !== undefined ? knownTokenLimits[modelKey] : "N/A"
+          tokenLimit: found ? knownTokenLimits[found] : "N/A"
         };
       });
       res.json({ service: "openai", models: modelData });
     } else {
-      // Fallback or for openrouter
       const openRouterKey = process.env.OPENROUTER_API_KEY || "";
       if (!openRouterKey) {
         return res.status(500).json({
@@ -594,10 +587,10 @@ app.get("/api/ai/models", async (req, res) => {
       });
       const rawModels = orResp.data?.data?.map((m) => m.id).sort() || [];
       const modelData = rawModels.map((id) => {
-        const modelKey = "openai/" + id;
+        const found = resolveModelKey(id, knownTokenLimits);
         return {
           id,
-          tokenLimit: knownTokenLimits[modelKey] !== undefined ? knownTokenLimits[modelKey] : "N/A"
+          tokenLimit: found ? knownTokenLimits[found] : "N/A"
         };
       });
       res.json({ service: "openrouter", models: modelData });
@@ -608,7 +601,6 @@ app.get("/api/ai/models", async (req, res) => {
   }
 });
 
-// Updated /api/chat for chunk-splitting & token counting
 app.post("/api/chat", async (req, res) => {
   console.debug("[Server Debug] POST /api/chat => body:", req.body);
   try {
@@ -620,7 +612,6 @@ app.post("/api/chat", async (req, res) => {
       return res.status(400).send("Missing message");
     }
 
-    // Gather entire conversation
     const priorPairs = db.getAllChatPairs(chatTabId);
     let model = db.getSetting("ai_model");
     const savedInstructions = db.getSetting("agent_instructions") || "";
@@ -635,7 +626,6 @@ app.post("/api/chat", async (req, res) => {
       }
     }
 
-    // Insert user message
     const chatPairId = db.createChatPair(userMessage, chatTabId, systemContext);
     conversation.push({ role: "user", content: userMessage });
     db.logActivity("User chat", JSON.stringify({ tabId: chatTabId, message: userMessage, userTime }));
@@ -647,18 +637,15 @@ app.post("/api/chat", async (req, res) => {
 
     const openaiClient = getOpenAiClient();
     if (!model) {
-      model = "unknown"; // Reverted fallback to gpt-3.5-turbo
+      model = "unknown";
     }
 
     console.debug("[Server Debug] Using model =>", model);
     const encoder = getEncoding(model);
 
-    // We'll measure tokens until it's under ~7000
     let convTokens = 0;
     let truncatedConversation = [];
-    // We'll keep the systemContext pinned
     truncatedConversation.push(conversation[0]);
-    // Then accumulate from the last pairs
     const remainder = conversation.slice(1).reverse();
 
     for (const msg of remainder) {
@@ -693,7 +680,6 @@ app.post("/api/chat", async (req, res) => {
     res.end();
     console.debug("[Server Debug] AI streaming finished, total length =>", assistantMessage.length);
 
-    // Final token counting
     const systemTokens = countTokens(encoder, systemContext);
     let prevAssistantTokens = 0;
     let historyTokens = 0;
@@ -727,7 +713,6 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
-// GET /api/chat/history
 app.get("/api/chat/history", (req, res) => {
   console.debug("[Server Debug] GET /api/chat/history =>", req.query);
   try {
@@ -740,15 +725,12 @@ app.get("/api/chat/history", (req, res) => {
   }
 });
 
-// Provide the current model
 app.get("/api/model", (req, res) => {
   console.debug("[Server Debug] GET /api/model called.");
   let m = db.getSetting("ai_model");
-  // Reverted fallback: no forced "gpt-3.5-turbo" here
   res.json({ model: m });
 });
 
-// Chat tabs
 app.get("/api/chat/tabs", (req, res) => {
   console.debug("[Server Debug] GET /api/chat/tabs => listing all tabs.");
   try {
@@ -809,7 +791,6 @@ app.delete("/api/chat/tabs/:id", (req, res) => {
   }
 });
 
-// Return entire conversation for a pair
 app.get("/pair/:id", (req, res) => {
   console.debug("[Server Debug] GET /pair/:id =>", req.params.id);
   const pairId = parseInt(req.params.id, 10);
@@ -823,7 +804,6 @@ app.get("/pair/:id", (req, res) => {
   });
 });
 
-// GET /api/time
 app.get("/api/time", (req, res) => {
   console.debug("[Server Debug] GET /api/time => returning server time.");
   const now = new Date();
@@ -841,7 +821,6 @@ app.get("/api/time", (req, res) => {
   });
 });
 
-// Implement file upload
 app.post("/api/upload", upload.single("myfile"), (req, res) => {
   console.debug("[Server Debug] POST /api/upload => File info:", req.file);
   if (!req.file) {
@@ -851,7 +830,6 @@ app.post("/api/upload", upload.single("myfile"), (req, res) => {
   res.json({ success: true, file: req.file });
 });
 
-// Provide list of uploaded files
 app.get("/api/upload/list", (req, res) => {
   console.debug("[Server Debug] GET /api/upload/list => listing files.");
   try {
@@ -865,25 +843,21 @@ app.get("/api/upload/list", (req, res) => {
 
 app.use(express.static(path.join(__dirname, "../public")));
 
-// Serve test_projects page
 app.get("/test_projects", (req, res) => {
   console.debug("[Server Debug] GET /test_projects => Serving test_projects.html");
   res.sendFile(path.join(__dirname, "../public/test_projects.html"));
 });
 
-// Serve activity page
 app.get("/activity", (req, res) => {
   console.debug("[Server Debug] GET /activity => Serving activity.html");
   res.sendFile(path.join(__dirname, "../public/activity.html"));
 });
 
-// Serve new AI Models page
 app.get("/ai_models", (req, res) => {
   console.debug("[Server Debug] GET /ai_models => Serving ai_models.html");
   res.sendFile(path.join(__dirname, "../public/ai_models.html"));
 });
 
-// Delete a single chat pair
 app.delete("/api/chat/pair/:id", (req, res) => {
   console.debug("[Server Debug] DELETE /api/chat/pair =>", req.params.id);
   try {
@@ -899,7 +873,6 @@ app.delete("/api/chat/pair/:id", (req, res) => {
   }
 });
 
-// "Create Sterling Chat" single response
 app.post("/api/createSterlingChat", async (req, res) => {
   db.logActivity("Create Sterling Chat", "User triggered createSterlingChat endpoint.");
 
@@ -932,7 +905,6 @@ app.post("/api/createSterlingChat", async (req, res) => {
   }
 });
 
-// Rename project
 app.post("/api/projects/rename", (req, res) => {
   console.debug("[Server Debug] POST /api/projects/rename =>", req.body);
   try {
@@ -949,7 +921,6 @@ app.post("/api/projects/rename", (req, res) => {
   }
 });
 
-// Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
