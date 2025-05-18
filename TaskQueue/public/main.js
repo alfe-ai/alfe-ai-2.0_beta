@@ -1647,7 +1647,10 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     const r2 = await fetch("/api/settings/agent_instructions");
     if(r2.ok){
       const { value } = await r2.json();
-      $("#displayedInstructions").textContent = value || "(none)";
+      const displayedInstrEl = document.querySelector("#displayedInstructions");
+      if (displayedInstrEl) {
+        displayedInstrEl.textContent = value || "(none)";
+      }
       window.agentInstructions = value || "";
     }
   } catch(e){
@@ -1716,4 +1719,3 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     default: showTasksPanel(); break;
   }
 })();
-
