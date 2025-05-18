@@ -899,25 +899,42 @@ app.post("/api/chat", async (req, res) => {
     // Measure AI response time
     let requestStartTime = Date.now();
 
-    const stream = await openaiClient.chat.completions.create({
-      model: modelForOpenAI,
-      messages: truncatedConversation,
-      stream: true
-    });
+    // Check user setting for streaming
+    const streamingSetting = db.getSetting("chat_streaming");
+    const useStreaming = (streamingSetting === false) ? false : true; // default true if unset
 
-    console.debug("[Server Debug] AI streaming started...");
+    if (useStreaming) {
+      // streaming logic
+      const stream = await openaiClient.chat.completions.create({
+        model: modelForOpenAI,
+        messages: truncatedConversation,
+        stream: true
+      });
 
-    for await (const part of stream) {
-      const chunk = part.choices?.[0]?.delta?.content || "";
-      if (chunk.includes("[DONE]")) {
-        break;
+      console.debug("[Server Debug] AI streaming started...");
+
+      for await (const part of stream) {
+        const chunk = part.choices?.[0]?.delta?.content || "";
+        if (chunk.includes("[DONE]")) {
+          break;
+        }
+        assistantMessage += chunk;
+        res.write(chunk);
       }
-      assistantMessage += chunk;
-      res.write(chunk);
-    }
+      res.end();
+      console.debug("[Server Debug] AI streaming finished, total length =>", assistantMessage.length);
 
-    res.end();
-    console.debug("[Server Debug] AI streaming finished, total length =>", assistantMessage.length);
+    } else {
+      // non-streaming logic
+      const completion = await openaiClient.chat.completions.create({
+        model: modelForOpenAI,
+        messages: truncatedConversation
+      });
+      assistantMessage = completion.choices?.[0]?.message?.content || "";
+      res.write(assistantMessage);
+      res.end();
+      console.debug("[Server Debug] AI non-streaming completed, length =>", assistantMessage.length);
+    }
 
     let requestEndTime = Date.now();
     let diffMs = requestEndTime - requestStartTime;
@@ -1231,4 +1248,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
-
