@@ -802,17 +802,6 @@ function countTokens(encoder, text) {
   return encoder.encode(text || "").length;
 }
 
-// Explicit CORS configuration
-app.use(cors({
-  origin: "*",
-  methods: ["GET","POST","PUT","DELETE","OPTIONS","HEAD"],
-  allowedHeaders: ["Content-Type","Authorization","Accept","X-Requested-With","Origin"]
-}));
-
-// This line above was from server code, and not part of client main.js (safe to ignore in final block).
-
-// We keep the rest of the client main.js code
-
 const chatInputEl = document.getElementById("chatInput");
 const chatSendBtnEl = document.getElementById("chatSendBtn");
 const waitingElem = document.getElementById("waitingCounter");
@@ -1714,7 +1703,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
         if(p.token_info && showSubbubbleToken){
           try {
             const tInfo = JSON.parse(p.token_info);
-            const userInTokens = (tInfo.systemTokens||0) + (tInfo.historyTokens||0) + (tInfo.inputTokens||0);
+            const userInTokens = (tInfo.systemTokens || 0) + (tInfo.historyTokens || 0) + (tInfo.inputTokens || 0);
             const userTokenDiv = document.createElement("div");
             userTokenDiv.className = "token-indicator";
             userTokenDiv.textContent = `In: ${userInTokens}`;
@@ -1946,4 +1935,3 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
 }
 
 console.log("[Server Debug] main.js fully loaded. End of script.");
-
