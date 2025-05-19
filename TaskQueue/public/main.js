@@ -866,7 +866,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
 
     if (model) {
       const modelLabel = document.createElement("div");
-      modelLabel.textContent = `Model: ${model}`;
+      modelLabel.textContent = `${provider} / ${model}`;
       metaContainer.appendChild(modelLabel);
     }
 
