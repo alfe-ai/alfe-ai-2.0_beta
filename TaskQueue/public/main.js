@@ -23,6 +23,10 @@ let sterlingChatUrlVisible = true;
 let chatStreaming = true; // new toggle for streaming
 window.agentName = "Alfe";
 
+// New: model tabs array
+let modelTabs = [];
+let currentModelTabId = null;
+
 const defaultFavicon = "alfe_favicon_clean_64x64.ico";
 const rotatingFavicon = "alfe_favicon_clean_64x64.ico";
 let favElement = null;
@@ -1630,6 +1634,9 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
   }
 
   initChatScrollLoading();
+
+  // Initialize model tabs
+  initModelTabs();
 })();
 
 function initChatScrollLoading(){
@@ -1937,89 +1944,132 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
   chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
 }
 
-// Listeners for changing the sterling branch
-const changeSterlingBranchBtn = document.getElementById("changeSterlingBranchBtn");
-if(changeSterlingBranchBtn){
-  changeSterlingBranchBtn.addEventListener("click", async ()=>{
-    const r = await fetch("/api/settings/sterling_chat_url");
-    if(!r.ok){
-      alert("No sterling_chat_url found. Create a chat first.");
-      return;
+// New model tabs logic
+async function initModelTabs() {
+  try {
+    // load from DB setting
+    let mTabs = await getSetting("model_tabs");
+    if(!Array.isArray(mTabs)) mTabs = [];
+    modelTabs = mTabs;
+    let lastModelTab = await getSetting("last_model_tab");
+    if(typeof lastModelTab !== "number" && modelTabs.length>0){
+      lastModelTab = modelTabs[0].id;
     }
-    const data = await r.json();
-    const urlVal = data.value || "";
-    if(!urlVal){
-      alert("No sterling_chat_url set. Create a chat first.");
-      return;
-    }
-    $("#sterlingBranchMsg").textContent = "";
-    // Show modal
-    showModal($("#changeBranchModal"));
+    currentModelTabId = lastModelTab || null;
+    renderModelTabs();
+  } catch(e){
+    console.error("Error init model tabs:", e);
+  }
+  const newModelTabBtn = document.getElementById("newModelTabBtn");
+  if(newModelTabBtn){
+    newModelTabBtn.addEventListener("click", addModelTab);
+  }
+}
+
+function renderModelTabs(){
+  const container = document.getElementById("modelTabsContainer");
+  if(!container) return;
+  container.innerHTML = "";
+  modelTabs.forEach(tab => {
+    const b = document.createElement("div");
+    b.style.padding="4px 6px";
+    b.style.cursor="pointer";
+    b.style.border= (tab.id===currentModelTabId) ? "2px solid #aaa" : "1px solid #444";
+    b.style.backgroundColor= (tab.id===currentModelTabId) ? "#555" : "#333";
+    b.style.color= (tab.id===currentModelTabId) ? "#fff" : "#ddd";
+
+    b.textContent = tab.name;
+    b.addEventListener("click", ()=>selectModelTab(tab.id));
+    b.addEventListener("contextmenu", e=>{
+      e.preventDefault();
+      const choice=prompt("Type 'rename' or 'delete':","");
+      if(choice==="rename") renameModelTab(tab.id);
+      else if(choice==="delete") deleteModelTab(tab.id);
+    });
+    container.appendChild(b);
   });
 }
 
-// Save branch
-const sterlingBranchSaveBtn = document.getElementById("sterlingBranchSaveBtn");
-if(sterlingBranchSaveBtn){
-  sterlingBranchSaveBtn.addEventListener("click", async ()=>{
-    const r = await fetch("/api/settings/sterling_chat_url");
-    if(!r.ok){
-      alert("Cannot read sterling_chat_url.");
-      return;
-    }
-    const data = await r.json();
-    const urlVal = data.value || "";
-    if(!urlVal){
-      alert("No sterling_chat_url set. Create a chat first.");
-      return;
-    }
-    const splitted = urlVal.split("/");
-    const chatNumber = splitted.pop();
-    splitted.pop();
-    const repoName = decodeURIComponent(splitted.pop());
+// Add a new model tab
+async function addModelTab(){
+  let name = prompt("Enter Model Tab Name (e.g., GPT-4 or deepseek-latest):", "");
+  if(!name) return;
+  let newId = 1;
+  if(modelTabs.length>0){
+    const maxId = Math.max(...modelTabs.map(t=>t.id));
+    newId = maxId+1;
+  }
+  // default model is the name
+  const newObj = {
+    id: newId,
+    name,
+    modelId: name
+  };
+  modelTabs.push(newObj);
+  currentModelTabId = newId;
+  await saveModelTabs();
+  // set the "ai_model" to the new tab's model
+  await setSetting("ai_model", name);
+  modelName = name;
+  renderModelTabs();
+}
 
-    const createNew = $("#createSterlingNewBranchCheck").checked;
-    const branchInput = $("#sterlingBranchNameInput").value.trim();
-    if(!branchInput){
-      alert("Please enter a branch name.");
-      return;
-    }
+// rename model tab
+async function renameModelTab(tabId){
+  const t = modelTabs.find(t => t.id===tabId);
+  if(!t) return;
+  const newName = prompt("Enter new model name:", t.name || "Unnamed");
+  if(!newName) return;
+  t.name = newName;
+  t.modelId = newName;
+  await saveModelTabs();
+  // if it's the active tab, update ai_model setting too
+  if(tabId===currentModelTabId){
+    await setSetting("ai_model", newName);
+    modelName = newName;
+  }
+  renderModelTabs();
+}
 
-    try {
-      // FIX: Use the correct URL on port 3444
-      const baseURL = 'http://localhost:3444/api';
-      const resp = await fetch(`${baseURL}/changeBranchOfChat/${repoName}/${chatNumber}`, {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({
-          createNew,
-          branchName: branchInput,
-          newBranchName: branchInput
-        })
-      });
-      if(!resp.ok){
-        const errData = await resp.json();
-        $("#sterlingBranchMsg").textContent = errData.error || "Error changing branch.";
-        $("#sterlingBranchMsg").style.color = "red";
-        return;
+// delete model tab
+async function deleteModelTab(tabId){
+  if(!confirm("Delete this model tab?")) return;
+  const idx = modelTabs.findIndex(x=>x.id===tabId);
+  if(idx<0) return;
+  modelTabs.splice(idx,1);
+  if(currentModelTabId===tabId){
+    currentModelTabId = modelTabs.length>0 ? modelTabs[0].id : null;
+    if(currentModelTabId){
+      const t = modelTabs.find(m=>m.id===currentModelTabId);
+      if(t) {
+        await setSetting("ai_model", t.modelId);
+        modelName = t.modelId;
       }
-      const resData = await resp.json();
-      $("#sterlingBranchMsg").style.color = "green";
-      $("#sterlingBranchMsg").textContent = `Branch changed to: ${resData.newBranch}`;
-      hideModal($("#changeBranchModal"));
-      await updateProjectInfo();
-    } catch(e){
-      console.error("Error changing sterling branch:", e);
-      $("#sterlingBranchMsg").style.color = "red";
-      $("#sterlingBranchMsg").textContent = "Error changing branch. Check console.";
+    } else {
+      // no tabs left
+      await setSetting("ai_model","");
+      modelName = "unknown";
     }
-  });
+  }
+  await saveModelTabs();
+  renderModelTabs();
 }
-const sterlingBranchCancelBtn = document.getElementById("sterlingBranchCancelBtn");
-if(sterlingBranchCancelBtn){
-  sterlingBranchCancelBtn.addEventListener("click", ()=>{
-    hideModal($("#changeBranchModal"));
-  });
+
+// select model tab
+async function selectModelTab(tabId){
+  currentModelTabId = tabId;
+  const t = modelTabs.find(x=>x.id===tabId);
+  if(t){
+    await setSetting("ai_model", t.modelId);
+    modelName = t.modelId;
+  }
+  await setSetting("last_model_tab", tabId);
+  renderModelTabs();
+}
+
+async function saveModelTabs(){
+  // store in setting "model_tabs"
+  await setSetting("model_tabs", modelTabs);
 }
 
 console.log("[Server Debug] main.js fully loaded. End of script.");
