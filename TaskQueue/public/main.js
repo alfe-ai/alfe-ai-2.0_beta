@@ -830,7 +830,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
   botHead.className = "bubble-header";
   const { provider, shortModel } = parseProviderModel(model);
   botHead.innerHTML = `
-    <div class="name-oval name-oval-ai">${window.agentName} (${provider} / ${shortModel})</div>
+    <div class="name-oval name-oval-ai" title="${provider} / ${shortModel}">${window.agentName}</div>
     <span style="opacity:0.8;">${aiTs ? formatTimestamp(aiTs) : "…"}</span>
   `;
   botDiv.appendChild(botHead);
@@ -1041,7 +1041,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
 
         const { provider, shortModel } = parseProviderModel(p.model);
         botHead.innerHTML = `
-          <div class="name-oval name-oval-ai">${window.agentName} (${provider} / ${shortModel})</div>
+          <div class="name-oval name-oval-ai" title="${provider} / ${shortModel}">${window.agentName}</div>
           <span style="opacity:0.8;">${p.ai_timestamp ? formatTimestamp(p.ai_timestamp) : "…"}</span>
         `;
         botDiv.appendChild(botHead);
@@ -1053,7 +1053,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
         if(p.token_info && showSubbubbleToken){
           try {
             const tInfo = JSON.parse(p.token_info);
-            const outTokens = tInfo.finalAssistantTokens || 0;
+            const outTokens = tInfo.assistantTokens || 0;
             const combinedDiv = document.createElement("div");
             combinedDiv.className = "token-indicator";
             combinedDiv.textContent = `Out: ${outTokens} (Time: ${tInfo.responseTime?.toFixed(2) || "?"}s)`;
@@ -1144,7 +1144,7 @@ chatSendBtnEl.addEventListener("click", async () => {
   const botHead = document.createElement("div");
   botHead.className = "bubble-header";
   botHead.innerHTML = `
-    <div class="name-oval name-oval-ai">${window.agentName} (${modelName})</div>
+    <div class="name-oval name-oval-ai" title="${modelName}">${window.agentName}</div>
     <span style="opacity:0.8;">…</span>
   `;
   botDiv.appendChild(botHead);
