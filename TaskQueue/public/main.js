@@ -1789,7 +1789,12 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
   } catch(e){
     modelName = "unknown";
   }
-  $("#modelHud").textContent = "Model: " + modelName;
+
+  //
+  //const provider =
+  // Fetch the provider like we do elsewhere in this code
+
+  $("#modelHud").textContent = provider + "/" + modelName;
 
   await loadTabs();
 
