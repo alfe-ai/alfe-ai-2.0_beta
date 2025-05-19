@@ -159,7 +159,8 @@ function parseProviderModel(model) {
   } else if (model.startsWith("openrouter/")) {
     return { provider: "openrouter", shortModel: model.replace(/^openrouter\//, "") };
   } else if (model.startsWith("deepseek/")) {
-    return { provider: "deepseek", shortModel: model.replace(/^deepseek\//, "") };
+    // Changed to treat deepseek/ as openrouter
+    return { provider: "openrouter", shortModel: model.replace(/^deepseek\//, "") };
   }
   return { provider: "Unknown", shortModel: model };
 }
