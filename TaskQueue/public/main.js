@@ -1364,7 +1364,7 @@ async function chatSettingsSaveFlow() {
     // Use parseProviderModel to fetch provider
     const { provider: autoProvider } = parseProviderModel(modelName);
     console.log("[OBTAINED PROVIDER] =>", autoProvider);
-    document.getElementById("modelHud").textContent = autoProvider + "/" + modelName;
+    document.getElementById("modelHud").textContent = autoProvider + " / " + modelName;
   }
 
   hideModal($("#chatSettingsModal"));
@@ -1798,7 +1798,7 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
   // Use parseProviderModel to fetch provider
   const { provider: autoProvider } = parseProviderModel(modelName);
   console.log("[OBTAINED PROVIDER] =>", autoProvider);
-  $("#modelHud").textContent = autoProvider + "/" + modelName;
+  $("#modelHud").textContent = autoProvider + " / " + modelName;
 
   await loadTabs();
 
