@@ -778,560 +778,28 @@ async function updateProjectInfo() {
 function parseProviderModel(model) {
   if(!model) return { provider: "Unknown", shortModel: "Unknown" };
   if(model.startsWith("openai/")) {
-    return { provider: "OpenAI", shortModel: model.replace(/^openai\//,'') };
+    return { provider: "openai", shortModel: model.replace(/^openai\//, "") };
   } else if(model.startsWith("openrouter/")) {
-    return { provider: "OpenRouter", shortModel: model.replace(/^openrouter\//,'') };
+    return { provider: "openrouter", shortModel: model.replace(/^openrouter\//, "") };
   } else if(model.startsWith("deepseek/")) {
-    return { provider: "OpenRouter", shortModel: model.replace(/^openrouter\//,'') };
+    return { provider: "DeepSeek", shortModel: model.replace(/^deepseek\//, "") };
   }
   return { provider: "Unknown", shortModel: model };
 }
 
-function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemContext, fullHistory, tokenInfo) {
-  const seqDiv = document.createElement("div");
-  seqDiv.className = "chat-sequence";
-
-  const userDiv = document.createElement("div");
-  userDiv.className = "chat-user";
-  {
-    const userHead = document.createElement("div");
-    userHead.className = "bubble-header";
-    userHead.innerHTML = `
-      <div class="name-oval name-oval-user">User</div>
-      <span style="opacity:0.8;">${formatTimestamp(userTs)}</span>
-    `;
-    userDiv.appendChild(userHead);
-
-    const userBody = document.createElement("div");
-    userBody.textContent = userText;
-    userDiv.appendChild(userBody);
-  }
-
-  // Add incoming token usage under user bubble if available, only if showSubbubbleToken is true
-  if(tokenInfo && showSubbubbleToken){
-    try {
-      const tInfo = JSON.parse(tokenInfo);
-      const userInTokens = (tInfo.systemTokens || 0) + (tInfo.historyTokens || 0) + (tInfo.inputTokens || 0);
-      const userTokenDiv = document.createElement("div");
-      userTokenDiv.className = "token-indicator";
-      userTokenDiv.textContent = `In: ${userInTokens}`;
-      userDiv.appendChild(userTokenDiv);
-    } catch(e) {
-      console.debug("[Server Debug] Could not parse token_info for user subbubble =>", e.message);
-    }
-  }
-
-  seqDiv.appendChild(userDiv);
-
-  const botDiv = document.createElement("div");
-  botDiv.className = "chat-bot";
-
-  const botHead = document.createElement("div");
-  botHead.className = "bubble-header";
-  const { provider, shortModel } = parseProviderModel(model);
-  botHead.innerHTML = `
-    <div class="name-oval name-oval-ai" title="${provider} / ${shortModel}">${window.agentName}</div>
-    <span style="opacity:0.8;">${aiTs ? formatTimestamp(aiTs) : "…"}</span>
-  `;
-  botDiv.appendChild(botHead);
-
-  const botBody = document.createElement("div");
-  botBody.textContent = aiText || "";
-  botDiv.appendChild(botBody);
-
-  if(tokenInfo && showSubbubbleToken){
-    try {
-      const tInfo = JSON.parse(tokenInfo);
-      const outTokens = tInfo.finalAssistantTokens || 0;
-      const combinedDiv = document.createElement("div");
-      combinedDiv.className = "token-indicator";
-      combinedDiv.textContent = `Out: ${outTokens} (Time: ${tInfo.responseTime?.toFixed(2) || "?"}s)`;
-      botDiv.appendChild(combinedDiv);
-    } catch(e) {
-      console.debug("[Server Debug] Could not parse token_info for pair =>", pairId, e.message);
-    }
-  }
-
-  seqDiv.appendChild(botDiv);
-
-  if(!chatHideMetadata){
-    const metaContainer = document.createElement("div");
-    metaContainer.style.fontSize = "0.8rem";
-    metaContainer.style.color = "#aaa";
-    metaContainer.style.textAlign = "right";
-
-    const pairLabel = document.createElement("div");
-    pairLabel.textContent = `Pair #${pairId}`;
-    metaContainer.appendChild(pairLabel);
-
-    if (model) {
-      const modelLabel = document.createElement("div");
-      modelLabel.textContent = `Model: ${model}`;
-      metaContainer.appendChild(modelLabel);
-    }
-
-    let tokObj = null;
-    try {
-      tokObj = tokenInfo ? JSON.parse(tokenInfo) : null;
-    } catch(e) {}
-
-    // Updated snippet below:
-    if (systemContext) {
-      const scDetails = document.createElement("details");
-      const scSum = document.createElement("summary");
-      if (tokObj && tokObj.systemTokens !== undefined) {
-        scSum.textContent = `System Context (${tokObj.systemTokens})`;
-      } else {
-        scSum.textContent = `System Context`;
-      }
-      scDetails.appendChild(scSum);
-
-      const lines = systemContext.split(/\r?\n/);
-      lines.forEach(line => {
-        if (!line.trim()) return;
-        const lineBubble = document.createElement("div");
-        lineBubble.className = "chat-bot";
-        lineBubble.style.marginTop = "4px";
-        lineBubble.textContent = line;
-        scDetails.appendChild(lineBubble);
-      });
-      metaContainer.appendChild(scDetails);
-    }
-
-    if (fullHistory) {
-      const fhDetails = document.createElement("details");
-      const fhSum = document.createElement("summary");
-      fhSum.textContent = `Full History`;
-      fhDetails.appendChild(fhSum);
-      const fhPre = document.createElement("pre");
-      fhPre.textContent = JSON.stringify(fullHistory, null, 2);
-      fhDetails.appendChild(fhPre);
-      metaContainer.appendChild(fhDetails);
-    }
-
-    if (tokObj) {
-      const tuDetails = document.createElement("details");
-      const tuSum = document.createElement("summary");
-      tuSum.textContent = `Token Usage (${tokObj.total})`;
-      tuDetails.appendChild(tuSum);
-
-      const usageDiv = document.createElement("div");
-      usageDiv.style.marginLeft = "1em";
-      usageDiv.textContent =
-          `System: ${tokObj.systemTokens}, ` +
-          `History: ${tokObj.historyTokens}, ` +
-          `Input: ${tokObj.inputTokens}, ` +
-          `Assistant: ${tokObj.assistantTokens}, ` +
-          `FinalAssistantTokens: ${tokObj.finalAssistantTokens}, ` +
-          `Total: ${tokObj.total}, ` +
-          `Time: ${tokObj.responseTime ?? "?"}s`;
-      tuDetails.appendChild(usageDiv);
-      metaContainer.appendChild(tuDetails);
-    }
-
-    const directLinkDiv = document.createElement("div");
-    const ddLink = document.createElement("a");
-    ddLink.href = `/pair/${pairId}`;
-    ddLink.target = "_blank";
-    ddLink.textContent = "Direct Link";
-    directLinkDiv.appendChild(ddLink);
-    metaContainer.appendChild(directLinkDiv);
-
-    seqDiv.appendChild(metaContainer);
-  }
-
-  const delBtn = document.createElement("button");
-  delBtn.className = "delete-chat-btn";
-  delBtn.textContent = "x";
-  delBtn.title = "Delete this chat message";
-  delBtn.style.marginLeft = "8px";
-  delBtn.addEventListener("click", async () => {
-    if (!confirm("Are you sure you want to delete this message?")) return;
-    const resp = await fetch(`/api/chat/pair/${pairId}`, {
-      method: "DELETE"
-    });
-    if (resp.ok) {
-      seqDiv.remove();
-    } else {
-      alert("Failed to delete chat pair.");
-    }
-  });
-  botHead.appendChild(delBtn);
-
-  const chatMessagesEl = document.getElementById("chatMessages");
-  chatMessagesEl.appendChild(seqDiv);
-  chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
-}
-
-let chatHistoryOffset = 0;
-let chatHasMore = true;
-
-async function loadChatHistory(tabId = 1, reset=false) {
-  const chatMessagesEl = document.getElementById("chatMessages");
-  if(reset){
-    chatMessagesEl.innerHTML="";
-    chatHistoryOffset = 0;
-    chatHasMore = true;
-  }
+function getEncoding(modelName) {
+  console.debug("[Server Debug] Attempting to load tokenizer for model =>", modelName);
   try {
-    const resp = await fetch(`/api/chat/history?tabId=${tabId}&limit=10&offset=${chatHistoryOffset}`);
-    if(!resp.ok){
-      console.error("Error loading chat history from server");
-      return;
-    }
-    const data = await resp.json();
-    const pairs = data.pairs || [];
-    if(pairs.length<10){
-      chatHasMore = false;
-    }
-    chatHistoryOffset += pairs.length;
-
-    if(reset){
-      for (const p of pairs) {
-        addChatMessage(
-            p.id, p.user_text, p.timestamp,
-            p.ai_text, p.ai_timestamp,
-            p.model, p.system_context, null, p.token_info
-        );
-      }
-    } else {
-      const scrollPos = chatMessagesEl.scrollHeight;
-      const fragment = document.createDocumentFragment();
-      for (let i = pairs.length-1; i>=0; i--){
-        const p = pairs[i];
-        const seqDiv = document.createElement("div");
-        seqDiv.className = "chat-sequence";
-
-        const userDiv = document.createElement("div");
-        userDiv.className = "chat-user";
-        {
-          const userHead = document.createElement("div");
-          userHead.className = "bubble-header";
-          userHead.innerHTML = `
-            <div class="name-oval name-oval-user">User</div>
-            <span style="opacity:0.8;">${formatTimestamp(p.timestamp)}</span>
-          `;
-          userDiv.appendChild(userHead);
-
-          const userBody = document.createElement("div");
-          userBody.textContent = p.user_text;
-          userDiv.appendChild(userBody);
-        }
-
-        if(p.token_info && showSubbubbleToken){
-          try {
-            const tInfo = JSON.parse(p.token_info);
-            const userInTokens = (tInfo.systemTokens||0) + (tInfo.historyTokens||0) + (tInfo.inputTokens||0);
-            const userTokenDiv = document.createElement("div");
-            userTokenDiv.className = "token-indicator";
-            userTokenDiv.textContent = `In: ${userInTokens}`;
-            userDiv.appendChild(userTokenDiv);
-          } catch(e){
-            console.debug("[Server Debug] Could not parse token_info for prepended pair =>", e);
-          }
-        }
-
-        seqDiv.appendChild(userDiv);
-
-        const botDiv = document.createElement("div");
-        botDiv.className = "chat-bot";
-
-        const botHead = document.createElement("div");
-        botHead.className = "bubble-header";
-
-        const { provider, shortModel } = parseProviderModel(p.model);
-        botHead.innerHTML = `
-          <div class="name-oval name-oval-ai" title="${provider} / ${shortModel}">${window.agentName}</div>
-          <span style="opacity:0.8;">${p.ai_timestamp ? formatTimestamp(p.ai_timestamp) : "…"}</span>
-        `;
-        botDiv.appendChild(botHead);
-
-        const botBody = document.createElement("div");
-        botBody.textContent = p.ai_text || "";
-        botDiv.appendChild(botBody);
-
-        if(p.token_info && showSubbubbleToken){
-          try {
-            const tInfo = JSON.parse(p.token_info);
-            const outTokens = tInfo.assistantTokens || 0;
-            const combinedDiv = document.createElement("div");
-            combinedDiv.className = "token-indicator";
-            combinedDiv.textContent = `Out: ${outTokens} (Time: ${tInfo.responseTime?.toFixed(2) || "?"}s)`;
-            botDiv.appendChild(combinedDiv);
-          } catch(e){
-            console.debug("[Server Debug] Could not parse token_info for prepended pair =>", e.message);
-          }
-        }
-
-        seqDiv.appendChild(botDiv);
-        fragment.appendChild(seqDiv);
-      }
-      if(chatMessagesEl.firstChild){
-        chatMessagesEl.insertBefore(fragment, chatMessagesEl.firstChild);
-      } else {
-        chatMessagesEl.appendChild(fragment);
-      }
-      chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight - scrollPos;
-    }
-  } catch (err) {
-    console.error("Error loading chat history:", err);
+    return encoding_for_model(modelName);
+  } catch (e) {
+    console.debug("[Server Debug] Tokenizer load failed, falling back to gpt-3.5-turbo =>", e.message);
+    return encoding_for_model("gpt-3.5-turbo");
   }
 }
 
-function initChatScrollLoading(){
-  const chatMessagesEl = document.getElementById("chatMessages");
-  if(!chatMessagesEl) return;
-
-  chatMessagesEl.addEventListener("scroll", async ()=>{
-    if(chatMessagesEl.scrollTop < 50){
-      if(chatHasMore){
-        await loadChatHistory(currentTabId, false);
-      }
-    }
-  });
+function countTokens(encoder, text) {
+  return encoder.encode(text || "").length;
 }
-
-const chatInputEl = document.getElementById("chatInput");
-const chatSendBtnEl = document.getElementById("chatSendBtn");
-const waitingElem = document.getElementById("waitingCounter");
-const scrollDownBtnEl = document.getElementById("scrollDownBtn");
-
-scrollDownBtnEl.addEventListener("click", ()=>{
-  const chatMessagesEl = document.getElementById("chatMessages");
-  chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
-});
-
-chatInputEl.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey) {
-    e.preventDefault();
-    chatSendBtnEl.click();
-  }
-});
-
-chatSendBtnEl.addEventListener("click", async () => {
-  const chatMessagesEl = document.getElementById("chatMessages");
-  const userMessage = chatInputEl.value.trim();
-  if(!userMessage) return;
-  const userTime = new Date().toISOString();
-
-  if (favElement) favElement.href = rotatingFavicon;
-
-  chatInputEl.value = "";
-
-  const seqDiv = document.createElement("div");
-  seqDiv.className = "chat-sequence";
-
-  const userDiv = document.createElement("div");
-  userDiv.className = "chat-user";
-  {
-    const userHead = document.createElement("div");
-    userHead.className = "bubble-header";
-    userHead.innerHTML = `
-      <div class="name-oval name-oval-user">User</div>
-      <span style="opacity:0.8;">${formatTimestamp(userTime)}</span>
-    `;
-    userDiv.appendChild(userHead);
-
-    const userBody = document.createElement("div");
-    userBody.textContent = userMessage;
-    userDiv.appendChild(userBody);
-  }
-  seqDiv.appendChild(userDiv);
-
-  const botDiv = document.createElement("div");
-  botDiv.className = "chat-bot";
-
-  const botHead = document.createElement("div");
-  botHead.className = "bubble-header";
-  botHead.innerHTML = `
-    <div class="name-oval name-oval-ai" title="${modelName}">${window.agentName}</div>
-    <span style="opacity:0.8;">…</span>
-  `;
-  botDiv.appendChild(botHead);
-
-  const botBody = document.createElement("div");
-  botBody.textContent = "Thinking…";
-  botDiv.appendChild(botBody);
-
-  seqDiv.appendChild(botDiv);
-  chatMessagesEl.appendChild(seqDiv);
-  chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
-
-  let partialText = "";
-  let waitTime=0;
-  waitingElem.textContent = "Waiting: 0.0s";
-  const waitInterval = setInterval(()=>{
-    waitTime+=0.1;
-    waitingElem.textContent = `Waiting: ${waitTime.toFixed(1)}s`;
-  }, 100);
-
-  try {
-    const resp = await fetch("/api/chat",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({message:userMessage, tabId: currentTabId, userTime})
-    });
-    clearInterval(waitInterval);
-    waitingElem.textContent = "";
-
-    if(!resp.ok){
-      botBody.textContent = "[Error contacting AI]";
-      botHead.querySelector("span").textContent = formatTimestamp(new Date().toISOString());
-    } else {
-      const reader = resp.body.getReader();
-      while(true){
-        const { value, done } = await reader.read();
-        if(done) break;
-        partialText += new TextDecoder().decode(value);
-        botBody.textContent = partialText;
-        chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
-      }
-      botHead.querySelector("span").textContent = formatTimestamp(new Date().toISOString());
-    }
-
-    // POST: Code change request creation after user input
-    await fetch("/api/tasks/new", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({
-        title: "[Code Change Request] " + userMessage.slice(0,60),
-        body: partialText
-      })
-    });
-
-    await loadChatHistory(currentTabId, true);
-  } catch(e) {
-    clearInterval(waitInterval);
-    waitingElem.textContent = "";
-    botBody.textContent = "[Error occurred]";
-    botHead.querySelector("span").textContent = formatTimestamp(new Date().toISOString());
-  }
-
-  if (favElement) favElement.href = defaultFavicon;
-
-  chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
-});
-
-$("#chatSettingsBtn").addEventListener("click", async () => {
-  const r = await fetch("/api/settings/chat_hide_metadata");
-  if(r.ok){
-    const { value } = await r.json();
-    chatHideMetadata = !!value;
-  }
-  const r2 = await fetch("/api/settings/chat_tab_auto_naming");
-  if(r2.ok){
-    const { value } = await r2.json();
-    chatTabAutoNaming = !!value;
-  }
-  const r3 = await fetch("/api/settings/show_subbubble_token_count");
-  if(r3.ok){
-    const { value } = await r3.json();
-    showSubbubbleToken = !!value;
-  } else {
-    showSubbubbleToken = true;
-    await setSetting("show_subbubble_token_count", showSubbubbleToken);
-  }
-  const r4 = await fetch("/api/settings/sterling_chat_url_visible");
-  if(r4.ok){
-    const { value } = await r4.json();
-    sterlingChatUrlVisible = value !== false;
-  } else {
-    sterlingChatUrlVisible = true;
-    await setSetting("sterling_chat_url_visible", sterlingChatUrlVisible);
-  }
-  try {
-    const r5 = await fetch("/api/settings/chat_streaming");
-    if(r5.ok){
-      const { value } = await r5.json();
-      chatStreaming = (value !== false);
-    }
-    $("#chatStreamingCheck").checked = chatStreaming;
-  } catch(e) {
-    console.error("Error loading chat_streaming:", e);
-    chatStreaming = true;
-  }
-
-  $("#hideMetadataCheck").checked = chatHideMetadata;
-  $("#autoNamingCheck").checked = chatTabAutoNaming;
-  $("#subbubbleTokenCheck").checked = showSubbubbleToken;
-  $("#sterlingUrlCheck").checked = sterlingChatUrlVisible;
-
-  try {
-    const modelListResp = await fetch("/api/ai/models");
-    if(modelListResp.ok){
-      const modelData = await modelListResp.json();
-      window.allAiModels = modelData.models || [];
-
-      const aiModelSelect = $("#aiModelSelect");
-      aiModelSelect.innerHTML = "";
-
-      function updateAiModelSelect() {
-        aiModelSelect.innerHTML = "";
-        const filterFav = $("#favoritesOnlyModelCheck").checked;
-        const filtered = filterFav
-            ? window.allAiModels.filter(m => m.favorite)
-            : window.allAiModels.slice();
-        filtered.forEach(m => {
-          aiModelSelect.appendChild(
-              new Option(
-                  `${m.id} (limit ${m.tokenLimit}, in ${m.inputCost}, out ${m.outputCost})`,
-                  m.id
-              )
-          );
-        });
-      }
-
-      updateAiModelSelect();
-
-      $("#favoritesOnlyModelCheck").addEventListener("change", () => {
-        updateAiModelSelect();
-      });
-
-      const currentModel = await getSetting("ai_model");
-      if(currentModel) aiModelSelect.value = currentModel;
-    }
-  } catch(e){
-    console.error("Error populating AI service/model lists:", e);
-  }
-
-  showModal($("#chatSettingsModal"));
-});
-
-// React when AI service changes
-$("#aiServiceSelect").addEventListener("change", async ()=>{
-  try {
-    const modelListResp = await fetch("/api/ai/models");
-    if(modelListResp.ok){
-      const modelData = await modelListResp.json();
-      window.allAiModels = modelData.models || [];
-
-      const aiModelSelect = $("#aiModelSelect");
-      aiModelSelect.innerHTML = "";
-
-      function updateAiModelSelect() {
-        aiModelSelect.innerHTML = "";
-        const filterFav = $("#favoritesOnlyModelCheck").checked;
-        const filtered = filterFav
-            ? window.allAiModels.filter(m => m.favorite)
-            : window.allAiModels.slice();
-        filtered.forEach(m => {
-          aiModelSelect.appendChild(
-              new Option(
-                  `${m.id} (limit ${m.tokenLimit}, in ${m.inputCost}, out ${m.outputCost})`,
-                  m.id
-              )
-          );
-        });
-      }
-      updateAiModelSelect();
-
-      const currentModel = await getSetting("ai_model");
-      if(currentModel) aiModelSelect.value = currentModel;
-    }
-  } catch(e){
-    console.error("Error populating AI service/model lists:", e);
-  }
-});
 
 async function chatSettingsSaveFlow() {
   chatHideMetadata = $("#hideMetadataCheck").checked;
@@ -1367,12 +835,7 @@ async function chatSettingsSaveFlow() {
   toggleSterlingUrlVisibility(sterlingChatUrlVisible);
 }
 
-$("#chatSettingsSaveBtn").addEventListener("click", chatSettingsSaveFlow);
-
-$("#chatSettingsCancelBtn").addEventListener("click", () => {
-  hideModal($("#chatSettingsModal"));
-});
-
+// The rest is standard logic
 function toggleSterlingUrlVisibility(visible) {
   const el = document.getElementById("sterlingUrlLabel");
   if(!el) return;
@@ -1893,3 +1356,554 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
 
   initChatScrollLoading();
 })();
+
+let chatHistoryOffset = 0;
+let chatHasMore = true;
+
+function initChatScrollLoading(){
+  const chatMessagesEl = document.getElementById("chatMessages");
+  if(!chatMessagesEl) return;
+
+  chatMessagesEl.addEventListener("scroll", async ()=>{
+    if(chatMessagesEl.scrollTop < 50){
+      if(chatHasMore){
+        await loadChatHistory(currentTabId, false);
+      }
+    }
+  });
+}
+
+async function loadChatHistory(tabId = 1, reset=false) {
+  const chatMessagesEl = document.getElementById("chatMessages");
+  if(reset){
+    chatMessagesEl.innerHTML="";
+    chatHistoryOffset = 0;
+    chatHasMore = true;
+  }
+  try {
+    const resp = await fetch(`/api/chat/history?tabId=${tabId}&limit=10&offset=${chatHistoryOffset}`);
+    if(!resp.ok){
+      console.error("Error loading chat history from server");
+      return;
+    }
+    const data = await resp.json();
+    const pairs = data.pairs || [];
+    if(pairs.length<10){
+      chatHasMore = false;
+    }
+    chatHistoryOffset += pairs.length;
+
+    if(reset){
+      for (const p of pairs) {
+        addChatMessage(
+            p.id, p.user_text, p.timestamp,
+            p.ai_text, p.ai_timestamp,
+            p.model, p.system_context, null, p.token_info
+        );
+      }
+    } else {
+      const scrollPos = chatMessagesEl.scrollHeight;
+      const fragment = document.createDocumentFragment();
+      for (let i = pairs.length-1; i>=0; i--){
+        const p = pairs[i];
+        const seqDiv = document.createElement("div");
+        seqDiv.className = "chat-sequence";
+
+        const userDiv = document.createElement("div");
+        userDiv.className = "chat-user";
+        {
+          const userHead = document.createElement("div");
+          userHead.className = "bubble-header";
+          userHead.innerHTML = `
+            <div class="name-oval name-oval-user">User</div>
+            <span style="opacity:0.8;">${formatTimestamp(p.timestamp)}</span>
+          `;
+          userDiv.appendChild(userHead);
+
+          const userBody = document.createElement("div");
+          userBody.textContent = p.user_text;
+          userDiv.appendChild(userBody);
+        }
+
+        if(p.token_info && showSubbubbleToken){
+          try {
+            const tInfo = JSON.parse(p.token_info);
+            const userInTokens = (tInfo.systemTokens||0) + (tInfo.historyTokens||0) + (tInfo.inputTokens||0);
+            const userTokenDiv = document.createElement("div");
+            userTokenDiv.className = "token-indicator";
+            userTokenDiv.textContent = `In: ${userInTokens}`;
+            userDiv.appendChild(userTokenDiv);
+          } catch(e){
+            console.debug("[Server Debug] Could not parse token_info for prepended pair =>", e);
+          }
+        }
+
+        seqDiv.appendChild(userDiv);
+
+        const botDiv = document.createElement("div");
+        botDiv.className = "chat-bot";
+
+        const botHead = document.createElement("div");
+        botHead.className = "bubble-header";
+
+        const { provider, shortModel } = parseProviderModel(p.model);
+        botHead.innerHTML = `
+          <div class="name-oval name-oval-ai" title="${provider} / ${shortModel}">${window.agentName}</div>
+          <span style="opacity:0.8;">${p.ai_timestamp ? formatTimestamp(p.ai_timestamp) : "…"}</span>
+        `;
+        botDiv.appendChild(botHead);
+
+        const botBody = document.createElement("div");
+        botBody.textContent = p.ai_text || "";
+        botDiv.appendChild(botBody);
+
+        if(p.token_info && showSubbubbleToken){
+          try {
+            const tInfo = JSON.parse(p.token_info);
+            const outTokens = tInfo.assistantTokens || 0;
+            const combinedDiv = document.createElement("div");
+            combinedDiv.className = "token-indicator";
+            combinedDiv.textContent = `Out: ${outTokens} (Time: ${tInfo.responseTime?.toFixed(2) || "?"}s)`;
+            botDiv.appendChild(combinedDiv);
+          } catch(e){
+            console.debug("[Server Debug] Could not parse token_info for prepended pair =>", e.message);
+          }
+        }
+
+        seqDiv.appendChild(botDiv);
+        fragment.appendChild(seqDiv);
+      }
+      if(chatMessagesEl.firstChild){
+        chatMessagesEl.insertBefore(fragment, chatMessagesEl.firstChild);
+      } else {
+        chatMessagesEl.appendChild(fragment);
+      }
+      chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight - scrollPos;
+    }
+  } catch (err) {
+    console.error("Error loading chat history:", err);
+  }
+}
+
+function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemContext, fullHistory, tokenInfo) {
+  const seqDiv = document.createElement("div");
+  seqDiv.className = "chat-sequence";
+
+  const userDiv = document.createElement("div");
+  userDiv.className = "chat-user";
+  {
+    const userHead = document.createElement("div");
+    userHead.className = "bubble-header";
+    userHead.innerHTML = `
+      <div class="name-oval name-oval-user">User</div>
+      <span style="opacity:0.8;">${formatTimestamp(userTs)}</span>
+    `;
+    userDiv.appendChild(userHead);
+
+    const userBody = document.createElement("div");
+    userBody.textContent = userText;
+    userDiv.appendChild(userBody);
+  }
+
+  // Add incoming token usage under user bubble if available, only if showSubbubbleToken is true
+  if(tokenInfo && showSubbubbleToken){
+    try {
+      const tInfo = JSON.parse(tokenInfo);
+      const userInTokens = (tInfo.systemTokens || 0) + (tInfo.historyTokens || 0) + (tInfo.inputTokens || 0);
+      const userTokenDiv = document.createElement("div");
+      userTokenDiv.className = "token-indicator";
+      userTokenDiv.textContent = `In: ${userInTokens}`;
+      userDiv.appendChild(userTokenDiv);
+    } catch(e) {
+      console.debug("[Server Debug] Could not parse token_info for user subbubble =>", e.message);
+    }
+  }
+
+  seqDiv.appendChild(userDiv);
+
+  const botDiv = document.createElement("div");
+  botDiv.className = "chat-bot";
+
+  const botHead = document.createElement("div");
+  botHead.className = "bubble-header";
+  const { provider, shortModel } = parseProviderModel(model);
+  botHead.innerHTML = `
+    <div class="name-oval name-oval-ai" title="${provider} / ${shortModel}">${window.agentName}</div>
+    <span style="opacity:0.8;">${aiTs ? formatTimestamp(aiTs) : "…"}</span>
+  `;
+  botDiv.appendChild(botHead);
+
+  const botBody = document.createElement("div");
+  botBody.textContent = aiText || "";
+  botDiv.appendChild(botBody);
+
+  if(tokenInfo && showSubbubbleToken){
+    try {
+      const tInfo = JSON.parse(tokenInfo);
+      const outTokens = tInfo.finalAssistantTokens || 0;
+      const combinedDiv = document.createElement("div");
+      combinedDiv.className = "token-indicator";
+      combinedDiv.textContent = `Out: ${outTokens} (Time: ${tInfo.responseTime?.toFixed(2) || "?"}s)`;
+      botDiv.appendChild(combinedDiv);
+    } catch(e) {
+      console.debug("[Server Debug] Could not parse token_info for pair =>", pairId, e.message);
+    }
+  }
+
+  seqDiv.appendChild(botDiv);
+
+  if(!chatHideMetadata){
+    const metaContainer = document.createElement("div");
+    metaContainer.style.fontSize = "0.8rem";
+    metaContainer.style.color = "#aaa";
+    metaContainer.style.textAlign = "right";
+
+    const pairLabel = document.createElement("div");
+    pairLabel.textContent = `Pair #${pairId}`;
+    metaContainer.appendChild(pairLabel);
+
+    if (model) {
+      const modelLabel = document.createElement("div");
+      modelLabel.textContent = `Model: ${model}`;
+      metaContainer.appendChild(modelLabel);
+    }
+
+    let tokObj = null;
+    try {
+      tokObj = tokenInfo ? JSON.parse(tokenInfo) : null;
+    } catch(e) {}
+
+    if (systemContext) {
+      const scDetails = document.createElement("details");
+      const scSum = document.createElement("summary");
+      if (tokObj && tokObj.systemTokens !== undefined) {
+        scSum.textContent = `System Context (${tokObj.systemTokens})`;
+      } else {
+        scSum.textContent = `System Context`;
+      }
+      scDetails.appendChild(scSum);
+
+      const lines = systemContext.split(/\r?\n/);
+      lines.forEach(line => {
+        if (!line.trim()) return;
+        const lineBubble = document.createElement("div");
+        lineBubble.className = "chat-bot";
+        lineBubble.style.marginTop = "4px";
+        lineBubble.textContent = line;
+        scDetails.appendChild(lineBubble);
+      });
+      metaContainer.appendChild(scDetails);
+    }
+
+    if (fullHistory) {
+      const fhDetails = document.createElement("details");
+      const fhSum = document.createElement("summary");
+      fhSum.textContent = `Full History`;
+      fhDetails.appendChild(fhSum);
+      const fhPre = document.createElement("pre");
+      fhPre.textContent = JSON.stringify(fullHistory, null, 2);
+      fhDetails.appendChild(fhPre);
+      metaContainer.appendChild(fhDetails);
+    }
+
+    if (tokObj) {
+      const tuDetails = document.createElement("details");
+      const tuSum = document.createElement("summary");
+      tuSum.textContent = `Token Usage (${tokObj.total})`;
+      tuDetails.appendChild(tuSum);
+
+      const usageDiv = document.createElement("div");
+      usageDiv.style.marginLeft = "1em";
+      usageDiv.textContent =
+          `System: ${tokObj.systemTokens}, ` +
+          `History: ${tokObj.historyTokens}, ` +
+          `Input: ${tokObj.inputTokens}, ` +
+          `Assistant: ${tokObj.assistantTokens}, ` +
+          `FinalAssistantTokens: ${tokObj.finalAssistantTokens}, ` +
+          `Total: ${tokObj.total}, ` +
+          `Time: ${tokObj.responseTime ?? "?"}s`;
+      tuDetails.appendChild(usageDiv);
+      metaContainer.appendChild(tuDetails);
+    }
+
+    const directLinkDiv = document.createElement("div");
+    const ddLink = document.createElement("a");
+    ddLink.href = `/pair/${pairId}`;
+    ddLink.target = "_blank";
+    ddLink.textContent = "Direct Link";
+    directLinkDiv.appendChild(ddLink);
+    metaContainer.appendChild(directLinkDiv);
+
+    seqDiv.appendChild(metaContainer);
+  }
+
+  const delBtn = document.createElement("button");
+  delBtn.className = "delete-chat-btn";
+  delBtn.textContent = "x";
+  delBtn.title = "Delete this chat message";
+  delBtn.style.marginLeft = "8px";
+  delBtn.addEventListener("click", async () => {
+    if (!confirm("Are you sure you want to delete this message?")) return;
+    const resp = await fetch(`/api/chat/pair/${pairId}`, {
+      method: "DELETE"
+    });
+    if (resp.ok) {
+      seqDiv.remove();
+    } else {
+      alert("Failed to delete chat pair.");
+    }
+  });
+  botHead.appendChild(delBtn);
+
+  const chatMessagesEl = document.getElementById("chatMessages");
+  chatMessagesEl.appendChild(seqDiv);
+  chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+}
+
+const chatInputEl = document.getElementById("chatInput");
+const chatSendBtnEl = document.getElementById("chatSendBtn");
+const waitingElem = document.getElementById("waitingCounter");
+const scrollDownBtnEl = document.getElementById("scrollDownBtn");
+
+scrollDownBtnEl.addEventListener("click", ()=>{
+  const chatMessagesEl = document.getElementById("chatMessages");
+  chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+});
+
+chatInputEl.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    chatSendBtnEl.click();
+  }
+});
+
+chatSendBtnEl.addEventListener("click", async () => {
+  const chatMessagesEl = document.getElementById("chatMessages");
+  const userMessage = chatInputEl.value.trim();
+  if(!userMessage) return;
+  const userTime = new Date().toISOString();
+
+  if (favElement) favElement.href = rotatingFavicon;
+
+  chatInputEl.value = "";
+
+  const seqDiv = document.createElement("div");
+  seqDiv.className = "chat-sequence";
+
+  const userDiv = document.createElement("div");
+  userDiv.className = "chat-user";
+  {
+    const userHead = document.createElement("div");
+    userHead.className = "bubble-header";
+    userHead.innerHTML = `
+      <div class="name-oval name-oval-user">User</div>
+      <span style="opacity:0.8;">${formatTimestamp(userTime)}</span>
+    `;
+    userDiv.appendChild(userHead);
+
+    const userBody = document.createElement("div");
+    userBody.textContent = userMessage;
+    userDiv.appendChild(userBody);
+  }
+  seqDiv.appendChild(userDiv);
+
+  const botDiv = document.createElement("div");
+  botDiv.className = "chat-bot";
+
+  const botHead = document.createElement("div");
+  botHead.className = "bubble-header";
+  botHead.innerHTML = `
+    <div class="name-oval name-oval-ai" title="${modelName}">${window.agentName}</div>
+    <span style="opacity:0.8;">…</span>
+  `;
+  botDiv.appendChild(botHead);
+
+  const botBody = document.createElement("div");
+  botBody.textContent = "Thinking…";
+  botDiv.appendChild(botBody);
+
+  seqDiv.appendChild(botDiv);
+  chatMessagesEl.appendChild(seqDiv);
+  chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+
+  let partialText = "";
+  let waitTime=0;
+  waitingElem.textContent = "Waiting: 0.0s";
+  const waitInterval = setInterval(()=>{
+    waitTime+=0.1;
+    waitingElem.textContent = `Waiting: ${waitTime.toFixed(1)}s`;
+  }, 100);
+
+  try {
+    const resp = await fetch("/api/chat",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({message:userMessage, tabId: currentTabId, userTime})
+    });
+    clearInterval(waitInterval);
+    waitingElem.textContent = "";
+
+    if(!resp.ok){
+      botBody.textContent = "[Error contacting AI]";
+      botHead.querySelector("span").textContent = formatTimestamp(new Date().toISOString());
+    } else {
+      const reader = resp.body.getReader();
+      while(true){
+        const { value, done } = await reader.read();
+        if(done) break;
+        partialText += new TextDecoder().decode(value);
+        botBody.textContent = partialText;
+        chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+      }
+      botHead.querySelector("span").textContent = formatTimestamp(new Date().toISOString());
+    }
+
+    // POST: Code change request creation after user input
+    await fetch("/api/tasks/new", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        title: "[Code Change Request] " + userMessage.slice(0,60),
+        body: partialText
+      })
+    });
+
+    await loadChatHistory(currentTabId, true);
+  } catch(e) {
+    clearInterval(waitInterval);
+    waitingElem.textContent = "";
+    botBody.textContent = "[Error occurred]";
+    botHead.querySelector("span").textContent = formatTimestamp(new Date().toISOString());
+  }
+
+  if (favElement) favElement.href = defaultFavicon;
+
+  chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+});
+
+$("#chatSettingsBtn").addEventListener("click", async () => {
+  const r = await fetch("/api/settings/chat_hide_metadata");
+  if(r.ok){
+    const { value } = await r.json();
+    chatHideMetadata = !!value;
+  }
+  const r2 = await fetch("/api/settings/chat_tab_auto_naming");
+  if(r2.ok){
+    const { value } = await r2.json();
+    chatTabAutoNaming = !!value;
+  }
+  const r3 = await fetch("/api/settings/show_subbubble_token_count");
+  if(r3.ok){
+    const { value } = await r3.json();
+    showSubbubbleToken = !!value;
+  } else {
+    showSubbubbleToken = true;
+    await setSetting("show_subbubble_token_count", showSubbubbleToken);
+  }
+  const r4 = await fetch("/api/settings/sterling_chat_url_visible");
+  if(r4.ok){
+    const { value } = await r4.json();
+    sterlingChatUrlVisible = value !== false;
+  } else {
+    sterlingChatUrlVisible = true;
+    await setSetting("sterling_chat_url_visible", sterlingChatUrlVisible);
+  }
+  try {
+    const r5 = await fetch("/api/settings/chat_streaming");
+    if(r5.ok){
+      const { value } = await r5.json();
+      chatStreaming = (value !== false);
+    }
+    $("#chatStreamingCheck").checked = chatStreaming;
+  } catch(e) {
+    console.error("Error loading chat_streaming:", e);
+    chatStreaming = true;
+  }
+
+  $("#hideMetadataCheck").checked = chatHideMetadata;
+  $("#autoNamingCheck").checked = chatTabAutoNaming;
+  $("#subbubbleTokenCheck").checked = showSubbubbleToken;
+  $("#sterlingUrlCheck").checked = sterlingChatUrlVisible;
+
+  try {
+    const modelListResp = await fetch("/api/ai/models");
+    if(modelListResp.ok){
+      const modelData = await modelListResp.json();
+      window.allAiModels = modelData.models || [];
+
+      const aiModelSelect = $("#aiModelSelect");
+      aiModelSelect.innerHTML = "";
+
+      function updateAiModelSelect() {
+        aiModelSelect.innerHTML = "";
+        const filterFav = $("#favoritesOnlyModelCheck").checked;
+        const filtered = filterFav
+            ? window.allAiModels.filter(m => m.favorite)
+            : window.allAiModels.slice();
+        filtered.forEach(m => {
+          aiModelSelect.appendChild(
+              new Option(
+                  `${m.id} (limit ${m.tokenLimit}, in ${m.inputCost}, out ${m.outputCost})`,
+                  m.id
+              )
+          );
+        });
+      }
+
+      updateAiModelSelect();
+
+      $("#favoritesOnlyModelCheck").addEventListener("change", () => {
+        updateAiModelSelect();
+      });
+
+      const currentModel = await getSetting("ai_model");
+      if(currentModel) aiModelSelect.value = currentModel;
+    }
+  } catch(e){
+    console.error("Error populating AI service/model lists:", e);
+  }
+
+  showModal($("#chatSettingsModal"));
+});
+
+// React when AI service changes
+$("#aiServiceSelect").addEventListener("change", async ()=>{
+  try {
+    const modelListResp = await fetch("/api/ai/models");
+    if(modelListResp.ok){
+      const modelData = await modelListResp.json();
+      window.allAiModels = modelData.models || [];
+
+      const aiModelSelect = $("#aiModelSelect");
+      aiModelSelect.innerHTML = "";
+
+      function updateAiModelSelect() {
+        aiModelSelect.innerHTML = "";
+        const filterFav = $("#favoritesOnlyModelCheck").checked;
+        const filtered = filterFav
+            ? window.allAiModels.filter(m => m.favorite)
+            : window.allAiModels.slice();
+        filtered.forEach(m => {
+          aiModelSelect.appendChild(
+              new Option(
+                  `${m.id} (limit ${m.tokenLimit}, in ${m.inputCost}, out ${m.outputCost})`,
+                  m.id
+              )
+          );
+        });
+      }
+      updateAiModelSelect();
+
+      const currentModel = await getSetting("ai_model");
+      if(currentModel) aiModelSelect.value = currentModel;
+    }
+  } catch(e){
+    console.error("Error populating AI service/model lists:", e);
+  }
+});
+
+$("#chatSettingsSaveBtn").addEventListener("click", chatSettingsSaveFlow);
+
+$("#chatSettingsCancelBtn").addEventListener("click", () => {
+  hideModal($("#chatSettingsModal"));
+});
