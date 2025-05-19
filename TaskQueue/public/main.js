@@ -782,7 +782,8 @@ function parseProviderModel(model) {
   } else if(model.startsWith("openrouter/")) {
     return { provider: "OpenRouter", shortModel: model.replace(/^openrouter\//,'') };
   } else if(model.startsWith("deepseek/")) {
-    return { provider: "OpenRouter", shortModel: model.replace(/^openrouter\//,'') };
+    // Show 'deepseek' as provider for UI display
+    return { provider: "deepseek", shortModel: model.replace(/^deepseek\//,'') };
   }
   return { provider: "Unknown", shortModel: model };
 }
@@ -866,7 +867,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
 
     if (model) {
       const modelLabel = document.createElement("div");
-      modelLabel.textContent = `Model: ${model}`;
+      modelLabel.textContent = `Model: ${model} (provider: ${provider})`;
       metaContainer.appendChild(modelLabel);
     }
 
@@ -875,7 +876,6 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
       tokObj = tokenInfo ? JSON.parse(tokenInfo) : null;
     } catch(e) {}
 
-    // Updated snippet below:
     if (systemContext) {
       const scDetails = document.createElement("details");
       const scSum = document.createElement("summary");
