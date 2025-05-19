@@ -1792,6 +1792,7 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
 
   // Use parseProviderModel to fetch provider
   const { provider: autoProvider } = parseProviderModel(modelName);
+  console.log("[OBTAINED PROVIDER] =>", autoProvider);
   $("#modelHud").textContent = autoProvider + "/" + modelName;
 
   await loadTabs();
