@@ -152,6 +152,18 @@ function getOpenAiClient() {
   }
 }
 
+function parseProviderModel(model) {
+  if (!model) return { provider: "Unknown", shortModel: "Unknown" };
+  if (model.startsWith("openai/")) {
+    return { provider: "openai", shortModel: model.replace(/^openai\//, "") };
+  } else if (model.startsWith("openrouter/")) {
+    return { provider: "openrouter", shortModel: model.replace(/^openrouter\//, "") };
+  } else if (model.startsWith("deepseek/")) {
+    return { provider: "deepseek", shortModel: model.replace(/^deepseek\//, "") };
+  }
+  return { provider: "Unknown", shortModel: model };
+}
+
 function getEncoding(modelName) {
   console.debug("[Server Debug] Attempting to load tokenizer for model =>", modelName);
   try {
@@ -164,18 +176,6 @@ function getEncoding(modelName) {
 
 function countTokens(encoder, text) {
   return encoder.encode(text || "").length;
-}
-
-// Helper to strip prefix like "openai/" or "openrouter/"
-function stripModelPrefix(model) {
-  if (!model) return "gpt-3.5-turbo";
-  let result = model;
-  if (model.startsWith("openai/")) {
-    result = model.substring("openai/".length);
-  } else if (model.startsWith("openrouter/")) {
-    result = model.substring("openrouter/".length);
-  }
-  return result;
 }
 
 // Explicit CORS configuration
@@ -914,7 +914,11 @@ app.post("/api/chat", async (req, res) => {
     const priorPairs = db.getAllChatPairs(chatTabId);
     let model = db.getSetting("ai_model");
     const savedInstructions = db.getSetting("agent_instructions") || "";
-    const systemContext = `System Context:\n${savedInstructions}\n\nModel: ${model}\nUserTime: ${userTime}\nTimeZone: Central`;
+
+    // Grab provider
+    const { provider, shortModel } = parseProviderModel(model || "gpt-3.5-turbo");
+    // Updated to also show provider
+    const systemContext = `System Context:\n${savedInstructions}\n\nModel: ${model} (provider: ${provider})\nUserTime: ${userTime}\nTimeZone: Central`;
 
     const conversation = [{ role: "system", content: systemContext }];
 
@@ -940,6 +944,12 @@ app.post("/api/chat", async (req, res) => {
     }
 
     // Apply prefix stripping
+    function stripModelPrefix(m) {
+      if (!m) return "gpt-3.5-turbo";
+      if (m.startsWith("openai/")) return m.substring("openai/".length);
+      if (m.startsWith("openrouter/")) return m.substring("openrouter/".length);
+      return m;
+    }
     const modelForOpenAI = stripModelPrefix(model);
 
     console.debug("[Server Debug] Using model =>", model, " (stripped =>", modelForOpenAI, ")");
