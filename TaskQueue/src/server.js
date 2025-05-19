@@ -136,6 +136,7 @@ function getOpenAiClient() {
       defaultHeaders: {
         "HTTP-Referer": "Alfe-DevAgent",
         "X-Title": "Alfe AI",
+        "User-Agent": "Alfe AI"
       },
     });
   } else {
@@ -724,6 +725,7 @@ app.get("/api/ai/models", async (req, res) => {
             Authorization: `Bearer ${openRouterKey}`,
             "HTTP-Referer": "Alfe-DevAgent",
             "X-Title": "Alfe AI",
+            "User-Agent": "Alfe AI"
           },
         });
         const rawModels = orResp.data?.data?.map((m) => m.id).sort() || [];
@@ -824,20 +826,6 @@ app.get("/api/ai/models", async (req, res) => {
       tokenLimit: 131072,
       inputCost: "$0.50",
       outputCost: "$2.18"
-    },
-    {
-      id: "deepseek/deepseek-r1-zero:free",
-      provider: "deepseek",
-      tokenLimit: 128000,
-      inputCost: "$0",
-      outputCost: "$0"
-    },
-    {
-      id: "deepseek/deepseek-v3-base:free",
-      provider: "deepseek",
-      tokenLimit: 163840,
-      inputCost: "$0",
-      outputCost: "$0"
     },
     {
       id: "deepseek/deepseek-r1-distill-qwen-32b",
