@@ -1709,7 +1709,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
             userTokenDiv.textContent = `In: ${userInTokens}`;
             userDiv.appendChild(userTokenDiv);
           } catch(e){
-            console.debug("[Server Debug] Could not parse token_info for prepended pair =>", e);
+            console.debug("[Server Debug] Could not parse token_info for prepended pair =>", e.message);
           }
         }
 
@@ -1932,6 +1932,89 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
   const chatMessagesEl = document.getElementById("chatMessages");
   chatMessagesEl.appendChild(seqDiv);
   chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+}
+
+// Listeners for changing the sterling branch
+const changeSterlingBranchBtn = document.getElementById("changeSterlingBranchBtn");
+if(changeSterlingBranchBtn){
+  changeSterlingBranchBtn.addEventListener("click", async ()=>{
+    const r = await fetch("/api/settings/sterling_chat_url");
+    if(!r.ok){
+      alert("No sterling_chat_url found. Create a chat first.");
+      return;
+    }
+    const data = await r.json();
+    const urlVal = data.value || "";
+    if(!urlVal){
+      alert("No sterling_chat_url set. Create a chat first.");
+      return;
+    }
+    $("#sterlingBranchMsg").textContent = "";
+    // Show modal
+    showModal($("#changeBranchModal"));
+  });
+}
+
+// Save branch
+const sterlingBranchSaveBtn = document.getElementById("sterlingBranchSaveBtn");
+if(sterlingBranchSaveBtn){
+  sterlingBranchSaveBtn.addEventListener("click", async ()=>{
+    const r = await fetch("/api/settings/sterling_chat_url");
+    if(!r.ok){
+      alert("Cannot read sterling_chat_url.");
+      return;
+    }
+    const data = await r.json();
+    const urlVal = data.value || "";
+    if(!urlVal){
+      alert("No sterling_chat_url set. Create a chat first.");
+      return;
+    }
+    const splitted = urlVal.split("/");
+    const chatNumber = splitted.pop();
+    splitted.pop();
+    const repoName = decodeURIComponent(splitted.pop());
+
+    const createNew = $("#createSterlingNewBranchCheck").checked;
+    const branchInput = $("#sterlingBranchNameInput").value.trim();
+    if(!branchInput){
+      alert("Please enter a branch name.");
+      return;
+    }
+
+    try {
+      const resp = await fetch(`/api/changeBranchOfChat/${repoName}/${chatNumber}`, {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          createNew,
+          branchName: branchInput,
+          newBranchName: branchInput
+        })
+      });
+      if(!resp.ok){
+        const errData = await resp.json();
+        $("#sterlingBranchMsg").textContent = errData.error || "Error changing branch.";
+        $("#sterlingBranchMsg").style.color = "red";
+        return;
+      }
+      const resData = await resp.json();
+      $("#sterlingBranchMsg").style.color = "green";
+      $("#sterlingBranchMsg").textContent = `Branch changed to: ${resData.newBranch}`;
+      hideModal($("#changeBranchModal"));
+      await updateProjectInfo();
+    } catch(e){
+      console.error("Error changing sterling branch:", e);
+      $("#sterlingBranchMsg").style.color = "red";
+      $("#sterlingBranchMsg").textContent = "Error changing branch. Check console.";
+    }
+  });
+}
+const sterlingBranchCancelBtn = document.getElementById("sterlingBranchCancelBtn");
+if(sterlingBranchCancelBtn){
+  sterlingBranchCancelBtn.addEventListener("click", ()=>{
+    hideModal($("#changeBranchModal"));
+  });
 }
 
 console.log("[Server Debug] main.js fully loaded. End of script.");
