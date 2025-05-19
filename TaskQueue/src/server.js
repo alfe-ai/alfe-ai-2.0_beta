@@ -128,16 +128,15 @@ function getOpenAiClient() {
         "Missing OPENROUTER_API_KEY environment variable, please set it before using OpenRouter."
       );
     }
-    // Use openrouter.ai
+    // Use openrouter.ai with app name and referer
     console.debug("[Server Debug] Using openrouter.ai with provided OPENROUTER_API_KEY.");
     return new OpenAI({
       apiKey: openRouterKey,
       baseURL: "https://openrouter.ai/api/v1",
       defaultHeaders: {
-        "HTTP-Referer": "Alfe-DevAgent",
-        "X-Title": "Alfe AI",
-        "User-Agent": "Alfe AI"
-      },
+        "X-Title": "MyAwesomeApp",
+        "HTTP-Referer": "https://my-awesome-app.example.com"
+      }
     });
   } else {
     if (!openAiKey) {
@@ -148,7 +147,7 @@ function getOpenAiClient() {
     // Default to openai
     console.debug("[Server Debug] Using openai with provided OPENAI_API_KEY.");
     return new OpenAI({
-      apiKey: openAiKey,
+      apiKey: openAiKey
     });
   }
 }
@@ -680,7 +679,7 @@ app.get("/api/ai/models", async (req, res) => {
     "openai/gpt-4-0314": { input: "$30", output: "$60" },
     "openai/gpt-4-32k-0314": { input: "$60", output: "$120" },
     "openai/gpt-4-vision-preview": { input: "--", output: "--" },
-    "openai/gpt-3.5-turbo-0301": { input: "--", output: "--" },
+    "openai/gpt-3.5-turbo-0301": { input: "--", output: "--" }
   };
 
   let openAIModelData = [];
@@ -726,7 +725,7 @@ app.get("/api/ai/models", async (req, res) => {
             "HTTP-Referer": "Alfe-DevAgent",
             "X-Title": "Alfe AI",
             "User-Agent": "Alfe AI"
-          },
+          }
         });
         const rawModels = orResp.data?.data?.map((m) => m.id).sort() || [];
         openRouterModelData = rawModels.map((id) => {
@@ -737,7 +736,7 @@ app.get("/api/ai/models", async (req, res) => {
             provider: "openrouter",
             tokenLimit: "N/A",
             inputCost: "N/A",
-            outputCost: "N/A",
+            outputCost: "N/A"
           };
         });
       } catch (err) {
