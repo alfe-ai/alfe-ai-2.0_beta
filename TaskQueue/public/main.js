@@ -1703,13 +1703,16 @@ async function loadChatHistory(tabId = 1, reset=false) {
         if(p.token_info && showSubbubbleToken){
           try {
             const tInfo = JSON.parse(p.token_info);
-            const userInTokens = (tInfo.systemTokens || 0) + (tInfo.historyTokens || 0) + (tInfo.inputTokens || 0);
+            const inputT = (tInfo.systemTokens || 0) + (tInfo.historyTokens || 0) + (tInfo.inputTokens || 0);
+            const outputT = (tInfo.assistantTokens || 0) + (tInfo.finalAssistantTokens || 0);
+
+            userDiv._tokenSections = { input: inputT, output: outputT };
             const userTokenDiv = document.createElement("div");
             userTokenDiv.className = "token-indicator";
-            userTokenDiv.textContent = `In: ${userInTokens}`;
+            userTokenDiv.textContent = `In: ${inputT}`;
             userDiv.appendChild(userTokenDiv);
-          } catch(e){
-            console.debug("[Server Debug] Could not parse token_info for prepended pair =>", e.message);
+          } catch (e) {
+            console.debug("[Server Debug] Could not parse token_info for pair =>", p.id, e.message);
           }
         }
 
@@ -1735,7 +1738,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
         if(p.token_info && showSubbubbleToken){
           try {
             const tInfo = JSON.parse(p.token_info);
-            const outTokens = tInfo.assistantTokens || 0;
+            const outTokens = (tInfo.assistantTokens || 0) + (tInfo.finalAssistantTokens || 0);
             const combinedDiv = document.createElement("div");
             combinedDiv.className = "token-indicator";
             combinedDiv.textContent = `Out: ${outTokens} (Time: ${tInfo.responseTime?.toFixed(2) || "?"}s)`;
@@ -1983,7 +1986,9 @@ if(sterlingBranchSaveBtn){
     }
 
     try {
-      const resp = await fetch(`/api/changeBranchOfChat/${repoName}/${chatNumber}`, {
+      // FIX: Use the correct URL on port 3444
+      const baseURL = 'http://localhost:3444/api';
+      const resp = await fetch(`${baseURL}/changeBranchOfChat/${repoName}/${chatNumber}`, {
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
