@@ -782,7 +782,7 @@ function parseProviderModel(model) {
   } else if(model.startsWith("openrouter/")) {
     return { provider: "OpenRouter", shortModel: model.replace(/^openrouter\//,'') };
   } else if(model.startsWith("deepseek/")) {
-    return { provider: "OpenRouter", shortModel: model.replace(/^openrouter\//,'') };
+    return { provider: "OpenRouter", shortModel: model.replace(/^deepseek\//,'') };
   }
   return { provider: "Unknown", shortModel: model };
 }
@@ -1790,11 +1790,9 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     modelName = "unknown";
   }
 
-  //
-  //const provider =
-  // Fetch the provider like we do elsewhere in this code
-
-  $("#modelHud").textContent = provider + "/" + modelName;
+  // Use parseProviderModel to fetch provider
+  const { provider: autoProvider } = parseProviderModel(modelName);
+  $("#modelHud").textContent = autoProvider + "/" + modelName;
 
   await loadTabs();
 
