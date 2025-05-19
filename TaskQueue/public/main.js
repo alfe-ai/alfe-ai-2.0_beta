@@ -1359,7 +1359,12 @@ async function chatSettingsSaveFlow() {
     const updatedModelData = await updatedModelResp.json();
     console.debug("[Client Debug] /api/model data =>", updatedModelData);
     modelName = updatedModelData.model || "unknown";
-    document.getElementById("modelHud").textContent = "Model: " + modelName;
+    //document.getElementById("modelHud").textContent = "Model: " + modelName;
+
+    // Use parseProviderModel to fetch provider
+    const { provider: autoProvider } = parseProviderModel(modelName);
+    console.log("[OBTAINED PROVIDER] =>", autoProvider);
+    document.getElementById("modelHud").textContent = autoProvider + "/" + modelName;
   }
 
   hideModal($("#chatSettingsModal"));
