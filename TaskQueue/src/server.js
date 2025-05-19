@@ -135,7 +135,7 @@ function getOpenAiClient() {
       baseURL: "https://openrouter.ai/api/v1",
       defaultHeaders: {
         "HTTP-Referer": "Alfe-DevAgent",
-        "X-Title": "Alfe Dev",
+        "X-Title": "Alfe AI",
       },
     });
   } else {
@@ -723,7 +723,7 @@ app.get("/api/ai/models", async (req, res) => {
           headers: {
             Authorization: `Bearer ${openRouterKey}`,
             "HTTP-Referer": "Alfe-DevAgent",
-            "X-Title": "Alfe Dev",
+            "X-Title": "Alfe AI",
           },
         });
         const rawModels = orResp.data?.data?.map((m) => m.id).sort() || [];
@@ -1332,4 +1332,3 @@ app.listen(PORT, () => {
 // The front-end chat UI expansions are generated in finalizeChatPair display logic below:
 //
 // [No further code. End of server.js here, changes concluded above with the relevant expansions.]
-
