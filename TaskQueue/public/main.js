@@ -2122,4 +2122,60 @@ document.getElementById("toggleModelTabsBtn").addEventListener("click", async ()
   }
 });
 
+// ----------------------------------------------------------------------
+// NEW: "Change Sterling Branch" button event + modal logic
+// ----------------------------------------------------------------------
+document.getElementById("changeSterlingBranchBtn").addEventListener("click", () => {
+  showModal($("#changeBranchModal"));
+});
+
+// Cancel button for branch
+document.getElementById("sterlingBranchCancelBtn").addEventListener("click", () => {
+  hideModal($("#changeBranchModal"));
+});
+
+// Save button for branch
+document.getElementById("sterlingBranchSaveBtn").addEventListener("click", async () => {
+  const createNew = $("#createSterlingNewBranchCheck").checked;
+  const branchName = $("#sterlingBranchNameInput").value.trim();
+  const msgElem = $("#sterlingBranchMsg");
+  msgElem.textContent = "";
+
+  if(!branchName){
+    msgElem.textContent = "Please enter a branch name.";
+    return;
+  }
+
+  try {
+    // We pretend to call a Sterling endpoint to change branches
+    // In real usage, you'd do something like:
+    // let project = await getSetting("sterling_project");
+    // if(!project) project = "some_default_project";
+    // const resp = await fetch(`http://localhost:3444/api/changeBranch/${project}`, {...});
+    // etc.
+
+    // For demonstration, we just store the base_branch in the DB
+    let project = await getSetting("sterling_project");
+    if(!project) {
+      msgElem.textContent = "No sterling_project is set. Please set a project first.";
+      return;
+    }
+    await fetch("/api/projectBranches", {
+      method: "POST",
+      headers: { "Content-Type":"application/json" },
+      body: JSON.stringify({ data: [{
+        project,
+        base_branch: branchName
+      }]})
+    });
+    hideModal($("#changeBranchModal"));
+    msgElem.textContent = "";
+    await updateProjectInfo();
+    alert(`Sterling branch changed to "${branchName}" (createNew=${createNew}).`);
+  } catch(err){
+    console.error("Error changing sterling branch:", err);
+    msgElem.textContent = "Error: " + err.message;
+  }
+});
+
 console.log("[Server Debug] main.js fully loaded. End of script.");
