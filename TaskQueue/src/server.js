@@ -1260,6 +1260,29 @@ app.post("/api/createSterlingChat", async (req, res) => {
     });
     console.log('Response from /createChat:', createChatResponse.data);
 
+    // NEW: Immediately call /changeBranchOfChat to ensure the branch is updated in Sterling
+    const allBranches = db.listProjectBranches();
+    const foundBranchObj = allBranches.find(x => x.project === project);
+    let sterlingBranch = foundBranchObj ? foundBranchObj.base_branch : "";
+    if (!sterlingBranch) {
+      // fallback to a default
+      sterlingBranch = "main";
+    }
+    console.log(`[Sterling Branch Fix] Setting branch to: ${sterlingBranch}`);
+
+    try {
+      const changeBranchResp = await axios.post(
+        `${baseURL}/changeBranchOfChat/${encodeURIComponent(projectName)}/${createChatResponse.data.newChatNumber}`,
+        {
+          createNew: false,
+          branchName: sterlingBranch
+        }
+      );
+      console.log('Response from /changeBranchOfChat:', changeBranchResp.data);
+    } catch (branchErr) {
+      console.error("[Sterling Branch Fix] Error calling /changeBranchOfChat =>", branchErr.message);
+    }
+
     console.log('=== Test run completed. ===');
 
     const sterlingUrl = `http://localhost:3444/${encodeURIComponent(projectName)}/chat/${createChatResponse.data.newChatNumber}`;
