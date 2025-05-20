@@ -2109,4 +2109,17 @@ async function saveModelTabs(){
   await setSetting("model_tabs", modelTabs);
 }
 
+document.getElementById("toggleModelTabsBtn").addEventListener("click", async () => {
+  const modelTabsEl = document.getElementById("modelTabs");
+  if(modelTabsEl.style.display === "none"){
+    modelTabsEl.style.display = "";
+    document.getElementById("toggleModelTabsBtn").textContent = "Hide model tabs bar";
+    await setSetting("model_tabs_bar_visible", true);
+  } else {
+    modelTabsEl.style.display = "none";
+    document.getElementById("toggleModelTabsBtn").textContent = "Show model tabs bar";
+    await setSetting("model_tabs_bar_visible", false);
+  }
+});
+
 console.log("[Server Debug] main.js fully loaded. End of script.");
