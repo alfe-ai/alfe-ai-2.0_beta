@@ -1097,8 +1097,10 @@ async function chatSettingsSaveFlow() {
     modelName = updatedModelData.model || "unknown";
 
     const { provider: autoProvider } = parseProviderModel(modelName);
+    console.log("[OBTAINED PROVIDER] => (global model removed in UI, fallback only)");
+    const { provider } = parseProviderModel(modelName);
     console.log("[OBTAINED PROVIDER] =>", autoProvider);
-    document.getElementById("modelHud").textContent = autoProvider + " / " + modelName;
+    $("#modelHud").textContent = autoProvider + " / " + modelName;
   }
 
   hideModal($("#chatSettingsModal"));
@@ -1529,15 +1531,11 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     modelName = "unknown";
   }
 
-<<<<<<< HEAD
+  // Merge-resolved lines below:
   console.log("[OBTAINED PROVIDER] => (global model removed in UI, fallback only)");
-  //$("#modelHud").textContent = "(Tab-based model) / " + modelName;
-  $("#modelHud").textContent = "";
-=======
   const { provider: autoProvider } = parseProviderModel(modelName);
   console.log("[OBTAINED PROVIDER] =>", autoProvider);
   $("#modelHud").textContent = autoProvider + " / " + modelName;
->>>>>>> parent of fbe0c55 (A.1. Changes Made)
 
   await loadTabs();
 
