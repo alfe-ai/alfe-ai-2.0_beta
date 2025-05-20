@@ -237,6 +237,7 @@
   </div>
 </div>
 
+<!-- Chat Settings Modal: now only has checkboxes for metadata, streaming, etc. -->
 <div id="chatSettingsModal" class="modal">
   <div class="modal-content">
     <h2>Chat Settings</h2>
@@ -250,32 +251,6 @@
     <br/>
     <label><input type="checkbox" id="chatStreamingCheck" checked/> Enable streaming completions</label>
     <br/>
-    <div style="margin-top:8px;">
-      <label>AI Service:
-        <select id="aiServiceSelect">
-          <option value="openai">OpenAI</option>
-          <option value="openrouter">OpenRouter</option>
-        </select>
-      </label>
-    </div>
-    <div style="margin-top:8px;">
-      <label>Provider:
-        <select id="aiModelProviderSelect">
-          <option value="">All Providers</option>
-          <option value="openai">openai</option>
-          <option value="openrouter">openrouter</option>
-          <option value="deepseek">deepseek</option>
-        </select>
-      </label>
-    </div>
-    <div style="margin-top:8px;">
-      <label>AI Model:
-        <select id="aiModelSelect">
-          <!-- populated dynamically -->
-        </select>
-      </label>
-      <label style="margin-left:8px;"><input type="checkbox" id="favoritesOnlyModelCheck" /> Favorites Only</label>
-    </div>
     <div class="modal-buttons">
       <button id="chatSettingsSaveBtn">Save</button>
       <button id="chatSettingsCancelBtn">Cancel</button>
