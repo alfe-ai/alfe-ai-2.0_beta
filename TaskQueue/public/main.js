@@ -1100,7 +1100,8 @@ async function chatSettingsSaveFlow() {
     console.log("[OBTAINED PROVIDER] => (global model removed in UI, fallback only)");
     const { provider } = parseProviderModel(modelName);
     console.log("[OBTAINED PROVIDER] =>", autoProvider);
-    $("#modelHud").textContent = autoProvider + " / " + modelName;
+    //$("#modelHud").textContent = autoProvider + " / " + modelName;
+    $("#modelHud").textContent = "";
   }
 
   hideModal($("#chatSettingsModal"));
@@ -1535,7 +1536,8 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
   console.log("[OBTAINED PROVIDER] => (global model removed in UI, fallback only)");
   const { provider: autoProvider } = parseProviderModel(modelName);
   console.log("[OBTAINED PROVIDER] =>", autoProvider);
-  $("#modelHud").textContent = autoProvider + " / " + modelName;
+  //$("#modelHud").textContent = autoProvider + " / " + modelName;
+  $("#modelHud").textContent = "";
 
   await loadTabs();
 
