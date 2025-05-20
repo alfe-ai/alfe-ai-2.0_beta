@@ -1389,7 +1389,8 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
   }
 
   console.log("[OBTAINED PROVIDER] => (global model removed in UI, fallback only)");
-  $("#modelHud").textContent = "(Tab-based model) / " + modelName;
+  //$("#modelHud").textContent = "(Tab-based model) / " + modelName;
+  $("#modelHud").textContent = "";
 
   await loadTabs();
 
