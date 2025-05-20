@@ -20,7 +20,7 @@ let chatHideMetadata = false;
 let chatTabAutoNaming = false;
 let showSubbubbleToken = false;
 let sterlingChatUrlVisible = true;
-let chatStreaming = true;
+let chatStreaming = true; // new toggle for streaming
 window.agentName = "Alfe";
 
 // For per-tab model arrays
@@ -779,6 +779,33 @@ async function updateProjectInfo() {
   }
 }
 
+function parseProviderModel(model) {
+  if(!model) return { provider: "Unknown", shortModel: "Unknown" };
+  if(model.startsWith("openai/")) {
+    return { provider: "openai", shortModel: model.replace(/^openai\//,'') };
+  } else if(model.startsWith("openrouter/")) {
+    return { provider: "openrouter", shortModel: model.replace(/^openrouter\//,'') };
+  } else if(model.startsWith("deepseek/")) {
+    // Changed to treat deepseek/ as openrouter
+    return { provider: "openrouter", shortModel: model.replace(/^deepseek\//,'') };
+  }
+  return { provider: "Unknown", shortModel: model };
+}
+
+function getEncoding(modelName) {
+  console.debug("[Server Debug] Attempting to load tokenizer for model =>", modelName);
+  try {
+    return encoding_for_model(modelName);
+  } catch (e) {
+    console.debug("[Server Debug] Tokenizer load failed, falling back to gpt-3.5-turbo =>", e.message);
+    return encoding_for_model("gpt-3.5-turbo");
+  }
+}
+
+function countTokens(encoder, text) {
+  return encoder.encode(text || "").length;
+}
+
 const chatInputEl = document.getElementById("chatInput");
 const chatSendBtnEl = document.getElementById("chatSendBtn");
 const waitingElem = document.getElementById("waitingCounter");
@@ -944,7 +971,102 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
   $("#subbubbleTokenCheck").checked = showSubbubbleToken;
   $("#sterlingUrlCheck").checked = sterlingChatUrlVisible;
 
+  try {
+    const modelListResp = await fetch("/api/ai/models");
+    if(modelListResp.ok){
+      const modelData = await modelListResp.json();
+      window.allAiModels = modelData.models || [];
+
+      const aiModelSelect = $("#aiModelSelect");
+
+      function updateAiModelSelect() {
+        aiModelSelect.innerHTML = "";
+        const filterFav = $("#favoritesOnlyModelCheck").checked;
+        const providerFilterSel = $("#aiModelProviderSelect");
+        let selectedProvider = providerFilterSel ? providerFilterSel.value : "";
+
+        let filtered = window.allAiModels.slice();
+        if(filterFav) {
+          filtered = filtered.filter(m => m.favorite);
+        }
+        if(selectedProvider) {
+          filtered = filtered.filter(m => (m.provider === selectedProvider));
+        }
+
+        filtered.forEach(m => {
+          aiModelSelect.appendChild(
+              new Option(
+                  `${m.id} (limit ${m.tokenLimit}, in ${m.inputCost}, out ${m.outputCost})`,
+                  m.id
+              )
+          );
+        });
+      }
+
+      updateAiModelSelect();
+
+      $("#favoritesOnlyModelCheck").addEventListener("change", () => {
+        updateAiModelSelect();
+      });
+
+      const providerSel = $("#aiModelProviderSelect");
+      if (providerSel) {
+        providerSel.addEventListener("change", () => {
+          updateAiModelSelect();
+        });
+      }
+
+      const currentModel = await getSetting("ai_model");
+      if(currentModel) aiModelSelect.value = currentModel;
+    }
+  } catch(e){
+    console.error("Error populating AI service/model lists:", e);
+  }
+
   showModal($("#chatSettingsModal"));
+});
+
+// React when AI service changes
+$("#aiServiceSelect").addEventListener("change", async ()=>{
+  try {
+    const modelListResp = await fetch("/api/ai/models");
+    if(modelListResp.ok){
+      const modelData = await modelListResp.json();
+      window.allAiModels = modelData.models || [];
+
+      const aiModelSelect = $("#aiModelSelect");
+
+      function updateAiModelSelect() {
+        aiModelSelect.innerHTML = "";
+        const filterFav = $("#favoritesOnlyModelCheck").checked;
+        const providerFilterSel = $("#aiModelProviderSelect");
+        let selectedProvider = providerFilterSel ? providerFilterSel.value : "";
+
+        let filtered = window.allAiModels.slice();
+        if(filterFav) {
+          filtered = filtered.filter(m => m.favorite);
+        }
+        if(selectedProvider) {
+          filtered = filtered.filter(m => (m.provider === selectedProvider));
+        }
+
+        filtered.forEach(m => {
+          aiModelSelect.appendChild(
+              new Option(
+                  `${m.id} (limit ${m.tokenLimit}, in ${m.inputCost}, out ${m.outputCost})`,
+                  m.id
+              )
+          );
+        });
+      }
+      updateAiModelSelect();
+
+      const currentModel = await getSetting("ai_model");
+      if(currentModel) aiModelSelect.value = currentModel;
+    }
+  } catch(e){
+    console.error("Error populating AI service/model lists:", e);
+  }
 });
 
 async function chatSettingsSaveFlow() {
@@ -959,6 +1081,25 @@ async function chatSettingsSaveFlow() {
   await setSetting("show_subbubble_token_count", showSubbubbleToken);
   await setSetting("sterling_chat_url_visible", sterlingChatUrlVisible);
   await setSetting("chat_streaming", chatStreaming);
+
+  const serviceSel = $("#aiServiceSelect").value;
+  const modelSel = $("#aiModelSelect").value;
+  await setSetting("ai_service", serviceSel);
+  if (modelSel.trim()) {
+    await setSetting("ai_model", modelSel.trim());
+  }
+
+  const updatedModelResp = await fetch("/api/model");
+  console.debug("[Client Debug] /api/model => status:", updatedModelResp.status);
+  if(updatedModelResp.ok){
+    const updatedModelData = await updatedModelResp.json();
+    console.debug("[Client Debug] /api/model data =>", updatedModelData);
+    modelName = updatedModelData.model || "unknown";
+
+    const { provider: autoProvider } = parseProviderModel(modelName);
+    console.log("[OBTAINED PROVIDER] =>", autoProvider);
+    document.getElementById("modelHud").textContent = autoProvider + " / " + modelName;
+  }
 
   hideModal($("#chatSettingsModal"));
   await loadChatHistory(currentTabId, true);
@@ -1388,9 +1529,15 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     modelName = "unknown";
   }
 
+<<<<<<< HEAD
   console.log("[OBTAINED PROVIDER] => (global model removed in UI, fallback only)");
   //$("#modelHud").textContent = "(Tab-based model) / " + modelName;
   $("#modelHud").textContent = "";
+=======
+  const { provider: autoProvider } = parseProviderModel(modelName);
+  console.log("[OBTAINED PROVIDER] =>", autoProvider);
+  $("#modelHud").textContent = autoProvider + " / " + modelName;
+>>>>>>> parent of fbe0c55 (A.1. Changes Made)
 
   await loadTabs();
 
@@ -1420,6 +1567,10 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     const r2 = await fetch("/api/settings/agent_instructions");
     if(r2.ok){
       const { value } = await r2.json();
+      const displayedInstrEl = document.querySelector("#displayedInstructions");
+      if (displayedInstrEl) {
+        displayedInstrEl.textContent = value || "(none)";
+      }
       window.agentInstructions = value || "";
     }
   } catch(e){
@@ -1489,6 +1640,8 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
   }
 
   initChatScrollLoading();
+
+  // Initialize model tabs
   initModelTabs();
 })();
 
@@ -1583,8 +1736,10 @@ async function loadChatHistory(tabId = 1, reset=false) {
 
         const botHead = document.createElement("div");
         botHead.className = "bubble-header";
+
+        const { provider, shortModel } = parseProviderModel(p.model);
         botHead.innerHTML = `
-          <div class="name-oval name-oval-ai" title="${p.model}">${window.agentName}</div>
+          <div class="name-oval name-oval-ai" title="${provider} / ${shortModel}">${window.agentName}</div>
           <span style="opacity:0.8;">${p.ai_timestamp ? formatTimestamp(p.ai_timestamp) : "…"}</span>
         `;
         botDiv.appendChild(botHead);
@@ -1661,8 +1816,9 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
 
   const botHead = document.createElement("div");
   botHead.className = "bubble-header";
+  const { provider, shortModel } = parseProviderModel(model);
   botHead.innerHTML = `
-    <div class="name-oval name-oval-ai" title="${model}">${window.agentName}</div>
+    <div class="name-oval name-oval-ai" title="${provider} / ${shortModel}">${window.agentName}</div>
     <span style="opacity:0.8;">${aiTs ? formatTimestamp(aiTs) : "…"}</span>
   `;
   botDiv.appendChild(botHead);
@@ -1698,7 +1854,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
 
     if (model) {
       const modelLabel = document.createElement("div");
-      modelLabel.textContent = model;
+      modelLabel.textContent = `${provider} / ${model}`;
       metaContainer.appendChild(modelLabel);
     }
 
@@ -1797,6 +1953,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
 // New model tabs logic
 async function initModelTabs() {
   try {
+    // load from DB setting
     let mTabs = await getSetting("model_tabs");
     if(!Array.isArray(mTabs)) mTabs = [];
     modelTabs = mTabs;
@@ -1869,6 +2026,7 @@ function renderModelTabs(){
   });
 }
 
+// Add a new model tab
 async function addModelTab(){
   let name = prompt("Enter Model Tab Name (e.g., GPT-4 or deepseek-latest):", "");
   if(!name) return;
@@ -1877,6 +2035,7 @@ async function addModelTab(){
     const maxId = Math.max(...modelTabs.map(t=>t.id));
     newId = maxId+1;
   }
+  // default model is the name
   const newObj = {
     id: newId,
     name,
@@ -1886,11 +2045,13 @@ async function addModelTab(){
   modelTabs.push(newObj);
   currentModelTabId = newId;
   await saveModelTabs();
+  // set the "ai_model" to the new tab's model
   await setSetting("ai_model", name);
   modelName = name;
   renderModelTabs();
 }
 
+// rename model tab
 async function renameModelTab(tabId){
   const t = modelTabs.find(t => t.id===tabId);
   if(!t) return;
@@ -1899,6 +2060,7 @@ async function renameModelTab(tabId){
   t.name = newName;
   t.modelId = newName;
   await saveModelTabs();
+  // if it's the active tab, update ai_model setting too
   if(tabId===currentModelTabId){
     await setSetting("ai_model", newName);
     modelName = newName;
@@ -1906,6 +2068,7 @@ async function renameModelTab(tabId){
   renderModelTabs();
 }
 
+// delete model tab
 async function deleteModelTab(tabId){
   if(!confirm("Delete this model tab?")) return;
   const idx = modelTabs.findIndex(x=>x.id===tabId);
@@ -1920,6 +2083,7 @@ async function deleteModelTab(tabId){
         modelName = t.modelId;
       }
     } else {
+      // no tabs left
       await setSetting("ai_model","");
       modelName = "unknown";
     }
@@ -1928,6 +2092,7 @@ async function deleteModelTab(tabId){
   renderModelTabs();
 }
 
+// select model tab
 async function selectModelTab(tabId){
   currentModelTabId = tabId;
   const t = modelTabs.find(x=>x.id===tabId);
@@ -1940,6 +2105,7 @@ async function selectModelTab(tabId){
 }
 
 async function saveModelTabs(){
+  // store in setting "model_tabs"
   await setSetting("model_tabs", modelTabs);
 }
 
