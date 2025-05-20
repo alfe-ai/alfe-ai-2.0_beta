@@ -23,7 +23,7 @@ let sterlingChatUrlVisible = true;
 let chatStreaming = true;
 window.agentName = "Alfe";
 
-// New: model tabs array
+// For per-tab model arrays
 let modelTabs = [];
 let currentModelTabId = null;
 
@@ -1395,7 +1395,7 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
 
   const lastChatTab = await getSetting("last_chat_tab");
   if(lastChatTab) {
-    const foundTab = chatTabs.find(t => t.id === parseInt(lastChatTab,10));
+    const foundTab = chatTabs.find(t => t.id===parseInt(lastChatTab,10));
     if(foundTab) currentTabId = foundTab.id;
     else if(chatTabs.length>0) currentTabId=chatTabs[0].id;
   } else {
@@ -1825,15 +1825,45 @@ function renderModelTabs(){
     b.style.border= (tab.id===currentModelTabId) ? "2px solid #aaa" : "1px solid #444";
     b.style.backgroundColor= (tab.id===currentModelTabId) ? "#555" : "#333";
     b.style.color= (tab.id===currentModelTabId) ? "#fff" : "#ddd";
+    b.style.display = "inline-flex";
+    b.style.alignItems = "center";
+    b.style.gap = "6px";
 
-    b.textContent = tab.name;
-    b.addEventListener("click", ()=>selectModelTab(tab.id));
+    // Title or name
+    const labelSpan = document.createElement("span");
+    labelSpan.textContent = tab.name;
+    b.appendChild(labelSpan);
+
+    // Service selector
+    const serviceSelect = document.createElement("select");
+    ["openai","openrouter","deepseek"].forEach(sv => {
+      const opt = document.createElement("option");
+      opt.value = sv;
+      opt.textContent = sv;
+      serviceSelect.appendChild(opt);
+    });
+    serviceSelect.value = tab.service || "openai";
+    serviceSelect.addEventListener("change", async (evt)=>{
+      tab.service = evt.target.value;
+      await saveModelTabs();
+    });
+    b.appendChild(serviceSelect);
+
+    // Click => select this tab
+    b.addEventListener("click", (ev)=>{
+      // If user clicked the service select, do not override current tab?
+      if(ev.target===serviceSelect) return;
+      selectModelTab(tab.id);
+    });
+
+    // Right-click => rename or delete
     b.addEventListener("contextmenu", e=>{
       e.preventDefault();
       const choice=prompt("Type 'rename' or 'delete':","");
       if(choice==="rename") renameModelTab(tab.id);
       else if(choice==="delete") deleteModelTab(tab.id);
     });
+
     container.appendChild(b);
   });
 }
@@ -1849,7 +1879,8 @@ async function addModelTab(){
   const newObj = {
     id: newId,
     name,
-    modelId: name
+    modelId: name,
+    service: "openai"
   };
   modelTabs.push(newObj);
   currentModelTabId = newId;
