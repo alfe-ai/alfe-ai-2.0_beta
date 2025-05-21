@@ -154,6 +154,14 @@ export default class TaskDB {
       );
     `);
 
+    // Add new column for markdown contents
+    try {
+      this.db.exec(`ALTER TABLE issues ADD COLUMN markdown_contents TEXT DEFAULT '';`);
+      console.debug("[TaskDB Debug] Added markdown_contents column to issues.");
+    } catch(e) {
+      console.debug("[TaskDB Debug] markdown_contents column likely exists. Skipped.", e.message);
+    }
+
     console.debug("[TaskDB Debug] Finished DB schema init.");
   }
 
@@ -163,7 +171,7 @@ export default class TaskDB {
   upsertIssue(issue, repositorySlug) {
     const existing = this.db
       .prepare(
-        "SELECT priority_number, priority, project, sprint, status, dependencies, blocking FROM issues WHERE github_id = ?"
+        "SELECT priority_number, priority, project, sprint, status, dependencies, blocking, markdown_contents FROM issues WHERE github_id = ?"
       )
       .get(issue.id);
 
@@ -603,4 +611,12 @@ export default class TaskDB {
       .prepare("UPDATE issues SET project=? WHERE project=?")
       .run(newProject, oldProject);
   }
+
+  /* ------------------------------------------------------------------ */
+  /*  Additional method to store markdown contents                      */
+  /* ------------------------------------------------------------------ */
+  setMarkdownContentsByGithubId(githubId, markdown) {
+    this.db.prepare("UPDATE issues SET markdown_contents = ? WHERE github_id = ?").run(markdown, githubId);
+  }
 }
+

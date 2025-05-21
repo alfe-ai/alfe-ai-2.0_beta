@@ -533,11 +533,13 @@ $("#defCancelBtn").addEventListener("click",()=>hideModal($("#defaultsModal")));
 $("#addTaskBtn").addEventListener("click",()=>{
   $("#newTaskTitle").value="";
   $("#newTaskBody").value="";
+  $("#newTaskMarkdown").value="";
   showModal($("#newTaskModal"));
 });
 $("#createTaskBtn").addEventListener("click", async ()=>{
-  const title=$("#newTaskTitle").value.trim(),
-      body=$("#newTaskBody").value.trim();
+  const title=$("#newTaskTitle").value.trim();
+  const body=$("#newTaskBody").value.trim();
+  const markdownContents=$("#newTaskMarkdown").value.trim();
   if(!title){
     alert("Please enter a title for the new task.");
     return;
@@ -545,7 +547,7 @@ $("#createTaskBtn").addEventListener("click", async ()=>{
   const res=await fetch("/api/tasks/new",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({title,body})
+    body:JSON.stringify({title,body,markdownContents})
   });
   if(!res.ok){
     alert("Error creating task. Check console/logs.");
@@ -2147,14 +2149,6 @@ document.getElementById("sterlingBranchSaveBtn").addEventListener("click", async
   }
 
   try {
-    // We pretend to call a Sterling endpoint to change branches
-    // In real usage, you'd do something like:
-    // let project = await getSetting("sterling_project");
-    // if(!project) project = "some_default_project";
-    // const resp = await fetch(`http://localhost:3444/api/changeBranch/${project}`, {...});
-    // etc.
-
-    // For demonstration, we just store the base_branch in the DB
     let project = await getSetting("sterling_project");
     if(!project) {
       msgElem.textContent = "No sterling_project is set. Please set a project first.";
@@ -2179,3 +2173,4 @@ document.getElementById("sterlingBranchSaveBtn").addEventListener("click", async
 });
 
 console.log("[Server Debug] main.js fully loaded. End of script.");
+
