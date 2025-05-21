@@ -454,7 +454,7 @@ app.post("/api/tasks/blocking", (req, res) => {
 app.post("/api/tasks/new", async (req, res) => {
   console.debug("[Server Debug] POST /api/tasks/new => body:", req.body);
   try {
-    const { title, body, markdownContents } = req.body;
+    const { title, body } = req.body;
     if (!title) {
       return res.status(400).json({ error: "Title required" });
     }
@@ -467,12 +467,7 @@ app.post("/api/tasks/new", async (req, res) => {
 
     const newIssue = await gh.createIssue(title, body || "");
     db.upsertIssue(newIssue, `${gh.owner}/${gh.repo}`);
-
-    if (markdownContents) {
-      db.setMarkdownContentsByGithubId(newIssue.id, markdownContents);
-    }
-
-    db.logActivity("New task", JSON.stringify({ title, body, markdownContents }));
+    db.logActivity("New task", JSON.stringify({ title, body }));
 
     const defaultProject = db.getSetting("default_project");
     const defaultSprint = db.getSetting("default_sprint");
@@ -1357,4 +1352,3 @@ app.listen(PORT, () => {
 // The front-end chat UI expansions are generated in finalizeChatPair display logic below:
 //
 // [No further code. End of server.js here, changes concluded above with the relevant expansions.]
-
