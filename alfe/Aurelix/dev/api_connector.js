@@ -1,9 +1,7 @@
 const express = require('express');
-const cors = require('cors');
 const router = express.Router();
 const path = require('path');
 const fs = require('fs');
-const { OpenAI } = require('openai'); // Added for AI integration
 
 // Import helpers for loading/saving the repo JSON
 const {
@@ -41,24 +39,6 @@ function loadGlobalInstructions() {
     console.error('[ERROR] reading global_agent_instructions:', e);
     return '';
   }
-}
-
-/**
- * Checks whether the given file path is attached. Supports both "relativePath"
- * and "repoName|relativePath" formats.
- * @param {string[]} attachedFiles
- * @param {string} relativePath
- * @returns {boolean}
- */
-function isPathAttached(attachedFiles, relativePath) {
-  return attachedFiles.some(af => {
-    const splitted = af.split('|');
-    if (splitted.length === 2) {
-      return splitted[1] === relativePath;
-    } else {
-      return af === relativePath;
-    }
-  });
 }
 
 /**
@@ -100,7 +80,7 @@ function buildFileTree(dirPath, rootDir, attachedFiles) {
         name: item.name,
         path: relativePath,
         type: 'file',
-        isAttached: isPathAttached(attachedFiles, relativePath),
+        isAttached: attachedFiles.includes(relativePath),
         children: []
       });
     }
@@ -114,14 +94,6 @@ function buildFileTree(dirPath, rootDir, attachedFiles) {
     children
   };
 }
-
-// Enable CORS on this router to ensure valid response headers
-router.use(cors({
-  origin: '*',
-  methods: ['GET','POST','PUT','DELETE','OPTIONS','HEAD'],
-  allowedHeaders: ['Content-Type','Authorization','Accept','X-Requested-With','Origin']
-}));
-router.options('*', cors());
 
 /**
  * POST /createChat
@@ -230,116 +202,60 @@ router.get('/listFileTree/:repoName/:chatNumber', (req, res) => {
   return res.json({ success: true, tree });
 });
 
-/* ---------- toggle file attachment ---------- */
-router.post("/:repoName/chat/:chatNumber/toggle_attached", (req, res) => {
-    const { repoName, chatNumber } = req.params;
-    const { filePath } = req.body;
-    if (!filePath) {
-        return res.status(400).json({ error: "No filePath provided." });
-    }
-
-    const dataObj = loadRepoJson(repoName);
-    const chatData = dataObj[chatNumber];
-    if (!chatData) {
-        return res.status(404).json({
-            error: `Chat #${chatNumber} not found in repo '${repoName}'.`,
-        });
-    }
-
-    chatData.attachedFiles = chatData.attachedFiles || [];
-    const index = chatData.attachedFiles.indexOf(filePath);
-
-    if (index >= 0) {
-        // Remove from attached
-        chatData.attachedFiles.splice(index, 1);
-    } else {
-        // Add to attached
-        chatData.attachedFiles.push(filePath);
-    }
-
-    dataObj[chatNumber] = chatData;
-    saveRepoJson(repoName, dataObj);
-
-    return res.json({
-        success: true,
-        attachedFiles: chatData.attachedFiles,
-    });
-});
-
 /**
- * POST /submitNewChatInput
- * Allows the user to submit a new user message for a given repo/chat
- * and returns the AI's full response.
+ * POST /changeBranchOfChat/:repoName/:chatNumber
+ * Switches the repository branch for the specified chat
+ * and stores the new branch name in chat data as chatData.gitBranch.
  */
-router.post('/submitNewChatInput', async (req, res) => {
+router.post('/changeBranchOfChat/:repoName/:chatNumber', (req, res) => {
+  const { repoName, chatNumber } = req.params;
+  const { createNew, branchName, newBranchName } = req.body || {};
+
+  const repoCfg = loadSingleRepoConfig(repoName);
+  if (!repoCfg) {
+    return res.status(400).json({ error: `Repo '${repoName}' not found.` });
+  }
+
+  const dataObj = loadRepoJson(repoName);
+  const chatData = dataObj[chatNumber];
+  if (!chatData) {
+    return res.status(404).json({ error: `Chat #${chatNumber} not found in repo '${repoName}'.` });
+  }
+
+  const { gitRepoLocalPath } = repoCfg;
+  const { execSync } = require('child_process');
+
   try {
-    const { repoName, chatNumber, userMessage } = req.body;
-
-    if (!repoName || !chatNumber || !userMessage) {
-      return res.status(400).json({ error: 'repoName, chatNumber, and userMessage are required.' });
+    if (createNew === true || createNew === 'true') {
+      if (!newBranchName) {
+        return res.status(400).json({ error: "No new branch name provided." });
+      }
+      execSync(`git checkout -b "${newBranchName}"`, { cwd: gitRepoLocalPath, stdio: "pipe" });
+      repoCfg.gitBranch = newBranchName;
+      chatData.gitBranch = newBranchName;
+    } else {
+      if (!branchName) {
+        return res.status(400).json({ error: "No branch name provided." });
+      }
+      execSync(`git checkout "${branchName}"`, { cwd: gitRepoLocalPath, stdio: "pipe" });
+      repoCfg.gitBranch = branchName;
+      chatData.gitBranch = branchName;
     }
 
-    // Load the chat data
-    const dataObj = loadRepoJson(repoName);
-    const chatData = dataObj[chatNumber];
-    if (!chatData) {
-      return res.status(404).json({ error: `Chat #${chatNumber} not found in repo '${repoName}'.` });
-    }
+    // Save updated repo config
+    const { loadRepoConfig, saveRepoConfig } = require('../../../server_defs');
+    const allConfig = loadRepoConfig() || {};
+    allConfig[repoName] = repoCfg;
+    saveRepoConfig(allConfig);
 
-    // Prepare the client
-    const openAiClient = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY || '',
-      dangerouslyAllowBrowser: true
-    });
-
-    // Use configured model or fallback
-    const chosenModel = chatData.aiModel || DEFAULT_AIMODEL;
-    // Build messages
-    const messages = [];
-
-    // If we have agent instructions, add them first
-    if (chatData.agentInstructions) {
-      messages.push({ role: 'system', content: chatData.agentInstructions });
-    }
-
-    // Then user message
-    messages.push({ role: 'user', content: userMessage });
-
-    console.log('[DEBUG] Sending to AI => model:', chosenModel, ', total messages:', messages.length);
-
-    // Call the AI
-    const response = await openAiClient.chat.completions.create({
-      model: chosenModel,
-      messages
-    });
-
-    const assistantReply = response.choices?.[0]?.message?.content || '';
-    console.log('[DEBUG] AI Reply length =>', assistantReply.length);
-
-    // Store in chat history
-    chatData.chatHistory = chatData.chatHistory || [];
-    chatData.chatHistory.push({
-      role: 'user',
-      content: userMessage,
-      timestamp: new Date().toISOString()
-    });
-    chatData.chatHistory.push({
-      role: 'assistant',
-      content: assistantReply,
-      timestamp: new Date().toISOString()
-    });
-
+    // Save updated chat data
     dataObj[chatNumber] = chatData;
     saveRepoJson(repoName, dataObj);
 
-    return res.json({
-      success: true,
-      assistantReply,
-      fullAIResponse: response // Return entire response if needed
-    });
-  } catch (error) {
-    console.error('[ERROR] /submitNewChatInput =>', error);
-    return res.status(500).json({ error: 'An error occurred while processing the request.' });
+    return res.json({ success: true, newBranch: chatData.gitBranch });
+  } catch (err) {
+    console.error("[ERROR] changeBranchOfChat =>", err);
+    return res.status(500).json({ error: "Failed to switch branch." });
   }
 });
 

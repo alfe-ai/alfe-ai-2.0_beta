@@ -604,4 +604,3 @@ export default class TaskDB {
       .run(newProject, oldProject);
   }
 }
-

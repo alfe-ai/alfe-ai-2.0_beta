@@ -67,7 +67,6 @@ async function main() {
 
     // ------------------------------------------------------------------
     // 2. Populate in-memory queue (only open issues)
-    // ------------------------------------------------------------------
     issues.forEach((issue) => queue.enqueue(issue));
 
     console.log(`[TaskQueue] ${queue.size()} task(s) in queue.`);
