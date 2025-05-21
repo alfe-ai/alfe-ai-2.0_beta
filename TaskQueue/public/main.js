@@ -485,7 +485,8 @@ $("#instrSaveBtn").addEventListener("click", async ()=>{
 $("#instrCancelBtn").addEventListener("click",()=>hideModal($("#instrModal")));
 
 $("#repoBtn").addEventListener("click", async ()=>{
-  const r=await fetch("/api/settings/github_repo");
+  // Now we store/read from "taskList_git_ssh_url" instead of "github_repo"
+  const r=await fetch("/api/settings/taskList_git_ssh_url");
   if(r.ok){
     const {value}=await r.json();
     $("#repoInput").value=value||"";
@@ -496,7 +497,7 @@ $("#repoSaveBtn").addEventListener("click", async ()=>{
   await fetch("/api/settings",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({key:"github_repo",value:$("#repoInput").value})
+    body:JSON.stringify({key:"taskList_git_ssh_url",value:$("#repoInput").value})
   });
   hideModal($("#repoModal"));
 });
@@ -736,7 +737,7 @@ document.getElementById("setProjectSaveBtn").addEventListener("click", async () 
   }
   await fetch("/api/settings", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type":"application/json" },
     body: JSON.stringify({ key: "sterling_project", value: pName })
   });
   alert("Project set to: " + pName);

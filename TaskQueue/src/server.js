@@ -90,6 +90,8 @@ import { fileURLToPath } from "url";
 import OpenAI from "openai";
 import { encoding_for_model } from "tiktoken";
 import axios from "axios";
+import os from "os";
+import child_process from "child_process";
 
 const db = new TaskDB();
 console.debug("[Server Debug] Checking or setting default 'ai_model' in DB...");
@@ -1345,9 +1347,64 @@ app.post("/api/ai/favorites", (req, res) => {
 });
 
 // -----------------------------------------------------------
-// New: Global Markdown file storage
+// New: Global Markdown file storage + Git push logic
 // -----------------------------------------------------------
 const mdFilePath = path.join(__dirname, "../markdown_global.txt");
+
+function ensureTaskListRepoCloned(gitUrl) {
+  if (!gitUrl) return null;
+  const homeDir = os.homedir();
+  const alfeDir = path.join(homeDir, ".alfeai");
+  if (!fs.existsSync(alfeDir)) {
+    fs.mkdirSync(alfeDir, { recursive: true });
+  }
+  const repoDir = path.join(alfeDir, "tasklistRepo");
+
+  try {
+    if (!fs.existsSync(repoDir)) {
+      // clone
+      console.log("[Git Debug] Cloning new repo =>", gitUrl, "into =>", repoDir);
+      child_process.execSync(`git clone "${gitUrl}" "${repoDir}"`, {
+        stdio: "inherit"
+      });
+    } else {
+      // pull
+      console.log("[Git Debug] Pulling latest in =>", repoDir);
+      child_process.execSync(`git pull`, {
+        cwd: repoDir,
+        stdio: "inherit"
+      });
+    }
+    return repoDir;
+  } catch (err) {
+    console.error("[Git Error] Could not clone/pull repo =>", err);
+    return null;
+  }
+}
+
+function commitAndPushMarkdown(repoDir) {
+  try {
+    const mgPath = path.join(repoDir, "markdown_global.txt");
+    child_process.execSync(`git add markdown_global.txt`, {
+      cwd: repoDir
+    });
+    child_process.execSync(`git commit -m "Update markdown_global.txt"`, {
+      cwd: repoDir
+    });
+    child_process.execSync(`git push`, {
+      cwd: repoDir,
+      stdio: "inherit"
+    });
+  } catch (err) {
+    // If there's nothing to commit, that's not necessarily fatal.
+    const msg = String(err.message || "");
+    if (msg.includes("nothing to commit, working tree clean")) {
+      console.log("[Git Debug] Nothing to commit. Working tree is clean.");
+    } else {
+      console.error("[Git Error] commitAndPushMarkdown =>", err);
+    }
+  }
+}
 
 app.get("/api/markdown", (req, res) => {
   try {
@@ -1367,6 +1424,20 @@ app.post("/api/markdown", (req, res) => {
   try {
     const { content } = req.body;
     fs.writeFileSync(mdFilePath, content || "", "utf-8");
+
+    // Git logic:
+    const gitUrl = db.getSetting("taskList_git_ssh_url");
+    if (gitUrl) {
+      const repoDir = ensureTaskListRepoCloned(gitUrl);
+      if (repoDir) {
+        // Copy updated file
+        const targetPath = path.join(repoDir, "markdown_global.txt");
+        fs.copyFileSync(mdFilePath, targetPath);
+        // commit/push
+        commitAndPushMarkdown(repoDir);
+      }
+    }
+
     res.json({ success: true });
   } catch (err) {
     console.error("Error writing markdown_global.txt:", err);
