@@ -1344,6 +1344,37 @@ app.post("/api/ai/favorites", (req, res) => {
   }
 });
 
+// -----------------------------------------------------------
+// New: Global Markdown file storage
+// -----------------------------------------------------------
+const mdFilePath = path.join(__dirname, "../markdown_global.txt");
+
+app.get("/api/markdown", (req, res) => {
+  try {
+    if (fs.existsSync(mdFilePath)) {
+      const data = fs.readFileSync(mdFilePath, "utf-8");
+      res.json({ content: data });
+    } else {
+      res.json({ content: "" });
+    }
+  } catch (err) {
+    console.error("Error reading markdown_global.txt:", err);
+    res.status(500).json({ error: "Unable to read markdown file." });
+  }
+});
+
+app.post("/api/markdown", (req, res) => {
+  try {
+    const { content } = req.body;
+    fs.writeFileSync(mdFilePath, content || "", "utf-8");
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Error writing markdown_global.txt:", err);
+    res.status(500).json({ error: "Unable to write markdown file." });
+  }
+});
+// -----------------------------------------------------------
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
