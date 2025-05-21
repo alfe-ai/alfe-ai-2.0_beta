@@ -1100,7 +1100,6 @@ async function chatSettingsSaveFlow() {
     console.log("[OBTAINED PROVIDER] => (global model removed in UI, fallback only)");
     const { provider } = parseProviderModel(modelName);
     console.log("[OBTAINED PROVIDER] =>", autoProvider);
-    //$("#modelHud").textContent = autoProvider + " / " + modelName;
     $("#modelHud").textContent = "";
   }
 
@@ -1532,11 +1531,9 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     modelName = "unknown";
   }
 
-  // Merge-resolved lines below:
   console.log("[OBTAINED PROVIDER] => (global model removed in UI, fallback only)");
   const { provider: autoProvider } = parseProviderModel(modelName);
   console.log("[OBTAINED PROVIDER] =>", autoProvider);
-  //$("#modelHud").textContent = autoProvider + " / " + modelName;
   $("#modelHud").textContent = "";
 
   await loadTabs();
@@ -1643,6 +1640,19 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
 
   // Initialize model tabs
   initModelTabs();
+
+  // -----------------------------------------------------------------------
+  // Load the global markdown content on startup
+  // -----------------------------------------------------------------------
+  try {
+    const mdResp = await fetch("/api/markdown");
+    if(mdResp.ok){
+      const mdData = await mdResp.json();
+      $("#markdownInput").value = mdData.content || "";
+    }
+  } catch(e) {
+    console.error("Error loading markdown content:", e);
+  }
 })();
 
 function initChatScrollLoading(){
@@ -2147,14 +2157,6 @@ document.getElementById("sterlingBranchSaveBtn").addEventListener("click", async
   }
 
   try {
-    // We pretend to call a Sterling endpoint to change branches
-    // In real usage, you'd do something like:
-    // let project = await getSetting("sterling_project");
-    // if(!project) project = "some_default_project";
-    // const resp = await fetch(`http://localhost:3444/api/changeBranch/${project}`, {...});
-    // etc.
-
-    // For demonstration, we just store the base_branch in the DB
     let project = await getSetting("sterling_project");
     if(!project) {
       msgElem.textContent = "No sterling_project is set. Please set a project first.";
@@ -2175,6 +2177,28 @@ document.getElementById("sterlingBranchSaveBtn").addEventListener("click", async
   } catch(err){
     console.error("Error changing sterling branch:", err);
     msgElem.textContent = "Error: " + err.message;
+  }
+});
+
+// -----------------------------------------------------------------------
+// Handling the global markdown save button
+// -----------------------------------------------------------------------
+document.getElementById("saveMdBtn").addEventListener("click", async () => {
+  try {
+    const content = $("#markdownInput").value;
+    const resp = await fetch("/api/markdown", {
+      method: "POST",
+      headers: { "Content-Type":"application/json" },
+      body: JSON.stringify({ content })
+    });
+    if(!resp.ok){
+      alert("Error saving markdown content.");
+      return;
+    }
+    alert("Markdown content saved.");
+  } catch(e) {
+    console.error("Error saving markdown:", e);
+    alert("Unable to save markdown content.");
   }
 });
 
