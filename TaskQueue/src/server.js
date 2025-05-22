@@ -1389,21 +1389,32 @@ app.post("/api/image/generate", async (req, res) => {
     }
 
     const first = result.data?.[0]?.url || null;
-    db.logActivity(
-      "Image generate",
-      JSON.stringify({ prompt, url: first, model: modelName, n: countParsed })
-    );
-
-    if (first) {
-      const tab = parseInt(tabId, 10) || 1;
-      db.createImagePair(first, prompt || '', tab);
-    }
-
     if (!first) {
       return res.status(502).json({ error: "Received empty response from AI service" });
     }
 
-    res.json({ success: true, url: first });
+    // Download the generated image and save locally
+    let localUrl = first;
+    try {
+      const resp = await axios.get(first, { responseType: "arraybuffer" });
+      const ext = path.extname(new URL(first).pathname) || ".png";
+      const filename = `generated-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+      const filePath = path.join(uploadsDir, filename);
+      fs.writeFileSync(filePath, resp.data);
+      localUrl = `/uploads/${filename}`;
+    } catch(downloadErr) {
+      console.error("[Server Debug] Failed to download generated image:", downloadErr);
+    }
+
+    db.logActivity(
+      "Image generate",
+      JSON.stringify({ prompt, url: localUrl, model: modelName, n: countParsed })
+    );
+
+    const tab = parseInt(tabId, 10) || 1;
+    db.createImagePair(localUrl, prompt || '', tab);
+
+    res.json({ success: true, url: localUrl });
   } catch (err) {
     console.error("[Server Debug] /api/image/generate error:", err);
     const status = err?.status || err?.response?.status || 500;
