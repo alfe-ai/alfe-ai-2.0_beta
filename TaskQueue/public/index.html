@@ -137,7 +137,7 @@
     </div>
 
     <!-- New Empty Task List Panel Above Chat UI -->
-    <div id="taskListPanel" style="border:1px dashed #666; padding:8px; margin:8px 0;">
+    <div id="taskListPanel" style="display:none;border:1px dashed #666; padding:8px; margin:8px 0;">
       <h2 style="margin:0;font-size:1.1rem;">Task List</h2>
       <!-- This panel is currently used for the global Markdown editing -->
       <div id="markdownContainer" style="margin-top:8px;border:1px solid #444; padding:8px;">
@@ -268,6 +268,8 @@
     <label><input type="checkbox" id="sterlingUrlCheck"/> Show Sterling chat URL</label>
     <br/>
     <label><input type="checkbox" id="chatStreamingCheck" checked/> Enable streaming completions</label>
+    <br/>
+    <label><input type="checkbox" id="showMarkdownTasksCheck"/> Show markdown tasks panel</label>
     <br/>
     <div style="margin-top:8px;">
       <label>AI Service:
