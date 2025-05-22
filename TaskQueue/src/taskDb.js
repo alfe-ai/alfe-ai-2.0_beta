@@ -348,14 +348,14 @@ export default class TaskDB {
   listProjects() {
     return this.db
         .prepare(
-            \`SELECT
+            `SELECT
                project,
                COUNT(*) AS count
              FROM issues
              WHERE closed = 0 AND hidden = 0
              GROUP BY project
              HAVING project <> ''
-             ORDER BY count DESC;\`
+             ORDER BY count DESC;`
         )
         .all();
   }
@@ -363,14 +363,14 @@ export default class TaskDB {
   listSprints() {
     return this.db
         .prepare(
-            \`SELECT
+            `SELECT
                sprint,
                COUNT(*) AS count
              FROM issues
              WHERE closed = 0 AND hidden = 0
              GROUP BY sprint
              HAVING sprint <> ''
-             ORDER BY count DESC;\`
+             ORDER BY count DESC;`
         )
         .all();
   }
