@@ -1289,29 +1289,48 @@ app.post("/api/image/generate", async (req, res) => {
       return res.status(400).json({ error: "Missing prompt" });
     }
 
-    const openAiKey = process.env.OPENAI_API_KEY || "";
+    const openAiKey = process.env.OPENAI_API_KEY;
     if (!openAiKey) {
-      return res.status(500).json({ error: "OPENAI_API_KEY not configured" });
+      return res
+        .status(500)
+        .json({ error: "OPENAI_API_KEY environment variable not configured" });
     }
-    // Force ChatGPT/DALL-E image generation regardless of ai_service setting
+
+    // Always use ChatGPT/DALL-E for image generation
     const openaiClient = new OpenAI({ apiKey: openAiKey });
-    const count = parseInt(n, 10) || 1;
-    const imgSize = typeof size === "string" ? size : "512x512";
+
+    const count = Math.min(parseInt(n, 10) || 1, 4);
+    const allowedSizes = ["256x256", "512x512", "1024x1024"];
+    const imgSize = allowedSizes.includes(size) ? size : "512x512";
 
     const result = await openaiClient.images.generate({
-      prompt,
+      prompt: prompt.slice(0, 1000),
       n: count,
-      size: imgSize
+      size: imgSize,
+      response_format: "url"
     });
 
     const first = result.data?.[0]?.url || null;
     db.logActivity("Image generate", JSON.stringify({ prompt, url: first }));
+
+    if (!first) {
+      return res.status(502).json({ error: "Received empty response from AI service" });
+    }
+
     res.json({ success: true, url: first });
   } catch (err) {
+<<<<<<< ours
     console.error("[Server Debug] /api/image/generate error:", err);
     const status = err?.status || 500;
     const message = err?.error?.message || err?.message || "Failed to generate image";
     res.status(status).json({ error: message });
+=======
+    console.error("[API] Image generation error:", err);
+    const status = err.status || 500;
+    const message =
+      err.response?.data?.error?.message || err.message || "Image generation failed";
+    res.status(status).json({ error: message, code: err.code, type: err.type });
+>>>>>>> theirs
   }
 });
 
