@@ -37,6 +37,9 @@ let favElement = null;
 const $  = (sel, ctx=document) => ctx.querySelector(sel);
 const $$ = (sel, ctx=document) => [...ctx.querySelectorAll(sel)];
 
+/* Introduce an image buffer and preview. */
+let pendingImages = [];
+
 /* Utility formatting functions, event handlers, rendering logic, etc. */
 function formatTimestamp(isoStr){
   if(!isoStr) return "(no time)";
@@ -870,10 +873,39 @@ chatInputEl.addEventListener("keydown", (e) => {
 chatSendBtnEl.addEventListener("click", async () => {
   const chatMessagesEl = document.getElementById("chatMessages");
   const userMessage = chatInputEl.value.trim();
-  if(!userMessage) return;
+  if(!userMessage && pendingImages.length===0) return;
   const userTime = new Date().toISOString();
 
   if (favElement) favElement.href = rotatingFavicon;
+
+  // If there are images pending, first handle them
+  if(pendingImages.length>0){
+    for(const f of pendingImages){
+      try {
+        const formData = new FormData();
+        formData.append("imageFile", f);
+        let uploadResp = await fetch(`/api/chat/image?tabId=${currentTabId}`, {
+          method: "POST",
+          body: formData
+        });
+        if(!uploadResp.ok){
+          console.error("Image upload error, status:", uploadResp.status);
+        }
+      } catch(e){
+        console.error("Error uploading image:", e);
+      }
+    }
+    // Clear the buffer for images
+    pendingImages = [];
+    updateImagePreviewList();
+    await loadChatHistory(currentTabId, true);
+  }
+
+  if(!userMessage){
+    // if there's no text, just refresh the chat now that images were posted
+    if (favElement) favElement.href = defaultFavicon;
+    return;
+  }
 
   chatInputEl.value = "";
 
@@ -2305,7 +2337,7 @@ document.getElementById("mdMenuCloseBtn").addEventListener("click", () => {
 });
 
 // ----------------------------------------------------------------------
-// New gearBtn opens Task List Config
+// New Task List Configuration modal
 // ----------------------------------------------------------------------
 document.getElementById("gearBtn").addEventListener("click", () => {
   showModal(document.getElementById("taskListConfigModal"));
@@ -2336,7 +2368,10 @@ document.getElementById("saveMdBtn").addEventListener("click", async () => {
   }
 });
 
-// New: image upload for chat
+/*
+  Image button now simply populates a buffer and displays a preview.
+  The actual upload occurs upon chat send if we have pending images.
+*/
 document.getElementById("chatImageBtn").addEventListener("click", () => {
   document.getElementById("imageUploadInput").click();
 });
@@ -2344,30 +2379,38 @@ document.getElementById("chatImageBtn").addEventListener("click", () => {
 document.getElementById("imageUploadInput").addEventListener("change", async (ev) => {
   const files = ev.target.files;
   if(!files || files.length===0) return;
-  try {
-    for(const f of files){
-      const formData = new FormData();
-      formData.append("imageFile", f);
-
-      const uploadResp = await fetch(`/api/chat/image?tabId=${currentTabId}`, {
-        method: "POST",
-        body: formData
-      });
-      if(!uploadResp.ok){
-        console.error("Error uploading image:", uploadResp.status);
-        continue;
-      }
-      const result = await uploadResp.json();
-      if(result.success){
-        await loadChatHistory(currentTabId, true);
-      }
-    }
-  } catch(e){
-    console.error("Error handling image upload:", e);
+  for(const f of files){
+    pendingImages.push(f);
   }
+  updateImagePreviewList();
   ev.target.value="";
 });
 
+/*
+  Show a small list of “buffered” images that will attach with the next message.
+*/
+function updateImagePreviewList(){
+  const previewArea = document.getElementById("imagePreviewArea");
+  if(!previewArea) return;
+  previewArea.innerHTML = "";
+  if(pendingImages.length===0){
+    previewArea.innerHTML = "<em>No images selected</em>";
+    return;
+  }
+  pendingImages.forEach((f, idx) => {
+    const div = document.createElement("div");
+    div.style.marginBottom="4px";
+    div.textContent = f.name;
+    const rmBtn = document.createElement("button");
+    rmBtn.textContent = "Remove";
+    rmBtn.style.marginLeft="8px";
+    rmBtn.addEventListener("click", () => {
+      pendingImages.splice(idx,1);
+      updateImagePreviewList();
+    });
+    div.appendChild(rmBtn);
+    previewArea.appendChild(div);
+  });
+}
+
 console.log("[Server Debug] main.js fully loaded. End of script.");
-
-
