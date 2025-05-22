@@ -157,6 +157,7 @@
     <div id="chatSubroutinesPanel" style="display:none;border:1px dashed #666; padding:8px; margin:8px 0;">
       <h2 style="margin:0;font-size:1.1rem;">Chat Subroutines</h2>
       <button id="newSubroutineBtn">➕ Subroutine</button>
+      <button id="viewActionHooksBtn">View Action Hooks</button>
       <div id="subroutineCards" style="display:flex; gap:8px; margin-top:8px;"></div>
     </div>
 
@@ -402,6 +403,17 @@
     <p>Configure your task list options here.</p>
     <div class="modal-buttons">
       <button id="taskListConfigCloseBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal showing defined action hooks -->
+<div id="actionHooksModal" class="modal">
+  <div class="modal-content">
+    <h2>Action Hooks</h2>
+    <ul id="actionHooksList"></ul>
+    <div class="modal-buttons">
+      <button id="actionHooksCloseBtn">Close</button>
     </div>
   </div>
 </div>

@@ -26,6 +26,7 @@ let chatStreaming = true; // new toggle for streaming
 let enterSubmitsMessage = true; // new toggle for Enter key submit
 let navMenuVisible = false; // visibility of the top navigation menu
 let chatSubroutines = [];
+let actionHooks = [];
 window.agentName = "Alfe";
 
 // For per-tab model arrays
@@ -70,6 +71,21 @@ function isoDate(d) {
 function showModal(m){ m.style.display = "flex"; }
 function hideModal(m){ m.style.display = "none"; }
 $$(".modal").forEach(m => m.addEventListener("click", e => { if(e.target===m) hideModal(m); }));
+
+function registerActionHook(name, fn){
+  actionHooks.push({ name, fn });
+}
+
+function renderActionHooks(){
+  const list = document.getElementById("actionHooksList");
+  if(!list) return;
+  list.innerHTML = "";
+  actionHooks.forEach((h, idx) => {
+    const li = document.createElement("li");
+    li.textContent = h.name || `Hook ${idx+1}`;
+    list.appendChild(li);
+  });
+}
 
 async function setSetting(key, value){
   await fetch("/api/settings", {
@@ -843,6 +859,11 @@ function renderSidebarTabs(){
 
 document.getElementById("newSideTabBtn").addEventListener("click", addNewTab);
 document.getElementById("newSubroutineBtn").addEventListener("click", addNewSubroutine);
+document.getElementById("viewActionHooksBtn").addEventListener("click", () => {
+  renderActionHooks();
+  showModal(document.getElementById("actionHooksModal"));
+});
+document.getElementById("actionHooksCloseBtn").addEventListener("click", () => hideModal(document.getElementById("actionHooksModal")));
 
 // New: Button to toggle top chat tabs bar
 document.getElementById("toggleTopChatTabsBtn").addEventListener("click", () => {
@@ -1145,6 +1166,12 @@ chatSendBtnEl.addEventListener("click", async () => {
     });
 
     await loadChatHistory(currentTabId, true);
+    actionHooks.forEach(h => {
+      if(typeof h.fn === "function"){
+        try { h.fn({type:"afterSend", message: combinedUserText, response: partialText}); }
+        catch(err){ console.error("Action hook error:", err); }
+      }
+    });
   } catch(e) {
     clearInterval(waitInterval);
     waitingElem.textContent = "";
@@ -2682,5 +2709,10 @@ function updateImagePreviewList(){
     previewArea.appendChild(div);
   });
 }
+
+// Example hook registration
+registerActionHook("afterSendLog", ({message, response}) => {
+  console.log("[Hook] afterSendLog", { message, response });
+});
 
 console.log("[Server Debug] main.js fully loaded. End of script.");
