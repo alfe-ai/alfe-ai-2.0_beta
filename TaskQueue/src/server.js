@@ -1029,7 +1029,7 @@ app.post("/api/chat", async (req, res) => {
     db.finalizeChatPair(chatPairId, assistantMessage, model, new Date().toISOString(), JSON.stringify(tokenInfo));
     db.logActivity("AI chat", JSON.stringify({ tabId: chatTabId, response: assistantMessage, tokenInfo }));
   } catch (err) {
-    console.error("[TaskQueue] /api/chat (stream) error:", err);
+    console.error("[Server Debug] /api/chat error:", err);
     if (!res.headersSent) {
       res.status(500).send("Internal server error");
     }
@@ -1319,18 +1319,11 @@ app.post("/api/image/generate", async (req, res) => {
 
     res.json({ success: true, url: first });
   } catch (err) {
-<<<<<<< ours
     console.error("[Server Debug] /api/image/generate error:", err);
-    const status = err?.status || 500;
-    const message = err?.error?.message || err?.message || "Failed to generate image";
-    res.status(status).json({ error: message });
-=======
-    console.error("[API] Image generation error:", err);
-    const status = err.status || 500;
+    const status = err?.status || err?.response?.status || 500;
     const message =
-      err.response?.data?.error?.message || err.message || "Image generation failed";
+      err?.response?.data?.error?.message || err?.message || "Image generation failed";
     res.status(status).json({ error: message, code: err.code, type: err.type });
->>>>>>> theirs
   }
 });
 
