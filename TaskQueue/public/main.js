@@ -665,7 +665,9 @@ function renderSubroutines(){
     const div = document.createElement("div");
     div.className = "subroutine-card";
     div.dataset.id = sub.id;
-    div.textContent = sub.name;
+    div.style.flexDirection = "column";
+    div.style.textAlign = "center";
+    div.innerHTML = `<strong>${sub.name}</strong><br/><small>${sub.trigger_text||''}</small><br/><small>${sub.action_text||''}</small>`;
     div.style.border = "1px solid #444";
     div.style.padding = "8px";
     div.style.width = "150px";
@@ -674,12 +676,16 @@ function renderSubroutines(){
     div.style.alignItems = "center";
     div.style.justifyContent = "center";
     div.addEventListener("dblclick", async () => {
-      const newName = prompt("Rename subroutine:", sub.name);
-      if(!newName) return;
-      const r = await fetch("/api/chat/subroutines/rename", {
+      const newName = prompt("Subroutine name:", sub.name);
+      if(newName===null) return;
+      const newTrigger = prompt("Trigger description:", sub.trigger_text||"");
+      if(newTrigger===null) return;
+      const newAction = prompt("Action description:", sub.action_text||"");
+      if(newAction===null) return;
+      const r = await fetch("/api/chat/subroutines/update", {
         method: "POST",
         headers: { "Content-Type":"application/json" },
-        body: JSON.stringify({ id: sub.id, newName })
+        body: JSON.stringify({ id: sub.id, name: newName, trigger: newTrigger, action: newAction })
       });
       if(r.ok){
         await loadSubroutines();
@@ -693,10 +699,14 @@ function renderSubroutines(){
 async function addNewSubroutine(){
   const name = prompt("Subroutine name:", "New Subroutine");
   if(!name) return;
+  const trigger = prompt("Trigger description:", "");
+  if(trigger===null) return;
+  const action = prompt("Action description:", "");
+  if(action===null) return;
   const r = await fetch("/api/chat/subroutines/new", {
     method: "POST",
     headers: { "Content-Type":"application/json" },
-    body: JSON.stringify({ name })
+    body: JSON.stringify({ name, trigger, action })
   });
   if(r.ok){
     await loadSubroutines();
