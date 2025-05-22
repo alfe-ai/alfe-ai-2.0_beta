@@ -469,6 +469,15 @@ body {
   width: 150px;
   height: 80px;
   color: #ddd;
+  position: relative;
+}
+
+.subroutine-card .edit-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 0.8rem;
+  cursor: pointer;
 }
 
 

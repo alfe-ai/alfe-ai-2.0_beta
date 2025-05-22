@@ -673,6 +673,24 @@ async function loadSubroutines(){
   }
 }
 
+function editSubroutine(sub){
+  const newName = prompt("Subroutine name:", sub.name);
+  if(newName===null) return;
+  const newTrigger = prompt("Trigger description:", sub.trigger_text||"");
+  if(newTrigger===null) return;
+  const newAction = prompt("Action description:", sub.action_text||"");
+  if(newAction===null) return;
+  fetch("/api/chat/subroutines/update", {
+    method: "POST",
+    headers: { "Content-Type":"application/json" },
+    body: JSON.stringify({ id: sub.id, name: newName, trigger: newTrigger, action: newAction })
+  }).then(r => {
+    if(r.ok){
+      loadSubroutines().then(renderSubroutines);
+    }
+  });
+}
+
 function renderSubroutines(){
   const container = document.getElementById("subroutineCards");
   if(!container) return;
@@ -691,23 +709,17 @@ function renderSubroutines(){
     div.style.display = "flex";
     div.style.alignItems = "center";
     div.style.justifyContent = "center";
-    div.addEventListener("dblclick", async () => {
-      const newName = prompt("Subroutine name:", sub.name);
-      if(newName===null) return;
-      const newTrigger = prompt("Trigger description:", sub.trigger_text||"");
-      if(newTrigger===null) return;
-      const newAction = prompt("Action description:", sub.action_text||"");
-      if(newAction===null) return;
-      const r = await fetch("/api/chat/subroutines/update", {
-        method: "POST",
-        headers: { "Content-Type":"application/json" },
-        body: JSON.stringify({ id: sub.id, name: newName, trigger: newTrigger, action: newAction })
-      });
-      if(r.ok){
-        await loadSubroutines();
-        renderSubroutines();
-      }
+    div.addEventListener("dblclick", () => editSubroutine(sub));
+
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "Edit";
+    editBtn.className = "edit-btn";
+    editBtn.addEventListener("click", e => {
+      e.stopPropagation();
+      editSubroutine(sub);
     });
+    div.appendChild(editBtn);
+
     container.appendChild(div);
   });
 }
