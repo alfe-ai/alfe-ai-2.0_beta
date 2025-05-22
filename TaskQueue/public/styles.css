@@ -452,6 +452,14 @@ body {
   border-radius: 2px;
 }
 
+/* Creation date text for sidebar chat tabs */
+#verticalTabsContainer .tab-date {
+  margin-left: auto;
+  font-size: 0.8rem;
+  color: #aaa;
+  white-space: nowrap;
+}
+
 #verticalTabsContainer button.active {
   background-color: #555;
   border-color: #aaa;
