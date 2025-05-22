@@ -1,13 +1,14 @@
-#!/bin/sh
-# Simple placeholder image description script
+#!/bin/bash
+# Simple placeholder script to return a basic image description
+# Usage: imagedesc.sh <image_path>
+
 file="$1"
 if [ -z "$file" ] || [ ! -f "$file" ]; then
-  echo "(Invalid image path)"
-  exit 1
+  echo "(Could not read image)"
+  exit 0
 fi
-# Determine bytes and extension
-size=$(wc -c < "$file" 2>/dev/null)
-name=$(basename "$file")
-ext=${name##*.}
-# Output simple description
-printf 'Uploaded image "%s" (%d bytes, extension .%s)' "$name" "$size" "$ext"
+
+size=$(stat -c%s "$file" 2>/dev/null)
+ext=${file##*.}
+base=$(basename "$file")
+echo "Image '$base' (${size} bytes, .$ext)"
