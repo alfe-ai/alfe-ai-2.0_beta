@@ -2293,7 +2293,7 @@ document.getElementById("toggleModelTabsBtn").addEventListener("click", async ()
   if(modelTabsBarVisible){
     if(cont) cont.style.display = "none";
     if(newBtn) newBtn.style.display = "none";
-    toggleBtn.textContent = "Show model tabs bar";
+    toggleBtn.textContent = "Model";
     modelTabsBarVisible = false;
     await setSetting("model_tabs_bar_visible", false);
   } else {
