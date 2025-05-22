@@ -1231,7 +1231,7 @@ app.post("/api/chat/image", upload.single("imageFile"), async (req, res) => {
       return res.status(400).json({ error: "No image file received." });
     }
 
-    const scriptPath = path.join(__dirname, "../../imagedesc.sh");
+    const scriptPath = `${process.env.HOME}/git/imgs_db/imagedesc.sh`;
     const filePath = path.join(uploadsDir, req.file.filename);
 
     let desc = "";
@@ -1507,5 +1507,4 @@ app.listen(PORT, () => {
 // The front-end chat UI expansions are generated in finalizeChatPair display logic below:
 //
 // [No further code. End of server.js here, changes concluded above with the relevant expansions.]
-
 
