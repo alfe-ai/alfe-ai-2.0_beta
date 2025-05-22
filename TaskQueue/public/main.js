@@ -48,6 +48,11 @@ const $$ = (sel, ctx=document) => [...ctx.querySelectorAll(sel)];
 let pendingImages = [];
 let pendingImageDescs = [];
 
+// Data and state for the secure files list
+let fileListData = [];
+let fileSortColumn = "index";
+let fileSortAsc = true;
+
 /* Utility formatting functions, event handlers, rendering logic, etc. */
 function formatTimestamp(isoStr){
   if(!isoStr) return "(no time)";
@@ -1590,32 +1595,66 @@ function toggleNavMenuVisibility(visible) {
   });
 })();
 
+function sortFileData(){
+  fileListData.sort((a,b)=>{
+    let va=a[fileSortColumn];
+    let vb=b[fileSortColumn];
+    if(fileSortColumn==='name'){ va = va.toLowerCase(); vb = vb.toLowerCase(); }
+    if(va<vb) return fileSortAsc ? -1 : 1;
+    if(va>vb) return fileSortAsc ? 1 : -1;
+    return 0;
+  });
+}
+
+function renderFileList(){
+  const table = $("#secureFilesList");
+  const tbody = table.querySelector("tbody");
+  tbody.innerHTML = "";
+  fileListData.forEach((f, idx) => {
+    const tr = document.createElement("tr");
+    const tdIndex = document.createElement("td");
+    tdIndex.textContent = idx + 1;
+    const tdName = document.createElement("td");
+    const link = document.createElement("a");
+    link.href = `/uploads/${f.name}`;
+    link.target = "_blank";
+    link.textContent = f.name;
+    tdName.appendChild(link);
+    const tdSize = document.createElement("td");
+    tdSize.textContent = f.size;
+    const tdMtime = document.createElement("td");
+    tdMtime.textContent = new Date(f.mtime).toLocaleString();
+    tr.appendChild(tdIndex);
+    tr.appendChild(tdName);
+    tr.appendChild(tdSize);
+    tr.appendChild(tdMtime);
+    tbody.appendChild(tr);
+  });
+}
+
+function setupFileSorting(){
+  $$("#secureFilesList th").forEach(th => {
+    const col = th.dataset.col;
+    if(!col) return;
+    th.style.cursor = "pointer";
+    th.addEventListener("click", () => {
+      if(fileSortColumn === col){
+        fileSortAsc = !fileSortAsc;
+      } else {
+        fileSortColumn = col;
+        fileSortAsc = true;
+      }
+      sortFileData();
+      renderFileList();
+    });
+  });
+}
+
 async function loadFileList() {
   try {
-    const files = await fetch("/api/upload/list").then(r => r.json());
-    const table = $("#secureFilesList");
-    const tbody = table.querySelector("tbody");
-    tbody.innerHTML = "";
-    files.forEach(f => {
-      const tr = document.createElement("tr");
-      const tdIndex = document.createElement("td");
-      tdIndex.textContent = f.index;
-      const tdName = document.createElement("td");
-      const link = document.createElement("a");
-      link.href = `/uploads/${f.name}`;
-      link.target = "_blank";
-      link.textContent = f.name;
-      tdName.appendChild(link);
-      const tdSize = document.createElement("td");
-      tdSize.textContent = f.size;
-      const tdMtime = document.createElement("td");
-      tdMtime.textContent = new Date(f.mtime).toLocaleString();
-      tr.appendChild(tdIndex);
-      tr.appendChild(tdName);
-      tr.appendChild(tdSize);
-      tr.appendChild(tdMtime);
-      tbody.appendChild(tr);
-    });
+    fileListData = await fetch("/api/upload/list").then(r => r.json());
+    sortFileData();
+    renderFileList();
   } catch(e) {
     console.error("Error fetching file list:", e);
   }
@@ -2062,6 +2101,7 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
   }
 
   await loadFileList();
+  setupFileSorting();
 
   favElement = document.getElementById("favicon");
   if (favElement) {
