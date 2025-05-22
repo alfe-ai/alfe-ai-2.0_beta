@@ -106,6 +106,7 @@ export default class TaskDB {
                                                 name TEXT NOT NULL,
                                                 trigger_text TEXT DEFAULT '',
                                                 action_text TEXT DEFAULT '',
+                                                action_hook TEXT DEFAULT '',
                                                 created_at TEXT NOT NULL
       );
     `);
@@ -121,6 +122,12 @@ export default class TaskDB {
       console.debug("[TaskDB Debug] Added chat_subroutines.action_text column");
     } catch(e) {
       console.debug("[TaskDB Debug] action_text column exists, skipping.", e.message);
+    }
+    try {
+      this.db.exec(`ALTER TABLE chat_subroutines ADD COLUMN action_hook TEXT DEFAULT '';`);
+      console.debug("[TaskDB Debug] Added chat_subroutines.action_hook column");
+    } catch(e) {
+      console.debug("[TaskDB Debug] action_hook column exists, skipping.", e.message);
     }
 
     // The is_image_desc column is no longer used, but we won't remove it in the schema for safety
@@ -580,13 +587,13 @@ export default class TaskDB {
   /*  Chat subroutines helpers                                           */
   /* ------------------------------------------------------------------ */
 
-  createChatSubroutine(name, trigger = "", action = "") {
+  createChatSubroutine(name, trigger = "", action = "", hook = "") {
     const ts = new Date().toISOString();
     const { lastInsertRowid } = this.db
         .prepare(
-            "INSERT INTO chat_subroutines (name, trigger_text, action_text, created_at) VALUES (?, ?, ?, ?)"
+            "INSERT INTO chat_subroutines (name, trigger_text, action_text, action_hook, created_at) VALUES (?, ?, ?, ?, ?)"
         )
-        .run(name, trigger, action, ts);
+        .run(name, trigger, action, hook, ts);
     return lastInsertRowid;
   }
 
@@ -602,12 +609,12 @@ export default class TaskDB {
         .run(newName, id);
   }
 
-  updateChatSubroutine(id, name, trigger = "", action = "") {
+  updateChatSubroutine(id, name, trigger = "", action = "", hook = "") {
     this.db
         .prepare(
-            "UPDATE chat_subroutines SET name=?, trigger_text=?, action_text=? WHERE id=?"
+            "UPDATE chat_subroutines SET name=?, trigger_text=?, action_text=?, action_hook=? WHERE id=?"
         )
-        .run(name, trigger, action, id);
+        .run(name, trigger, action, hook, id);
   }
 }
 

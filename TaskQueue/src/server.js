@@ -1145,11 +1145,11 @@ app.get("/api/chat/subroutines", (req, res) => {
 app.post("/api/chat/subroutines/new", (req, res) => {
   console.debug("[Server Debug] POST /api/chat/subroutines/new =>", req.body);
   try {
-    const { name, trigger = "", action = "" } = req.body;
+    const { name, trigger = "", action = "", hook = "" } = req.body;
     if (!name) {
       return res.status(400).json({ error: "Name required" });
     }
-    const id = db.createChatSubroutine(name, trigger, action);
+    const id = db.createChatSubroutine(name, trigger, action, hook);
     res.json({ success: true, id });
   } catch (err) {
     console.error("[TaskQueue] POST /api/chat/subroutines/new error:", err);
@@ -1175,11 +1175,11 @@ app.post("/api/chat/subroutines/rename", (req, res) => {
 app.post("/api/chat/subroutines/update", (req, res) => {
   console.debug("[Server Debug] POST /api/chat/subroutines/update =>", req.body);
   try {
-    const { id, name, trigger = "", action = "" } = req.body;
+    const { id, name, trigger = "", action = "", hook = "" } = req.body;
     if (!id || !name) {
       return res.status(400).json({ error: "Missing id or name" });
     }
-    db.updateChatSubroutine(id, name, trigger, action);
+    db.updateChatSubroutine(id, name, trigger, action, hook);
     res.json({ success: true });
   } catch (err) {
     console.error("[TaskQueue] POST /api/chat/subroutines/update error:", err);

@@ -27,6 +27,7 @@ let enterSubmitsMessage = true; // new toggle for Enter key submit
 let navMenuVisible = false; // visibility of the top navigation menu
 let chatSubroutines = [];
 let actionHooks = [];
+let editingSubroutineId = null;
 window.agentName = "Alfe";
 
 // For per-tab model arrays
@@ -673,22 +674,52 @@ async function loadSubroutines(){
   }
 }
 
-function editSubroutine(sub){
-  const newName = prompt("Subroutine name:", sub.name);
-  if(newName===null) return;
-  const newTrigger = prompt("Trigger description:", sub.trigger_text||"");
-  if(newTrigger===null) return;
-  const newAction = prompt("Action description:", sub.action_text||"");
-  if(newAction===null) return;
-  fetch("/api/chat/subroutines/update", {
+function openSubroutineModal(sub=null){
+  editingSubroutineId = sub ? sub.id : null;
+  document.getElementById("subroutineModalTitle").textContent = sub ? "Edit Subroutine" : "New Subroutine";
+  $("#subroutineNameInput").value = sub ? sub.name : "";
+  $("#subroutineTriggerInput").value = sub ? sub.trigger_text || "" : "";
+  $("#subroutineActionInput").value = sub ? sub.action_text || "" : "";
+  const sel = document.getElementById("subroutineHookSelect");
+  sel.innerHTML = '<option value="">(none)</option>';
+  actionHooks.forEach(h => {
+    const opt = document.createElement("option");
+    opt.value = h.name;
+    opt.textContent = h.name;
+    sel.appendChild(opt);
+  });
+  sel.value = sub ? (sub.action_hook || "") : "";
+  showModal(document.getElementById("subroutineModal"));
+}
+
+async function saveSubroutine(){
+  const name = $("#subroutineNameInput").value.trim();
+  if(!name) return;
+  const trigger = $("#subroutineTriggerInput").value.trim();
+  const action = $("#subroutineActionInput").value.trim();
+  const hook = $("#subroutineHookSelect").value;
+
+  const payload = { name, trigger, action, hook };
+  let url = "/api/chat/subroutines/new";
+  if(editingSubroutineId){
+    payload.id = editingSubroutineId;
+    url = "/api/chat/subroutines/update";
+  }
+  const r = await fetch(url, {
     method: "POST",
     headers: { "Content-Type":"application/json" },
-    body: JSON.stringify({ id: sub.id, name: newName, trigger: newTrigger, action: newAction })
-  }).then(r => {
-    if(r.ok){
-      loadSubroutines().then(renderSubroutines);
-    }
+    body: JSON.stringify(payload)
   });
+  if(r.ok){
+    hideModal(document.getElementById("subroutineModal"));
+    editingSubroutineId = null;
+    await loadSubroutines();
+    renderSubroutines();
+  }
+}
+
+function editSubroutine(sub){
+  openSubroutineModal(sub);
 }
 
 function renderSubroutines(){
@@ -701,7 +732,7 @@ function renderSubroutines(){
     div.dataset.id = sub.id;
     div.style.flexDirection = "column";
     div.style.textAlign = "center";
-    div.innerHTML = `<strong>${sub.name}</strong><br/><small>${sub.trigger_text||''}</small><br/><small>${sub.action_text||''}</small>`;
+    div.innerHTML = `<strong>${sub.name}</strong><br/><small>${sub.trigger_text||''}</small><br/><small>${sub.action_text||''}</small><br/><small>${sub.action_hook||''}</small>`;
     div.style.border = "1px solid #444";
     div.style.padding = "8px";
     div.style.width = "150px";
@@ -725,21 +756,7 @@ function renderSubroutines(){
 }
 
 async function addNewSubroutine(){
-  const name = prompt("Subroutine name:", "New Subroutine");
-  if(!name) return;
-  const trigger = prompt("Trigger description:", "");
-  if(trigger===null) return;
-  const action = prompt("Action description:", "");
-  if(action===null) return;
-  const r = await fetch("/api/chat/subroutines/new", {
-    method: "POST",
-    headers: { "Content-Type":"application/json" },
-    body: JSON.stringify({ name, trigger, action })
-  });
-  if(r.ok){
-    await loadSubroutines();
-    renderSubroutines();
-  }
+  openSubroutineModal();
 }
 async function addNewTab() {
   const projectInput = prompt("Enter project name (or leave blank):", "");
@@ -876,6 +893,11 @@ document.getElementById("viewActionHooksBtn").addEventListener("click", () => {
   showModal(document.getElementById("actionHooksModal"));
 });
 document.getElementById("actionHooksCloseBtn").addEventListener("click", () => hideModal(document.getElementById("actionHooksModal")));
+document.getElementById("subroutineSaveBtn").addEventListener("click", saveSubroutine);
+document.getElementById("subroutineCancelBtn").addEventListener("click", () => {
+  editingSubroutineId = null;
+  hideModal(document.getElementById("subroutineModal"));
+});
 
 // New: Button to toggle top chat tabs bar
 document.getElementById("toggleTopChatTabsBtn").addEventListener("click", () => {
