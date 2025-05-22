@@ -1316,13 +1316,38 @@ app.post("/api/image/generate", async (req, res) => {
     const allowedSizes = ["1024x1024", "1024x1792", "1792x1024"];
     const imgSize = allowedSizes.includes(size) ? size : "1024x1024";
 
-    const result = await openaiClient.images.generate({
-      model: modelName,
-      prompt: prompt.slice(0, 1000),
-      n: countParsed,
-      size: imgSize,
-      response_format: "url"
-    });
+    let result;
+    try {
+      result = await openaiClient.images.generate({
+        model: modelName,
+        prompt: prompt.slice(0, 1000),
+        n: countParsed,
+        size: imgSize,
+        response_format: "url"
+      });
+    } catch (err) {
+      // If DALLE-3 request fails due to user error, try DALLE-2 as a fallback
+      if (
+        modelName === "dall-e-3" &&
+        err?.type === "image_generation_user_error"
+      ) {
+        try {
+          result = await openaiClient.images.generate({
+            model: "dall-e-2",
+            prompt: prompt.slice(0, 1000),
+            n: Math.min(countParsed, 4),
+            size: "1024x1024",
+            response_format: "url"
+          });
+          // indicate fallback
+          modelName = "dall-e-2";
+        } catch (err2) {
+          throw err2;
+        }
+      } else {
+        throw err;
+      }
+    }
 
     const first = result.data?.[0]?.url || null;
     db.logActivity(
