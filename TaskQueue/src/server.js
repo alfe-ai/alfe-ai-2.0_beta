@@ -1299,20 +1299,36 @@ app.post("/api/image/generate", async (req, res) => {
     // Always use ChatGPT/DALL-E for image generation
     const openaiClient = new OpenAI({ apiKey: openAiKey });
 
-    const count = Math.min(parseInt(n, 10) || 1, 4);
+    const modelName = (model || "dall-e-3").toLowerCase();
+    const allowedModels = ["dall-e-2", "dall-e-3"];
+    if (!allowedModels.includes(modelName)) {
+      return res.status(400).json({ error: "Invalid model" });
+    }
+
+    let countParsed = parseInt(n, 10);
+    if (isNaN(countParsed) || countParsed < 1) countParsed = 1;
+    if (modelName === "dall-e-3") {
+      countParsed = 1; // API restriction
+    } else {
+      countParsed = Math.min(countParsed, 4); // limit for dall-e-2
+    }
+
     const allowedSizes = ["1024x1024", "1024x1792", "1792x1024"];
     const imgSize = allowedSizes.includes(size) ? size : "1024x1024";
 
     const result = await openaiClient.images.generate({
-      model: model || "dall-e-3",
+      model: modelName,
       prompt: prompt.slice(0, 1000),
-      n: count,
+      n: countParsed,
       size: imgSize,
       response_format: "url"
     });
 
     const first = result.data?.[0]?.url || null;
-    db.logActivity("Image generate", JSON.stringify({ prompt, url: first }));
+    db.logActivity(
+      "Image generate",
+      JSON.stringify({ prompt, url: first, model: modelName, n: countParsed })
+    );
 
     if (!first) {
       return res.status(502).json({ error: "Received empty response from AI service" });
