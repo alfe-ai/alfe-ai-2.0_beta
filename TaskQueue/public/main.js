@@ -967,6 +967,20 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
     chatStreaming = true;
   }
 
+  // New fetch + set for markdownPanelVisible
+  let markdownPanelVisible = true;
+  try {
+    const r6 = await fetch("/api/settings/markdownPanelVisible");
+    if(r6.ok){
+      const { value } = await r6.json();
+      markdownPanelVisible = !!value;
+    }
+  } catch(e) {
+    console.error("Error loading markdownPanelVisible:", e);
+    markdownPanelVisible = true;
+  }
+  $("#markdownPanelCheck").checked = markdownPanelVisible;
+
   $("#hideMetadataCheck").checked = chatHideMetadata;
   $("#autoNamingCheck").checked = chatTabAutoNaming;
   $("#subbubbleTokenCheck").checked = showSubbubbleToken;
@@ -1070,6 +1084,18 @@ $("#aiServiceSelect").addEventListener("change", async ()=>{
   }
 });
 
+function toggleSterlingUrlVisibility(visible) {
+  const el = document.getElementById("sterlingUrlLabel");
+  if(!el) return;
+  el.style.display = visible ? "inline" : "none";
+}
+
+// New function to toggle #taskListPanel
+function toggleTaskListPanelVisibility(visible) {
+  const panel = document.getElementById("taskListPanel");
+  panel.style.display = visible ? "" : "none";
+}
+
 async function chatSettingsSaveFlow() {
   chatHideMetadata = $("#hideMetadataCheck").checked;
   chatTabAutoNaming = $("#autoNamingCheck").checked;
@@ -1089,6 +1115,11 @@ async function chatSettingsSaveFlow() {
   if (modelSel.trim()) {
     await setSetting("ai_model", modelSel.trim());
   }
+
+  // Save markdownPanelVisible
+  let markdownPanelVisible = $("#markdownPanelCheck").checked;
+  await setSetting("markdownPanelVisible", markdownPanelVisible);
+  toggleTaskListPanelVisibility(markdownPanelVisible);
 
   const updatedModelResp = await fetch("/api/model");
   console.debug("[Client Debug] /api/model => status:", updatedModelResp.status);
@@ -1114,12 +1145,6 @@ $("#chatSettingsSaveBtn").addEventListener("click", chatSettingsSaveFlow);
 $("#chatSettingsCancelBtn").addEventListener("click", () => {
   hideModal($("#chatSettingsModal"));
 });
-
-function toggleSterlingUrlVisibility(visible) {
-  const el = document.getElementById("sterlingUrlLabel");
-  if(!el) return;
-  el.style.display = visible ? "inline" : "none";
-}
 
 (function installDividerDrag(){
   const divider = $("#divider");
