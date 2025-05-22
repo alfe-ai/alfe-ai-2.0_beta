@@ -385,6 +385,17 @@ body {
   font-size: 14px;
 }
 
+/* Toggle icon in top-left corner */
+.nav-toggle-icon {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  z-index: 1000;
+}
+
 /* Token count indicator in bottom-right corner of subbubble */
 .token-indicator {
   position: absolute;
