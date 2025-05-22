@@ -206,6 +206,27 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  position: relative;
+}
+
+.pair-delete-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: transparent;
+  border: none;
+  color: #888;
+  cursor: pointer;
+}
+
+.bubble-delete-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: transparent;
+  border: none;
+  color: #888;
+  cursor: pointer;
 }
 
 /* Avatars replaced with name ovals */
@@ -271,6 +292,14 @@ body {
 .chat-user,
 .chat-bot {
   font-size: 1rem;
+}
+
+/* Thumbnail for user uploaded images */
+.user-image-thumb {
+  max-width: 120px;
+  max-height: 120px;
+  margin: 4px 0;
+  border: 1px solid #555;
 }
 
 /* Additional details styling */
@@ -385,6 +414,17 @@ body {
   font-size: 14px;
 }
 
+/* Toggle icon in top-left corner */
+.nav-toggle-icon {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 42px;
+  height: 42px;
+  cursor: pointer;
+  z-index: 1000;
+}
+
 /* Token count indicator in bottom-right corner of subbubble */
 .token-indicator {
   position: absolute;
@@ -418,6 +458,24 @@ body {
   color: #fff;
 }
 
+/* Secure uploader file table */
+#secureFilesList {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+#secureFilesList th,
+#secureFilesList td {
+  border: 1px solid #444;
+  padding: 4px 6px;
+}
+
+#secureFilesList th {
+  background: #3a3a3a;
+  text-align: left;
+}
+
 /* New gear icon for the Markdown area */
 #markdownGearIcon {
   position: relative;
@@ -427,6 +485,25 @@ body {
   color: #ddd;
   cursor: pointer;
   margin-left: 4px;
+}
+
+/* Basic style for chat subroutine cards */
+.subroutine-card {
+  background: #333;
+  border: 1px solid #444;
+  padding: 8px;
+  width: 150px;
+  height: 80px;
+  color: #ddd;
+  position: relative;
+}
+
+.subroutine-card .edit-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 0.8rem;
+  cursor: pointer;
 }
 
 

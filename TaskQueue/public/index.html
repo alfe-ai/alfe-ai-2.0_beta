@@ -16,6 +16,7 @@
 <body>
 
 <div class="app">
+  <img id="navMenuToggle" class="nav-toggle-icon" src="alfe_favicon_clean_64x64.ico" alt="Toggle navigation menu" title="Toggle navigation"/>
   <aside class="sidebar">
     <!-- Tree-style menu with sections -->
     <nav class="tree-menu">
@@ -28,6 +29,7 @@
               <li><button id="navUploaderBtn" class="tree-button">Uploader</button></li>
               <li><button id="navFileTreeBtn" class="tree-button">File Tree</button></li>
               <li><a href="/ai_models" class="tree-button" style="text-decoration:none; color:inherit;">AI Models</a></li>
+              <li><a href="/image_generator" class="tree-button" style="text-decoration:none; color:inherit;">Image Generator</a></li>
             </ul>
           </details>
         </li>
@@ -91,7 +93,17 @@
         <input type="file" id="fileInput"/>
         <button type="submit">Upload</button>
       </form>
-      <ul id="secureFilesList"></ul>
+      <table id="secureFilesList" class="file-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>File</th>
+            <th>Size</th>
+            <th>Last Modified</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
     </div>
 
     <!-- New File Tree view panel (hidden by default) -->
@@ -118,7 +130,7 @@
 
   <div id="divider" class="divider"></div>
 
-  <div class="exclamation-icon" title="Placeholder tooltip">!</div>
+<!--  <div class="exclamation-icon" title="Placeholder tooltip">!</div>-->
 
   <div id="expandSidebarBtn" style="position: absolute; top: 60px; left: 8px; background: #444; color: #ddd; padding: 4px 8px; cursor: pointer; z-index: 999; display: none;">
     Show Sidebar
@@ -152,6 +164,15 @@
       </div>
     </div>
 
+    <!-- New Chat Subroutines Panel -->
+    <div id="chatSubroutinesPanel" style="display:none;border:1px dashed #666; padding:8px; margin:8px 0;">
+      <h2 style="margin:0;font-size:1.1rem;">Chat Subroutines</h2>
+      <button id="newSubroutineBtn">➕ Subroutine</button>
+      <button id="viewActionHooksBtn">View Action Hooks</button>
+      <p style="margin:4px 0;font-size:0.8rem;color:#aaa;">Use the Edit button or double-click a card to modify a subroutine.</p>
+      <div id="subroutineCards" style="display:flex; gap:8px; margin-top:8px;"></div>
+    </div>
+
     <div id="chatPanel" style="position: relative;">
       <div style="display: flex; align-items: center; gap: 0.5rem;">
         <div id="modelHud" style="font-size:0.9rem; color:#aaa; margin-bottom:4px;"></div>
@@ -163,13 +184,17 @@
         <div id="modelTabsContainer" style="flex-wrap: wrap;display:none;gap:0.5rem;"></div>
         <button id="newModelTabBtn" style="display:none;">➕ Model</button>
         <!-- Added toggle for model tabs bar -->
-        <button id="toggleModelTabsBtn">Show model tabs bar</button>
+        <button id="toggleModelTabsBtn">Models</button>
       </div>
 
       <div id="chatMessages"></div>
 
       <div id="waitingCounter"></div>
       <div class="chat-input-container">
+        <!-- Hidden file input for image uploading -->
+        <input type="file" id="imageUploadInput" accept="image/*" style="display:none" multiple />
+        <button id="chatImageBtn" class="send-btn" title="Upload Image">🖼</button>
+
         <textarea id="chatInput" placeholder="Type your message..."></textarea>
         <button id="chatSendBtn" class="send-btn">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -178,7 +203,10 @@
             <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
           </svg>
         </button>
+        <button id="chatGenImageBtn" class="send-btn" title="Generate Image">🎨</button>
       </div>
+      <div id="imagePreviewArea" style="margin:8px 0;"></div>
+      <div id="imageProcessingIndicator" style="display:none; color:#f0f; margin:8px 0;">Processing image, please wait...</div>
     </div>
   </main>
 </div>
@@ -271,7 +299,11 @@
     <br/>
     <label><input type="checkbox" id="showMarkdownTasksCheck"/> Show markdown tasks panel</label>
     <br/>
+    <label><input type="checkbox" id="showSubroutinePanelCheck"/> Show chat subroutines panel</label>
+    <br/>
     <label><input type="checkbox" id="enterSubmitCheck" checked/> Enter submits message</label>
+    <br/>
+    <label><input type="checkbox" id="showNavMenuCheck" checked/> Show navigation menu</label>
     <br/>
     <div style="margin-top:8px;">
       <label>AI Service:
@@ -296,8 +328,8 @@
         <select id="aiModelSelect">
           <!-- populated dynamically -->
         </select>
+        <label style="margin-left:8px;"><input type="checkbox" id="favoritesOnlyModelCheck" /> Favorites Only</label>
       </label>
-      <label style="margin-left:8px;"><input type="checkbox" id="favoritesOnlyModelCheck" /> Favorites Only</label>
     </div>
     <div class="modal-buttons">
       <button id="chatSettingsSaveBtn">Save</button>
@@ -384,6 +416,40 @@
     <p>Configure your task list options here.</p>
     <div class="modal-buttons">
       <button id="taskListConfigCloseBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for creating/editing chat subroutines -->
+<div id="subroutineModal" class="modal">
+  <div class="modal-content">
+    <h2 id="subroutineModalTitle">Subroutine</h2>
+    <label>Name:<br/>
+      <input type="text" id="subroutineNameInput" style="width:100%;" />
+    </label>
+    <label style="margin-top:8px;">Trigger:<br/>
+      <input type="text" id="subroutineTriggerInput" style="width:100%;" />
+    </label>
+    <label style="margin-top:8px;">Action Text:<br/>
+      <input type="text" id="subroutineActionInput" style="width:100%;" />
+    </label>
+    <label style="margin-top:8px;">Action Hook:<br/>
+      <select id="subroutineHookSelect" style="width:100%;"></select>
+    </label>
+    <div class="modal-buttons">
+      <button id="subroutineSaveBtn">Save</button>
+      <button id="subroutineCancelBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal showing defined action hooks -->
+<div id="actionHooksModal" class="modal">
+  <div class="modal-content">
+    <h2>Action Hooks</h2>
+    <ul id="actionHooksList"></ul>
+    <div class="modal-buttons">
+      <button id="actionHooksCloseBtn">Close</button>
     </div>
   </div>
 </div>

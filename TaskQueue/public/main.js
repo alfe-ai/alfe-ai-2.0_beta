@@ -14,6 +14,7 @@ let dragSrcRow = null;
 let modelName = "unknown";
 let tasksVisible = true;
 let markdownPanelVisible = false;
+let subroutinePanelVisible = false;
 let sidebarVisible = true;
 let chatTabs = [];
 let currentTabId = 1;
@@ -23,6 +24,10 @@ let showSubbubbleToken = false;
 let sterlingChatUrlVisible = true;
 let chatStreaming = true; // new toggle for streaming
 let enterSubmitsMessage = true; // new toggle for Enter key submit
+let navMenuVisible = false; // visibility of the top navigation menu
+let chatSubroutines = [];
+let actionHooks = [];
+let editingSubroutineId = null;
 window.agentName = "Alfe";
 
 // For per-tab model arrays
@@ -36,6 +41,10 @@ let favElement = null;
 
 const $  = (sel, ctx=document) => ctx.querySelector(sel);
 const $$ = (sel, ctx=document) => [...ctx.querySelectorAll(sel)];
+
+/* Introduce an image buffer and preview, plus an array to hold their descriptions. */
+let pendingImages = [];
+let pendingImageDescs = [];
 
 /* Utility formatting functions, event handlers, rendering logic, etc. */
 function formatTimestamp(isoStr){
@@ -63,6 +72,21 @@ function isoDate(d) {
 function showModal(m){ m.style.display = "flex"; }
 function hideModal(m){ m.style.display = "none"; }
 $$(".modal").forEach(m => m.addEventListener("click", e => { if(e.target===m) hideModal(m); }));
+
+function registerActionHook(name, fn){
+  actionHooks.push({ name, fn });
+}
+
+function renderActionHooks(){
+  const list = document.getElementById("actionHooksList");
+  if(!list) return;
+  list.innerHTML = "";
+  actionHooks.forEach((h, idx) => {
+    const li = document.createElement("li");
+    li.textContent = h.name || `Hook ${idx+1}`;
+    list.appendChild(li);
+  });
+}
 
 async function setSetting(key, value){
   await fetch("/api/settings", {
@@ -93,6 +117,12 @@ async function toggleMarkdownPanel(){
   await setSetting("markdown_panel_visible", markdownPanelVisible);
 }
 
+async function toggleSubroutinePanel(){
+  subroutinePanelVisible = !subroutinePanelVisible;
+  $("#chatSubroutinesPanel").style.display = subroutinePanelVisible ? "" : "none";
+  await setSetting("subroutine_panel_visible", subroutinePanelVisible);
+}
+
 async function toggleSidebar(){
   sidebarVisible = !sidebarVisible;
   const sidebarEl = $(".sidebar");
@@ -113,6 +143,15 @@ document.getElementById("expandSidebarBtn").addEventListener("click", () => {
     toggleSidebar();
   }
 });
+
+async function toggleNavMenu(){
+  navMenuVisible = !navMenuVisible;
+  toggleNavMenuVisibility(navMenuVisible);
+  const check = document.getElementById("showNavMenuCheck");
+  if(check) check.checked = navMenuVisible;
+  await setSetting("nav_menu_visible", navMenuVisible);
+}
+document.getElementById("navMenuToggle").addEventListener("click", toggleNavMenu);
 
 async function loadSettings(){
   {
@@ -155,6 +194,16 @@ async function loadSettings(){
       }
     }
     $("#taskListPanel").style.display = markdownPanelVisible ? "" : "none";
+  }
+  {
+    const r = await fetch("/api/settings/subroutine_panel_visible");
+    if(r.ok){
+      const { value } = await r.json();
+      if(typeof value !== "undefined"){
+        subroutinePanelVisible = !!value;
+      }
+    }
+    $("#chatSubroutinesPanel").style.display = subroutinePanelVisible ? "" : "none";
   }
   {
     const r = await fetch("/api/settings/sidebar_visible");
@@ -200,7 +249,17 @@ async function loadSettings(){
     const toggleBtn = document.getElementById("toggleModelTabsBtn");
     if(cont) cont.style.display = modelTabsBarVisible ? "" : "none";
     if(newBtn) newBtn.style.display = modelTabsBarVisible ? "" : "none";
-    if(toggleBtn) toggleBtn.textContent = modelTabsBarVisible ? "Hide model tabs bar" : "Show model tabs bar";
+    if(toggleBtn) toggleBtn.textContent = modelTabsBarVisible ? "Hide Models" : "Models";
+  }
+  {
+    const r = await fetch("/api/settings/nav_menu_visible");
+    if(r.ok){
+      const { value } = await r.json();
+      if(typeof value !== 'undefined'){
+        navMenuVisible = value !== false;
+      }
+    }
+    toggleNavMenuVisibility(navMenuVisible);
   }
 }
 async function saveSettings(){
@@ -605,12 +664,106 @@ async function loadTabs(){
   const res = await fetch("/api/chat/tabs");
   chatTabs = await res.json();
 }
+
+async function loadSubroutines(){
+  const res = await fetch("/api/chat/subroutines");
+  if(res.ok){
+    chatSubroutines = await res.json();
+  } else {
+    chatSubroutines = [];
+  }
+}
+
+function openSubroutineModal(sub=null){
+  editingSubroutineId = sub ? sub.id : null;
+  document.getElementById("subroutineModalTitle").textContent = sub ? "Edit Subroutine" : "New Subroutine";
+  $("#subroutineNameInput").value = sub ? sub.name : "";
+  $("#subroutineTriggerInput").value = sub ? sub.trigger_text || "" : "";
+  $("#subroutineActionInput").value = sub ? sub.action_text || "" : "";
+  const sel = document.getElementById("subroutineHookSelect");
+  sel.innerHTML = '<option value="">(none)</option>';
+  actionHooks.forEach(h => {
+    const opt = document.createElement("option");
+    opt.value = h.name;
+    opt.textContent = h.name;
+    sel.appendChild(opt);
+  });
+  sel.value = sub ? (sub.action_hook || "") : "";
+  showModal(document.getElementById("subroutineModal"));
+}
+
+async function saveSubroutine(){
+  const name = $("#subroutineNameInput").value.trim();
+  if(!name) return;
+  const trigger = $("#subroutineTriggerInput").value.trim();
+  const action = $("#subroutineActionInput").value.trim();
+  const hook = $("#subroutineHookSelect").value;
+
+  const payload = { name, trigger, action, hook };
+  let url = "/api/chat/subroutines/new";
+  if(editingSubroutineId){
+    payload.id = editingSubroutineId;
+    url = "/api/chat/subroutines/update";
+  }
+  const r = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type":"application/json" },
+    body: JSON.stringify(payload)
+  });
+  if(r.ok){
+    hideModal(document.getElementById("subroutineModal"));
+    editingSubroutineId = null;
+    await loadSubroutines();
+    renderSubroutines();
+  }
+}
+
+function editSubroutine(sub){
+  openSubroutineModal(sub);
+}
+
+function renderSubroutines(){
+  const container = document.getElementById("subroutineCards");
+  if(!container) return;
+  container.innerHTML = "";
+  chatSubroutines.forEach(sub => {
+    const div = document.createElement("div");
+    div.className = "subroutine-card";
+    div.dataset.id = sub.id;
+    div.style.flexDirection = "column";
+    div.style.textAlign = "center";
+    div.innerHTML = `<strong>${sub.name}</strong><br/><small>${sub.trigger_text||''}</small><br/><small>${sub.action_text||''}</small><br/><small>${sub.action_hook||''}</small>`;
+    div.style.border = "1px solid #444";
+    div.style.padding = "8px";
+    div.style.width = "150px";
+    div.style.height = "80px";
+    div.style.display = "flex";
+    div.style.alignItems = "center";
+    div.style.justifyContent = "center";
+    div.addEventListener("dblclick", () => editSubroutine(sub));
+
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "Edit";
+    editBtn.className = "edit-btn";
+    editBtn.addEventListener("click", e => {
+      e.stopPropagation();
+      editSubroutine(sub);
+    });
+    div.appendChild(editBtn);
+
+    container.appendChild(div);
+  });
+}
+
+async function addNewSubroutine(){
+  openSubroutineModal();
+}
 async function addNewTab() {
   const projectInput = prompt("Enter project name (or leave blank):", "");
   if(projectInput){
     await fetch("/api/settings", {
       method:"POST",
-      headers: {"Content-Type":"application/json"},
+      headers: { "Content-Type":"application/json" },
       body: JSON.stringify({ key: "sterling_project", value: projectInput })
     });
   }
@@ -734,6 +887,17 @@ function renderSidebarTabs(){
 }
 
 document.getElementById("newSideTabBtn").addEventListener("click", addNewTab);
+document.getElementById("newSubroutineBtn").addEventListener("click", addNewSubroutine);
+document.getElementById("viewActionHooksBtn").addEventListener("click", () => {
+  renderActionHooks();
+  showModal(document.getElementById("actionHooksModal"));
+});
+document.getElementById("actionHooksCloseBtn").addEventListener("click", () => hideModal(document.getElementById("actionHooksModal")));
+document.getElementById("subroutineSaveBtn").addEventListener("click", saveSubroutine);
+document.getElementById("subroutineCancelBtn").addEventListener("click", () => {
+  editingSubroutineId = null;
+  hideModal(document.getElementById("subroutineModal"));
+});
 
 // New: Button to toggle top chat tabs bar
 document.getElementById("toggleTopChatTabsBtn").addEventListener("click", () => {
@@ -870,33 +1034,117 @@ chatInputEl.addEventListener("keydown", (e) => {
 chatSendBtnEl.addEventListener("click", async () => {
   const chatMessagesEl = document.getElementById("chatMessages");
   const userMessage = chatInputEl.value.trim();
-  if(!userMessage) return;
-  const userTime = new Date().toISOString();
+  if(!userMessage && pendingImages.length===0) return;
 
   if (favElement) favElement.href = rotatingFavicon;
 
+  // 1) If there are images pending, process them to get descriptions and
+  //    collect info for showing thumbnails in the chat history.
+  let descsForThisSend = [];
+  let imageInfosForThisSend = [];
+  if(pendingImages.length>0){
+    // Show the loading indicator for image processing
+    const loaderEl = document.getElementById("imageProcessingIndicator");
+    if(loaderEl) loaderEl.style.display = "";
+    // Disable chat input and send button while images upload
+    chatInputEl.disabled = true;
+    chatSendBtnEl.disabled = true;
+
+    try {
+      for(const f of pendingImages){
+        try {
+          const formData = new FormData();
+          formData.append("imageFile", f);
+          let uploadResp = await fetch(`/api/chat/image?tabId=${currentTabId}`, {
+            method: "POST",
+            body: formData
+          });
+          if(!uploadResp.ok){
+            console.error("Image upload error, status:", uploadResp.status);
+          } else {
+            const json = await uploadResp.json();
+            if(json.desc){
+              // Show bracketed text with filename
+              descsForThisSend.push(`[filename: ${json.filename}] [desc: ${json.desc}]`);
+              imageInfosForThisSend.push({
+                url: `/uploads/${json.filename}`,
+                desc: json.desc
+              });
+            }
+          }
+        } catch(e){
+          console.error("Error uploading image:", e);
+        }
+      }
+    } finally {
+      // Hide the loading indicator
+      if(loaderEl) loaderEl.style.display = "none";
+      // Re-enable chat input and send button
+      chatInputEl.disabled = false;
+      chatSendBtnEl.disabled = false;
+    }
+
+    // Clear the buffer for images
+    pendingImages = [];
+    updateImagePreviewList();
+  }
+
+  // If user typed nothing but we have desc subbubbles, we can still show them in a single bubble
+  if(!userMessage && descsForThisSend.length>0){
+    chatInputEl.value = "";
+  } else if(!userMessage && descsForThisSend.length===0){
+    if (favElement) favElement.href = defaultFavicon;
+    return;
+  }
+
   chatInputEl.value = "";
 
+  // Create the single chat-sequence
   const seqDiv = document.createElement("div");
   seqDiv.className = "chat-sequence";
 
+  // The user bubble
   const userDiv = document.createElement("div");
   userDiv.className = "chat-user";
-  {
-    const userHead = document.createElement("div");
-    userHead.className = "bubble-header";
-    userHead.innerHTML = `
-      <div class="name-oval name-oval-user">User</div>
-      <span style="opacity:0.8;">${formatTimestamp(userTime)}</span>
-    `;
-    userDiv.appendChild(userHead);
 
+  const userHead = document.createElement("div");
+  userHead.className = "bubble-header";
+  const userTime = new Date().toISOString();
+  userHead.innerHTML = `
+    <div class="name-oval name-oval-user">User</div>
+    <span style="opacity:0.8;">${formatTimestamp(userTime)}</span>
+  `;
+  userDiv.appendChild(userHead);
+
+  // Show thumbnails for uploaded images
+  imageInfosForThisSend.forEach(info => {
+    const img = document.createElement("img");
+    img.src = info.url;
+    img.alt = info.desc;
+    img.className = "user-image-thumb";
+    userDiv.appendChild(img);
+  });
+
+  // For each image desc, also add text subbubble
+  descsForThisSend.forEach(d => {
+    const descBubble = document.createElement("div");
+    descBubble.textContent = d;
+    descBubble.style.marginBottom = "8px";
+    descBubble.style.borderLeft = "2px solid #ccc";
+    descBubble.style.paddingLeft = "6px";
+    userDiv.appendChild(descBubble);
+  });
+
+  // Then the user's typed text as last subbubble
+  if(userMessage){
     const userBody = document.createElement("div");
     userBody.textContent = userMessage;
     userDiv.appendChild(userBody);
   }
+
   seqDiv.appendChild(userDiv);
 
+  // The AI bubble
   const botDiv = document.createElement("div");
   botDiv.className = "chat-bot";
 
@@ -916,6 +1164,14 @@ chatSendBtnEl.addEventListener("click", async () => {
   chatMessagesEl.appendChild(seqDiv);
   chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
 
+  let combinedUserText = "";
+  if(descsForThisSend.length>0){
+    combinedUserText = descsForThisSend.join("\n") + "\n\n";
+  }
+  if(userMessage){
+    combinedUserText += userMessage;
+  }
+
   let partialText = "";
   let waitTime=0;
   waitingElem.textContent = "Waiting: 0.0s";
@@ -928,7 +1184,7 @@ chatSendBtnEl.addEventListener("click", async () => {
     const resp = await fetch("/api/chat",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({message:userMessage, tabId: currentTabId, userTime})
+      body:JSON.stringify({message:combinedUserText, tabId: currentTabId, userTime})
     });
     clearInterval(waitInterval);
     waitingElem.textContent = "";
@@ -959,6 +1215,12 @@ chatSendBtnEl.addEventListener("click", async () => {
     });
 
     await loadChatHistory(currentTabId, true);
+    actionHooks.forEach(h => {
+      if(typeof h.fn === "function"){
+        try { h.fn({type:"afterSend", message: combinedUserText, response: partialText}); }
+        catch(err){ console.error("Action hook error:", err); }
+      }
+    });
   } catch(e) {
     clearInterval(waitInterval);
     waitingElem.textContent = "";
@@ -975,13 +1237,22 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
   const r = await fetch("/api/settings/chat_hide_metadata");
   if(r.ok){
     const { value } = await r.json();
-    chatHideMetadata = !!value;
+    if(typeof value !== "undefined"){
+      chatHideMetadata = !!value;
+    } else {
+      chatHideMetadata = false;
+    }
+  } else {
+    chatHideMetadata = false;
+    await setSetting("chat_hide_metadata", chatHideMetadata);
   }
+
   const r2 = await fetch("/api/settings/chat_tab_auto_naming");
   if(r2.ok){
     const { value } = await r2.json();
     chatTabAutoNaming = !!value;
   }
+
   const r3 = await fetch("/api/settings/show_subbubble_token_count");
   if(r3.ok){
     const { value } = await r3.json();
@@ -990,6 +1261,7 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
     showSubbubbleToken = true;
     await setSetting("show_subbubble_token_count", showSubbubbleToken);
   }
+
   const r4 = await fetch("/api/settings/sterling_chat_url_visible");
   if(r4.ok){
     const { value } = await r4.json();
@@ -998,6 +1270,7 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
     sterlingChatUrlVisible = true;
     await setSetting("sterling_chat_url_visible", sterlingChatUrlVisible);
   }
+
   try {
     const r5 = await fetch("/api/settings/chat_streaming");
     if(r5.ok){
@@ -1009,11 +1282,19 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
     console.error("Error loading chat_streaming:", e);
     chatStreaming = true;
   }
+
   const r6 = await fetch("/api/settings/markdown_panel_visible");
   if(r6.ok){
     const { value } = await r6.json();
     markdownPanelVisible = !!value;
   }
+
+  const rSub = await fetch("/api/settings/subroutine_panel_visible");
+  if(rSub.ok){
+    const { value } = await rSub.json();
+    subroutinePanelVisible = !!value;
+  }
+
   const r7 = await fetch("/api/settings/enter_submits_message");
   if(r7.ok){
     const { value } = await r7.json();
@@ -1023,12 +1304,20 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
     await setSetting("enter_submits_message", enterSubmitsMessage);
   }
 
+  const r8 = await fetch("/api/settings/nav_menu_visible");
+  if(r8.ok){
+    const { value } = await r8.json();
+    navMenuVisible = value !== false;
+  }
+
   $("#hideMetadataCheck").checked = chatHideMetadata;
   $("#autoNamingCheck").checked = chatTabAutoNaming;
   $("#subbubbleTokenCheck").checked = showSubbubbleToken;
   $("#sterlingUrlCheck").checked = sterlingChatUrlVisible;
   $("#showMarkdownTasksCheck").checked = markdownPanelVisible;
+  $("#showSubroutinePanelCheck").checked = subroutinePanelVisible;
   $("#enterSubmitCheck").checked = enterSubmitsMessage;
+  $("#showNavMenuCheck").checked = navMenuVisible;
 
   try {
     const modelListResp = await fetch("/api/ai/models");
@@ -1090,8 +1379,8 @@ $("#aiServiceSelect").addEventListener("change", async ()=>{
   try {
     const modelListResp = await fetch("/api/ai/models");
     if(modelListResp.ok){
-      const modelData = await modelListResp.json();
-      window.allAiModels = modelData.models || [];
+      const modelData = modelListResp.json();
+      window.allAiModels = (await modelData).models || [];
 
       const aiModelSelect = $("#aiModelSelect");
 
@@ -1135,7 +1424,9 @@ async function chatSettingsSaveFlow() {
   sterlingChatUrlVisible = $("#sterlingUrlCheck").checked;
   chatStreaming = $("#chatStreamingCheck").checked;
   markdownPanelVisible = $("#showMarkdownTasksCheck").checked;
+  subroutinePanelVisible = $("#showSubroutinePanelCheck").checked;
   enterSubmitsMessage = $("#enterSubmitCheck").checked;
+  navMenuVisible = $("#showNavMenuCheck").checked;
 
   await setSetting("chat_hide_metadata", chatHideMetadata);
   await setSetting("chat_tab_auto_naming", chatTabAutoNaming);
@@ -1143,7 +1434,9 @@ async function chatSettingsSaveFlow() {
   await setSetting("sterling_chat_url_visible", sterlingChatUrlVisible);
   await setSetting("chat_streaming", chatStreaming);
   await setSetting("markdown_panel_visible", markdownPanelVisible);
+  await setSetting("subroutine_panel_visible", subroutinePanelVisible);
   await setSetting("enter_submits_message", enterSubmitsMessage);
+  await setSetting("nav_menu_visible", navMenuVisible);
 
   const serviceSel = $("#aiServiceSelect").value;
   const modelSel = $("#aiModelSelect").value;
@@ -1167,7 +1460,9 @@ async function chatSettingsSaveFlow() {
   hideModal($("#chatSettingsModal"));
   await loadChatHistory(currentTabId, true);
   toggleSterlingUrlVisibility(sterlingChatUrlVisible);
+  toggleNavMenuVisibility(navMenuVisible);
   document.getElementById("taskListPanel").style.display = markdownPanelVisible ? "" : "none";
+  document.getElementById("chatSubroutinesPanel").style.display = subroutinePanelVisible ? "" : "none";
 }
 
 $("#chatSettingsSaveBtn").addEventListener("click", chatSettingsSaveFlow);
@@ -1180,6 +1475,12 @@ function toggleSterlingUrlVisibility(visible) {
   const el = document.getElementById("sterlingUrlLabel");
   if(!el) return;
   el.style.display = visible ? "inline" : "none";
+}
+
+function toggleNavMenuVisibility(visible) {
+  const navEl = document.querySelector("nav.tree-menu");
+  if(!navEl) return;
+  navEl.style.display = visible ? "" : "none";
 }
 
 (function installDividerDrag(){
@@ -1225,16 +1526,28 @@ function toggleSterlingUrlVisibility(visible) {
 async function loadFileList() {
   try {
     const files = await fetch("/api/upload/list").then(r => r.json());
-    const listEl = $("#secureFilesList");
-    listEl.innerHTML = "";
-    files.forEach(fn => {
-      const li = document.createElement("li");
+    const table = $("#secureFilesList");
+    const tbody = table.querySelector("tbody");
+    tbody.innerHTML = "";
+    files.forEach(f => {
+      const tr = document.createElement("tr");
+      const tdIndex = document.createElement("td");
+      tdIndex.textContent = f.index;
+      const tdName = document.createElement("td");
       const link = document.createElement("a");
-      link.href = `/uploads/${fn}`;
+      link.href = `/uploads/${f.name}`;
       link.target = "_blank";
-      link.textContent = fn;
-      li.appendChild(link);
-      listEl.appendChild(li);
+      link.textContent = f.name;
+      tdName.appendChild(link);
+      const tdSize = document.createElement("td");
+      tdSize.textContent = f.size;
+      const tdMtime = document.createElement("td");
+      tdMtime.textContent = new Date(f.mtime).toLocaleString();
+      tr.appendChild(tdIndex);
+      tr.appendChild(tdName);
+      tr.appendChild(tdSize);
+      tr.appendChild(tdMtime);
+      tbody.appendChild(tr);
     });
   } catch(e) {
     console.error("Error fetching file list:", e);
@@ -1599,6 +1912,8 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
   $("#modelHud").textContent = "";
 
   await loadTabs();
+  await loadSubroutines();
+  renderSubroutines();
 
   const lastChatTab = await getSetting("last_chat_tab");
   if(lastChatTab) {
@@ -1637,15 +1952,24 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     window.agentInstructions = "";
   }
 
+  // Previously forced chatHideMetadata to "true" – now corrected:
   try {
     const r3 = await fetch("/api/settings/chat_hide_metadata");
     if(r3.ok){
-      chatHideMetadata = true;
+      const j = await r3.json();
+      if(typeof j.value !== "undefined"){
+        chatHideMetadata = !!j.value;
+      } else {
+        chatHideMetadata = false;
+        await setSetting("chat_hide_metadata", chatHideMetadata);
+      }
+    } else {
+      chatHideMetadata = false;
       await setSetting("chat_hide_metadata", chatHideMetadata);
     }
   } catch(e) {
     console.error("Error loading chat_hide_metadata:", e);
-    chatHideMetadata = true;
+    chatHideMetadata = false;
     await setSetting("chat_hide_metadata", chatHideMetadata);
   }
 
@@ -1671,6 +1995,17 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     favElement.href = defaultFavicon;
   }
 
+  // Sync hidden chat settings checkboxes with loaded values before saving
+  $("#hideMetadataCheck").checked = chatHideMetadata;
+  $("#autoNamingCheck").checked = chatTabAutoNaming;
+  $("#subbubbleTokenCheck").checked = showSubbubbleToken;
+  $("#sterlingUrlCheck").checked = sterlingChatUrlVisible;
+  $("#chatStreamingCheck").checked = chatStreaming;
+  $("#showMarkdownTasksCheck").checked = markdownPanelVisible;
+  $("#showSubroutinePanelCheck").checked = subroutinePanelVisible;
+  $("#enterSubmitCheck").checked = enterSubmitsMessage;
+  $("#showNavMenuCheck").checked = navMenuVisible;
+
   await chatSettingsSaveFlow();
   await updateProjectInfo();
 
@@ -1689,13 +2024,13 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
   toggleSterlingUrlVisibility(sterlingChatUrlVisible);
 
   let lastView = await getSetting("last_sidebar_view");
-  if(!lastView) lastView = "tasks";
+  if(!lastView) lastView = "chatTabs";
   switch(lastView){
     case "uploader": showUploaderPanel(); break;
     case "fileTree": showFileTreePanel(); break;
     case "chatTabs": showChatTabsPanel(); break;
     case "activity": showActivityIframePanel(); break;
-    default: showTasksPanel(); break;
+    default: showChatTabsPanel(); break;
   }
 
   initChatScrollLoading();
@@ -1758,7 +2093,8 @@ async function loadChatHistory(tabId = 1, reset=false) {
         addChatMessage(
             p.id, p.user_text, p.timestamp,
             p.ai_text, p.ai_timestamp,
-            p.model, p.system_context, null, p.token_info
+            p.model, p.system_context, null, p.token_info,
+            p.image_url, p.image_alt
         );
       }
     } else {
@@ -1768,6 +2104,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
         const p = pairs[i];
         const seqDiv = document.createElement("div");
         seqDiv.className = "chat-sequence";
+        seqDiv.dataset.pairId = p.id;
 
         const userDiv = document.createElement("div");
         userDiv.className = "chat-user";
@@ -1778,6 +2115,16 @@ async function loadChatHistory(tabId = 1, reset=false) {
             <div class="name-oval name-oval-user">User</div>
             <span style="opacity:0.8;">${formatTimestamp(p.timestamp)}</span>
           `;
+          const uDel = document.createElement("button");
+          uDel.className = "delete-chat-btn bubble-delete-btn";
+          uDel.textContent = "x";
+          uDel.title = "Delete user message";
+          uDel.addEventListener("click", async () => {
+            if(!confirm("Delete this user message?")) return;
+            const r = await fetch(`/api/chat/pair/${p.id}/user`, { method:"DELETE" });
+            if(r.ok) userDiv.remove();
+          });
+          userHead.appendChild(uDel);
           userDiv.appendChild(userHead);
 
           const userBody = document.createElement("div");
@@ -1794,7 +2141,8 @@ async function loadChatHistory(tabId = 1, reset=false) {
             userDiv._tokenSections = { input: inputT, output: outputT };
             const userTokenDiv = document.createElement("div");
             userTokenDiv.className = "token-indicator";
-            userTokenDiv.textContent = `In: ${inputT}`;
+            const pairTokens = tInfo.inputTokens || 0;
+            userTokenDiv.textContent = `In: ${pairTokens} (${inputT})`;
             userDiv.appendChild(userTokenDiv);
           } catch (e) {
             console.debug("[Server Debug] Could not parse token_info for pair =>", p.id, e.message);
@@ -1814,7 +2162,25 @@ async function loadChatHistory(tabId = 1, reset=false) {
           <div class="name-oval name-oval-ai" title="${provider} / ${shortModel}">${window.agentName}</div>
           <span style="opacity:0.8;">${p.ai_timestamp ? formatTimestamp(p.ai_timestamp) : "…"}</span>
         `;
+        const aDel = document.createElement("button");
+        aDel.className = "delete-chat-btn bubble-delete-btn";
+        aDel.textContent = "x";
+        aDel.title = "Delete AI reply";
+        aDel.addEventListener("click", async () => {
+          if(!confirm("Delete this AI reply?")) return;
+          const r = await fetch(`/api/chat/pair/${p.id}/ai`, { method:"DELETE" });
+          if(r.ok) botDiv.remove();
+        });
+        botHead.appendChild(aDel);
         botDiv.appendChild(botHead);
+
+        if(p.image_url){
+          const img = document.createElement("img");
+          img.src = p.image_url;
+          img.alt = p.image_alt || "";
+          img.style.maxWidth = "100%";
+          botDiv.appendChild(img);
+        }
 
         const botBody = document.createElement("div");
         botBody.textContent = p.ai_text || "";
@@ -1826,7 +2192,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
             const outTokens = (tInfo.assistantTokens || 0) + (tInfo.finalAssistantTokens || 0);
             const combinedDiv = document.createElement("div");
             combinedDiv.className = "token-indicator";
-            combinedDiv.textContent = `Out: ${outTokens} (Time: ${tInfo.responseTime?.toFixed(2) || "?"}s)`;
+            combinedDiv.textContent = `Out: ${outTokens} (Time: ${(tInfo.responseTime*10)?.toFixed(2) || "?"}s)`;
             botDiv.appendChild(combinedDiv);
           } catch(e){
             console.debug("[Server Debug] Could not parse token_info for prepended pair =>", e.message);
@@ -1834,6 +2200,16 @@ async function loadChatHistory(tabId = 1, reset=false) {
         }
 
         seqDiv.appendChild(botDiv);
+        const pairDel = document.createElement("button");
+        pairDel.className = "delete-chat-btn pair-delete-btn";
+        pairDel.textContent = "x";
+        pairDel.title = "Delete this chat pair";
+        pairDel.addEventListener("click", async () => {
+          if(!confirm("Are you sure you want to delete this pair?")) return;
+          const r = await fetch(`/api/chat/pair/${p.id}`, { method:"DELETE" });
+          if(r.ok) seqDiv.remove();
+        });
+        seqDiv.appendChild(pairDel);
         fragment.appendChild(seqDiv);
       }
       if(chatMessagesEl.firstChild){
@@ -1848,20 +2224,35 @@ async function loadChatHistory(tabId = 1, reset=false) {
   }
 }
 
-function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemContext, fullHistory, tokenInfo) {
+function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemContext, fullHistory, tokenInfo, imageUrl=null, imageAlt='') {
   const seqDiv = document.createElement("div");
   seqDiv.className = "chat-sequence";
+  seqDiv.dataset.pairId = pairId;
 
   const userDiv = document.createElement("div");
   userDiv.className = "chat-user";
   {
     const userHead = document.createElement("div");
-    userHead.className = "bubble-header";
-    userHead.innerHTML = `
-      <div class="name-oval name-oval-user">User</div>
-      <span style="opacity:0.8;">${formatTimestamp(userTs)}</span>
-    `;
-    userDiv.appendChild(userHead);
+  userHead.className = "bubble-header";
+  userHead.innerHTML = `
+    <div class="name-oval name-oval-user">User</div>
+    <span style="opacity:0.8;">${formatTimestamp(userTs)}</span>
+  `;
+  const userDelBtn = document.createElement("button");
+  userDelBtn.className = "delete-chat-btn bubble-delete-btn";
+  userDelBtn.textContent = "x";
+  userDelBtn.title = "Delete user message";
+  userDelBtn.addEventListener("click", async () => {
+    if (!confirm("Delete this user message?")) return;
+    const resp = await fetch(`/api/chat/pair/${pairId}/user`, { method: "DELETE" });
+    if (resp.ok) {
+      userDiv.remove();
+    } else {
+      alert("Failed to delete user message.");
+    }
+  });
+  userHead.appendChild(userDelBtn);
+  userDiv.appendChild(userHead);
 
     const userBody = document.createElement("div");
     userBody.textContent = userText;
@@ -1872,9 +2263,10 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
     try {
       const tInfo = JSON.parse(tokenInfo);
       const userInTokens = (tInfo.systemTokens||0) + (tInfo.historyTokens||0) + (tInfo.inputTokens||0);
+      const pairTokens = tInfo.inputTokens || 0;
       const userTokenDiv = document.createElement("div");
       userTokenDiv.className = "token-indicator";
-      userTokenDiv.textContent = `In: ${userInTokens}`;
+      userTokenDiv.textContent = `In: ${pairTokens} (${userInTokens})`;
       userDiv.appendChild(userTokenDiv);
     } catch(e){
       console.debug("[Server Debug] Could not parse token_info for user subbubble =>", e.message);
@@ -1893,7 +2285,29 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
     <div class="name-oval name-oval-ai" title="${provider} / ${shortModel}">${window.agentName}</div>
     <span style="opacity:0.8;">${aiTs ? formatTimestamp(aiTs) : "…"}</span>
   `;
+  const aiDelBtn = document.createElement("button");
+  aiDelBtn.className = "delete-chat-btn bubble-delete-btn";
+  aiDelBtn.textContent = "x";
+  aiDelBtn.title = "Delete AI reply";
+  aiDelBtn.addEventListener("click", async () => {
+    if (!confirm("Delete this AI reply?")) return;
+    const resp = await fetch(`/api/chat/pair/${pairId}/ai`, { method: "DELETE" });
+    if (resp.ok) {
+      botDiv.remove();
+    } else {
+      alert("Failed to delete AI reply.");
+    }
+  });
+  botHead.appendChild(aiDelBtn);
   botDiv.appendChild(botHead);
+
+  if(imageUrl){
+    const img = document.createElement("img");
+    img.src = imageUrl;
+    img.alt = imageAlt;
+    img.style.maxWidth = "100%";
+    botDiv.appendChild(img);
+  }
 
   const botBody = document.createElement("div");
   botBody.textContent = aiText || "";
@@ -1905,7 +2319,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
       const outTokens = tInfo.finalAssistantTokens || 0;
       const combinedDiv = document.createElement("div");
       combinedDiv.className = "token-indicator";
-      combinedDiv.textContent = `Out: ${outTokens} (Time: ${tInfo.responseTime?.toFixed(2) || "?"}s)`;
+      combinedDiv.textContent = `Out: ${outTokens} (Time: ${(tInfo.responseTime*10)?.toFixed(2) || "?"}s)`;
       botDiv.appendChild(combinedDiv);
     } catch(e){
       console.debug("[Server Debug] Could not parse token_info for pair =>", pairId, e.message);
@@ -1974,6 +2388,9 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
       tuSum.textContent = `Token Usage (${tokObj.total})`;
       tuDetails.appendChild(tuSum);
 
+      const respTime = tokObj.responseTime*10;
+      console.log('respTime: ' + respTime);
+
       const usageDiv = document.createElement("div");
       usageDiv.style.marginLeft = "1em";
       usageDiv.textContent =
@@ -1983,7 +2400,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
           `Assistant: ${tokObj.assistantTokens}, ` +
           `FinalAssistantTokens: ${tokObj.finalAssistantTokens}, ` +
           `Total: ${tokObj.total}, ` +
-          `Time: ${tokObj.responseTime ?? "?"}s`;
+          `Time: ${respTime}s`;
       tuDetails.appendChild(usageDiv);
       metaContainer.appendChild(tuDetails);
     }
@@ -1999,23 +2416,20 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
     seqDiv.appendChild(metaContainer);
   }
 
-  const delBtn = document.createElement("button");
-  delBtn.className = "delete-chat-btn";
-  delBtn.textContent = "x";
-  delBtn.title = "Delete this chat message";
-  delBtn.style.marginLeft = "8px";
-  delBtn.addEventListener("click", async () => {
-    if (!confirm("Are you sure you want to delete this message?")) return;
-    const resp = await fetch(`/api/chat/pair/${pairId}`, {
-      method: "DELETE"
-    });
+  const pairDelBtn = document.createElement("button");
+  pairDelBtn.className = "delete-chat-btn pair-delete-btn";
+  pairDelBtn.textContent = "x";
+  pairDelBtn.title = "Delete this chat pair";
+  pairDelBtn.addEventListener("click", async () => {
+    if (!confirm("Are you sure you want to delete this pair?")) return;
+    const resp = await fetch(`/api/chat/pair/${pairId}`, { method: "DELETE" });
     if (resp.ok) {
       seqDiv.remove();
     } else {
       alert("Failed to delete chat pair.");
     }
   });
-  botHead.appendChild(delBtn);
+  seqDiv.appendChild(pairDelBtn);
 
   const chatMessagesEl = document.getElementById("chatMessages");
   chatMessagesEl.appendChild(seqDiv);
@@ -2081,7 +2495,6 @@ function renderModelTabs(){
 
     // Click => select this tab
     b.addEventListener("click", (ev)=>{
-      // If user clicked the service select, do not override current tab?
       if(ev.target===serviceSelect) return;
       selectModelTab(tab.id);
     });
@@ -2107,7 +2520,6 @@ async function addModelTab(){
     const maxId = Math.max(...modelTabs.map(t=>t.id));
     newId = maxId+1;
   }
-  // default model is the name
   const newObj = {
     id: newId,
     name,
@@ -2117,7 +2529,6 @@ async function addModelTab(){
   modelTabs.push(newObj);
   currentModelTabId = newId;
   await saveModelTabs();
-  // set the "ai_model" to the new tab's model
   await setSetting("ai_model", name);
   modelName = name;
   renderModelTabs();
@@ -2132,7 +2543,6 @@ async function renameModelTab(tabId){
   t.name = newName;
   t.modelId = newName;
   await saveModelTabs();
-  // if it's the active tab, update ai_model setting too
   if(tabId===currentModelTabId){
     await setSetting("ai_model", newName);
     modelName = newName;
@@ -2155,7 +2565,6 @@ async function deleteModelTab(tabId){
         modelName = t.modelId;
       }
     } else {
-      // no tabs left
       await setSetting("ai_model","");
       modelName = "unknown";
     }
@@ -2177,7 +2586,6 @@ async function selectModelTab(tabId){
 }
 
 async function saveModelTabs(){
-  // store in setting "model_tabs"
   await setSetting("model_tabs", modelTabs);
 }
 
@@ -2188,13 +2596,13 @@ document.getElementById("toggleModelTabsBtn").addEventListener("click", async ()
   if(modelTabsBarVisible){
     if(cont) cont.style.display = "none";
     if(newBtn) newBtn.style.display = "none";
-    if(toggleBtn) toggleBtn.textContent = "Show model tabs bar";
+    toggleBtn.textContent = "Model";
     modelTabsBarVisible = false;
     await setSetting("model_tabs_bar_visible", false);
   } else {
     if(cont) cont.style.display = "";
     if(newBtn) newBtn.style.display = "";
-    if(toggleBtn) toggleBtn.textContent = "Hide model tabs bar";
+    toggleBtn.textContent = "Hide model tabs bar";
     modelTabsBarVisible = true;
     await setSetting("model_tabs_bar_visible", true);
   }
@@ -2234,9 +2642,9 @@ document.getElementById("sterlingBranchSaveBtn").addEventListener("click", async
       method: "POST",
       headers: { "Content-Type":"application/json" },
       body: JSON.stringify({ data: [{
-          project,
-          base_branch: branchName
-        }]})
+        project,
+        base_branch: branchName
+      }]})
     });
     hideModal($("#changeBranchModal"));
     msgElem.textContent = "";
@@ -2305,7 +2713,7 @@ document.getElementById("mdMenuCloseBtn").addEventListener("click", () => {
 });
 
 // ----------------------------------------------------------------------
-// New gearBtn opens Task List Config
+// New Task List Configuration modal
 // ----------------------------------------------------------------------
 document.getElementById("gearBtn").addEventListener("click", () => {
   showModal(document.getElementById("taskListConfigModal"));
@@ -2336,6 +2744,114 @@ document.getElementById("saveMdBtn").addEventListener("click", async () => {
   }
 });
 
+/*
+  Image button now simply populates a buffer and displays a preview.
+*/
+document.getElementById("chatImageBtn").addEventListener("click", () => {
+  document.getElementById("imageUploadInput").click();
+});
+
+// Use user's text prompt to generate an image via the existing hook
+document.getElementById("chatGenImageBtn").addEventListener("click", () => {
+  const prompt = chatInputEl.value.trim();
+  if(!prompt) return;
+  const hook = actionHooks.find(h => h.name === "generateImage");
+  if(hook && typeof hook.fn === "function") {
+    hook.fn({ response: prompt });
+  }
+});
+
+document.getElementById("imageUploadInput").addEventListener("change", async (ev) => {
+  const files = ev.target.files;
+  if(!files || files.length===0) return;
+  for(const f of files){
+    pendingImages.push(f);
+  }
+  updateImagePreviewList();
+  ev.target.value="";
+});
+
+/*
+  Show a small list of “buffered” images that will attach with the next message.
+*/
+function updateImagePreviewList(){
+  const previewArea = document.getElementById("imagePreviewArea");
+  if(!previewArea) return;
+  previewArea.innerHTML = "";
+  if(pendingImages.length===0){
+    previewArea.innerHTML = "<em>No images selected</em>";
+    return;
+  }
+  pendingImages.forEach((f, idx) => {
+    const div = document.createElement("div");
+    div.style.marginBottom="4px";
+    div.textContent = f.name;
+    const rmBtn = document.createElement("button");
+    rmBtn.textContent = "Remove";
+    rmBtn.style.marginLeft="8px";
+    rmBtn.addEventListener("click", () => {
+      pendingImages.splice(idx,1);
+      updateImagePreviewList();
+    });
+    div.appendChild(rmBtn);
+    previewArea.appendChild(div);
+  });
+}
+
+// Append an AI image bubble to the chat
+function addImageChatBubble(url, altText=""){
+  const chatMessagesEl = document.getElementById("chatMessages");
+  if(!chatMessagesEl || !url) return;
+
+  const seqDiv = document.createElement("div");
+  seqDiv.className = "chat-sequence";
+
+  const botDiv = document.createElement("div");
+  botDiv.className = "chat-bot";
+
+  const botHead = document.createElement("div");
+  botHead.className = "bubble-header";
+  botHead.innerHTML = `
+    <div class="name-oval name-oval-ai" title="${modelName}">${window.agentName}</div>
+    <span style="opacity:0.8;">${formatTimestamp(new Date().toISOString())}</span>
+  `;
+  botDiv.appendChild(botHead);
+
+  const img = document.createElement("img");
+  img.src = url;
+  img.alt = altText;
+  img.style.maxWidth = "100%";
+  botDiv.appendChild(img);
+
+  seqDiv.appendChild(botDiv);
+  chatMessagesEl.appendChild(seqDiv);
+  chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+}
+
+// Example hook registration
+registerActionHook("afterSendLog", ({message, response}) => {
+  console.log("[Hook] afterSendLog", { message, response });
+});
+
+// Automatically generate an image from the AI response
+registerActionHook("generateImage", async ({response}) => {
+  try {
+    const prompt = (response || "").trim();
+    if(!prompt) return;
+    const r = await fetch('/api/image/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, tabId: currentTabId })
+    });
+    const data = await r.json();
+    if(r.ok && data.url){
+      addImageChatBubble(data.url, prompt);
+    } else {
+      console.error('[Hook generateImage] API error:', data.error);
+    }
+  } catch(err){
+    console.error('[Hook generateImage] failed:', err);
+  }
+});
+
 console.log("[Server Debug] main.js fully loaded. End of script.");
-
-
