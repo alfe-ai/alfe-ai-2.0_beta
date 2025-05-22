@@ -2398,7 +2398,7 @@ document.getElementById("markdownGearIcon").addEventListener("click", async () =
     const rp = await fetch("/api/tasklist/repo-path");
     if(rp.ok){
       const { path } = await rp.json();
-      document.getElementById("mdMenuRepoPath").textContent = path ? \`Local repo: \${path}\` : "Repo not cloned";
+      document.getElementById("mdMenuRepoPath").textContent = path ? `Local repo: ${path}` : "Repo not cloned";
     } else {
       document.getElementById("mdMenuRepoPath").textContent = "Repo not cloned";
     }
