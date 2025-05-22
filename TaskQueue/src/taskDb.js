@@ -146,6 +146,14 @@ export default class TaskDB {
       console.debug("[TaskDB Debug] token_info column likely exists. Skipped.", e.message);
     }
 
+    // Add is_image_desc column
+    try {
+      this.db.exec(`ALTER TABLE chat_pairs ADD COLUMN is_image_desc INTEGER DEFAULT 0;`);
+      console.debug("[TaskDB Debug] Added is_image_desc column to chat_pairs.");
+    } catch(e) {
+      console.debug("[TaskDB Debug] is_image_desc column likely exists. Skipped.", e.message);
+    }
+
     // New table to store base branch per project
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS project_branches (
@@ -602,6 +610,22 @@ export default class TaskDB {
     this.db
         .prepare("UPDATE issues SET project=? WHERE project=?")
         .run(newProject, oldProject);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Special for image desc                                            */
+  /* ------------------------------------------------------------------ */
+  createImageDescPair(desc, chatTabId=1){
+    const ts = new Date().toISOString();
+    const { lastInsertRowid } = this.db.prepare(`
+      INSERT INTO chat_pairs (user_text, ai_text, model, timestamp, ai_timestamp, chat_tab_id, system_context, token_info, is_image_desc)
+      VALUES (@desc, '', '', @ts, NULL, @tabId, '', NULL, 1)
+    `).run({
+      desc,
+      ts,
+      tabId: chatTabId
+    });
+    return lastInsertRowid;
   }
 }
 
