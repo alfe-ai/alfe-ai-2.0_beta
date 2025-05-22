@@ -1511,16 +1511,28 @@ function toggleNavMenuVisibility(visible) {
 async function loadFileList() {
   try {
     const files = await fetch("/api/upload/list").then(r => r.json());
-    const listEl = $("#secureFilesList");
-    listEl.innerHTML = "";
-    files.forEach(fn => {
-      const li = document.createElement("li");
+    const table = $("#secureFilesList");
+    const tbody = table.querySelector("tbody");
+    tbody.innerHTML = "";
+    files.forEach(f => {
+      const tr = document.createElement("tr");
+      const tdIndex = document.createElement("td");
+      tdIndex.textContent = f.index;
+      const tdName = document.createElement("td");
       const link = document.createElement("a");
-      link.href = `/uploads/${fn}`;
+      link.href = `/uploads/${f.name}`;
       link.target = "_blank";
-      link.textContent = fn;
-      li.appendChild(link);
-      listEl.appendChild(li);
+      link.textContent = f.name;
+      tdName.appendChild(link);
+      const tdSize = document.createElement("td");
+      tdSize.textContent = f.size;
+      const tdMtime = document.createElement("td");
+      tdMtime.textContent = new Date(f.mtime).toLocaleString();
+      tr.appendChild(tdIndex);
+      tr.appendChild(tdName);
+      tr.appendChild(tdSize);
+      tr.appendChild(tdMtime);
+      tbody.appendChild(tr);
     });
   } catch(e) {
     console.error("Error fetching file list:", e);

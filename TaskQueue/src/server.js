@@ -1246,7 +1246,16 @@ app.get("/api/upload/list", (req, res) => {
   console.debug("[Server Debug] GET /api/upload/list => listing files.");
   try {
     const fileNames = fs.readdirSync(uploadsDir);
-    res.json(fileNames);
+    const files = fileNames.map((name, idx) => {
+      const { size, mtime } = fs.statSync(path.join(uploadsDir, name));
+      return {
+        index: idx + 1,
+        name,
+        size,
+        mtime
+      };
+    });
+    res.json(files);
   } catch (err) {
     console.error("[Server Debug] /api/upload/list error:", err);
     res.status(500).json({ error: "Internal server error" });
