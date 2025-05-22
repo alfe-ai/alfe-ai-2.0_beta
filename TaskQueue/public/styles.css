@@ -461,4 +461,14 @@ body {
   margin-left: 4px;
 }
 
+/* Basic style for chat subroutine cards */
+.subroutine-card {
+  background: #333;
+  border: 1px solid #444;
+  padding: 8px;
+  width: 150px;
+  height: 80px;
+  color: #ddd;
+}
+
 

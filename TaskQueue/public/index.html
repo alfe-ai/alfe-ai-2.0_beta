@@ -153,6 +153,14 @@
       </div>
     </div>
 
+    <!-- New Chat Subroutines Panel -->
+    <div id="chatSubroutinesPanel" style="display:none;border:1px dashed #666; padding:8px; margin:8px 0;">
+      <h2 style="margin:0;font-size:1.1rem;">Chat Subroutines</h2>
+      <div id="subroutineCards" style="display:flex; gap:8px; margin-top:8px;">
+        <div class="subroutine-card" data-name="access priority list (markdown)" style="border:1px solid #444; padding:8px; width:150px; height:80px;"></div>
+      </div>
+    </div>
+
     <div id="chatPanel" style="position: relative;">
       <div style="display: flex; align-items: center; gap: 0.5rem;">
         <div id="modelHud" style="font-size:0.9rem; color:#aaa; margin-bottom:4px;"></div>
@@ -277,6 +285,8 @@
     <label><input type="checkbox" id="chatStreamingCheck" checked/> Enable streaming completions</label>
     <br/>
     <label><input type="checkbox" id="showMarkdownTasksCheck"/> Show markdown tasks panel</label>
+    <br/>
+    <label><input type="checkbox" id="showSubroutinePanelCheck"/> Show chat subroutines panel</label>
     <br/>
     <label><input type="checkbox" id="enterSubmitCheck" checked/> Enter submits message</label>
     <br/>

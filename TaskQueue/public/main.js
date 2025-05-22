@@ -14,6 +14,7 @@ let dragSrcRow = null;
 let modelName = "unknown";
 let tasksVisible = true;
 let markdownPanelVisible = false;
+let subroutinePanelVisible = false;
 let sidebarVisible = true;
 let chatTabs = [];
 let currentTabId = 1;
@@ -98,6 +99,12 @@ async function toggleMarkdownPanel(){
   await setSetting("markdown_panel_visible", markdownPanelVisible);
 }
 
+async function toggleSubroutinePanel(){
+  subroutinePanelVisible = !subroutinePanelVisible;
+  $("#chatSubroutinesPanel").style.display = subroutinePanelVisible ? "" : "none";
+  await setSetting("subroutine_panel_visible", subroutinePanelVisible);
+}
+
 async function toggleSidebar(){
   sidebarVisible = !sidebarVisible;
   const sidebarEl = $(".sidebar");
@@ -169,6 +176,16 @@ async function loadSettings(){
       }
     }
     $("#taskListPanel").style.display = markdownPanelVisible ? "" : "none";
+  }
+  {
+    const r = await fetch("/api/settings/subroutine_panel_visible");
+    if(r.ok){
+      const { value } = await r.json();
+      if(typeof value !== "undefined"){
+        subroutinePanelVisible = !!value;
+      }
+    }
+    $("#chatSubroutinesPanel").style.display = subroutinePanelVisible ? "" : "none";
   }
   {
     const r = await fetch("/api/settings/sidebar_visible");
@@ -1128,6 +1145,12 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
     markdownPanelVisible = !!value;
   }
 
+  const rSub = await fetch("/api/settings/subroutine_panel_visible");
+  if(rSub.ok){
+    const { value } = await rSub.json();
+    subroutinePanelVisible = !!value;
+  }
+
   const r7 = await fetch("/api/settings/enter_submits_message");
   if(r7.ok){
     const { value } = await r7.json();
@@ -1148,6 +1171,7 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
   $("#subbubbleTokenCheck").checked = showSubbubbleToken;
   $("#sterlingUrlCheck").checked = sterlingChatUrlVisible;
   $("#showMarkdownTasksCheck").checked = markdownPanelVisible;
+  $("#showSubroutinePanelCheck").checked = subroutinePanelVisible;
   $("#enterSubmitCheck").checked = enterSubmitsMessage;
   $("#showNavMenuCheck").checked = navMenuVisible;
 
@@ -1256,6 +1280,7 @@ async function chatSettingsSaveFlow() {
   sterlingChatUrlVisible = $("#sterlingUrlCheck").checked;
   chatStreaming = $("#chatStreamingCheck").checked;
   markdownPanelVisible = $("#showMarkdownTasksCheck").checked;
+  subroutinePanelVisible = $("#showSubroutinePanelCheck").checked;
   enterSubmitsMessage = $("#enterSubmitCheck").checked;
   navMenuVisible = $("#showNavMenuCheck").checked;
 
@@ -1265,6 +1290,7 @@ async function chatSettingsSaveFlow() {
   await setSetting("sterling_chat_url_visible", sterlingChatUrlVisible);
   await setSetting("chat_streaming", chatStreaming);
   await setSetting("markdown_panel_visible", markdownPanelVisible);
+  await setSetting("subroutine_panel_visible", subroutinePanelVisible);
   await setSetting("enter_submits_message", enterSubmitsMessage);
   await setSetting("nav_menu_visible", navMenuVisible);
 
@@ -1292,6 +1318,7 @@ async function chatSettingsSaveFlow() {
   toggleSterlingUrlVisibility(sterlingChatUrlVisible);
   toggleNavMenuVisibility(navMenuVisible);
   document.getElementById("taskListPanel").style.display = markdownPanelVisible ? "" : "none";
+  document.getElementById("chatSubroutinesPanel").style.display = subroutinePanelVisible ? "" : "none";
 }
 
 $("#chatSettingsSaveBtn").addEventListener("click", chatSettingsSaveFlow);
@@ -1817,6 +1844,7 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
   $("#sterlingUrlCheck").checked = sterlingChatUrlVisible;
   $("#chatStreamingCheck").checked = chatStreaming;
   $("#showMarkdownTasksCheck").checked = markdownPanelVisible;
+  $("#showSubroutinePanelCheck").checked = subroutinePanelVisible;
   $("#enterSubmitCheck").checked = enterSubmitsMessage;
   $("#showNavMenuCheck").checked = navMenuVisible;
 
