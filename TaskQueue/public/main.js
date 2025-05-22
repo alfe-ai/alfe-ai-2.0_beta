@@ -2336,6 +2336,38 @@ document.getElementById("saveMdBtn").addEventListener("click", async () => {
   }
 });
 
+// New: image upload for chat
+document.getElementById("chatImageBtn").addEventListener("click", () => {
+  document.getElementById("imageUploadInput").click();
+});
+
+document.getElementById("imageUploadInput").addEventListener("change", async (ev) => {
+  const files = ev.target.files;
+  if(!files || files.length===0) return;
+  try {
+    for(const f of files){
+      const formData = new FormData();
+      formData.append("imageFile", f);
+
+      const uploadResp = await fetch(`/api/chat/image?tabId=${currentTabId}`, {
+        method: "POST",
+        body: formData
+      });
+      if(!uploadResp.ok){
+        console.error("Error uploading image:", uploadResp.status);
+        continue;
+      }
+      const result = await uploadResp.json();
+      if(result.success){
+        await loadChatHistory(currentTabId, true);
+      }
+    }
+  } catch(e){
+    console.error("Error handling image upload:", e);
+  }
+  ev.target.value="";
+});
+
 console.log("[Server Debug] main.js fully loaded. End of script.");
 
 

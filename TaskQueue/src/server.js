@@ -913,7 +913,7 @@ app.post("/api/chat", async (req, res) => {
       return res.status(400).send("Missing message");
     }
 
-    const priorPairs = db.getAllChatPairs(chatTabId);
+    const priorPairsAll = db.getAllChatPairs(chatTabId);
     let model = db.getSetting("ai_model");
     const savedInstructions = db.getSetting("agent_instructions") || "";
 
@@ -923,10 +923,18 @@ app.post("/api/chat", async (req, res) => {
 
     const conversation = [{ role: "system", content: systemContext }];
 
-    for (const p of priorPairs) {
-      conversation.push({ role: "user", content: p.user_text });
-      if (p.ai_text) {
-        conversation.push({ role: "assistant", content: p.ai_text });
+    for (const p of priorPairsAll) {
+      if(p.is_image_desc){
+        conversation.push({ role: "system", content: p.user_text });
+      }
+    }
+
+    for (const p of priorPairsAll) {
+      if(!p.is_image_desc){
+        conversation.push({ role: "user", content: p.user_text });
+        if (p.ai_text) {
+          conversation.push({ role: "assistant", content: p.ai_text });
+        }
       }
     }
 
@@ -1021,7 +1029,8 @@ app.post("/api/chat", async (req, res) => {
     const systemTokens = countTokens(encoder, systemContext);
     let prevAssistantTokens = 0;
     let historyTokens = 0;
-    for (const p of priorPairs) {
+    for (const p of priorPairsAll) {
+      if(p.is_image_desc) continue;
       historyTokens += countTokens(encoder, p.user_text);
       prevAssistantTokens += countTokens(encoder, p.ai_text || "");
     }
@@ -1210,6 +1219,37 @@ app.get("/api/upload/list", (req, res) => {
     res.json(fileNames);
   } catch (err) {
     console.error("[Server Debug] /api/upload/list error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// New route to upload images, generate description, and store as system context
+app.post("/api/chat/image", upload.single("imageFile"), async (req, res) => {
+  try {
+    const chatTabId = parseInt(req.query.tabId || "1", 10);
+    if(!req.file){
+      return res.status(400).json({ error: "No image file received." });
+    }
+
+    const scriptPath = path.join(__dirname, "../../imagedesc.sh");
+    const filePath = path.join(uploadsDir, req.file.filename);
+
+    let desc = "";
+    try {
+      const cmd = `${scriptPath} "${filePath}"`;
+      console.log("[Server Debug] Running command =>", cmd);
+      desc = child_process.execSync(cmd).toString().trim();
+    } catch(e){
+      console.error("[Server Debug] Error calling imagedesc.sh =>", e);
+      desc = "(Could not generate description.)";
+    }
+
+    db.createImageDescPair(desc, chatTabId);
+
+    db.logActivity("Image upload", JSON.stringify({ chatTabId, file: req.file.filename, desc }));
+    res.json({ success: true });
+  } catch(e){
+    console.error("Error in /api/chat/image:", e);
     res.status(500).json({ error: "Internal server error" });
   }
 });
