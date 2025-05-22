@@ -2707,6 +2707,16 @@ document.getElementById("chatImageBtn").addEventListener("click", () => {
   document.getElementById("imageUploadInput").click();
 });
 
+// Use user's text prompt to generate an image via the existing hook
+document.getElementById("chatGenImageBtn").addEventListener("click", () => {
+  const prompt = chatInputEl.value.trim();
+  if(!prompt) return;
+  const hook = actionHooks.find(h => h.name === "generateImage");
+  if(hook && typeof hook.fn === "function") {
+    hook.fn({ response: prompt });
+  }
+});
+
 document.getElementById("imageUploadInput").addEventListener("change", async (ev) => {
   const files = ev.target.files;
   if(!files || files.length===0) return;
