@@ -23,7 +23,7 @@ let showSubbubbleToken = false;
 let sterlingChatUrlVisible = true;
 let chatStreaming = true; // new toggle for streaming
 let enterSubmitsMessage = true; // new toggle for Enter key submit
-let navMenuVisible = true; // visibility of the top navigation menu
+let navMenuVisible = false; // visibility of the top navigation menu
 window.agentName = "Alfe";
 
 // For per-tab model arrays
