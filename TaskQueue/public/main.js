@@ -2085,6 +2085,8 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
       tuSum.textContent = `Token Usage (${tokObj.total})`;
       tuDetails.appendChild(tuSum);
 
+      const respTime = tokObj.responseTime*10;
+
       const usageDiv = document.createElement("div");
       usageDiv.style.marginLeft = "1em";
       usageDiv.textContent =
@@ -2094,7 +2096,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
           `Assistant: ${tokObj.assistantTokens}, ` +
           `FinalAssistantTokens: ${tokObj.finalAssistantTokens}, ` +
           `Total: ${tokObj.total}, ` +
-          `Time: ${tokObj.responseTime*10 ?? "?"}s`;
+          `Time: ${respTime ?? "?"}s`;
       tuDetails.appendChild(usageDiv);
       metaContainer.appendChild(tuDetails);
     }
