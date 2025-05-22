@@ -37,8 +37,9 @@ let favElement = null;
 const $  = (sel, ctx=document) => ctx.querySelector(sel);
 const $$ = (sel, ctx=document) => [...ctx.querySelectorAll(sel)];
 
-/* Introduce an image buffer and preview. */
+/* Introduce an image buffer and preview, plus an array to hold their descriptions. */
 let pendingImages = [];
+let pendingImageDescs = [];
 
 /* Utility formatting functions, event handlers, rendering logic, etc. */
 function formatTimestamp(isoStr){
@@ -613,7 +614,7 @@ async function addNewTab() {
   if(projectInput){
     await fetch("/api/settings", {
       method:"POST",
-      headers: {"Content-Type":"application/json"},
+      headers: { "Content-Type":"application/json" },
       body: JSON.stringify({ key: "sterling_project", value: projectInput })
     });
   }
@@ -874,11 +875,11 @@ chatSendBtnEl.addEventListener("click", async () => {
   const chatMessagesEl = document.getElementById("chatMessages");
   const userMessage = chatInputEl.value.trim();
   if(!userMessage && pendingImages.length===0) return;
-  const userTime = new Date().toISOString();
 
   if (favElement) favElement.href = rotatingFavicon;
 
-  // If there are images pending, first handle them
+  // 1) If there are images pending, process them to get descriptions, but do NOT call loadChatHistory now.
+  let descsForThisSend = [];
   if(pendingImages.length>0){
     for(const f of pendingImages){
       try {
@@ -890,6 +891,11 @@ chatSendBtnEl.addEventListener("click", async () => {
         });
         if(!uploadResp.ok){
           console.error("Image upload error, status:", uploadResp.status);
+        } else {
+          const json = await uploadResp.json();
+          if(json.desc){
+            descsForThisSend.push(json.desc);
+          }
         }
       } catch(e){
         console.error("Error uploading image:", e);
@@ -898,37 +904,55 @@ chatSendBtnEl.addEventListener("click", async () => {
     // Clear the buffer for images
     pendingImages = [];
     updateImagePreviewList();
-    await loadChatHistory(currentTabId, true);
   }
 
-  if(!userMessage){
-    // if there's no text, just refresh the chat now that images were posted
+  // If user typed nothing but we have desc subbubbles, we can still show them in a single bubble
+  if(!userMessage && descsForThisSend.length>0){
+    chatInputEl.value = "";
+  } else if(!userMessage && descsForThisSend.length===0){
     if (favElement) favElement.href = defaultFavicon;
     return;
   }
 
   chatInputEl.value = "";
 
+  // Create the single chat-sequence
   const seqDiv = document.createElement("div");
   seqDiv.className = "chat-sequence";
 
+  // The user bubble
   const userDiv = document.createElement("div");
   userDiv.className = "chat-user";
-  {
-    const userHead = document.createElement("div");
-    userHead.className = "bubble-header";
-    userHead.innerHTML = `
-      <div class="name-oval name-oval-user">User</div>
-      <span style="opacity:0.8;">${formatTimestamp(userTime)}</span>
-    `;
-    userDiv.appendChild(userHead);
 
+  const userHead = document.createElement("div");
+  userHead.className = "bubble-header";
+  const userTime = new Date().toISOString();
+  userHead.innerHTML = `
+    <div class="name-oval name-oval-user">User</div>
+    <span style="opacity:0.8;">${formatTimestamp(userTime)}</span>
+  `;
+  userDiv.appendChild(userHead);
+
+  // For each image desc, add a subbubble
+  descsForThisSend.forEach(d => {
+    const descBubble = document.createElement("div");
+    descBubble.textContent = d;
+    descBubble.style.marginBottom = "8px";
+    descBubble.style.borderLeft = "2px solid #ccc";
+    descBubble.style.paddingLeft = "6px";
+    userDiv.appendChild(descBubble);
+  });
+
+  // Then the user's typed text as last subbubble
+  if(userMessage){
     const userBody = document.createElement("div");
     userBody.textContent = userMessage;
     userDiv.appendChild(userBody);
   }
+
   seqDiv.appendChild(userDiv);
 
+  // The AI bubble
   const botDiv = document.createElement("div");
   botDiv.className = "chat-bot";
 
@@ -948,6 +972,14 @@ chatSendBtnEl.addEventListener("click", async () => {
   chatMessagesEl.appendChild(seqDiv);
   chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
 
+  let combinedUserText = "";
+  if(descsForThisSend.length>0){
+    combinedUserText = descsForThisSend.join("\n") + "\n\n";
+  }
+  if(userMessage){
+    combinedUserText += userMessage;
+  }
+
   let partialText = "";
   let waitTime=0;
   waitingElem.textContent = "Waiting: 0.0s";
@@ -960,7 +992,7 @@ chatSendBtnEl.addEventListener("click", async () => {
     const resp = await fetch("/api/chat",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({message:userMessage, tabId: currentTabId, userTime})
+      body:JSON.stringify({message:combinedUserText, tabId: currentTabId, userTime})
     });
     clearInterval(waitInterval);
     waitingElem.textContent = "";
@@ -2113,7 +2145,6 @@ function renderModelTabs(){
 
     // Click => select this tab
     b.addEventListener("click", (ev)=>{
-      // If user clicked the service select, do not override current tab?
       if(ev.target===serviceSelect) return;
       selectModelTab(tab.id);
     });
@@ -2139,7 +2170,6 @@ async function addModelTab(){
     const maxId = Math.max(...modelTabs.map(t=>t.id));
     newId = maxId+1;
   }
-  // default model is the name
   const newObj = {
     id: newId,
     name,
@@ -2149,7 +2179,6 @@ async function addModelTab(){
   modelTabs.push(newObj);
   currentModelTabId = newId;
   await saveModelTabs();
-  // set the "ai_model" to the new tab's model
   await setSetting("ai_model", name);
   modelName = name;
   renderModelTabs();
@@ -2164,7 +2193,6 @@ async function renameModelTab(tabId){
   t.name = newName;
   t.modelId = newName;
   await saveModelTabs();
-  // if it's the active tab, update ai_model setting too
   if(tabId===currentModelTabId){
     await setSetting("ai_model", newName);
     modelName = newName;
@@ -2187,7 +2215,6 @@ async function deleteModelTab(tabId){
         modelName = t.modelId;
       }
     } else {
-      // no tabs left
       await setSetting("ai_model","");
       modelName = "unknown";
     }
@@ -2209,7 +2236,6 @@ async function selectModelTab(tabId){
 }
 
 async function saveModelTabs(){
-  // store in setting "model_tabs"
   await setSetting("model_tabs", modelTabs);
 }
 
@@ -2220,13 +2246,13 @@ document.getElementById("toggleModelTabsBtn").addEventListener("click", async ()
   if(modelTabsBarVisible){
     if(cont) cont.style.display = "none";
     if(newBtn) newBtn.style.display = "none";
-    if(toggleBtn) toggleBtn.textContent = "Show model tabs bar";
+    toggleBtn.textContent = "Show model tabs bar";
     modelTabsBarVisible = false;
     await setSetting("model_tabs_bar_visible", false);
   } else {
     if(cont) cont.style.display = "";
     if(newBtn) newBtn.style.display = "";
-    if(toggleBtn) toggleBtn.textContent = "Hide model tabs bar";
+    toggleBtn.textContent = "Hide model tabs bar";
     modelTabsBarVisible = true;
     await setSetting("model_tabs_bar_visible", true);
   }
@@ -2370,7 +2396,6 @@ document.getElementById("saveMdBtn").addEventListener("click", async () => {
 
 /*
   Image button now simply populates a buffer and displays a preview.
-  The actual upload occurs upon chat send if we have pending images.
 */
 document.getElementById("chatImageBtn").addEventListener("click", () => {
   document.getElementById("imageUploadInput").click();

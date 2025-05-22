@@ -594,7 +594,6 @@ app.get("/api/activity", (req, res) => {
 app.get("/api/ai/models", async (req, res) => {
   console.debug("[Server Debug] GET /api/ai/models called.");
 
-  // Updated known token limits based on user-provided data
   const knownTokenLimits = {
     "openai/gpt-4o-mini": 128000,
     "openai/gpt-4.1": 1047576,
@@ -639,7 +638,6 @@ app.get("/api/ai/models", async (req, res) => {
     "openai/gpt-3.5-turbo-0301": "--"
   };
 
-  // Updated known costs based on user-provided data
   const knownCosts = {
     "openai/gpt-4o-mini": { input: "$0.15", output: "$0.60" },
     "openai/gpt-4.1": { input: "$2", output: "$8" },
@@ -732,7 +730,6 @@ app.get("/api/ai/models", async (req, res) => {
         const rawModels = orResp.data?.data?.map((m) => m.id).sort() || [];
         openRouterModelData = rawModels.map((id) => {
           const combinedId = "openrouter/" + id;
-          // For demonstration, mark them as "N/A"
           return {
             id: combinedId,
             provider: "openrouter",
@@ -749,7 +746,6 @@ app.get("/api/ai/models", async (req, res) => {
     console.error("[TaskQueue] /api/ai/models error:", err);
   }
 
-  // Hardcode a set of DeepSeek models
   const deepseekModelData = [
     {
       id: "deepseek/deepseek-chat-v3-0324:free",
@@ -886,14 +882,12 @@ app.get("/api/ai/models", async (req, res) => {
     }
   ];
 
-  // Combine them into a single array
   const combinedModels = [
     ...openAIModelData,
     ...openRouterModelData,
     ...deepseekModelData
   ].sort((a, b) => a.id.localeCompare(b.id));
 
-  // Retrieve favorites from settings
   const favorites = db.getSetting("favorite_ai_models") || [];
   for (const m of combinedModels) {
     m.favorite = favorites.includes(m.id);
@@ -917,24 +911,18 @@ app.post("/api/chat", async (req, res) => {
     let model = db.getSetting("ai_model");
     const savedInstructions = db.getSetting("agent_instructions") || "";
 
-    // Grab provider
-    const { provider, shortModel } = parseProviderModel(model || "gpt-3.5-turbo");
+    const { provider } = parseProviderModel(model || "gpt-3.5-turbo");
     const systemContext = `System Context:\n${savedInstructions}\n\nModel: ${model} (provider: ${provider})\nUserTime: ${userTime}\nTimeZone: Central`;
 
     const conversation = [{ role: "system", content: systemContext }];
 
-    for (const p of priorPairsAll) {
-      if(p.is_image_desc){
-        conversation.push({ role: "system", content: p.user_text });
-      }
-    }
+    // We skip storing any image desc as separate pairs now.
 
     for (const p of priorPairsAll) {
-      if(!p.is_image_desc){
-        conversation.push({ role: "user", content: p.user_text });
-        if (p.ai_text) {
-          conversation.push({ role: "assistant", content: p.ai_text });
-        }
+      // Only standard user/assistant pairs
+      conversation.push({ role: "user", content: p.user_text });
+      if (p.ai_text) {
+        conversation.push({ role: "assistant", content: p.ai_text });
       }
     }
 
@@ -952,7 +940,6 @@ app.post("/api/chat", async (req, res) => {
       model = "unknown";
     }
 
-    // Apply prefix stripping
     function stripModelPrefix(m) {
       if (!m) return "gpt-3.5-turbo";
       if (m.startsWith("openai/")) return m.substring("openai/".length);
@@ -981,16 +968,12 @@ app.post("/api/chat", async (req, res) => {
     console.debug("[Server Debug] Truncated conversation length =>", truncatedConversation.length);
 
     let assistantMessage = "";
-
-    // Measure AI response time
     let requestStartTime = Date.now();
 
-    // Check user setting for streaming
     const streamingSetting = db.getSetting("chat_streaming");
-    const useStreaming = (streamingSetting === false) ? false : true; // default true if unset
+    const useStreaming = (streamingSetting === false) ? false : true;
 
     if (useStreaming) {
-      // streaming logic
       const stream = await openaiClient.chat.completions.create({
         model: modelForOpenAI,
         messages: truncatedConversation,
@@ -1011,7 +994,6 @@ app.post("/api/chat", async (req, res) => {
       console.debug("[Server Debug] AI streaming finished, total length =>", assistantMessage.length);
 
     } else {
-      // non-streaming logic
       const completion = await openaiClient.chat.completions.create({
         model: modelForOpenAI,
         messages: truncatedConversation
@@ -1024,13 +1006,12 @@ app.post("/api/chat", async (req, res) => {
 
     let requestEndTime = Date.now();
     let diffMs = requestEndTime - requestStartTime;
-    let responseTime = Math.ceil(diffMs * 0.01) / 100; // 2-decimal ceiling
+    let responseTime = Math.ceil(diffMs * 0.01) / 100;
 
     const systemTokens = countTokens(encoder, systemContext);
     let prevAssistantTokens = 0;
     let historyTokens = 0;
     for (const p of priorPairsAll) {
-      if(p.is_image_desc) continue;
       historyTokens += countTokens(encoder, p.user_text);
       prevAssistantTokens += countTokens(encoder, p.ai_text || "");
     }
@@ -1061,7 +1042,6 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
-// Updated endpoint to return paged pairs, plus running token sums for input/output
 app.get("/api/chat/history", (req, res) => {
   console.debug("[Server Debug] GET /api/chat/history =>", req.query);
   try {
@@ -1223,10 +1203,9 @@ app.get("/api/upload/list", (req, res) => {
   }
 });
 
-// New route to upload images, generate description, and store as system context
+// Upload images, run script to get description, return it as JSON.
 app.post("/api/chat/image", upload.single("imageFile"), async (req, res) => {
   try {
-    const chatTabId = parseInt(req.query.tabId || "1", 10);
     if(!req.file){
       return res.status(400).json({ error: "No image file received." });
     }
@@ -1244,10 +1223,8 @@ app.post("/api/chat/image", upload.single("imageFile"), async (req, res) => {
       desc = "(Could not generate description.)";
     }
 
-    db.createImageDescPair(desc, chatTabId);
-
-    db.logActivity("Image upload", JSON.stringify({ chatTabId, file: req.file.filename, desc }));
-    res.json({ success: true });
+    db.logActivity("Image upload", JSON.stringify({ file: req.file.filename, desc }));
+    res.json({ success: true, desc });
   } catch(e){
     console.error("Error in /api/chat/image:", e);
     res.status(500).json({ error: "Internal server error" });
@@ -1300,12 +1277,10 @@ app.post("/api/createSterlingChat", async (req, res) => {
     });
     console.log('Response from /createChat:', createChatResponse.data);
 
-    // NEW: Immediately call /changeBranchOfChat to ensure the branch is updated in Sterling
     const allBranches = db.listProjectBranches();
     const foundBranchObj = allBranches.find(x => x.project === project);
     let sterlingBranch = foundBranchObj ? foundBranchObj.base_branch : "";
     if (!sterlingBranch) {
-      // fallback to a default
       sterlingBranch = "main";
     }
     console.log(`[Sterling Branch Fix] Setting branch to: ${sterlingBranch}`);
@@ -1385,9 +1360,6 @@ app.post("/api/ai/favorites", (req, res) => {
   }
 });
 
-// -----------------------------------------------------------
-// New: Global Markdown file storage + Git push logic
-// -----------------------------------------------------------
 const mdFilePath = path.join(__dirname, "../markdown_global.txt");
 
 function ensureTaskListRepoCloned(gitUrl) {
@@ -1401,13 +1373,11 @@ function ensureTaskListRepoCloned(gitUrl) {
 
   try {
     if (!fs.existsSync(repoDir)) {
-      // clone
       console.log("[Git Debug] Cloning new repo =>", gitUrl, "into =>", repoDir);
       child_process.execSync(`git clone "${gitUrl}" "${repoDir}"`, {
         stdio: "inherit"
       });
     } else {
-      // pull
       console.log("[Git Debug] Pulling latest in =>", repoDir);
       child_process.execSync(`git pull`, {
         cwd: repoDir,
@@ -1435,7 +1405,6 @@ function commitAndPushMarkdown(repoDir) {
       stdio: "inherit"
     });
   } catch (err) {
-    // If there's nothing to commit, that's not necessarily fatal.
     const msg = String(err.message || "");
     if (msg.includes("nothing to commit, working tree clean")) {
       console.log("[Git Debug] Nothing to commit. Working tree is clean.");
@@ -1478,15 +1447,12 @@ app.post("/api/markdown", (req, res) => {
     const { content } = req.body;
     fs.writeFileSync(mdFilePath, content || "", "utf-8");
 
-    // Git logic:
     const gitUrl = db.getSetting("taskList_git_ssh_url");
     if (gitUrl) {
       const repoDir = ensureTaskListRepoCloned(gitUrl);
       if (repoDir) {
-        // Copy updated file
         const targetPath = path.join(repoDir, "markdown_global.txt");
         fs.copyFileSync(mdFilePath, targetPath);
-        // commit/push
         commitAndPushMarkdown(repoDir);
       }
     }
@@ -1497,14 +1463,8 @@ app.post("/api/markdown", (req, res) => {
     res.status(500).json({ error: "Unable to write markdown file." });
   }
 });
-// -----------------------------------------------------------
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
-
-// The front-end chat UI expansions are generated in finalizeChatPair display logic below:
-//
-// [No further code. End of server.js here, changes concluded above with the relevant expansions.]
-

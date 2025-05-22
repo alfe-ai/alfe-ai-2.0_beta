@@ -12,7 +12,6 @@ export default class TaskDB {
   _init() {
     console.debug("[TaskDB Debug] Initializing DB schema…");
 
-    // Base table (wide schema)
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS issues (
                                           id              INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -30,43 +29,25 @@ export default class TaskDB {
                                           fib_points      INTEGER,
                                           assignee        TEXT,
                                           created_at      TEXT,
-                                          closed          INTEGER DEFAULT 0
+                                          closed          INTEGER DEFAULT 0,
+                                          status          TEXT DEFAULT 'Not Started',
+                                          dependencies    TEXT DEFAULT '',
+                                          blocking        TEXT DEFAULT ''
       );
     `);
 
-    // Additional columns
-    try {
-      this.db.exec(`ALTER TABLE issues ADD COLUMN sprint TEXT DEFAULT '';`);
-    } catch {}
-    try {
-      this.db.exec(`ALTER TABLE issues ADD COLUMN priority TEXT DEFAULT 'Medium';`);
-    } catch {}
-    try {
-      this.db.exec(`ALTER TABLE issues ADD COLUMN status TEXT DEFAULT 'Not Started';`);
-    } catch {}
-    try {
-      this.db.exec(`ALTER TABLE issues ADD COLUMN dependencies TEXT DEFAULT '';`);
-    } catch {}
-    try {
-      this.db.exec(`ALTER TABLE issues ADD COLUMN blocking TEXT DEFAULT '';`);
-    } catch {}
-
-    // Revised migration for priority_number: break into steps
-    // 1) Rename if old column is present
     try {
       this.db.exec(`ALTER TABLE issues RENAME COLUMN priority_number TO priority_number_old;`);
       console.debug("[TaskDB Debug] Renamed existing priority_number -> priority_number_old");
     } catch(e) {
       console.debug("[TaskDB Debug] Skipped rename (likely doesn't exist).", e.message);
     }
-    // 2) Ensure new REAL column
     try {
       this.db.exec(`ALTER TABLE issues ADD COLUMN priority_number REAL;`);
       console.debug("[TaskDB Debug] Created new priority_number column as REAL");
     } catch(e) {
       console.debug("[TaskDB Debug] Skipped add column (likely exists).", e.message);
     }
-    // 3) Copy data over
     try {
       this.db.exec(`UPDATE issues SET priority_number = priority_number_old;`);
       console.debug("[TaskDB Debug] Copied data from priority_number_old to priority_number");
@@ -74,7 +55,6 @@ export default class TaskDB {
       console.debug("[TaskDB Debug] Skipped copy data (maybe no old data).", e.message);
     }
 
-    // Simple key/value store
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS settings (
                                             key   TEXT PRIMARY KEY,
@@ -82,16 +62,13 @@ export default class TaskDB {
       );
     `);
 
-    // Index for GitHub IDs
     this.db.exec(
         `CREATE UNIQUE INDEX IF NOT EXISTS idx_issues_github ON issues(github_id);`
     );
-    // Re-create priority index without UNIQUE
     this.db.exec(
         `CREATE INDEX IF NOT EXISTS idx_issues_priority ON issues(priority_number);`
     );
 
-    // Activity timeline
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS activity_timeline (
                                                      id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -101,7 +78,6 @@ export default class TaskDB {
       );
     `);
 
-    // New table for chat tabs
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS chat_tabs (
                                              id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -110,7 +86,6 @@ export default class TaskDB {
       );
     `);
 
-    // New table for storing chat bubble pairs
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS chat_pairs (
                                               id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -119,42 +94,15 @@ export default class TaskDB {
                                               model TEXT,
                                               timestamp TEXT NOT NULL,
                                               ai_timestamp TEXT,
-                                              chat_tab_id INTEGER DEFAULT 1
+                                              chat_tab_id INTEGER DEFAULT 1,
+                                              system_context TEXT,
+                                              token_info TEXT
       );
     `);
 
-    // Add system_context column
-    try {
-      this.db.exec(`ALTER TABLE chat_pairs ADD COLUMN system_context TEXT;`);
-      console.debug("[TaskDB Debug] Added system_context column to chat_pairs.");
-    } catch(e) {
-      console.debug("[TaskDB Debug] system_context column likely exists. Skipped.", e.message);
-    }
+    // The is_image_desc column is no longer used, but we won't remove it in the schema for safety
+    // The logic referencing it is removed.
 
-    // Add chat_tab_id if missing
-    try {
-      this.db.exec(`ALTER TABLE chat_pairs ADD COLUMN chat_tab_id INTEGER DEFAULT 1;`);
-    } catch(e) {
-      // Usually means it already exists
-    }
-
-    // Add token_info column for storing token usage data
-    try {
-      this.db.exec(`ALTER TABLE chat_pairs ADD COLUMN token_info TEXT;`);
-      console.debug("[TaskDB Debug] Added token_info column to chat_pairs.");
-    } catch(e) {
-      console.debug("[TaskDB Debug] token_info column likely exists. Skipped.", e.message);
-    }
-
-    // Add is_image_desc column
-    try {
-      this.db.exec(`ALTER TABLE chat_pairs ADD COLUMN is_image_desc INTEGER DEFAULT 0;`);
-      console.debug("[TaskDB Debug] Added is_image_desc column to chat_pairs.");
-    } catch(e) {
-      console.debug("[TaskDB Debug] is_image_desc column likely exists. Skipped.", e.message);
-    }
-
-    // New table to store base branch per project
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS project_branches (
                                                     project TEXT PRIMARY KEY,
@@ -475,14 +423,11 @@ export default class TaskDB {
         .all();
   }
 
-  /* ------------------------------------------------------------------ */
-  /*  Chat storage methods                                              */
-  /* ------------------------------------------------------------------ */
   createChatPair(userText, chatTabId = 1, systemContext = "") {
     const timestamp = new Date().toISOString();
     const { lastInsertRowid } = this.db.prepare(`
-      INSERT INTO chat_pairs (user_text, ai_text, model, timestamp, ai_timestamp, chat_tab_id, system_context)
-      VALUES (@user_text, '', '', @timestamp, NULL, @chat_tab_id, @system_context)
+      INSERT INTO chat_pairs (user_text, ai_text, model, timestamp, ai_timestamp, chat_tab_id, system_context, token_info)
+      VALUES (@user_text, '', '', @timestamp, NULL, @chat_tab_id, @system_context, NULL)
     `).run({
       user_text: userText,
       timestamp,
@@ -531,9 +476,6 @@ export default class TaskDB {
         .get(id);
   }
 
-  /* ------------------------------------------------------------------ */
-  /*  Chat tabs methods                                                 */
-  /* ------------------------------------------------------------------ */
   createChatTab(name) {
     const ts = new Date().toISOString();
     const { lastInsertRowid } = this.db.prepare(`
@@ -559,16 +501,10 @@ export default class TaskDB {
     this.db.prepare("DELETE FROM chat_pairs WHERE chat_tab_id=?").run(tabId);
   }
 
-  /* ------------------------------------------------------------------ */
-  /*  Deletion methods (new)                                            */
-  /* ------------------------------------------------------------------ */
   deleteChatPair(id) {
     this.db.prepare("DELETE FROM chat_pairs WHERE id=?").run(id);
   }
 
-  /* ------------------------------------------------------------------ */
-  /*  Project Branches                                                  */
-  /* ------------------------------------------------------------------ */
   listProjectBranches() {
     return this.db
         .prepare("SELECT project, base_branch FROM project_branches ORDER BY project ASC")
@@ -587,46 +523,21 @@ export default class TaskDB {
     this.db.prepare("DELETE FROM project_branches WHERE project=?").run(project);
   }
 
-  /* ------------------------------------------------------------------ */
-  /*  Rename Project (new)                                              */
-  /* ------------------------------------------------------------------ */
   renameProject(oldProject, newProject) {
-    // If old project is recognized in project_branches, keep its base_branch
     const row = this.db
         .prepare("SELECT base_branch FROM project_branches WHERE project=?")
         .get(oldProject);
 
     const baseBranch = row ? row.base_branch : "";
 
-    // Remove old branch entry
     this.deleteProjectBranch(oldProject);
 
-    // Insert new project with same branch (if newProject not empty)
     if (newProject) {
       this.upsertProjectBranch(newProject, baseBranch);
     }
 
-    // Update issues
     this.db
         .prepare("UPDATE issues SET project=? WHERE project=?")
         .run(newProject, oldProject);
   }
-
-  /* ------------------------------------------------------------------ */
-  /*  Special for image desc                                            */
-  /* ------------------------------------------------------------------ */
-  createImageDescPair(desc, chatTabId=1){
-    const ts = new Date().toISOString();
-    const { lastInsertRowid } = this.db.prepare(`
-      INSERT INTO chat_pairs (user_text, ai_text, model, timestamp, ai_timestamp, chat_tab_id, system_context, token_info, is_image_desc)
-      VALUES (@desc, '', '', @ts, NULL, @tabId, '', NULL, 1)
-    `).run({
-      desc,
-      ts,
-      tabId: chatTabId
-    });
-    return lastInsertRowid;
-  }
 }
-
-
