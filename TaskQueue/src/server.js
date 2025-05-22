@@ -1322,8 +1322,14 @@ app.post("/api/image/generate", async (req, res) => {
   } catch (err) {
     console.error("[Server Debug] /api/image/generate error:", err);
     const status = err?.status || err?.response?.status || 500;
-    const message =
-      err?.response?.data?.error?.message || err?.message || "Image generation failed";
+    let message = err?.response?.data?.error?.message ?? err?.message;
+    if (!message) {
+      if (err?.type === "image_generation_user_error") {
+        message = "Image generation failed: invalid prompt or policy violation.";
+      } else {
+        message = "Image generation failed";
+      }
+    }
     res.status(status).json({ error: message, code: err.code, type: err.type });
   }
 });
