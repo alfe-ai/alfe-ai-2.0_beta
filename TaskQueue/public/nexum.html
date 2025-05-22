@@ -47,12 +47,22 @@
 </head>
 <body>
   <h1>Nexum Chat</h1>
+  <div id="modelInfo" style="margin-bottom:0.5rem; color:#aaa;"></div>
   <div id="chat"></div>
   <div id="inputArea">
     <textarea id="prompt" rows="3" placeholder="Enter your message"></textarea>
     <button id="sendBtn">Send</button>
   </div>
   <script>
+    async function loadModelInfo(){
+      try{
+        const res = await fetch('/api/model');
+        if(!res.ok) return;
+        const data = await res.json();
+        document.getElementById('modelInfo').textContent = 'Model: ' + (data.model || 'unknown');
+      }catch(e){console.error(e);}
+    }
+
     async function loadHistory(){
       try{
         const res = await fetch('/api/chat/history?tabId=1&limit=20&offset=0');
@@ -98,7 +108,8 @@
     }
     document.getElementById('sendBtn').addEventListener('click',send);
     document.getElementById('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
-    loadHistory();
+      loadModelInfo();
+      loadHistory();
   </script>
 </body>
 </html>
