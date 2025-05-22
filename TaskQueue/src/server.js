@@ -916,10 +916,7 @@ app.post("/api/chat", async (req, res) => {
 
     const conversation = [{ role: "system", content: systemContext }];
 
-    // We skip storing any image desc as separate pairs now.
-
     for (const p of priorPairsAll) {
-      // Only standard user/assistant pairs
       conversation.push({ role: "user", content: p.user_text });
       if (p.ai_text) {
         conversation.push({ role: "assistant", content: p.ai_text });
@@ -1224,7 +1221,7 @@ app.post("/api/chat/image", upload.single("imageFile"), async (req, res) => {
     }
 
     db.logActivity("Image upload", JSON.stringify({ file: req.file.filename, desc }));
-    res.json({ success: true, desc });
+    res.json({ success: true, desc, filename: req.file.filename });
   } catch(e){
     console.error("Error in /api/chat/image:", e);
     res.status(500).json({ error: "Internal server error" });
@@ -1468,3 +1465,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
+

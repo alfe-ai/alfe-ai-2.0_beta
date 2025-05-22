@@ -899,7 +899,8 @@ chatSendBtnEl.addEventListener("click", async () => {
           } else {
             const json = await uploadResp.json();
             if(json.desc){
-              descsForThisSend.push(json.desc);
+              // Show bracketed text with filename
+              descsForThisSend.push(`[filename: ${json.filename}] [desc: ${json.desc}]`);
             }
           }
         } catch(e){
@@ -2302,9 +2303,9 @@ document.getElementById("sterlingBranchSaveBtn").addEventListener("click", async
       method: "POST",
       headers: { "Content-Type":"application/json" },
       body: JSON.stringify({ data: [{
-          project,
-          base_branch: branchName
-        }]})
+        project,
+        base_branch: branchName
+      }]})
     });
     hideModal($("#changeBranchModal"));
     msgElem.textContent = "";
@@ -2449,3 +2450,4 @@ function updateImagePreviewList(){
 }
 
 console.log("[Server Debug] main.js fully loaded. End of script.");
+
