@@ -707,7 +707,7 @@ document.getElementById("createSterlingChatBtn").addEventListener("click", async
   try {
     const resp = await fetch("/api/createSterlingChat", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type":"application/json" },
       body: JSON.stringify({})
     });
     if(!resp.ok){
@@ -2204,3 +2204,4 @@ document.getElementById("saveMdBtn").addEventListener("click", async () => {
 });
 
 console.log("[Server Debug] main.js fully loaded. End of script.");
+
