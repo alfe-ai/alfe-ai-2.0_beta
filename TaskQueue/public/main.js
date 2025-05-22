@@ -884,6 +884,9 @@ chatSendBtnEl.addEventListener("click", async () => {
     // Show the loading indicator for image processing
     const loaderEl = document.getElementById("imageProcessingIndicator");
     if(loaderEl) loaderEl.style.display = "";
+    // Disable chat input and send button while images upload
+    chatInputEl.disabled = true;
+    chatSendBtnEl.disabled = true;
 
     try {
       for(const f of pendingImages){
@@ -909,6 +912,9 @@ chatSendBtnEl.addEventListener("click", async () => {
     } finally {
       // Hide the loading indicator
       if(loaderEl) loaderEl.style.display = "none";
+      // Re-enable chat input and send button
+      chatInputEl.disabled = false;
+      chatSendBtnEl.disabled = false;
     }
 
     // Clear the buffer for images
