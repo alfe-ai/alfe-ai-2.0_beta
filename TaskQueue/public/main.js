@@ -927,34 +927,51 @@ function renderTabs(){
 function renderSidebarTabs(){
   const container = document.getElementById("verticalTabsContainer");
   container.innerHTML="";
-  chatTabs.filter(t => showArchivedTabs || !t.archived).forEach(tab=>{
+  chatTabs.filter(t => showArchivedTabs || !t.archived).forEach(tab => {
     const wrapper = document.createElement("div");
     wrapper.style.display = "flex";
+    wrapper.style.alignItems = "center";
     wrapper.style.gap = "4px";
+    wrapper.style.width = "100%";
+
+    // Container holding the tab title and creation date
+    const info = document.createElement("div");
+    info.style.display = "flex";
+    info.style.justifyContent = "space-between";
+    info.style.alignItems = "center";
+    info.style.flexGrow = "1";
+
     const b = document.createElement("button");
     b.textContent = tab.name;
-    if(tab.id===currentTabId){
+    if (tab.id === currentTabId) {
       b.classList.add("active");
     }
     b.style.flexGrow = "1";
-    b.addEventListener("click", ()=>selectTab(tab.id));
-    b.addEventListener("contextmenu", e=>{
+    b.addEventListener("click", () => selectTab(tab.id));
+    b.addEventListener("contextmenu", e => {
       e.preventDefault();
-      const choice=prompt("Type 'rename' or 'delete':","");
-      if(choice==="rename") renameTab(tab.id);
-      else if(choice==="delete") deleteTab(tab.id);
+      const choice = prompt("Type 'rename' or 'delete':", "");
+      if (choice === "rename") renameTab(tab.id);
+      else if (choice === "delete") deleteTab(tab.id);
     });
-    const archBtn = document.createElement("button");
-    archBtn.textContent = tab.archived ? "Unarchive" : "Archive";
-    archBtn.addEventListener("click", e=>{ e.stopPropagation(); toggleArchiveTab(tab.id, !tab.archived); });
 
     const dateSpan = document.createElement("span");
     dateSpan.textContent = isoDate(tab.created_at);
     dateSpan.className = "tab-date";
 
-    wrapper.appendChild(b);
+    // Place title button and date in the info container
+    info.appendChild(b);
+    info.appendChild(dateSpan);
+
+    const archBtn = document.createElement("button");
+    archBtn.textContent = tab.archived ? "Unarchive" : "Archive";
+    archBtn.addEventListener("click", e => {
+      e.stopPropagation();
+      toggleArchiveTab(tab.id, !tab.archived);
+    });
+
+    wrapper.appendChild(info);
     wrapper.appendChild(archBtn);
-    wrapper.appendChild(dateSpan);
     container.appendChild(wrapper);
   });
 }

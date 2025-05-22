@@ -448,13 +448,12 @@ body {
   cursor: pointer;
   align-items: center;
   text-align: left;
-  width: 100%;
   border-radius: 2px;
 }
 
+
 /* Creation date text for sidebar chat tabs */
 #verticalTabsContainer .tab-date {
-  margin-left: auto;
   font-size: 0.8rem;
   color: #aaa;
   white-space: nowrap;
