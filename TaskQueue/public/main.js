@@ -1937,7 +1937,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
             const outTokens = (tInfo.assistantTokens || 0) + (tInfo.finalAssistantTokens || 0);
             const combinedDiv = document.createElement("div");
             combinedDiv.className = "token-indicator";
-            combinedDiv.textContent = `Out: ${outTokens} (Time: ${tInfo.responseTime?.toFixed(2) || "?"}s)`;
+            combinedDiv.textContent = `Out: ${outTokens} (Time: ${(tInfo.responseTime*10)?.toFixed(2) || "?"}s)`;
             botDiv.appendChild(combinedDiv);
           } catch(e){
             console.debug("[Server Debug] Could not parse token_info for prepended pair =>", e.message);
@@ -2016,7 +2016,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
       const outTokens = tInfo.finalAssistantTokens || 0;
       const combinedDiv = document.createElement("div");
       combinedDiv.className = "token-indicator";
-      combinedDiv.textContent = `Out: ${outTokens} (Time: ${tInfo.responseTime?.toFixed(2) || "?"}s)`;
+      combinedDiv.textContent = `Out: ${outTokens} (Time: ${(tInfo.responseTime*10)?.toFixed(2) || "?"}s)`;
       botDiv.appendChild(combinedDiv);
     } catch(e){
       console.debug("[Server Debug] Could not parse token_info for pair =>", pairId, e.message);
