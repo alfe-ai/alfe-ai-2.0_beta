@@ -881,26 +881,36 @@ chatSendBtnEl.addEventListener("click", async () => {
   // 1) If there are images pending, process them to get descriptions, but do NOT call loadChatHistory now.
   let descsForThisSend = [];
   if(pendingImages.length>0){
-    for(const f of pendingImages){
-      try {
-        const formData = new FormData();
-        formData.append("imageFile", f);
-        let uploadResp = await fetch(`/api/chat/image?tabId=${currentTabId}`, {
-          method: "POST",
-          body: formData
-        });
-        if(!uploadResp.ok){
-          console.error("Image upload error, status:", uploadResp.status);
-        } else {
-          const json = await uploadResp.json();
-          if(json.desc){
-            descsForThisSend.push(json.desc);
+    // Show the loading indicator for image processing
+    const loaderEl = document.getElementById("imageProcessingIndicator");
+    if(loaderEl) loaderEl.style.display = "";
+
+    try {
+      for(const f of pendingImages){
+        try {
+          const formData = new FormData();
+          formData.append("imageFile", f);
+          let uploadResp = await fetch(`/api/chat/image?tabId=${currentTabId}`, {
+            method: "POST",
+            body: formData
+          });
+          if(!uploadResp.ok){
+            console.error("Image upload error, status:", uploadResp.status);
+          } else {
+            const json = await uploadResp.json();
+            if(json.desc){
+              descsForThisSend.push(json.desc);
+            }
           }
+        } catch(e){
+          console.error("Error uploading image:", e);
         }
-      } catch(e){
-        console.error("Error uploading image:", e);
       }
+    } finally {
+      // Hide the loading indicator
+      if(loaderEl) loaderEl.style.display = "none";
     }
+
     // Clear the buffer for images
     pendingImages = [];
     updateImagePreviewList();
@@ -1154,8 +1164,8 @@ $("#aiServiceSelect").addEventListener("change", async ()=>{
   try {
     const modelListResp = await fetch("/api/ai/models");
     if(modelListResp.ok){
-      const modelData = await modelListResp.json();
-      window.allAiModels = modelData.models || [];
+      const modelData = modelListResp.json();
+      window.allAiModels = (await modelData).models || [];
 
       const aiModelSelect = $("#aiModelSelect");
 
