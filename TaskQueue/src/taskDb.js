@@ -137,7 +137,7 @@ export default class TaskDB {
       number: issue.number,
       title: issue.title,
       html_url: issue.html_url,
-      task_id_slug: `${repositorySlug}#${issue.number}`,
+      task_id_slug: \`\${repositorySlug}#\${issue.number}\`,
       priority_number: priorityNum,
       priority: existing?.priority ?? "Medium",
       hidden: 0,
@@ -190,7 +190,7 @@ export default class TaskDB {
     }
     const placeholders = openGithubIds.map(() => "?").join(",");
     this.db
-        .prepare(`UPDATE issues SET closed = 1 WHERE github_id NOT IN (${placeholders});`)
+        .prepare(\`UPDATE issues SET closed = 1 WHERE github_id NOT IN (\${placeholders});\`)
         .run(...openGithubIds);
   }
 
@@ -211,10 +211,10 @@ export default class TaskDB {
     if (direction === "up") {
       neighbor = this.db
           .prepare(
-              `SELECT id, priority_number FROM issues
+              \`SELECT id, priority_number FROM issues
                WHERE priority_number < ?
                ORDER BY priority_number DESC
-                 LIMIT 1`
+                 LIMIT 1\`
           )
           .get(current.priority_number);
       if (!neighbor) {
@@ -228,10 +228,10 @@ export default class TaskDB {
     } else {
       neighbor = this.db
           .prepare(
-              `SELECT id, priority_number FROM issues
+              \`SELECT id, priority_number FROM issues
                WHERE priority_number > ?
                ORDER BY priority_number ASC
-                 LIMIT 1`
+                 LIMIT 1\`
           )
           .get(current.priority_number);
       if (!neighbor) {
@@ -348,14 +348,14 @@ export default class TaskDB {
   listProjects() {
     return this.db
         .prepare(
-            `SELECT
+            \`SELECT
                project,
                COUNT(*) AS count
              FROM issues
              WHERE closed = 0 AND hidden = 0
              GROUP BY project
              HAVING project <> ''
-             ORDER BY count DESC;`
+             ORDER BY count DESC;\`
         )
         .all();
   }
@@ -363,14 +363,14 @@ export default class TaskDB {
   listSprints() {
     return this.db
         .prepare(
-            `SELECT
+            \`SELECT
                sprint,
                COUNT(*) AS count
              FROM issues
              WHERE closed = 0 AND hidden = 0
              GROUP BY sprint
              HAVING sprint <> ''
-             ORDER BY count DESC;`
+             ORDER BY count DESC;\`
         )
         .all();
   }
@@ -461,13 +461,13 @@ export default class TaskDB {
   }
 
   getChatPairsPage(tabId = 1, limit = 10, offset = 0) {
-    return this.db.prepare(`
+    return this.db.prepare(\`
       SELECT * FROM chat_pairs
       WHERE chat_tab_id = ?
       ORDER BY id DESC
         LIMIT ?
       OFFSET ?
-    `).all(tabId, limit, offset);
+    \`).all(tabId, limit, offset);
   }
 
   getPairById(id) {
@@ -541,4 +541,5 @@ export default class TaskDB {
         .run(newProject, oldProject);
   }
 }
+
 

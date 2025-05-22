@@ -1067,13 +1067,22 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
   const r = await fetch("/api/settings/chat_hide_metadata");
   if(r.ok){
     const { value } = await r.json();
-    chatHideMetadata = !!value;
+    if(typeof value !== "undefined"){
+      chatHideMetadata = !!value;
+    } else {
+      chatHideMetadata = false;
+    }
+  } else {
+    chatHideMetadata = false;
+    await setSetting("chat_hide_metadata", chatHideMetadata);
   }
+
   const r2 = await fetch("/api/settings/chat_tab_auto_naming");
   if(r2.ok){
     const { value } = await r2.json();
     chatTabAutoNaming = !!value;
   }
+
   const r3 = await fetch("/api/settings/show_subbubble_token_count");
   if(r3.ok){
     const { value } = await r3.json();
@@ -1082,6 +1091,7 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
     showSubbubbleToken = true;
     await setSetting("show_subbubble_token_count", showSubbubbleToken);
   }
+
   const r4 = await fetch("/api/settings/sterling_chat_url_visible");
   if(r4.ok){
     const { value } = await r4.json();
@@ -1090,6 +1100,7 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
     sterlingChatUrlVisible = true;
     await setSetting("sterling_chat_url_visible", sterlingChatUrlVisible);
   }
+
   try {
     const r5 = await fetch("/api/settings/chat_streaming");
     if(r5.ok){
@@ -1101,11 +1112,13 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
     console.error("Error loading chat_streaming:", e);
     chatStreaming = true;
   }
+
   const r6 = await fetch("/api/settings/markdown_panel_visible");
   if(r6.ok){
     const { value } = await r6.json();
     markdownPanelVisible = !!value;
   }
+
   const r7 = await fetch("/api/settings/enter_submits_message");
   if(r7.ok){
     const { value } = await r7.json();
@@ -1114,6 +1127,7 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
     enterSubmitsMessage = true;
     await setSetting("enter_submits_message", enterSubmitsMessage);
   }
+
   const r8 = await fetch("/api/settings/nav_menu_visible");
   if(r8.ok){
     const { value } = await r8.json();
@@ -1744,15 +1758,24 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     window.agentInstructions = "";
   }
 
+  // Previously forced chatHideMetadata to "true" – now corrected:
   try {
     const r3 = await fetch("/api/settings/chat_hide_metadata");
     if(r3.ok){
-      chatHideMetadata = true;
+      const j = await r3.json();
+      if(typeof j.value !== "undefined"){
+        chatHideMetadata = !!j.value;
+      } else {
+        chatHideMetadata = false;
+        await setSetting("chat_hide_metadata", chatHideMetadata);
+      }
+    } else {
+      chatHideMetadata = false;
       await setSetting("chat_hide_metadata", chatHideMetadata);
     }
   } catch(e) {
     console.error("Error loading chat_hide_metadata:", e);
-    chatHideMetadata = true;
+    chatHideMetadata = false;
     await setSetting("chat_hide_metadata", chatHideMetadata);
   }
 
@@ -2375,7 +2398,7 @@ document.getElementById("markdownGearIcon").addEventListener("click", async () =
     const rp = await fetch("/api/tasklist/repo-path");
     if(rp.ok){
       const { path } = await rp.json();
-      document.getElementById("mdMenuRepoPath").textContent = path ? `Local repo: ${path}` : "Repo not cloned";
+      document.getElementById("mdMenuRepoPath").textContent = path ? \`Local repo: \${path}\` : "Repo not cloned";
     } else {
       document.getElementById("mdMenuRepoPath").textContent = "Repo not cloned";
     }
@@ -2495,4 +2518,3 @@ function updateImagePreviewList(){
 }
 
 console.log("[Server Debug] main.js fully loaded. End of script.");
-
