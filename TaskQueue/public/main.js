@@ -2182,8 +2182,29 @@ document.getElementById("sterlingBranchSaveBtn").addEventListener("click", async
 // ----------------------------------------------------------------------
 // Added click events for the “Markdown Menu” gear icon
 // ----------------------------------------------------------------------
-document.getElementById("markdownGearIcon").addEventListener("click", () => {
+document.getElementById("markdownGearIcon").addEventListener("click", async () => {
+  try {
+    const r = await fetch("/api/settings/taskList_git_ssh_url");
+    if(r.ok){
+      const { value } = await r.json();
+      document.getElementById("mdMenuRepoInput").value = value || "";
+    }
+  } catch(e){
+    console.error("Error loading taskList_git_ssh_url:", e);
+  }
   showModal(document.getElementById("mdMenuModal"));
+});
+document.getElementById("mdMenuSaveBtn").addEventListener("click", async () => {
+  try {
+    await fetch("/api/settings", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({key: "taskList_git_ssh_url", value: document.getElementById("mdMenuRepoInput").value})
+    });
+  } catch(e){
+    console.error("Error saving taskList_git_ssh_url:", e);
+  }
+  hideModal(document.getElementById("mdMenuModal"));
 });
 document.getElementById("mdMenuCloseBtn").addEventListener("click", () => {
   hideModal(document.getElementById("mdMenuModal"));
