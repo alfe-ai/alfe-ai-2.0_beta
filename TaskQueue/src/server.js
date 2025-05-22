@@ -1262,6 +1262,36 @@ app.delete("/api/chat/pair/:id", (req, res) => {
   }
 });
 
+app.delete("/api/chat/pair/:id/ai", (req, res) => {
+  console.debug("[Server Debug] DELETE /api/chat/pair/:id/ai =>", req.params.id);
+  try {
+    const pairId = parseInt(req.params.id, 10);
+    if (Number.isNaN(pairId)) {
+      return res.status(400).json({ error: "Invalid pair ID" });
+    }
+    db.deleteAiPart(pairId);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[TaskQueue] DELETE /api/chat/pair/:id/ai error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.delete("/api/chat/pair/:id/user", (req, res) => {
+  console.debug("[Server Debug] DELETE /api/chat/pair/:id/user =>", req.params.id);
+  try {
+    const pairId = parseInt(req.params.id, 10);
+    if (Number.isNaN(pairId)) {
+      return res.status(400).json({ error: "Invalid pair ID" });
+    }
+    db.deleteUserPart(pairId);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[TaskQueue] DELETE /api/chat/pair/:id/user error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.post("/api/createSterlingChat", async (req, res) => {
   db.logActivity("Create Sterling Chat", "User triggered createSterlingChat endpoint.");
 

@@ -1917,6 +1917,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
         const p = pairs[i];
         const seqDiv = document.createElement("div");
         seqDiv.className = "chat-sequence";
+        seqDiv.dataset.pairId = p.id;
 
         const userDiv = document.createElement("div");
         userDiv.className = "chat-user";
@@ -1927,6 +1928,16 @@ async function loadChatHistory(tabId = 1, reset=false) {
             <div class="name-oval name-oval-user">User</div>
             <span style="opacity:0.8;">${formatTimestamp(p.timestamp)}</span>
           `;
+          const uDel = document.createElement("button");
+          uDel.className = "delete-chat-btn bubble-delete-btn";
+          uDel.textContent = "x";
+          uDel.title = "Delete user message";
+          uDel.addEventListener("click", async () => {
+            if(!confirm("Delete this user message?")) return;
+            const r = await fetch(`/api/chat/pair/${p.id}/user`, { method:"DELETE" });
+            if(r.ok) userDiv.remove();
+          });
+          userHead.appendChild(uDel);
           userDiv.appendChild(userHead);
 
           const userBody = document.createElement("div");
@@ -1963,6 +1974,16 @@ async function loadChatHistory(tabId = 1, reset=false) {
           <div class="name-oval name-oval-ai" title="${provider} / ${shortModel}">${window.agentName}</div>
           <span style="opacity:0.8;">${p.ai_timestamp ? formatTimestamp(p.ai_timestamp) : "…"}</span>
         `;
+        const aDel = document.createElement("button");
+        aDel.className = "delete-chat-btn bubble-delete-btn";
+        aDel.textContent = "x";
+        aDel.title = "Delete AI reply";
+        aDel.addEventListener("click", async () => {
+          if(!confirm("Delete this AI reply?")) return;
+          const r = await fetch(`/api/chat/pair/${p.id}/ai`, { method:"DELETE" });
+          if(r.ok) botDiv.remove();
+        });
+        botHead.appendChild(aDel);
         botDiv.appendChild(botHead);
 
         const botBody = document.createElement("div");
@@ -1983,6 +2004,16 @@ async function loadChatHistory(tabId = 1, reset=false) {
         }
 
         seqDiv.appendChild(botDiv);
+        const pairDel = document.createElement("button");
+        pairDel.className = "delete-chat-btn pair-delete-btn";
+        pairDel.textContent = "x";
+        pairDel.title = "Delete this chat pair";
+        pairDel.addEventListener("click", async () => {
+          if(!confirm("Are you sure you want to delete this pair?")) return;
+          const r = await fetch(`/api/chat/pair/${p.id}`, { method:"DELETE" });
+          if(r.ok) seqDiv.remove();
+        });
+        seqDiv.appendChild(pairDel);
         fragment.appendChild(seqDiv);
       }
       if(chatMessagesEl.firstChild){
@@ -2000,17 +2031,32 @@ async function loadChatHistory(tabId = 1, reset=false) {
 function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemContext, fullHistory, tokenInfo) {
   const seqDiv = document.createElement("div");
   seqDiv.className = "chat-sequence";
+  seqDiv.dataset.pairId = pairId;
 
   const userDiv = document.createElement("div");
   userDiv.className = "chat-user";
   {
     const userHead = document.createElement("div");
-    userHead.className = "bubble-header";
-    userHead.innerHTML = `
-      <div class="name-oval name-oval-user">User</div>
-      <span style="opacity:0.8;">${formatTimestamp(userTs)}</span>
-    `;
-    userDiv.appendChild(userHead);
+  userHead.className = "bubble-header";
+  userHead.innerHTML = `
+    <div class="name-oval name-oval-user">User</div>
+    <span style="opacity:0.8;">${formatTimestamp(userTs)}</span>
+  `;
+  const userDelBtn = document.createElement("button");
+  userDelBtn.className = "delete-chat-btn bubble-delete-btn";
+  userDelBtn.textContent = "x";
+  userDelBtn.title = "Delete user message";
+  userDelBtn.addEventListener("click", async () => {
+    if (!confirm("Delete this user message?")) return;
+    const resp = await fetch(`/api/chat/pair/${pairId}/user`, { method: "DELETE" });
+    if (resp.ok) {
+      userDiv.remove();
+    } else {
+      alert("Failed to delete user message.");
+    }
+  });
+  userHead.appendChild(userDelBtn);
+  userDiv.appendChild(userHead);
 
     const userBody = document.createElement("div");
     userBody.textContent = userText;
@@ -2042,6 +2088,20 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
     <div class="name-oval name-oval-ai" title="${provider} / ${shortModel}">${window.agentName}</div>
     <span style="opacity:0.8;">${aiTs ? formatTimestamp(aiTs) : "…"}</span>
   `;
+  const aiDelBtn = document.createElement("button");
+  aiDelBtn.className = "delete-chat-btn bubble-delete-btn";
+  aiDelBtn.textContent = "x";
+  aiDelBtn.title = "Delete AI reply";
+  aiDelBtn.addEventListener("click", async () => {
+    if (!confirm("Delete this AI reply?")) return;
+    const resp = await fetch(`/api/chat/pair/${pairId}/ai`, { method: "DELETE" });
+    if (resp.ok) {
+      botDiv.remove();
+    } else {
+      alert("Failed to delete AI reply.");
+    }
+  });
+  botHead.appendChild(aiDelBtn);
   botDiv.appendChild(botHead);
 
   const botBody = document.createElement("div");
@@ -2151,23 +2211,20 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
     seqDiv.appendChild(metaContainer);
   }
 
-  const delBtn = document.createElement("button");
-  delBtn.className = "delete-chat-btn";
-  delBtn.textContent = "x";
-  delBtn.title = "Delete this chat message";
-  delBtn.style.marginLeft = "8px";
-  delBtn.addEventListener("click", async () => {
-    if (!confirm("Are you sure you want to delete this message?")) return;
-    const resp = await fetch(`/api/chat/pair/${pairId}`, {
-      method: "DELETE"
-    });
+  const pairDelBtn = document.createElement("button");
+  pairDelBtn.className = "delete-chat-btn pair-delete-btn";
+  pairDelBtn.textContent = "x";
+  pairDelBtn.title = "Delete this chat pair";
+  pairDelBtn.addEventListener("click", async () => {
+    if (!confirm("Are you sure you want to delete this pair?")) return;
+    const resp = await fetch(`/api/chat/pair/${pairId}`, { method: "DELETE" });
     if (resp.ok) {
       seqDiv.remove();
     } else {
       alert("Failed to delete chat pair.");
     }
   });
-  botHead.appendChild(delBtn);
+  seqDiv.appendChild(pairDelBtn);
 
   const chatMessagesEl = document.getElementById("chatMessages");
   chatMessagesEl.appendChild(seqDiv);
