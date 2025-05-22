@@ -190,7 +190,7 @@ export default class TaskDB {
     }
     const placeholders = openGithubIds.map(() => "?").join(",");
     this.db
-        .prepare(\`UPDATE issues SET closed = 1 WHERE github_id NOT IN (\${placeholders});\`)
+        .prepare(`UPDATE issues SET closed = 1 WHERE github_id NOT IN (${placeholders});`)
         .run(...openGithubIds);
   }
 
