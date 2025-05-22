@@ -1309,7 +1309,9 @@ app.post("/api/image/generate", async (req, res) => {
     res.json({ success: true, url: first });
   } catch (err) {
     console.error("[Server Debug] /api/image/generate error:", err);
-    res.status(500).json({ error: "Failed to generate image" });
+    const status = err?.status || 500;
+    const message = err?.error?.message || err?.message || "Failed to generate image";
+    res.status(status).json({ error: message });
   }
 });
 
