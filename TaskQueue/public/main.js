@@ -23,6 +23,7 @@ let showSubbubbleToken = false;
 let sterlingChatUrlVisible = true;
 let chatStreaming = true; // new toggle for streaming
 let enterSubmitsMessage = true; // new toggle for Enter key submit
+let navMenuVisible = false; // visibility of the top navigation menu
 window.agentName = "Alfe";
 
 // For per-tab model arrays
@@ -205,6 +206,16 @@ async function loadSettings(){
     if(cont) cont.style.display = modelTabsBarVisible ? "" : "none";
     if(newBtn) newBtn.style.display = modelTabsBarVisible ? "" : "none";
     if(toggleBtn) toggleBtn.textContent = modelTabsBarVisible ? "Hide model tabs bar" : "Show model tabs bar";
+  }
+  {
+    const r = await fetch("/api/settings/nav_menu_visible");
+    if(r.ok){
+      const { value } = await r.json();
+      if(typeof value !== 'undefined'){
+        navMenuVisible = value !== false;
+      }
+    }
+    toggleNavMenuVisibility(navMenuVisible);
   }
 }
 async function saveSettings(){
@@ -1097,6 +1108,11 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
     enterSubmitsMessage = true;
     await setSetting("enter_submits_message", enterSubmitsMessage);
   }
+  const r8 = await fetch("/api/settings/nav_menu_visible");
+  if(r8.ok){
+    const { value } = await r8.json();
+    navMenuVisible = value !== false;
+  }
 
   $("#hideMetadataCheck").checked = chatHideMetadata;
   $("#autoNamingCheck").checked = chatTabAutoNaming;
@@ -1104,6 +1120,7 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
   $("#sterlingUrlCheck").checked = sterlingChatUrlVisible;
   $("#showMarkdownTasksCheck").checked = markdownPanelVisible;
   $("#enterSubmitCheck").checked = enterSubmitsMessage;
+  $("#showNavMenuCheck").checked = navMenuVisible;
 
   try {
     const modelListResp = await fetch("/api/ai/models");
@@ -1211,6 +1228,7 @@ async function chatSettingsSaveFlow() {
   chatStreaming = $("#chatStreamingCheck").checked;
   markdownPanelVisible = $("#showMarkdownTasksCheck").checked;
   enterSubmitsMessage = $("#enterSubmitCheck").checked;
+  navMenuVisible = $("#showNavMenuCheck").checked;
 
   await setSetting("chat_hide_metadata", chatHideMetadata);
   await setSetting("chat_tab_auto_naming", chatTabAutoNaming);
@@ -1219,6 +1237,7 @@ async function chatSettingsSaveFlow() {
   await setSetting("chat_streaming", chatStreaming);
   await setSetting("markdown_panel_visible", markdownPanelVisible);
   await setSetting("enter_submits_message", enterSubmitsMessage);
+  await setSetting("nav_menu_visible", navMenuVisible);
 
   const serviceSel = $("#aiServiceSelect").value;
   const modelSel = $("#aiModelSelect").value;
@@ -1242,6 +1261,7 @@ async function chatSettingsSaveFlow() {
   hideModal($("#chatSettingsModal"));
   await loadChatHistory(currentTabId, true);
   toggleSterlingUrlVisibility(sterlingChatUrlVisible);
+  toggleNavMenuVisibility(navMenuVisible);
   document.getElementById("taskListPanel").style.display = markdownPanelVisible ? "" : "none";
 }
 
@@ -1255,6 +1275,12 @@ function toggleSterlingUrlVisibility(visible) {
   const el = document.getElementById("sterlingUrlLabel");
   if(!el) return;
   el.style.display = visible ? "inline" : "none";
+}
+
+function toggleNavMenuVisibility(visible) {
+  const navEl = document.querySelector("nav.tree-menu");
+  if(!navEl) return;
+  navEl.style.display = visible ? "" : "none";
 }
 
 (function installDividerDrag(){
@@ -1746,6 +1772,16 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     favElement.href = defaultFavicon;
   }
 
+  // Sync hidden chat settings checkboxes with loaded values before saving
+  $("#hideMetadataCheck").checked = chatHideMetadata;
+  $("#autoNamingCheck").checked = chatTabAutoNaming;
+  $("#subbubbleTokenCheck").checked = showSubbubbleToken;
+  $("#sterlingUrlCheck").checked = sterlingChatUrlVisible;
+  $("#chatStreamingCheck").checked = chatStreaming;
+  $("#showMarkdownTasksCheck").checked = markdownPanelVisible;
+  $("#enterSubmitCheck").checked = enterSubmitsMessage;
+  $("#showNavMenuCheck").checked = navMenuVisible;
+
   await chatSettingsSaveFlow();
   await updateProjectInfo();
 
@@ -1764,13 +1800,13 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
   toggleSterlingUrlVisibility(sterlingChatUrlVisible);
 
   let lastView = await getSetting("last_sidebar_view");
-  if(!lastView) lastView = "tasks";
+  if(!lastView) lastView = "chatTabs";
   switch(lastView){
     case "uploader": showUploaderPanel(); break;
     case "fileTree": showFileTreePanel(); break;
     case "chatTabs": showChatTabsPanel(); break;
     case "activity": showActivityIframePanel(); break;
-    default: showTasksPanel(); break;
+    default: showChatTabsPanel(); break;
   }
 
   initChatScrollLoading();
