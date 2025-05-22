@@ -1136,6 +1136,47 @@ app.post("/api/chat/tabs/rename", (req, res) => {
   }
 });
 
+app.get("/api/chat/subroutines", (req, res) => {
+  console.debug("[Server Debug] GET /api/chat/subroutines");
+  try {
+    const subs = db.listChatSubroutines();
+    res.json(subs);
+  } catch (err) {
+    console.error("[TaskQueue] GET /api/chat/subroutines error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/api/chat/subroutines/new", (req, res) => {
+  console.debug("[Server Debug] POST /api/chat/subroutines/new =>", req.body);
+  try {
+    const { name } = req.body;
+    if (!name) {
+      return res.status(400).json({ error: "Name required" });
+    }
+    const id = db.createChatSubroutine(name);
+    res.json({ success: true, id });
+  } catch (err) {
+    console.error("[TaskQueue] POST /api/chat/subroutines/new error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/api/chat/subroutines/rename", (req, res) => {
+  console.debug("[Server Debug] POST /api/chat/subroutines/rename =>", req.body);
+  try {
+    const { id, newName } = req.body;
+    if (!id || !newName) {
+      return res.status(400).json({ error: "Missing id or newName" });
+    }
+    db.renameChatSubroutine(id, newName);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[TaskQueue] POST /api/chat/subroutines/rename error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.delete("/api/chat/tabs/:id", (req, res) => {
   console.debug("[Server Debug] DELETE /api/chat/tabs =>", req.params.id);
   try {

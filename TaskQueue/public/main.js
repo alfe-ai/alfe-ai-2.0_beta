@@ -25,6 +25,7 @@ let sterlingChatUrlVisible = true;
 let chatStreaming = true; // new toggle for streaming
 let enterSubmitsMessage = true; // new toggle for Enter key submit
 let navMenuVisible = false; // visibility of the top navigation menu
+let chatSubroutines = [];
 window.agentName = "Alfe";
 
 // For per-tab model arrays
@@ -646,6 +647,62 @@ async function loadTabs(){
   const res = await fetch("/api/chat/tabs");
   chatTabs = await res.json();
 }
+
+async function loadSubroutines(){
+  const res = await fetch("/api/chat/subroutines");
+  if(res.ok){
+    chatSubroutines = await res.json();
+  } else {
+    chatSubroutines = [];
+  }
+}
+
+function renderSubroutines(){
+  const container = document.getElementById("subroutineCards");
+  if(!container) return;
+  container.innerHTML = "";
+  chatSubroutines.forEach(sub => {
+    const div = document.createElement("div");
+    div.className = "subroutine-card";
+    div.dataset.id = sub.id;
+    div.textContent = sub.name;
+    div.style.border = "1px solid #444";
+    div.style.padding = "8px";
+    div.style.width = "150px";
+    div.style.height = "80px";
+    div.style.display = "flex";
+    div.style.alignItems = "center";
+    div.style.justifyContent = "center";
+    div.addEventListener("dblclick", async () => {
+      const newName = prompt("Rename subroutine:", sub.name);
+      if(!newName) return;
+      const r = await fetch("/api/chat/subroutines/rename", {
+        method: "POST",
+        headers: { "Content-Type":"application/json" },
+        body: JSON.stringify({ id: sub.id, newName })
+      });
+      if(r.ok){
+        await loadSubroutines();
+        renderSubroutines();
+      }
+    });
+    container.appendChild(div);
+  });
+}
+
+async function addNewSubroutine(){
+  const name = prompt("Subroutine name:", "New Subroutine");
+  if(!name) return;
+  const r = await fetch("/api/chat/subroutines/new", {
+    method: "POST",
+    headers: { "Content-Type":"application/json" },
+    body: JSON.stringify({ name })
+  });
+  if(r.ok){
+    await loadSubroutines();
+    renderSubroutines();
+  }
+}
 async function addNewTab() {
   const projectInput = prompt("Enter project name (or leave blank):", "");
   if(projectInput){
@@ -775,6 +832,7 @@ function renderSidebarTabs(){
 }
 
 document.getElementById("newSideTabBtn").addEventListener("click", addNewTab);
+document.getElementById("newSubroutineBtn").addEventListener("click", addNewSubroutine);
 
 // New: Button to toggle top chat tabs bar
 document.getElementById("toggleTopChatTabsBtn").addEventListener("click", () => {
@@ -1756,6 +1814,8 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
   $("#modelHud").textContent = "";
 
   await loadTabs();
+  await loadSubroutines();
+  renderSubroutines();
 
   const lastChatTab = await getSetting("last_chat_tab");
   if(lastChatTab) {
