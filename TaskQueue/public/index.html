@@ -408,6 +408,29 @@
   </div>
 </div>
 
+<!-- Modal for creating/editing chat subroutines -->
+<div id="subroutineModal" class="modal">
+  <div class="modal-content">
+    <h2 id="subroutineModalTitle">Subroutine</h2>
+    <label>Name:<br/>
+      <input type="text" id="subroutineNameInput" style="width:100%;" />
+    </label>
+    <label style="margin-top:8px;">Trigger:<br/>
+      <input type="text" id="subroutineTriggerInput" style="width:100%;" />
+    </label>
+    <label style="margin-top:8px;">Action Text:<br/>
+      <input type="text" id="subroutineActionInput" style="width:100%;" />
+    </label>
+    <label style="margin-top:8px;">Action Hook:<br/>
+      <select id="subroutineHookSelect" style="width:100%;"></select>
+    </label>
+    <div class="modal-buttons">
+      <button id="subroutineSaveBtn">Save</button>
+      <button id="subroutineCancelBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal showing defined action hooks -->
 <div id="actionHooksModal" class="modal">
   <div class="modal-content">
