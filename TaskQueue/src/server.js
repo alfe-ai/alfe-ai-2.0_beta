@@ -1289,7 +1289,12 @@ app.post("/api/image/generate", async (req, res) => {
       return res.status(400).json({ error: "Missing prompt" });
     }
 
-    const openaiClient = getOpenAiClient();
+    const openAiKey = process.env.OPENAI_API_KEY || "";
+    if (!openAiKey) {
+      return res.status(500).json({ error: "OPENAI_API_KEY not configured" });
+    }
+    // Force ChatGPT/DALL-E image generation regardless of ai_service setting
+    const openaiClient = new OpenAI({ apiKey: openAiKey });
     const count = parseInt(n, 10) || 1;
     const imgSize = typeof size === "string" ? size : "512x512";
 
