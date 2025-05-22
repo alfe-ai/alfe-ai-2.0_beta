@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Nexum Chat</title>
+  <style>
+    body {
+      background:#1e1e1e;
+      color:#ddd;
+      font-family:sans-serif;
+      padding:1rem;
+    }
+    #chat {
+      max-width:800px;
+      margin:0 auto 1rem auto;
+      display:flex;
+      flex-direction:column;
+      gap:0.5rem;
+    }
+    .msg {
+      border:1px solid #444;
+      padding:8px;
+      border-radius:6px;
+      white-space:pre-wrap;
+    }
+    .user { background:#3b3b3b; align-self:flex-end; }
+    .ai   { background:#2a2a2a; align-self:flex-start; }
+    #inputArea {
+      max-width:800px;
+      margin:0 auto;
+      display:flex;
+      gap:0.5rem;
+    }
+    #prompt {
+      flex:1;
+      background:#2a2a2a;
+      color:#ddd;
+      border:1px solid #444;
+      padding:8px;
+      font-family:monospace;
+      resize:vertical;
+    }
+    button {
+      padding:8px 12px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Nexum Chat</h1>
+  <div id="chat"></div>
+  <div id="inputArea">
+    <textarea id="prompt" rows="3" placeholder="Enter your message"></textarea>
+    <button id="sendBtn">Send</button>
+  </div>
+  <script>
+    async function loadHistory(){
+      try{
+        const res = await fetch('/api/chat/history?tabId=1&limit=20&offset=0');
+        if(!res.ok) return;
+        const data = await res.json();
+        const chatDiv = document.getElementById('chat');
+        (data.pairs || []).reverse().forEach(p => {
+          addMsg('user', p.user_text);
+          if(p.ai_text) addMsg('ai', p.ai_text);
+        });
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+      }catch(e){console.error(e);}
+    }
+    function addMsg(role,text){
+      const el=document.createElement('div');
+      el.className='msg '+(role==='user'?'user':'ai');
+      el.textContent=text;
+      document.getElementById('chat').appendChild(el);
+    }
+    async function send(){
+      const promptEl=document.getElementById('prompt');
+      const text=promptEl.value.trim();
+      if(!text) return;
+      addMsg('user',text);
+      promptEl.value='';
+      const aiEl=document.createElement('div');
+      aiEl.className='msg ai';
+      aiEl.textContent='...';
+      document.getElementById('chat').appendChild(aiEl);
+      document.getElementById('chat').scrollTop=document.getElementById('chat').scrollHeight;
+      try{
+        const resp=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,tabId:1})});
+        if(!resp.ok||!resp.body){aiEl.textContent='[error]';return;}
+        const reader=resp.body.getReader();
+        const dec=new TextDecoder();
+        let done=false;let result='';
+        while(!done){
+          const {value,done:doneR}=await reader.read();
+          done=doneR;
+          if(value){result+=dec.decode(value);aiEl.textContent=result;document.getElementById('chat').scrollTop=document.getElementById('chat').scrollHeight;}
+        }
+      }catch(e){aiEl.textContent='[error]';console.error(e);}
+    }
+    document.getElementById('sendBtn').addEventListener('click',send);
+    document.getElementById('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
+    loadHistory();
+  </script>
+</body>
+</html>
