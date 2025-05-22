@@ -118,12 +118,7 @@ function getOpenAiClient() {
 
   console.debug("[Server Debug] Creating OpenAI client with service =", service);
 
-  // NEW override for DeepSeek models:
-  const modelForCheck = db.getSetting("ai_model") || "";
-  if (modelForCheck.startsWith("deepseek/")) {
-    console.debug("[Server Debug] Overriding service to 'openrouter' for deepseek model =>", modelForCheck);
-    service = "openrouter";
-  }
+  // Removed forced override for deepseek models.
 
   if (service === "openrouter") {
     if (!openRouterKey) {
