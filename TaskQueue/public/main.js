@@ -1711,6 +1711,7 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     if(mdResp.ok){
       const mdData = await mdResp.json();
       $("#markdownInput").value = mdData.content || "";
+      renderPriorityList();
     }
   } catch(e) {
     console.error("Error loading markdown content:", e);
@@ -2335,6 +2336,118 @@ document.getElementById("saveMdBtn").addEventListener("click", async () => {
     alert("Unable to save markdown content.");
   }
 });
+
+// ----------------------------------------------------------------------
+// Priority List Tab Logic
+// ----------------------------------------------------------------------
+
+const markdownTabBtn = document.getElementById("markdownTabBtn");
+const priorityTabBtn = document.getElementById("priorityTabBtn");
+const markdownContainer = document.getElementById("markdownContainer");
+const priorityContainer = document.getElementById("priorityContainer");
+const priorityListEl = document.getElementById("priorityList");
+
+function switchTaskTab(tab){
+  if(tab === "priority"){
+    markdownTabBtn.classList.remove("active");
+    priorityTabBtn.classList.add("active");
+    markdownContainer.style.display = "none";
+    priorityContainer.style.display = "block";
+    renderPriorityList();
+  } else {
+    priorityTabBtn.classList.remove("active");
+    markdownTabBtn.classList.add("active");
+    priorityContainer.style.display = "none";
+    markdownContainer.style.display = "block";
+  }
+}
+
+markdownTabBtn.addEventListener("click", () => switchTaskTab("markdown"));
+priorityTabBtn.addEventListener("click", () => switchTaskTab("priority"));
+
+function parsePriorityMarkdown(md){
+  const lines = md.split(/\r?\n/);
+  const headerIdx = lines.findIndex(l => l.trim().toLowerCase().startsWith("# priority"));
+  if(headerIdx === -1) return {before: lines, tasks: [], after: []};
+  let idx = headerIdx + 1;
+  if(lines[idx] && lines[idx].trim() === "---") idx++;
+  const before = lines.slice(0, idx);
+  const tasks = [];
+  let current = [];
+  for(; idx < lines.length; idx++){
+    const line = lines[idx];
+    if(/^MVPT-\d+\./.test(line)){
+      if(current.length) tasks.push(current);
+      current = [line];
+    } else if(current.length){
+      current.push(line);
+    } else {
+      // reached non-task content after header
+      break;
+    }
+  }
+  if(current.length) tasks.push(current);
+  const after = lines.slice(idx);
+  return {before, tasks, after};
+}
+
+function rebuildPriorityMarkdown(parsed){
+  const {before, tasks, after} = parsed;
+  const out = [];
+  out.push(...before);
+  tasks.forEach((t, i) => {
+    if(t[0]) t[0] = t[0].replace(/^MVPT-\d+/, `MVPT-${i+1}`);
+    out.push(...t);
+  });
+  out.push(...after);
+  return out.join("\n");
+}
+
+function renderPriorityList(){
+  const md = document.getElementById("markdownInput").value || "";
+  const parsed = parsePriorityMarkdown(md);
+  window._priorityParsed = parsed; // store globally
+  priorityListEl.innerHTML = "";
+  parsed.tasks.forEach((task, idx) => {
+    const item = document.createElement("div");
+    item.className = "priority-item";
+    const up = document.createElement("button");
+    up.textContent = "⬆️";
+    up.disabled = idx === 0;
+    up.addEventListener("click", () => movePriority(idx, idx-1));
+    const down = document.createElement("button");
+    down.textContent = "⬇️";
+    down.disabled = idx === parsed.tasks.length-1;
+    down.addEventListener("click", () => movePriority(idx, idx+1));
+    const span = document.createElement("span");
+    span.className = "priority-text";
+    span.textContent = task[0] || "";
+    item.appendChild(up);
+    item.appendChild(down);
+    item.appendChild(span);
+    priorityListEl.appendChild(item);
+  });
+}
+
+async function movePriority(from, to){
+  const parsed = window._priorityParsed;
+  if(!parsed) return;
+  if(to < 0 || to >= parsed.tasks.length) return;
+  const task = parsed.tasks.splice(from,1)[0];
+  parsed.tasks.splice(to,0,task);
+  const newMd = rebuildPriorityMarkdown(parsed);
+  document.getElementById("markdownInput").value = newMd;
+  renderPriorityList();
+  try {
+    await fetch("/api/markdown", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ content: newMd })
+    });
+  } catch(e){
+    console.error("Error saving reordered markdown:", e);
+  }
+}
 
 console.log("[Server Debug] main.js fully loaded. End of script.");
 

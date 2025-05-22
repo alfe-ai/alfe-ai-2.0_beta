@@ -429,4 +429,32 @@ body {
   margin-left: 4px;
 }
 
+/* Tabs inside the task list panel */
+#taskListTabs button {
+  background: #333;
+  border: 1px solid #444;
+  color: #ddd;
+  padding: 2px 6px;
+  cursor: pointer;
+  margin-right: 4px;
+}
+
+#taskListTabs button.active {
+  background: #555;
+  border-color: #aaa;
+  color: #fff;
+}
+
+/* Priority list items */
+#priorityList .priority-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+#priorityList .priority-text {
+  flex: 1;
+}
+
 
