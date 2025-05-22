@@ -100,6 +100,14 @@ export default class TaskDB {
       );
     `);
 
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS chat_subroutines (
+                                                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                                name TEXT NOT NULL,
+                                                created_at TEXT NOT NULL
+      );
+    `);
+
     // The is_image_desc column is no longer used, but we won't remove it in the schema for safety
     // The logic referencing it is removed.
 
@@ -551,6 +559,32 @@ export default class TaskDB {
     this.db
         .prepare("UPDATE issues SET project=? WHERE project=?")
         .run(newProject, oldProject);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /*  Chat subroutines helpers                                           */
+  /* ------------------------------------------------------------------ */
+
+  createChatSubroutine(name) {
+    const ts = new Date().toISOString();
+    const { lastInsertRowid } = this.db
+        .prepare(
+            "INSERT INTO chat_subroutines (name, created_at) VALUES (?, ?)"
+        )
+        .run(name, ts);
+    return lastInsertRowid;
+  }
+
+  listChatSubroutines() {
+    return this.db
+        .prepare("SELECT * FROM chat_subroutines ORDER BY id ASC")
+        .all();
+  }
+
+  renameChatSubroutine(id, newName) {
+    this.db
+        .prepare("UPDATE chat_subroutines SET name=? WHERE id=?")
+        .run(newName, id);
   }
 }
 
