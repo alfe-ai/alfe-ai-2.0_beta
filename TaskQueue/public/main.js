@@ -1624,10 +1624,19 @@ function renderFileList(){
     tdSize.textContent = f.size;
     const tdMtime = document.createElement("td");
     tdMtime.textContent = new Date(f.mtime).toLocaleString();
+    const tdAction = document.createElement("td");
+    const openBtn = document.createElement("button");
+    openBtn.textContent = "Open";
+    openBtn.addEventListener("click", () => {
+      window.open(`PrintifyPipeline.html?file=${encodeURIComponent(f.name)}`,
+                  "_blank");
+    });
+    tdAction.appendChild(openBtn);
     tr.appendChild(tdIndex);
     tr.appendChild(tdName);
     tr.appendChild(tdSize);
     tr.appendChild(tdMtime);
+    tr.appendChild(tdAction);
     tbody.appendChild(tr);
   });
 }

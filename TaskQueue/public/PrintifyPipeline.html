@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Printify Pipeline</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body style="padding:1rem;">
+  <h2>PrintifyPipeline</h2>
+  <div id="fileContainer"></div>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const file = params.get('file');
+    const container = document.getElementById('fileContainer');
+    if (file) {
+      const ext = file.split('.').pop().toLowerCase();
+      if (["png","jpg","jpeg","gif","webp","svg"].includes(ext)) {
+        const img = document.createElement('img');
+        img.src = `/uploads/${file}`;
+        img.style.maxWidth = '100%';
+        container.appendChild(img);
+      } else {
+        const link = document.createElement('a');
+        link.href = `/uploads/${file}`;
+        link.textContent = file;
+        link.target = '_blank';
+        container.appendChild(link);
+      }
+    } else {
+      container.textContent = 'No file specified.';
+    }
+  </script>
+</body>
+</html>
