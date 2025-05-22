@@ -26,6 +26,7 @@ let chatStreaming = true; // new toggle for streaming
 let enterSubmitsMessage = true; // new toggle for Enter key submit
 let navMenuVisible = false; // visibility of the top navigation menu
 let showArchivedTabs = false;
+let tabGenerateImages = true; // per-tab auto image toggle
 let chatSubroutines = [];
 let actionHooks = [];
 let editingSubroutineId = null;
@@ -153,6 +154,22 @@ async function toggleNavMenu(){
   await setSetting("nav_menu_visible", navMenuVisible);
 }
 document.getElementById("navMenuToggle").addEventListener("click", toggleNavMenu);
+
+async function toggleTabGenerateImages(){
+  tabGenerateImages = !tabGenerateImages;
+  const chk = document.getElementById("tabGenerateImagesCheck");
+  if(chk) chk.checked = tabGenerateImages;
+  const r = await fetch('/api/chat/tabs/generate_images', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tabId: currentTabId, enabled: tabGenerateImages })
+  });
+  if(r.ok){
+    const t = chatTabs.find(t => t.id===currentTabId);
+    if(t) t.generate_images = tabGenerateImages ? 1 : 0;
+  }
+}
+document.getElementById("tabGenerateImagesCheck").addEventListener("change", toggleTabGenerateImages);
 
 async function loadSettings(){
   {
@@ -852,6 +869,10 @@ async function selectTab(tabId){
   currentTabId = tabId;
   await setSetting("last_chat_tab", tabId);
   loadChatHistory(tabId, true);
+  const t = chatTabs.find(t => t.id === tabId);
+  tabGenerateImages = !t || t.generate_images !== 0;
+  const chk = document.getElementById("tabGenerateImagesCheck");
+  if(chk) chk.checked = tabGenerateImages;
   renderTabs();
   renderSidebarTabs();
 }
@@ -1979,6 +2000,12 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
       currentTabId = chatTabs[0].id;
     }
   }
+  {
+    const firstTab = chatTabs.find(t => t.id === currentTabId);
+    tabGenerateImages = !firstTab || firstTab.generate_images !== 0;
+    const chk = document.getElementById("tabGenerateImagesCheck");
+    if(chk) chk.checked = tabGenerateImages;
+  }
   renderTabs();
   renderSidebarTabs();
   await loadChatHistory(currentTabId, true);
@@ -2886,6 +2913,7 @@ registerActionHook("afterSendLog", ({message, response}) => {
 // Automatically generate an image from the AI response
 registerActionHook("generateImage", async ({response}) => {
   try {
+    if(!tabGenerateImages) return;
     const prompt = (response || "").trim();
     if(!prompt) return;
     const r = await fetch('/api/image/generate', {
