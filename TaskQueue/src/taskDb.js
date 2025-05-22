@@ -83,7 +83,8 @@ export default class TaskDB {
                                              id INTEGER PRIMARY KEY AUTOINCREMENT,
                                              name TEXT NOT NULL,
                                              created_at TEXT NOT NULL,
-                                             archived INTEGER DEFAULT 0
+                                             archived INTEGER DEFAULT 0,
+                                             generate_images INTEGER DEFAULT 1
       );
     `);
     try {
@@ -91,6 +92,12 @@ export default class TaskDB {
       console.debug("[TaskDB Debug] Added chat_tabs.archived column");
     } catch(e) {
       console.debug("[TaskDB Debug] chat_tabs.archived column exists, skipping.", e.message);
+    }
+    try {
+      this.db.exec('ALTER TABLE chat_tabs ADD COLUMN generate_images INTEGER DEFAULT 1;');
+      console.debug("[TaskDB Debug] Added chat_tabs.generate_images column");
+    } catch(e) {
+      console.debug("[TaskDB Debug] generate_images column exists, skipping.", e.message);
     }
 
     this.db.exec(`
@@ -551,8 +558,8 @@ export default class TaskDB {
   createChatTab(name) {
     const ts = new Date().toISOString();
     const { lastInsertRowid } = this.db.prepare(`
-      INSERT INTO chat_tabs (name, created_at)
-      VALUES (@name, @created_at)
+      INSERT INTO chat_tabs (name, created_at, generate_images)
+      VALUES (@name, @created_at, 1)
     `).run({
       name,
       created_at: ts
@@ -570,6 +577,18 @@ export default class TaskDB {
 
   setChatTabArchived(tabId, archived = 1) {
     this.db.prepare("UPDATE chat_tabs SET archived=? WHERE id=?").run(archived ? 1 : 0, tabId);
+  }
+
+  setChatTabGenerateImages(tabId, enabled = 1) {
+    this.db.prepare("UPDATE chat_tabs SET generate_images=? WHERE id=?")
+        .run(enabled ? 1 : 0, tabId);
+  }
+
+  getChatTabGenerateImages(tabId) {
+    const row = this.db
+        .prepare("SELECT generate_images FROM chat_tabs WHERE id=?")
+        .get(tabId);
+    return row ? !!row.generate_images : true;
   }
 
   deleteChatTab(tabId) {
