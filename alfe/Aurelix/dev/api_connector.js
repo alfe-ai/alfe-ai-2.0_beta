@@ -45,7 +45,7 @@ function loadGlobalInstructions() {
  * Builds a directory tree structure as an object, skipping hidden files and those in an excluded set.
  * @param {string} dirPath
  * @param {string} rootDir
- * @param {string[]} attachedFiles
+ * @param {string[]} attachedFiles}
  * @returns {Object} Directory tree with children.
  */
 function buildFileTree(dirPath, rootDir, attachedFiles) {

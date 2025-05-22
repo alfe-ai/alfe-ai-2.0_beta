@@ -584,7 +584,7 @@ async function addNewTab() {
   if(projectInput){
     await fetch("/api/settings", {
       method:"POST",
-      headers: {"Content-Type":"application/json"},
+      headers: { "Content-Type":"application/json" },
       body: JSON.stringify({ key: "sterling_project", value: projectInput })
     });
   }
@@ -1663,7 +1663,12 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
   toggleSterlingUrlVisibility(sterlingChatUrlVisible);
 
   try {
-    const barVisible = await getSetting("model_tabs_bar_visible");
+    let barVisible = await getSetting("model_tabs_bar_visible");
+    if(barVisible === undefined) {
+      // Ensure default is to show the model tabs bar if not set
+      barVisible = true;
+      await setSetting("model_tabs_bar_visible", barVisible);
+    }
     const modelTabsEl = document.getElementById("modelTabs");
     if(barVisible === false){
       modelTabsEl.style.display = "none";
