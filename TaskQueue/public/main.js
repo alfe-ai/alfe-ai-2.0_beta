@@ -21,6 +21,7 @@ let chatTabAutoNaming = false;
 let showSubbubbleToken = false;
 let sterlingChatUrlVisible = true;
 let chatStreaming = true; // new toggle for streaming
+let markdownPanelVisible = true; // new setting to hide/show the Task List panel
 window.agentName = "Alfe";
 
 // For per-tab model arrays
@@ -150,6 +151,17 @@ async function loadSettings(){
     document.getElementById("expandSidebarBtn").style.display = sidebarVisible ? "none" : "block";
   }
   {
+    // Load or default "markdownPanelVisible"
+    const r = await fetch("/api/settings/markdownPanelVisible");
+    if(r.ok){
+      const { value } = await r.json();
+      if(typeof value !== 'undefined'){
+        markdownPanelVisible = !!value;
+      }
+    }
+    applyMarkdownPanelVisibility();
+  }
+  {
     const r = await fetch("/api/settings/sidebar_width");
     if(r.ok){
       const { value } = await r.json();
@@ -170,6 +182,12 @@ async function saveSettings(){
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify({ key:"columns_order", value:columnsOrder.map(c=>c.key) })
   });
+}
+
+function applyMarkdownPanelVisibility() {
+  const panel = document.getElementById("taskListPanel");
+  if(!panel) return;
+  panel.style.display = markdownPanelVisible ? "" : "none";
 }
 
 function renderHeader(){
@@ -972,6 +990,18 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
   $("#subbubbleTokenCheck").checked = showSubbubbleToken;
   $("#sterlingUrlCheck").checked = sterlingChatUrlVisible;
 
+  // Add a checkbox for "Show Task List Panel"
+  const chatSettingsModal = $("#chatSettingsModal");
+  let existingToggle = $("#markdownPanelCheck");
+  if(!existingToggle){
+    const toggleLabel = document.createElement("label");
+    toggleLabel.innerHTML = `<input type="checkbox" id="markdownPanelCheck"/> Show Task List Panel`;
+    chatSettingsModal.querySelector("h2").insertAdjacentElement("afterend", toggleLabel);
+    const br = document.createElement("br");
+    toggleLabel.insertAdjacentElement("afterend", br);
+  }
+  $("#markdownPanelCheck").checked = markdownPanelVisible;
+
   try {
     const modelListResp = await fetch("/api/ai/models");
     if(modelListResp.ok){
@@ -1076,6 +1106,11 @@ async function chatSettingsSaveFlow() {
   showSubbubbleToken = $("#subbubbleTokenCheck").checked;
   sterlingChatUrlVisible = $("#sterlingUrlCheck").checked;
   chatStreaming = $("#chatStreamingCheck").checked;
+
+  // Save new markdownPanelVisible
+  markdownPanelVisible = $("#markdownPanelCheck").checked;
+  await setSetting("markdownPanelVisible", markdownPanelVisible);
+  applyMarkdownPanelVisibility();
 
   await setSetting("chat_hide_metadata", chatHideMetadata);
   await setSetting("chat_tab_auto_naming", chatTabAutoNaming);
