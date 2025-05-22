@@ -20,17 +20,9 @@ let chatHideMetadata = false;
 let chatTabAutoNaming = false;
 let showSubbubbleToken = false;
 let sterlingChatUrlVisible = true;
-let chatStreaming = true; // new toggle for streaming
-let markdownPanelVisible = true; // new setting to hide/show the Task List panel
+let chatStreaming = true;
+let markdownPanelVisible = true;
 window.agentName = "Alfe";
-
-// For per-tab model arrays
-let modelTabs = [];
-let currentModelTabId = null;
-
-const defaultFavicon = "alfe_favicon_clean_64x64.ico";
-const rotatingFavicon = "alfe_favicon_clean_64x64.ico";
-let favElement = null;
 
 const $  = (sel, ctx=document) => ctx.querySelector(sel);
 const $$ = (sel, ctx=document) => [...ctx.querySelectorAll(sel)];
@@ -151,7 +143,6 @@ async function loadSettings(){
     document.getElementById("expandSidebarBtn").style.display = sidebarVisible ? "none" : "block";
   }
   {
-    // Load or default "markdownPanelVisible"
     const r = await fetch("/api/settings/markdownPanelVisible");
     if(r.ok){
       const { value } = await r.json();
@@ -302,8 +293,6 @@ function renderBody(){
             case "created":
               td.textContent = isoDate(t.created_at);
               break;
-            default:
-              td.textContent = t[key]||"";
           }
           tr.appendChild(td);
         });
@@ -503,7 +492,6 @@ $("#instrSaveBtn").addEventListener("click", async ()=>{
 $("#instrCancelBtn").addEventListener("click",()=>hideModal($("#instrModal")));
 
 $("#repoBtn").addEventListener("click", async ()=>{
-  // Now we store/read from "taskList_git_ssh_url" instead of "github_repo"
   const r=await fetch("/api/settings/taskList_git_ssh_url");
   if(r.ok){
     const {value}=await r.json();
@@ -686,7 +674,6 @@ function renderTabs(){
   });
 }
 
-// New function to render vertical chat tabs in sidebar
 function renderSidebarTabs(){
   const container = document.getElementById("verticalTabsContainer");
   container.innerHTML="";
@@ -708,8 +695,6 @@ function renderSidebarTabs(){
 }
 
 document.getElementById("newSideTabBtn").addEventListener("click", addNewTab);
-
-// New: Button to toggle top chat tabs bar
 document.getElementById("toggleTopChatTabsBtn").addEventListener("click", () => {
   const topTabs = document.getElementById("chatTabs");
   if (topTabs.style.display === "none") {
@@ -805,7 +790,6 @@ function parseProviderModel(model) {
   } else if(model.startsWith("openrouter/")) {
     return { provider: "openrouter", shortModel: model.replace(/^openrouter\//,'') };
   } else if(model.startsWith("deepseek/")) {
-    // Changed to treat deepseek/ as openrouter
     return { provider: "openrouter", shortModel: model.replace(/^deepseek\//,'') };
   }
   return { provider: "Unknown", shortModel: model };
@@ -847,8 +831,6 @@ chatSendBtnEl.addEventListener("click", async () => {
   const userMessage = chatInputEl.value.trim();
   if(!userMessage) return;
   const userTime = new Date().toISOString();
-
-  if (favElement) favElement.href = rotatingFavicon;
 
   chatInputEl.value = "";
 
@@ -923,7 +905,7 @@ chatSendBtnEl.addEventListener("click", async () => {
       botHead.querySelector("span").textContent = formatTimestamp(new Date().toISOString());
     }
 
-    // POST: Code change request creation after user input
+    // Simple mock creation of a "Code Change Request"
     await fetch("/api/tasks/new", {
       method:"POST",
       headers:{"Content-Type":"application/json"},
@@ -940,8 +922,6 @@ chatSendBtnEl.addEventListener("click", async () => {
     botBody.textContent = "[Error occurred]";
     botHead.querySelector("span").textContent = formatTimestamp(new Date().toISOString());
   }
-
-  if (favElement) favElement.href = defaultFavicon;
 
   chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
 });
@@ -990,13 +970,11 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
   $("#subbubbleTokenCheck").checked = showSubbubbleToken;
   $("#sterlingUrlCheck").checked = sterlingChatUrlVisible;
 
-  // Add a checkbox for "Show Task List Panel"
-  const chatSettingsModal = $("#chatSettingsModal");
   let existingToggle = $("#markdownPanelCheck");
   if(!existingToggle){
     const toggleLabel = document.createElement("label");
     toggleLabel.innerHTML = `<input type="checkbox" id="markdownPanelCheck"/> Show Task List Panel`;
-    chatSettingsModal.querySelector("h2").insertAdjacentElement("afterend", toggleLabel);
+    $("#chatSettingsModal").querySelector("h2").insertAdjacentElement("afterend", toggleLabel);
     const br = document.createElement("br");
     toggleLabel.insertAdjacentElement("afterend", br);
   }
@@ -1057,7 +1035,6 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
   showModal($("#chatSettingsModal"));
 });
 
-// React when AI service changes
 $("#aiServiceSelect").addEventListener("change", async ()=>{
   try {
     const modelListResp = await fetch("/api/ai/models");
@@ -1107,7 +1084,6 @@ async function chatSettingsSaveFlow() {
   sterlingChatUrlVisible = $("#sterlingUrlCheck").checked;
   chatStreaming = $("#chatStreamingCheck").checked;
 
-  // Save new markdownPanelVisible
   markdownPanelVisible = $("#markdownPanelCheck").checked;
   await setSetting("markdownPanelVisible", markdownPanelVisible);
   applyMarkdownPanelVisibility();
@@ -1133,9 +1109,6 @@ async function chatSettingsSaveFlow() {
     modelName = updatedModelData.model || "unknown";
 
     const { provider: autoProvider } = parseProviderModel(modelName);
-    console.log("[OBTAINED PROVIDER] => (global model removed in UI, fallback only)");
-    const { provider } = parseProviderModel(modelName);
-    console.log("[OBTAINED PROVIDER] =>", autoProvider);
     $("#modelHud").textContent = "";
   }
 
@@ -1145,7 +1118,6 @@ async function chatSettingsSaveFlow() {
 }
 
 $("#chatSettingsSaveBtn").addEventListener("click", chatSettingsSaveFlow);
-
 $("#chatSettingsCancelBtn").addEventListener("click", () => {
   hideModal($("#chatSettingsModal"));
 });
@@ -1234,7 +1206,7 @@ $("#secureUploadForm").addEventListener("submit", async e => {
     });
     if(!resp.ok){
       console.error("[Uploader Debug] Server responded with status:", resp.status);
-      alert("Upload failed. Check console for details.");
+      alert("Upload failed. Check logs.");
       return;
     }
     const result = await resp.json();
@@ -1434,7 +1406,7 @@ function showActivityIframePanel(){
 }
 
 /**
- * Recursively render the file tree structure
+ * Recursive file tree
  */
 function createTreeNode(node, repoName, chatNumber) {
   const li = document.createElement("li");
@@ -1482,12 +1454,12 @@ function createTreeNode(node, repoName, chatNumber) {
     li.appendChild(label);
 
     cb.addEventListener("change", async () => {
-      console.debug(`[FileTree Debug] Checkbox changed for: ${node.path}, new checked state: ${cb.checked}`);
+      console.debug(`[FileTree Debug] Checkbox changed for: ${node.path}, new checked: ${cb.checked}`);
       try {
-        console.debug(`[FileTree Debug] Sending POST to toggle attachment for file: ${node.path}`);
-        const resp = await axios.post(`https://openrouter.ai/api/v1/${repoName}/chat/${chatNumber}/toggle_attached`, {
-          filePath: node.path
-        });
+        const resp = await axios.post(
+          `https://openrouter.ai/api/v1/${repoName}/chat/${chatNumber}/toggle_attached`,
+          { filePath: node.path }
+        );
         console.debug("[FileTree Debug] toggle_attached response:", resp.data);
       } catch(err) {
         console.error("Error toggling file attachment:", err);
@@ -1557,19 +1529,15 @@ async function init(){
   await loadTasks();
   try {
     const r = await fetch("/api/model");
-    console.debug("[Client Debug] /api/model => status:", r.status);
     if(r.ok){
       const data = await r.json();
-      console.debug("[Client Debug] /api/model data =>", data);
       modelName = data.model || "unknown";
     }
   } catch(e){
     modelName = "unknown";
   }
 
-  console.log("[OBTAINED PROVIDER] => (global model removed in UI, fallback only)");
   const { provider: autoProvider } = parseProviderModel(modelName);
-  console.log("[OBTAINED PROVIDER] =>", autoProvider);
   $("#modelHud").textContent = "";
 
   await loadTabs();
@@ -1600,10 +1568,6 @@ async function init(){
     const r2 = await fetch("/api/settings/agent_instructions");
     if(r2.ok){
       const { value } = await r2.json();
-      const displayedInstrEl = document.querySelector("#displayedInstructions");
-      if (displayedInstrEl) {
-        displayedInstrEl.textContent = value || "(none)";
-      }
       window.agentInstructions = value || "";
     }
   } catch(e){
@@ -1640,9 +1604,9 @@ async function init(){
 
   await loadFileList();
 
-  favElement = document.getElementById("favicon");
+  let favElement = document.getElementById("favicon");
   if (favElement) {
-    favElement.href = defaultFavicon;
+    favElement.href = "alfe_favicon_clean_64x64.ico";
   }
 
   await chatSettingsSaveFlow();
@@ -1665,7 +1629,6 @@ async function init(){
   try {
     let barVisible = await getSetting("model_tabs_bar_visible");
     if(barVisible === undefined) {
-      // Ensure default is to show the model tabs bar if not set
       barVisible = true;
       await setSetting("model_tabs_bar_visible", barVisible);
     }
@@ -1694,9 +1657,6 @@ async function init(){
   initChatScrollLoading();
   initModelTabs();
 
-  // -----------------------------------------------------------------------
-  // Load the global markdown content on startup
-  // -----------------------------------------------------------------------
   try {
     const mdResp = await fetch("/api/markdown");
     if(mdResp.ok){
@@ -1896,7 +1856,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
       const outTokens = tInfo.finalAssistantTokens || 0;
       const combinedDiv = document.createElement("div");
       combinedDiv.className = "token-indicator";
-      combinedDiv.textContent = `Out: ${outTokens} (Time: ${tInfo.responseTime?.toFixed(2) || "?"}s)`;
+      combinedDiv.textContent = `Out: ${outTokens} (Time: ${tInfo.responseTime ?? "?"}s)`;
       botDiv.appendChild(combinedDiv);
     } catch(e){
       console.debug("[Server Debug] Could not parse token_info for pair =>", pairId, e.message);
@@ -2013,10 +1973,11 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
   chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
 }
 
-// New model tabs logic
+let modelTabs = [];
+let currentModelTabId = null;
+
 async function initModelTabs() {
   try {
-    // load from DB setting
     let mTabs = await getSetting("model_tabs");
     if(!Array.isArray(mTabs)) mTabs = [];
     modelTabs = mTabs;
@@ -2050,12 +2011,10 @@ function renderModelTabs(){
     b.style.alignItems = "center";
     b.style.gap = "6px";
 
-    // Title or name
     const labelSpan = document.createElement("span");
     labelSpan.textContent = tab.name;
     b.appendChild(labelSpan);
 
-    // Service selector
     const serviceSelect = document.createElement("select");
     ["openai","openrouter","deepseek"].forEach(sv => {
       const opt = document.createElement("option");
@@ -2068,40 +2027,31 @@ function renderModelTabs(){
       tab.service = evt.target.value;
       await saveModelTabs();
     });
-    b.appendChild(serviceSelect);
-
-    // Click => select this tab
     b.addEventListener("click", (ev)=>{
-      // If user clicked the service select, do not override current tab?
       if(ev.target===serviceSelect) return;
       selectModelTab(tab.id);
     });
-
-    // Right-click => rename or delete
     b.addEventListener("contextmenu", e=>{
       e.preventDefault();
       const choice=prompt("Type 'rename' or 'delete':","");
       if(choice==="rename") renameModelTab(tab.id);
       else if(choice==="delete") deleteModelTab(tab.id);
     });
-
+    b.appendChild(serviceSelect);
     container.appendChild(b);
   });
 }
 
-// Add a new model tab
 async function addModelTab(){
   let name = prompt("Enter Model Tab Name (e.g., GPT-4 or deepseek-latest):", "");
   let newId = 1;
   if(!name) {
-    // Provide a default name if empty
     name = "Untitled ModelTab " + (modelTabs.length + 1);
   }
   if(modelTabs.length>0){
     const maxId = Math.max(...modelTabs.map(t=>t.id));
     newId = maxId+1;
   }
-  // default model is the name
   const newObj = {
     id: newId,
     name,
@@ -2111,13 +2061,11 @@ async function addModelTab(){
   modelTabs.push(newObj);
   currentModelTabId = newId;
   await saveModelTabs();
-  // set the "ai_model" to the new tab's model
   await setSetting("ai_model", name);
   modelName = name;
   renderModelTabs();
 }
 
-// rename model tab
 async function renameModelTab(tabId){
   const t = modelTabs.find(t => t.id===tabId);
   if(!t) return;
@@ -2126,7 +2074,6 @@ async function renameModelTab(tabId){
   t.name = newName;
   t.modelId = newName;
   await saveModelTabs();
-  // if it's the active tab, update ai_model setting too
   if(tabId===currentModelTabId){
     await setSetting("ai_model", newName);
     modelName = newName;
@@ -2134,7 +2081,6 @@ async function renameModelTab(tabId){
   renderModelTabs();
 }
 
-// delete model tab
 async function deleteModelTab(tabId){
   if(!confirm("Delete this model tab?")) return;
   const idx = modelTabs.findIndex(x=>x.id===tabId);
@@ -2149,7 +2095,6 @@ async function deleteModelTab(tabId){
         modelName = t.modelId;
       }
     } else {
-      // no tabs left
       await setSetting("ai_model","");
       modelName = "unknown";
     }
@@ -2158,7 +2103,6 @@ async function deleteModelTab(tabId){
   renderModelTabs();
 }
 
-// select model tab
 async function selectModelTab(tabId){
   currentModelTabId = tabId;
   const t = modelTabs.find(x=>x.id===tabId);
@@ -2171,7 +2115,6 @@ async function selectModelTab(tabId){
 }
 
 async function saveModelTabs(){
-  // store in setting "model_tabs"
   await setSetting("model_tabs", modelTabs);
 }
 
@@ -2188,19 +2131,12 @@ document.getElementById("toggleModelTabsBtn").addEventListener("click", async ()
   }
 });
 
-// ----------------------------------------------------------------------
-// NEW: "Change Sterling Branch" button event + modal logic
-// ----------------------------------------------------------------------
 document.getElementById("changeSterlingBranchBtn").addEventListener("click", () => {
   showModal($("#changeBranchModal"));
 });
-
-// Cancel button for branch
 document.getElementById("sterlingBranchCancelBtn").addEventListener("click", () => {
   hideModal($("#changeBranchModal"));
 });
-
-// Save button for branch
 document.getElementById("sterlingBranchSaveBtn").addEventListener("click", async () => {
   const createNew = $("#createSterlingNewBranchCheck").checked;
   const branchName = $("#sterlingBranchNameInput").value.trim();
@@ -2236,9 +2172,6 @@ document.getElementById("sterlingBranchSaveBtn").addEventListener("click", async
   }
 });
 
-// -----------------------------------------------------------------------
-// Handling the global markdown save button
-// -----------------------------------------------------------------------
 document.getElementById("saveMdBtn").addEventListener("click", async () => {
   try {
     const content = $("#markdownInput").value;

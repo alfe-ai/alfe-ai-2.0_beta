@@ -29,7 +29,7 @@
     th {
       background: #333;
       text-align: left;
-      cursor: pointer; /* Make headers clickable for sorting */
+      cursor: pointer;
     }
     tr:nth-child(even) {
       background: #2a2a2a;
@@ -62,7 +62,6 @@
       color: #777;
     }
 
-    /* New style for provider filter & favorites checkbox. */
     #filtersContainer {
       margin-bottom: 1rem;
     }
@@ -119,7 +118,7 @@
 <script>
   let modelList = [];
   let currentSortCol = null;
-  let currentSortDir = 1; // 1 = ascending, -1 = descending
+  let currentSortDir = 1;
 
   const providerFilterEl = document.getElementById("providerFilter");
   const favoritesOnlyCheckEl = document.getElementById("favoritesOnlyCheck");
@@ -200,7 +199,6 @@
     });
     tbody.innerHTML = html;
 
-    // Attach star click events
     const stars = tbody.querySelectorAll(".favorite-star");
     stars.forEach(star => {
       star.addEventListener("click", async () => {

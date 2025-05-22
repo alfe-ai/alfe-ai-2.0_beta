@@ -45,7 +45,7 @@ function loadGlobalInstructions() {
  * Builds a directory tree structure as an object, skipping hidden files and those in an excluded set.
  * @param {string} dirPath
  * @param {string} rootDir
- * @param {string[]} attachedFiles}
+ * @param {string[]} attachedFiles
  * @returns {Object} Directory tree with children.
  */
 function buildFileTree(dirPath, rootDir, attachedFiles) {
@@ -61,7 +61,6 @@ function buildFileTree(dirPath, rootDir, attachedFiles) {
         return true;
       })
       .sort((a, b) => {
-        // directories first
         if (a.isDirectory() && !b.isDirectory()) return -1;
         if (!a.isDirectory() && b.isDirectory()) return 1;
         return a.name.localeCompare(b.name);
@@ -108,15 +107,13 @@ router.post('/createChat', (req, res) => {
     return res.status(400).json({ error: 'repoName is required.' });
   }
 
-  // Load the existing data for this repo
   let dataObj = loadRepoJson(repoName);
 
   if (!dataObj) {
-    console.log('[DEBUG] No data object found => initializing empty repo JSON.');
+    console.log('[DEBUG] No data object found => initializing.');
     dataObj = {};
   }
 
-  // Find the highest existing chat number
   let maxChatNumber = 0;
   for (const key of Object.keys(dataObj)) {
     const n = parseInt(key, 10);
@@ -125,10 +122,8 @@ router.post('/createChat', (req, res) => {
     }
   }
 
-  // Load global agent instructions
   const globalInstructions = loadGlobalInstructions();
 
-  // Create a new chat entry
   const newChatNumber = maxChatNumber + 1;
   dataObj[newChatNumber] = {
     status: 'ACTIVE',
@@ -140,7 +135,6 @@ router.post('/createChat', (req, res) => {
     pushAfterCommit: true
   };
 
-  // Save
   saveRepoJson(repoName, dataObj);
 
   console.log('[DEBUG] Created new chat:', newChatNumber, 'for repo:', repoName);
@@ -152,14 +146,8 @@ router.post('/createChat', (req, res) => {
   });
 });
 
-/**
- * Existing sample: Creates a new chat generically.
- * (For demonstration, retained but not necessarily used.)
- */
 router.post('/createGenericChat', (req, res) => {
   console.log('[DEBUG] POST /createGenericChat => creating a generic chat');
-
-  // For demonstration
   const chatData = {
     chatId: Math.floor(Math.random() * 100000),
     status: 'ACTIVE',
@@ -176,11 +164,9 @@ router.post('/createGenericChat', (req, res) => {
 
 /**
  * GET /listFileTree/:repoName/:chatNumber
- * Returns JSON structure of the file tree for a specified repository/chat.
  */
 router.get('/listFileTree/:repoName/:chatNumber', (req, res) => {
   const { repoName, chatNumber } = req.params;
-  // Load repo config to find local path
   const repoConfig = loadSingleRepoConfig(repoName);
   if (!repoConfig) {
     console.log('[DEBUG] /listFileTree => Repo config not found:', repoName);
@@ -197,15 +183,12 @@ router.get('/listFileTree/:repoName/:chatNumber', (req, res) => {
   const attachedFiles = chatData.attachedFiles || [];
   const { gitRepoLocalPath } = repoConfig;
 
-  // Build the directory tree
   const tree = buildFileTree(gitRepoLocalPath, gitRepoLocalPath, attachedFiles);
   return res.json({ success: true, tree });
 });
 
 /**
  * POST /changeBranchOfChat/:repoName/:chatNumber
- * Switches the repository branch for the specified chat
- * and stores the new branch name in chat data as chatData.gitBranch.
  */
 router.post('/changeBranchOfChat/:repoName/:chatNumber', (req, res) => {
   const { repoName, chatNumber } = req.params;
@@ -242,13 +225,11 @@ router.post('/changeBranchOfChat/:repoName/:chatNumber', (req, res) => {
       chatData.gitBranch = branchName;
     }
 
-    // Save updated repo config
     const { loadRepoConfig, saveRepoConfig } = require('../../../server_defs');
     const allConfig = loadRepoConfig() || {};
     allConfig[repoName] = repoCfg;
     saveRepoConfig(allConfig);
 
-    // Save updated chat data
     dataObj[chatNumber] = chatData;
     saveRepoJson(repoName, dataObj);
 

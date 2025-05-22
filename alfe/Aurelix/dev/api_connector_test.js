@@ -1,10 +1,6 @@
 /**
  * Manual test for the endpoints in api_connector.js.
- * Usage:
- *   1) Make sure the server is running (e.g., node executable/server_webserver.js).
- *   2) Run this test: node api_connector_test.js
  */
-
 const axios = require('axios');
 
 (async () => {

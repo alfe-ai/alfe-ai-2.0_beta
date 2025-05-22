@@ -11,8 +11,8 @@ body {
 .app {
   display: flex;
   height: 100vh;
-  overflow: hidden; /* Restored overflow hidden to allow separate scrolling areas */
-  position: relative; /* For absolute positioning of exclamation icon */
+  overflow: hidden;
+  position: relative;
 }
 
 /* Sidebar */
@@ -22,7 +22,7 @@ body {
   padding: 1rem;
   overflow-y: auto;
   border-right: 1px solid #444;
-  flex: none; /* Keep fixed width */
+  flex: none;
 }
 
 /* Draggable divider */
@@ -33,7 +33,7 @@ body {
   flex: none;
 }
 
-/* Chat Panel in main area */
+/* Chat Panel */
 .chat-panel {
   flex: 1;
   display: flex;
@@ -41,16 +41,15 @@ body {
   padding: 1rem;
   background-color: #1e1e1e;
   color: #ddd;
-  overflow: hidden; /* Hide overflow here */
-  min-height: 0;    /* Allow flex children to scroll properly */
+  overflow: hidden;
+  min-height: 0;
 }
 
-/* The controls, tasks table, and other components end up in the sidebar. */
+/* Tools & tables in the sidebar */
 #controls {
   margin-bottom: 1rem;
 }
 
-/* Tasks table */
 #tasks {
   width: 100%;
   border-collapse: collapse;
@@ -104,7 +103,6 @@ body {
   cursor: pointer;
 }
 
-/* Filter controls */
 #projectFilter,
 #sprintFilter {
   margin-left: 4px;
@@ -119,7 +117,7 @@ body {
   outline: 1px solid #888;
 }
 
-/* Modal styling */
+/* Modal */
 .modal {
   display: none;
   position: fixed;
@@ -168,7 +166,7 @@ body {
   color: #ddd;
 }
 
-/* Chat panel area */
+/* Chat panel */
 #chatPanel {
   margin-top: 1rem;
   display: flex;
@@ -179,7 +177,7 @@ body {
 
 #chatMessages {
   overflow: auto;
-  background: #292929; /* Changed from #2a2a2a to #292929 */
+  background: #292929;
   border: 1px solid #444;
   padding: 8px;
   flex: 1 1 auto;
@@ -187,7 +185,6 @@ body {
   color: #ddd;
 }
 
-/* The waiting counter */
 #waitingCounter {
   font-size: 0.9rem;
   color: #888;
@@ -195,7 +192,7 @@ body {
   margin-bottom: 0.5rem;
 }
 
-/* Chat message bubble grouping */
+/* Chat bubble grouping */
 .chat-sequence {
   background: #2c2c2c;
   border: 1px solid #444;
@@ -225,36 +222,36 @@ body {
   background: #f90;
 }
 
-/* Bubble headers, containing name oval + timestamp */
+/* Bubble headers */
 .bubble-header {
   display: flex;
   align-items: center;
-  gap: 8px; /* increased for better spacing */
-  margin-bottom: 6px; /* increased for a bit more breathing room */
+  gap: 8px;
+  margin-bottom: 6px;
   font-size: 0.9rem;
 }
 
-/* User bubble: displayed on the right side */
+/* User bubble */
 .chat-user {
   background: #3b3b3b;
-  padding: 10px 12px; /* slightly increased for spacing */
+  padding: 10px 12px;
   border-radius: 12px;
-  margin-bottom: 12px; /* more vertical space between elements */
+  margin-bottom: 12px;
   align-self: flex-end;
   text-align: right;
   max-width: 70%;
   color: #ddd;
   position: relative;
-  white-space: pre-wrap;       /* Allows multiline wrapping */
-  word-wrap: break-word;       /* Helps break long words */
-  overflow-wrap: break-word;   /* Additional safety for older browsers */
-  font-family: monospace;      /* Changed to monospaced */
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  font-family: monospace;
 }
 
-/* AI bubble: displayed on the left side */
+/* AI bubble */
 .chat-bot {
   background: #2a2a2a;
-  padding: 10px 12px; /* slightly increased for spacing */
+  padding: 10px 12px;
   border-radius: 12px;
   margin-bottom: 12px;
   display: block;
@@ -264,16 +261,15 @@ body {
   white-space: pre-wrap;
   word-wrap: break-word;
   overflow-wrap: break-word;
-  font-family: monospace;      /* Changed to monospaced */
+  font-family: monospace;
 }
 
-/* Match font sizes between chat bubbles and input box */
 .chat-user,
 .chat-bot {
   font-size: 1rem;
 }
 
-/* Additional details styling */
+/* Additional details */
 .chat-system,
 .chat-instructions {
   background: #333;
@@ -285,7 +281,7 @@ body {
   white-space: pre-wrap;
 }
 
-/* Modern chat input container */
+/* Chat input container */
 .chat-input-container {
   display: flex;
   align-items: center;
@@ -309,7 +305,7 @@ body {
   resize: none;
   min-height: 40px;
   overflow-y: auto;
-  font-family: monospace; /* Added to match chat bubbles */
+  font-family: monospace;
 }
 
 .chat-input-container textarea::placeholder {
@@ -333,7 +329,7 @@ body {
   background: #0062cc;
 }
 
-/* Scroll to bottom button: now always visible inline */
+/* Scroll to bottom button */
 #scrollDownBtn {
   background: #444;
   color: #ddd;
@@ -346,7 +342,7 @@ body {
   margin-left: 0.5rem;
 }
 
-/* Collapsible menus in index */
+/* Collapsible tools */
 #toolbarCollapsible {
   margin-bottom: 1rem;
   background: #333;
@@ -355,7 +351,7 @@ body {
   border: 1px solid #444;
 }
 
-/* New sticky toolbar for chat tabs */
+/* Sticky toolbar for chat tabs */
 #chatTabs {
   position: sticky;
   top: 0;
@@ -368,7 +364,7 @@ body {
   margin-bottom: 0;
 }
 
-/* Circle icon for exclamation */
+/* Exclamation icon */
 .exclamation-icon {
   position: absolute;
   top: 8px;
@@ -385,7 +381,7 @@ body {
   font-size: 14px;
 }
 
-/* Token count indicator in bottom-right corner of subbubble */
+/* Token usage label in bubble corner */
 .token-indicator {
   position: absolute;
   right: 8px;
@@ -394,7 +390,7 @@ body {
   margin-top: 10px;
 }
 
-/* Additional styling for the new Chat Tabs sidebar panel */
+/* Chat Tabs in sidebar */
 #sidebarViewChatTabs {
   margin-top: 1rem;
 }
