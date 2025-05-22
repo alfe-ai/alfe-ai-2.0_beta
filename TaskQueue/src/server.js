@@ -723,7 +723,7 @@ app.get("/api/ai/models", async (req, res) => {
         console.debug("[Server Debug] Fetching OpenRouter model list...");
         const orResp = await axios.get("https://openrouter.ai/api/v1/models", {
           headers: {
-            Authorization: \`Bearer \${openRouterKey}\`,
+            Authorization: `Bearer ${openRouterKey}`,
             "HTTP-Referer": "Alfe-DevAgent",
             "X-Title": "Alfe AI",
             "User-Agent": "Alfe AI"
