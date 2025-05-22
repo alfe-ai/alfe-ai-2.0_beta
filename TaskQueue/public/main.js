@@ -2094,7 +2094,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
           `Assistant: ${tokObj.assistantTokens}, ` +
           `FinalAssistantTokens: ${tokObj.finalAssistantTokens}, ` +
           `Total: ${tokObj.total}, ` +
-          `Time: ${tokObj.responseTime ?? "?"}s`;
+          `Time: ${tokObj.responseTime*10 ?? "?"}s`;
       tuDetails.appendChild(usageDiv);
       metaContainer.appendChild(tuDetails);
     }
