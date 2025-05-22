@@ -914,7 +914,7 @@ app.post("/api/chat", async (req, res) => {
     const savedInstructions = db.getSetting("agent_instructions") || "";
 
     const { provider } = parseProviderModel(model || "gpt-3.5-turbo");
-    const systemContext = \`System Context:\\n\${savedInstructions}\\n\\nModel: \${model} (provider: \${provider})\\nUserTime: \${userTime}\\nTimeZone: Central\`;
+    const systemContext = `System Context:\n${savedInstructions}\n\nModel: ${model} (provider: ${provider})\nUserTime: ${userTime}\nTimeZone: Central`;
 
     const conversation = [{ role: "system", content: systemContext }];
 
@@ -1087,7 +1087,7 @@ app.get("/api/chat/history", (req, res) => {
 app.get("/api/model", (req, res) => {
   console.debug("[Server Debug] GET /api/model called.");
   let m = db.getSetting("ai_model");
-  console.debug(\`[Server Debug] DB returned ai_model => \${m}\`);
+  console.debug(`[Server Debug] DB returned ai_model => ${m}`);
   res.json({ model: m });
 });
 
@@ -1110,7 +1110,7 @@ app.post("/api/chat/tabs/new", (req, res) => {
     const autoNaming = db.getSetting("chat_tab_auto_naming");
     const projectName = db.getSetting("sterling_project") || "";
     if (autoNaming && projectName) {
-      name = \`\${projectName}: \${name}\`;
+      name = `${projectName}: ${name}`;
     }
 
     const tabId = db.createChatTab(name);
@@ -1209,12 +1209,12 @@ app.post("/api/chat/image", upload.single("imageFile"), async (req, res) => {
       return res.status(400).json({ error: "No image file received." });
     }
 
-    const scriptPath = \`\${process.env.HOME}/git/imgs_db/imagedesc.sh\`;
+    const scriptPath = `${process.env.HOME}/git/imgs_db/imagedesc.sh`;
     const filePath = path.join(uploadsDir, req.file.filename);
 
     let desc = "";
     try {
-      const cmd = \`\${scriptPath} "\${filePath}"\`;
+      const cmd = `${scriptPath} "${filePath}"`;
       console.log("[Server Debug] Running command =>", cmd);
       desc = child_process.execSync(cmd).toString().trim();
     } catch(e){
@@ -1271,7 +1271,7 @@ app.post("/api/createSterlingChat", async (req, res) => {
     const projectName = "aurora_working-" + project;
 
     console.log('=== Testing createChat endpoint ===');
-    const createChatResponse = await axios.post(\`\${baseURL}/createChat\`, {
+    const createChatResponse = await axios.post(`${baseURL}/createChat`, {
       repoName: projectName
     });
     console.log('Response from /createChat:', createChatResponse.data);
@@ -1282,11 +1282,11 @@ app.post("/api/createSterlingChat", async (req, res) => {
     if (!sterlingBranch) {
       sterlingBranch = "main";
     }
-    console.log(\`[Sterling Branch Fix] Setting branch to: \${sterlingBranch}\`);
+    console.log(`[Sterling Branch Fix] Setting branch to: ${sterlingBranch}`);
 
     try {
       const changeBranchResp = await axios.post(
-          \`\${baseURL}/changeBranchOfChat/\${encodeURIComponent(projectName)}/\${createChatResponse.data.newChatNumber}\`,
+          `${baseURL}/changeBranchOfChat/${encodeURIComponent(projectName)}/${createChatResponse.data.newChatNumber}`,
           {
             createNew: false,
             branchName: sterlingBranch
@@ -1299,7 +1299,7 @@ app.post("/api/createSterlingChat", async (req, res) => {
 
     console.log('=== Test run completed. ===');
 
-    const sterlingUrl = \`http://localhost:3444/\${encodeURIComponent(projectName)}/chat/\${createChatResponse.data.newChatNumber}\`;
+    const sterlingUrl = `http://localhost:3444/${encodeURIComponent(projectName)}/chat/${createChatResponse.data.newChatNumber}`;
     db.setSetting("sterling_chat_url", sterlingUrl);
 
     res.json({
@@ -1373,12 +1373,12 @@ function ensureTaskListRepoCloned(gitUrl) {
   try {
     if (!fs.existsSync(repoDir)) {
       console.log("[Git Debug] Cloning new repo =>", gitUrl, "into =>", repoDir);
-      child_process.execSync(\`git clone "\${gitUrl}" "\${repoDir}"\`, {
+      child_process.execSync(`git clone "${gitUrl}" "${repoDir}"`, {
         stdio: "inherit"
       });
     } else {
       console.log("[Git Debug] Pulling latest in =>", repoDir);
-      child_process.execSync(\`git pull\`, {
+      child_process.execSync(`git pull`, {
         cwd: repoDir,
         stdio: "inherit"
       });
@@ -1393,13 +1393,13 @@ function ensureTaskListRepoCloned(gitUrl) {
 function commitAndPushMarkdown(repoDir) {
   try {
     const mgPath = path.join(repoDir, "markdown_global.txt");
-    child_process.execSync(\`git add markdown_global.txt\`, {
+    child_process.execSync(`git add markdown_global.txt`, {
       cwd: repoDir
     });
-    child_process.execSync(\`git commit -m "Update markdown_global.txt"\`, {
+    child_process.execSync(`git commit -m "Update markdown_global.txt"`, {
       cwd: repoDir
     });
-    child_process.execSync(\`git push\`, {
+    child_process.execSync(`git push`, {
       cwd: repoDir,
       stdio: "inherit"
     });
@@ -1465,7 +1465,5 @@ app.post("/api/markdown", (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(\`[TaskQueue] Web server is running on port \${PORT} (verbose='true')\`);
+  console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
-
-
