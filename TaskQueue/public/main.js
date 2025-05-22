@@ -2384,6 +2384,10 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
     pairLabel.textContent = `Pair #${pairId}`;
     metaContainer.appendChild(pairLabel);
 
+    const typeLabel = document.createElement("div");
+    typeLabel.textContent = imageUrl ? "Type: Image" : "Type: Chat";
+    metaContainer.appendChild(typeLabel);
+
     if (model) {
       const modelLabel = document.createElement("div");
       modelLabel.textContent = `${provider} / ${model}`;
