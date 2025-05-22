@@ -329,7 +329,7 @@ function openColModal(){
   });
   showModal($("#colModal"));
 }
-$("#gearBtn").addEventListener("click", openColModal);
+$("#colBtn").addEventListener("click", openColModal);
 $("#colList").addEventListener("click", e=>{
   if(!e.target.classList.contains("col-move")) return;
   const i = +e.target.dataset.idx, d=e.target.dataset.dir;
@@ -1095,10 +1095,8 @@ async function chatSettingsSaveFlow() {
     const updatedModelData = await updatedModelResp.json();
     console.debug("[Client Debug] /api/model data =>", updatedModelData);
     modelName = updatedModelData.model || "unknown";
-
     const { provider: autoProvider } = parseProviderModel(modelName);
     console.log("[OBTAINED PROVIDER] => (global model removed in UI, fallback only)");
-    const { provider } = parseProviderModel(modelName);
     console.log("[OBTAINED PROVIDER] =>", autoProvider);
     $("#modelHud").textContent = "";
   }
@@ -2180,9 +2178,29 @@ document.getElementById("sterlingBranchSaveBtn").addEventListener("click", async
   }
 });
 
-// -----------------------------------------------------------------------
+// ----------------------------------------------------------------------
+// Added click events for the “Markdown Menu” gear icon
+// ----------------------------------------------------------------------
+document.getElementById("markdownGearIcon").addEventListener("click", () => {
+  showModal(document.getElementById("mdMenuModal"));
+});
+document.getElementById("mdMenuCloseBtn").addEventListener("click", () => {
+  hideModal(document.getElementById("mdMenuModal"));
+});
+
+// ----------------------------------------------------------------------
+// New gearBtn opens Task List Config
+// ----------------------------------------------------------------------
+document.getElementById("gearBtn").addEventListener("click", () => {
+  showModal(document.getElementById("taskListConfigModal"));
+});
+document.getElementById("taskListConfigCloseBtn").addEventListener("click", () => {
+  hideModal(document.getElementById("taskListConfigModal"));
+});
+
+// ----------------------------------------------------------------------
 // Handling the global markdown save button
-// -----------------------------------------------------------------------
+// ----------------------------------------------------------------------
 document.getElementById("saveMdBtn").addEventListener("click", async () => {
   try {
     const content = $("#markdownInput").value;
@@ -2200,16 +2218,6 @@ document.getElementById("saveMdBtn").addEventListener("click", async () => {
     console.error("Error saving markdown:", e);
     alert("Unable to save markdown content.");
   }
-});
-
-// ----------------------------------------------------------------------
-// Added click events for the “Markdown Menu” gear icon
-// ----------------------------------------------------------------------
-document.getElementById("markdownGearIcon").addEventListener("click", () => {
-  showModal(document.getElementById("mdMenuModal"));
-});
-document.getElementById("mdMenuCloseBtn").addEventListener("click", () => {
-  hideModal(document.getElementById("mdMenuModal"));
 });
 
 console.log("[Server Debug] main.js fully loaded. End of script.");
