@@ -361,13 +361,12 @@
 <div id="mdMenuModal" class="modal">
   <div class="modal-content">
     <h2>Markdown Menu</h2>
-    <ul>
-      <li>Implemented a new task list configuration menu, opened via a gear icon button in the panel.</li>
-      <li>Added input for specifying a remote Git repository (SSH URL).</li>
-      <li>On every save of the global markdown file, the server now checks out (or updates) the repo in ~/.alfeai/tasklistRepo, copies markdown_global.txt there, then commits and pushes.</li>
-    </ul>
+    <label>TaskList Git SSH URL:<br/>
+      <input type="text" id="mdMenuRepoInput" style="width:100%;" />
+    </label>
     <div class="modal-buttons">
-      <button id="mdMenuCloseBtn">Close</button>
+      <button id="mdMenuSaveBtn">Save</button>
+      <button id="mdMenuCloseBtn">Cancel</button>
     </div>
   </div>
 </div>
