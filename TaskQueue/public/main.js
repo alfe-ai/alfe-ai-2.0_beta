@@ -27,6 +27,7 @@ window.agentName = "Alfe";
 // For per-tab model arrays
 let modelTabs = [];
 let currentModelTabId = null;
+let modelTabsBarVisible = false;
 
 const defaultFavicon = "alfe_favicon_clean_64x64.ico";
 const rotatingFavicon = "alfe_favicon_clean_64x64.ico";
@@ -175,6 +176,21 @@ async function loadSettings(){
         $(".sidebar").style.width = value + "px";
       }
     }
+  }
+  {
+    const r = await fetch("/api/settings/model_tabs_bar_visible");
+    if(r.ok){
+      const { value } = await r.json();
+      if(typeof value !== 'undefined'){
+        modelTabsBarVisible = !!value;
+      }
+    }
+    const cont = document.getElementById("modelTabsContainer");
+    const newBtn = document.getElementById("newModelTabBtn");
+    const toggleBtn = document.getElementById("toggleModelTabsBtn");
+    if(cont) cont.style.display = modelTabsBarVisible ? "" : "none";
+    if(newBtn) newBtn.style.display = modelTabsBarVisible ? "" : "none";
+    if(toggleBtn) toggleBtn.textContent = modelTabsBarVisible ? "Hide model tabs bar" : "Show model tabs bar";
   }
 }
 async function saveSettings(){
@@ -2145,15 +2161,21 @@ async function saveModelTabs(){
 }
 
 document.getElementById("toggleModelTabsBtn").addEventListener("click", async () => {
-  const modelTabsEl = document.getElementById("modelTabs");
-  if(modelTabsEl.style.display === "none"){
-    modelTabsEl.style.display = "";
-    document.getElementById("toggleModelTabsBtn").textContent = "Hide model tabs bar";
-    await setSetting("model_tabs_bar_visible", true);
-  } else {
-    modelTabsEl.style.display = "none";
-    document.getElementById("toggleModelTabsBtn").textContent = "Show model tabs bar";
+  const cont = document.getElementById("modelTabsContainer");
+  const newBtn = document.getElementById("newModelTabBtn");
+  const toggleBtn = document.getElementById("toggleModelTabsBtn");
+  if(modelTabsBarVisible){
+    if(cont) cont.style.display = "none";
+    if(newBtn) newBtn.style.display = "none";
+    if(toggleBtn) toggleBtn.textContent = "Show model tabs bar";
+    modelTabsBarVisible = false;
     await setSetting("model_tabs_bar_visible", false);
+  } else {
+    if(cont) cont.style.display = "";
+    if(newBtn) newBtn.style.display = "";
+    if(toggleBtn) toggleBtn.textContent = "Hide model tabs bar";
+    modelTabsBarVisible = true;
+    await setSetting("model_tabs_bar_visible", true);
   }
 });
 
