@@ -55,6 +55,7 @@
       if(resp.ok && data.url){
         const safeAlt = prompt.replace(/"/g, '&quot;');
         resultDiv.innerHTML = `<img src="${data.url}" alt="${safeAlt}"/>`;
+        promptInput.value = '';
       } else {
         resultDiv.textContent = data.error || 'Error generating image';
       }
