@@ -298,6 +298,22 @@ body {
   flex: 0 0 auto;
 }
 
+/* Buffer displaying thumbnails of images waiting to upload */
+.image-buffer {
+  display: flex;
+  gap: 4px;
+  margin: 4px 0;
+  flex-wrap: wrap;
+}
+
+.image-buffer img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border: 1px solid #444;
+  border-radius: 4px;
+}
+
 .chat-input-container textarea {
   border: none;
   background: #2a2a2a;

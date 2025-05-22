@@ -23,6 +23,7 @@ let showSubbubbleToken = false;
 let sterlingChatUrlVisible = true;
 let chatStreaming = true; // new toggle for streaming
 let enterSubmitsMessage = true; // new toggle for Enter key submit
+let pendingImages = []; // temporary image buffer
 window.agentName = "Alfe";
 
 // For per-tab model arrays
@@ -870,12 +871,41 @@ chatInputEl.addEventListener("keydown", (e) => {
 chatSendBtnEl.addEventListener("click", async () => {
   const chatMessagesEl = document.getElementById("chatMessages");
   const userMessage = chatInputEl.value.trim();
-  if(!userMessage) return;
+  const hasImages = pendingImages.length > 0;
+  if(!userMessage && !hasImages) return;
   const userTime = new Date().toISOString();
 
   if (favElement) favElement.href = rotatingFavicon;
 
   chatInputEl.value = "";
+
+  // Upload any pending images first
+  if(hasImages){
+    for(const f of pendingImages){
+      try{
+        const fd = new FormData();
+        fd.append("imageFile", f);
+        const upResp = await fetch(`/api/chat/image?tabId=${currentTabId}`, {
+          method:"POST",
+          body: fd
+        });
+        if(!upResp.ok){
+          console.error("Error uploading image:", upResp.status);
+        } else {
+          await upResp.json();
+        }
+      }catch(err){
+        console.error("Image upload error:", err);
+      }
+    }
+    clearImageBuffer();
+  }
+
+  if(!userMessage){
+    await loadChatHistory(currentTabId, true);
+    if (favElement) favElement.href = defaultFavicon;
+    return;
+  }
 
   const seqDiv = document.createElement("div");
   seqDiv.className = "chat-sequence";
@@ -2335,6 +2365,34 @@ document.getElementById("saveMdBtn").addEventListener("click", async () => {
     alert("Unable to save markdown content.");
   }
 });
+
+// New: image upload for chat
+document.getElementById("chatImageBtn").addEventListener("click", () => {
+  document.getElementById("imageUploadInput").click();
+});
+
+document.getElementById("imageUploadInput").addEventListener("change", (ev) => {
+  const files = ev.target.files;
+  if(!files || files.length===0) return;
+  const buf = document.getElementById("imageBuffer");
+  for(const f of files){
+    pendingImages.push(f);
+    const reader = new FileReader();
+    reader.onload = (e)=>{
+      const img = document.createElement("img");
+      img.src = e.target.result;
+      buf.appendChild(img);
+    };
+    reader.readAsDataURL(f);
+  }
+  ev.target.value="";
+});
+
+function clearImageBuffer(){
+  pendingImages = [];
+  const buf = document.getElementById("imageBuffer");
+  if(buf) buf.innerHTML = "";
+}
 
 console.log("[Server Debug] main.js fully loaded. End of script.");
 
