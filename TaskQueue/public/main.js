@@ -119,6 +119,15 @@ document.getElementById("expandSidebarBtn").addEventListener("click", () => {
   }
 });
 
+async function toggleNavMenu(){
+  navMenuVisible = !navMenuVisible;
+  toggleNavMenuVisibility(navMenuVisible);
+  const check = document.getElementById("showNavMenuCheck");
+  if(check) check.checked = navMenuVisible;
+  await setSetting("nav_menu_visible", navMenuVisible);
+}
+document.getElementById("navMenuToggle").addEventListener("click", toggleNavMenu);
+
 async function loadSettings(){
   {
     const r = await fetch("/api/settings/visible_columns");
