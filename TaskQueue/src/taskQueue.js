@@ -27,9 +27,7 @@ export default class TaskQueue {
    */
   print() {
     this.tasks.forEach((t, i) => {
-      console.log(\`#\${i + 1} [\${t.title}] -> \${t.html_url}\`);
+      console.log(`#${i + 1} [${t.title}] -> ${t.html_url}`);
     });
   }
 }
-
-
