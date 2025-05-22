@@ -2166,9 +2166,9 @@ document.getElementById("sterlingBranchSaveBtn").addEventListener("click", async
       method: "POST",
       headers: { "Content-Type":"application/json" },
       body: JSON.stringify({ data: [{
-        project,
-        base_branch: branchName
-      }]})
+          project,
+          base_branch: branchName
+        }]})
     });
     hideModal($("#changeBranchModal"));
     msgElem.textContent = "";

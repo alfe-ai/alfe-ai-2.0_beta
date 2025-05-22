@@ -46,9 +46,9 @@ async function main() {
 
     const label = process.env.GITHUB_LABEL;
     console.log(
-      `[TaskQueue] Fetching tasks from GitHub ${
-        label ? `(label='${label}')` : "(all open issues)"
-      } …`
+        `[TaskQueue] Fetching tasks from GitHub ${
+            label ? `(label='${label}')` : "(all open issues)"
+        } …`
     );
 
     const issues = await client.fetchOpenIssues(label?.trim() || undefined);

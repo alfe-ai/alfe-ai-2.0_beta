@@ -15,22 +15,22 @@ export default class TaskDB {
     // Base table (wide schema)
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS issues (
-        id              INTEGER PRIMARY KEY AUTOINCREMENT,
-        github_id       INTEGER UNIQUE,
-        repository      TEXT,
-        number          INTEGER,
-        title           TEXT,
-        html_url        TEXT,
-        task_id_slug    TEXT,
-        priority_number REAL,
-        priority        TEXT DEFAULT 'Medium',
-        hidden          INTEGER DEFAULT 0,
-        project         TEXT DEFAULT '',
-        sprint          TEXT DEFAULT '',
-        fib_points      INTEGER,
-        assignee        TEXT,
-        created_at      TEXT,
-        closed          INTEGER DEFAULT 0
+                                          id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                                          github_id       INTEGER UNIQUE,
+                                          repository      TEXT,
+                                          number          INTEGER,
+                                          title           TEXT,
+                                          html_url        TEXT,
+                                          task_id_slug    TEXT,
+                                          priority_number REAL,
+                                          priority        TEXT DEFAULT 'Medium',
+                                          hidden          INTEGER DEFAULT 0,
+                                          project         TEXT DEFAULT '',
+                                          sprint          TEXT DEFAULT '',
+                                          fib_points      INTEGER,
+                                          assignee        TEXT,
+                                          created_at      TEXT,
+                                          closed          INTEGER DEFAULT 0
       );
     `);
 
@@ -77,49 +77,49 @@ export default class TaskDB {
     // Simple key/value store
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS settings (
-        key   TEXT PRIMARY KEY,
-        value TEXT NOT NULL
+                                            key   TEXT PRIMARY KEY,
+                                            value TEXT NOT NULL
       );
     `);
 
     // Index for GitHub IDs
     this.db.exec(
-      `CREATE UNIQUE INDEX IF NOT EXISTS idx_issues_github ON issues(github_id);`
+        `CREATE UNIQUE INDEX IF NOT EXISTS idx_issues_github ON issues(github_id);`
     );
     // Re-create priority index without UNIQUE
     this.db.exec(
-      `CREATE INDEX IF NOT EXISTS idx_issues_priority ON issues(priority_number);`
+        `CREATE INDEX IF NOT EXISTS idx_issues_priority ON issues(priority_number);`
     );
 
     // Activity timeline
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS activity_timeline (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        timestamp TEXT NOT NULL,
-        action TEXT NOT NULL,
-        details TEXT
+                                                     id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                                     timestamp TEXT NOT NULL,
+                                                     action TEXT NOT NULL,
+                                                     details TEXT
       );
     `);
 
     // New table for chat tabs
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS chat_tabs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        created_at TEXT NOT NULL
+                                             id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                             name TEXT NOT NULL,
+                                             created_at TEXT NOT NULL
       );
     `);
 
     // New table for storing chat bubble pairs
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS chat_pairs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_text TEXT NOT NULL,
-        ai_text TEXT,
-        model TEXT,
-        timestamp TEXT NOT NULL,
-        ai_timestamp TEXT,
-        chat_tab_id INTEGER DEFAULT 1
+                                              id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                              user_text TEXT NOT NULL,
+                                              ai_text TEXT,
+                                              model TEXT,
+                                              timestamp TEXT NOT NULL,
+                                              ai_timestamp TEXT,
+                                              chat_tab_id INTEGER DEFAULT 1
       );
     `);
 
@@ -149,8 +149,8 @@ export default class TaskDB {
     // New table to store base branch per project
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS project_branches (
-        project TEXT PRIMARY KEY,
-        base_branch TEXT DEFAULT ''
+                                                    project TEXT PRIMARY KEY,
+                                                    base_branch TEXT DEFAULT ''
       );
     `);
 
@@ -162,16 +162,16 @@ export default class TaskDB {
   /* ------------------------------------------------------------------ */
   upsertIssue(issue, repositorySlug) {
     const existing = this.db
-      .prepare(
-        "SELECT priority_number, priority, project, sprint, status, dependencies, blocking FROM issues WHERE github_id = ?"
-      )
-      .get(issue.id);
+        .prepare(
+            "SELECT priority_number, priority, project, sprint, status, dependencies, blocking FROM issues WHERE github_id = ?"
+        )
+        .get(issue.id);
 
     let priorityNum = existing?.priority_number;
     if (!priorityNum) {
       const max =
-        this.db.prepare("SELECT MAX(priority_number) AS m FROM issues").get()
-          .m || 0;
+          this.db.prepare("SELECT MAX(priority_number) AS m FROM issues").get()
+              .m || 0;
       priorityNum = max + 1;
     }
 
@@ -203,25 +203,25 @@ export default class TaskDB {
         project, sprint, fib_points, assignee, created_at, closed, status,
         dependencies, blocking
       ) VALUES (
-        @github_id, @repository, @number, @title, @html_url,
-        @task_id_slug, @priority_number, @priority, @hidden,
-        @project, @sprint, @fib_points, @assignee, @created_at, @closed, @status,
-        @dependencies, @blocking
-      )
-      ON CONFLICT(github_id) DO UPDATE SET
+                 @github_id, @repository, @number, @title, @html_url,
+                 @task_id_slug, @priority_number, @priority, @hidden,
+                 @project, @sprint, @fib_points, @assignee, @created_at, @closed, @status,
+                 @dependencies, @blocking
+               )
+        ON CONFLICT(github_id) DO UPDATE SET
         repository      = excluded.repository,
-        number          = excluded.number,
-        title           = excluded.title,
-        html_url        = excluded.html_url,
-        task_id_slug    = excluded.task_id_slug,
-        priority_number = excluded.priority_number,
-        priority        = excluded.priority,
-        assignee        = excluded.assignee,
-        created_at      = excluded.created_at,
-        closed          = 0,
-        status          = issues.status,
-        dependencies    = issues.dependencies,
-        blocking        = issues.blocking
+                                    number          = excluded.number,
+                                    title           = excluded.title,
+                                    html_url        = excluded.html_url,
+                                    task_id_slug    = excluded.task_id_slug,
+                                    priority_number = excluded.priority_number,
+                                    priority        = excluded.priority,
+                                    assignee        = excluded.assignee,
+                                    created_at      = excluded.created_at,
+                                    closed          = 0,
+                                    status          = issues.status,
+                                    dependencies    = issues.dependencies,
+                                    blocking        = issues.blocking
     `);
 
     stmt.run(row);
@@ -234,33 +234,33 @@ export default class TaskDB {
     }
     const placeholders = openGithubIds.map(() => "?").join(",");
     this.db
-      .prepare(`UPDATE issues SET closed = 1 WHERE github_id NOT IN (${placeholders});`)
-      .run(...openGithubIds);
+        .prepare(`UPDATE issues SET closed = 1 WHERE github_id NOT IN (${placeholders});`)
+        .run(...openGithubIds);
   }
 
   listTasks(includeHidden = false) {
     const sql = includeHidden
-      ? "SELECT * FROM issues WHERE closed = 0 ORDER BY priority_number;"
-      : "SELECT * FROM issues WHERE closed = 0 AND hidden = 0 ORDER BY priority_number;";
+        ? "SELECT * FROM issues WHERE closed = 0 ORDER BY priority_number;"
+        : "SELECT * FROM issues WHERE closed = 0 AND hidden = 0 ORDER BY priority_number;";
     return this.db.prepare(sql).all();
   }
 
   reorderTask(id, direction) {
     const current = this.db
-      .prepare("SELECT id, priority_number FROM issues WHERE id = ?")
-      .get(id);
+        .prepare("SELECT id, priority_number FROM issues WHERE id = ?")
+        .get(id);
     if (!current) return false;
 
     let neighbor;
     if (direction === "up") {
       neighbor = this.db
-        .prepare(
-          `SELECT id, priority_number FROM issues
-           WHERE priority_number < ?
-           ORDER BY priority_number DESC
-           LIMIT 1`
-        )
-        .get(current.priority_number);
+          .prepare(
+              `SELECT id, priority_number FROM issues
+               WHERE priority_number < ?
+               ORDER BY priority_number DESC
+                 LIMIT 1`
+          )
+          .get(current.priority_number);
       if (!neighbor) {
         const newVal = current.priority_number - 1;
         this.db.prepare("UPDATE issues SET priority_number=? WHERE id=?").run(newVal, current.id);
@@ -271,13 +271,13 @@ export default class TaskDB {
       return true;
     } else {
       neighbor = this.db
-        .prepare(
-          `SELECT id, priority_number FROM issues
-           WHERE priority_number > ?
-           ORDER BY priority_number ASC
-           LIMIT 1`
-        )
-        .get(current.priority_number);
+          .prepare(
+              `SELECT id, priority_number FROM issues
+               WHERE priority_number > ?
+               ORDER BY priority_number ASC
+                 LIMIT 1`
+          )
+          .get(current.priority_number);
       if (!neighbor) {
         const newVal = current.priority_number + 1;
         this.db.prepare("UPDATE issues SET priority_number=? WHERE id=?").run(newVal, current.id);
@@ -301,80 +301,80 @@ export default class TaskDB {
 
   setHidden(id, hidden) {
     this.db.prepare("UPDATE issues SET hidden = ? WHERE id = ?").run(
-      hidden ? 1 : 0,
-      id
+        hidden ? 1 : 0,
+        id
     );
   }
 
   setPoints(id, points) {
     this.db.prepare("UPDATE issues SET fib_points = ? WHERE id = ?").run(
-      points,
-      id
+        points,
+        id
     );
   }
 
   setProject(id, project) {
     this.db.prepare("UPDATE issues SET project = ? WHERE id = ?").run(
-      project,
-      id
+        project,
+        id
     );
   }
 
   setSprint(id, sprint) {
     this.db.prepare("UPDATE issues SET sprint = ? WHERE id = ?").run(
-      sprint,
-      id
+        sprint,
+        id
     );
   }
 
   setPriority(id, priority) {
     this.db.prepare("UPDATE issues SET priority = ? WHERE id = ?").run(
-      priority,
-      id
+        priority,
+        id
     );
   }
 
   setStatus(id, status) {
     this.db.prepare("UPDATE issues SET status = ? WHERE id = ?").run(
-      status,
-      id
+        status,
+        id
     );
   }
 
   setDependencies(id, deps) {
     this.db.prepare("UPDATE issues SET dependencies = ? WHERE id = ?").run(
-      deps,
-      id
+        deps,
+        id
     );
   }
 
   setBlocking(id, blocks) {
     this.db.prepare("UPDATE issues SET blocking = ? WHERE id = ?").run(
-      blocks,
-      id
+        blocks,
+        id
     );
   }
 
   setProjectByGithubId(githubId, project) {
     this.db
-      .prepare("UPDATE issues SET project = ? WHERE github_id = ?")
-      .run(project, githubId);
+        .prepare("UPDATE issues SET project = ? WHERE github_id = ?")
+        .run(project, githubId);
   }
 
   setSprintByGithubId(githubId, sprint) {
     this.db
-      .prepare("UPDATE issues SET sprint = ? WHERE github_id = ?")
-      .run(sprint, githubId);
+        .prepare("UPDATE issues SET sprint = ? WHERE github_id = ?")
+        .run(sprint, githubId);
   }
 
   allSettings() {
     return this.db
-      .prepare("SELECT key, value FROM settings")
-      .all()
-      .map((r) => ({
-        key: r.key,
-        value: this._safeParse(r.value)
-      }));
+        .prepare("SELECT key, value FROM settings")
+        .all()
+        .map((r) => ({
+          key: r.key,
+          value: this._safeParse(r.value)
+        }));
   }
 
   getSetting(key) {
@@ -385,44 +385,44 @@ export default class TaskDB {
   setSetting(key, value) {
     const val = JSON.stringify(value);
     this.db
-      .prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)")
-      .run(key, val);
+        .prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)")
+        .run(key, val);
   }
 
   listProjects() {
     return this.db
-      .prepare(
-        `SELECT
-           project,
-           COUNT(*) AS count
-         FROM issues
-         WHERE closed = 0 AND hidden = 0
-         GROUP BY project
-         HAVING project <> ''
-         ORDER BY count DESC;`
-      )
-      .all();
+        .prepare(
+            `SELECT
+               project,
+               COUNT(*) AS count
+             FROM issues
+             WHERE closed = 0 AND hidden = 0
+             GROUP BY project
+             HAVING project <> ''
+             ORDER BY count DESC;`
+        )
+        .all();
   }
 
   listSprints() {
     return this.db
-      .prepare(
-        `SELECT
-           sprint,
-           COUNT(*) AS count
-         FROM issues
-         WHERE closed = 0 AND hidden = 0
-         GROUP BY sprint
-         HAVING sprint <> ''
-         ORDER BY count DESC;`
-      )
-      .all();
+        .prepare(
+            `SELECT
+               sprint,
+               COUNT(*) AS count
+             FROM issues
+             WHERE closed = 0 AND hidden = 0
+             GROUP BY sprint
+             HAVING sprint <> ''
+             ORDER BY count DESC;`
+        )
+        .all();
   }
 
   dump() {
     return this.db
-      .prepare("SELECT * FROM issues ORDER BY priority_number")
-      .all();
+        .prepare("SELECT * FROM issues ORDER BY priority_number")
+        .all();
   }
 
   _safeParse(val) {
@@ -435,20 +435,20 @@ export default class TaskDB {
 
   getTaskById(id) {
     return this.db
-      .prepare("SELECT * FROM issues WHERE id=?")
-      .get(id);
+        .prepare("SELECT * FROM issues WHERE id=?")
+        .get(id);
   }
 
   listTasksByProject(project) {
     return this.db
-      .prepare("SELECT * FROM issues WHERE project=? AND closed=0 ORDER BY priority_number")
-      .all(project);
+        .prepare("SELECT * FROM issues WHERE project=? AND closed=0 ORDER BY priority_number")
+        .all(project);
   }
 
   listTasksBySprint(sprint) {
     return this.db
-      .prepare("SELECT * FROM issues WHERE sprint=? AND closed=0 ORDER BY priority_number")
-      .all(sprint);
+        .prepare("SELECT * FROM issues WHERE sprint=? AND closed=0 ORDER BY priority_number")
+        .all(sprint);
   }
 
   setTitle(id, newTitle) {
@@ -457,14 +457,14 @@ export default class TaskDB {
 
   logActivity(action, details) {
     this.db
-      .prepare("INSERT INTO activity_timeline (timestamp, action, details) VALUES (?, ?, ?)")
-      .run(new Date().toISOString(), action, details ?? "");
+        .prepare("INSERT INTO activity_timeline (timestamp, action, details) VALUES (?, ?, ?)")
+        .run(new Date().toISOString(), action, details ?? "");
   }
 
   getActivity() {
     return this.db
-      .prepare("SELECT * FROM activity_timeline ORDER BY id DESC")
-      .all();
+        .prepare("SELECT * FROM activity_timeline ORDER BY id DESC")
+        .all();
   }
 
   /* ------------------------------------------------------------------ */
@@ -503,8 +503,8 @@ export default class TaskDB {
 
   getAllChatPairs(tabId = 1) {
     return this.db
-      .prepare("SELECT * FROM chat_pairs WHERE chat_tab_id=? ORDER BY id ASC")
-      .all(tabId);
+        .prepare("SELECT * FROM chat_pairs WHERE chat_tab_id=? ORDER BY id ASC")
+        .all(tabId);
   }
 
   getChatPairsPage(tabId = 1, limit = 10, offset = 0) {
@@ -512,15 +512,15 @@ export default class TaskDB {
       SELECT * FROM chat_pairs
       WHERE chat_tab_id = ?
       ORDER BY id DESC
-      LIMIT ?
+        LIMIT ?
       OFFSET ?
     `).all(tabId, limit, offset);
   }
 
   getPairById(id) {
     return this.db
-      .prepare("SELECT * FROM chat_pairs WHERE id = ?")
-      .get(id);
+        .prepare("SELECT * FROM chat_pairs WHERE id = ?")
+        .get(id);
   }
 
   /* ------------------------------------------------------------------ */
@@ -563,15 +563,15 @@ export default class TaskDB {
   /* ------------------------------------------------------------------ */
   listProjectBranches() {
     return this.db
-      .prepare("SELECT project, base_branch FROM project_branches ORDER BY project ASC")
-      .all();
+        .prepare("SELECT project, base_branch FROM project_branches ORDER BY project ASC")
+        .all();
   }
 
   upsertProjectBranch(project, branch) {
     this.db.prepare(`
       INSERT INTO project_branches (project, base_branch)
       VALUES (@project, @branch)
-      ON CONFLICT(project) DO UPDATE SET base_branch=excluded.base_branch
+        ON CONFLICT(project) DO UPDATE SET base_branch=excluded.base_branch
     `).run({ project, branch });
   }
 
@@ -585,8 +585,8 @@ export default class TaskDB {
   renameProject(oldProject, newProject) {
     // If old project is recognized in project_branches, keep its base_branch
     const row = this.db
-      .prepare("SELECT base_branch FROM project_branches WHERE project=?")
-      .get(oldProject);
+        .prepare("SELECT base_branch FROM project_branches WHERE project=?")
+        .get(oldProject);
 
     const baseBranch = row ? row.base_branch : "";
 
@@ -600,7 +600,7 @@ export default class TaskDB {
 
     // Update issues
     this.db
-      .prepare("UPDATE issues SET project=? WHERE project=?")
-      .run(newProject, oldProject);
+        .prepare("UPDATE issues SET project=? WHERE project=?")
+        .run(newProject, oldProject);
   }
 }

@@ -34,8 +34,8 @@ export default class GitHubClient {
 
     // `paginate()` handles multi-page responses transparently.
     return await this.octokit.paginate(
-      this.octokit.issues.listForRepo,
-      params
+        this.octokit.issues.listForRepo,
+        params
     );
   }
 

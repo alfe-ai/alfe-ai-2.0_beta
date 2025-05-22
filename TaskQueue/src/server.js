@@ -46,9 +46,9 @@ async function main() {
 
     const label = process.env.GITHUB_LABEL;
     console.log(
-      `[TaskQueue] Fetching tasks from GitHub ${
-        label ? `(label='${label}')` : "(all open issues)"
-      } …`
+        `[TaskQueue] Fetching tasks from GitHub ${
+            label ? `(label='${label}')` : "(all open issues)"
+        } …`
     );
 
     const issues = await client.fetchOpenIssues(label?.trim() || undefined);
@@ -126,7 +126,7 @@ function getOpenAiClient() {
   if (service === "openrouter") {
     if (!openRouterKey) {
       throw new Error(
-        "Missing OPENROUTER_API_KEY environment variable, please set it before using OpenRouter."
+          "Missing OPENROUTER_API_KEY environment variable, please set it before using OpenRouter."
       );
     }
     // Use openrouter.ai with app name and referer
@@ -142,7 +142,7 @@ function getOpenAiClient() {
   } else {
     if (!openAiKey) {
       throw new Error(
-        "Missing OPENAI_API_KEY environment variable, please set it before using OpenAI."
+          "Missing OPENAI_API_KEY environment variable, please set it before using OpenAI."
       );
     }
     // Default to openai
@@ -228,8 +228,8 @@ app.get("/api/tasks", (req, res) => {
   console.debug("[Server Debug] GET /api/tasks called.");
   try {
     const includeHidden =
-      req.query.includeHidden === "1" ||
-      req.query.includeHidden === "true";
+        req.query.includeHidden === "1" ||
+        req.query.includeHidden === "true";
     console.debug("[Server Debug] includeHidden =", includeHidden);
     const tasks = db.listTasks(includeHidden);
     console.debug("[Server Debug] Found tasks =>", tasks.length);
@@ -403,8 +403,8 @@ app.post("/api/tasks/priority", (req, res) => {
     db.setPriority(id, priority);
 
     db.logActivity(
-      "Set priority",
-      JSON.stringify({ id, from: oldPriority, to: priority })
+        "Set priority",
+        JSON.stringify({ id, from: oldPriority, to: priority })
     );
 
     res.json({ success: true });
@@ -702,8 +702,8 @@ app.get("/api/ai/models", async (req, res) => {
           const combinedId = "openai/" + id;
           const limit = knownTokenLimits[combinedId] || "N/A";
           const cInfo = knownCosts[combinedId]
-            ? knownCosts[combinedId]
-            : { input: "N/A", output: "N/A" };
+              ? knownCosts[combinedId]
+              : { input: "N/A", output: "N/A" };
           return {
             id: combinedId,
             provider: "openai",
@@ -1030,7 +1030,7 @@ app.post("/api/chat", async (req, res) => {
     const finalAssistantTokens = countTokens(encoder, assistantMessage);
 
     const total =
-      systemTokens + historyTokens + inputTokens + prevAssistantTokens + finalAssistantTokens;
+        systemTokens + historyTokens + inputTokens + prevAssistantTokens + finalAssistantTokens;
 
     const tokenInfo = {
       systemTokens,
@@ -1272,11 +1272,11 @@ app.post("/api/createSterlingChat", async (req, res) => {
 
     try {
       const changeBranchResp = await axios.post(
-        `${baseURL}/changeBranchOfChat/${encodeURIComponent(projectName)}/${createChatResponse.data.newChatNumber}`,
-        {
-          createNew: false,
-          branchName: sterlingBranch
-        }
+          `${baseURL}/changeBranchOfChat/${encodeURIComponent(projectName)}/${createChatResponse.data.newChatNumber}`,
+          {
+            createNew: false,
+            branchName: sterlingBranch
+          }
       );
       console.log('Response from /changeBranchOfChat:', changeBranchResp.data);
     } catch (branchErr) {
