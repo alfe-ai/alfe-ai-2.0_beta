@@ -787,7 +787,6 @@ function parseProviderModel(model) {
   } else if(model.startsWith("openrouter/")) {
     return { provider: "openrouter", shortModel: model.replace(/^openrouter\//,'') };
   } else if(model.startsWith("deepseek/")) {
-    // Changed to treat deepseek/ as openrouter
     return { provider: "openrouter", shortModel: model.replace(/^deepseek\//,'') };
   }
   return { provider: "Unknown", shortModel: model };
@@ -2203,5 +2202,14 @@ document.getElementById("saveMdBtn").addEventListener("click", async () => {
   }
 });
 
-console.log("[Server Debug] main.js fully loaded. End of script.");
+// ----------------------------------------------------------------------
+// Added click events for the “Markdown Menu” gear icon
+// ----------------------------------------------------------------------
+document.getElementById("markdownGearIcon").addEventListener("click", () => {
+  showModal(document.getElementById("mdMenuModal"));
+});
+document.getElementById("mdMenuCloseBtn").addEventListener("click", () => {
+  hideModal(document.getElementById("mdMenuModal"));
+});
 
+console.log("[Server Debug] main.js fully loaded. End of script.");

@@ -919,7 +919,6 @@ app.post("/api/chat", async (req, res) => {
 
     // Grab provider
     const { provider, shortModel } = parseProviderModel(model || "gpt-3.5-turbo");
-    // Updated to also show provider
     const systemContext = `System Context:\n${savedInstructions}\n\nModel: ${model} (provider: ${provider})\nUserTime: ${userTime}\nTimeZone: Central`;
 
     const conversation = [{ role: "system", content: systemContext }];
@@ -1454,4 +1453,3 @@ app.listen(PORT, () => {
 // The front-end chat UI expansions are generated in finalizeChatPair display logic below:
 //
 // [No further code. End of server.js here, changes concluded above with the relevant expansions.]
-
