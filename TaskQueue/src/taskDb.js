@@ -461,13 +461,13 @@ export default class TaskDB {
   }
 
   getChatPairsPage(tabId = 1, limit = 10, offset = 0) {
-    return this.db.prepare(\`
+    return this.db.prepare(`
       SELECT * FROM chat_pairs
       WHERE chat_tab_id = ?
       ORDER BY id DESC
         LIMIT ?
       OFFSET ?
-    \`).all(tabId, limit, offset);
+    `).all(tabId, limit, offset);
   }
 
   getPairById(id) {
