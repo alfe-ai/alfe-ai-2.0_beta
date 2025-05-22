@@ -294,6 +294,14 @@ body {
   font-size: 1rem;
 }
 
+/* Thumbnail for user uploaded images */
+.user-image-thumb {
+  max-width: 120px;
+  max-height: 120px;
+  margin: 4px 0;
+  border: 1px solid #555;
+}
+
 /* Additional details styling */
 .chat-system,
 .chat-instructions {
