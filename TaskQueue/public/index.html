@@ -361,7 +361,11 @@
 <div id="mdMenuModal" class="modal">
   <div class="modal-content">
     <h2>Markdown Menu</h2>
-    <p>Placeholder for future markdown-related settings or actions.</p>
+    <ul>
+      <li>Implemented a new task list configuration menu, opened via a gear icon button in the panel.</li>
+      <li>Added input for specifying a remote Git repository (SSH URL).</li>
+      <li>On every save of the global markdown file, the server now checks out (or updates) the repo in ~/.alfeai/tasklistRepo, copies markdown_global.txt there, then commits and pushes.</li>
+    </ul>
     <div class="modal-buttons">
       <button id="mdMenuCloseBtn">Close</button>
     </div>
