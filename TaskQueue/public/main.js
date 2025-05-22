@@ -2189,6 +2189,13 @@ document.getElementById("markdownGearIcon").addEventListener("click", async () =
       const { value } = await r.json();
       document.getElementById("mdMenuRepoInput").value = value || "";
     }
+    const rp = await fetch("/api/tasklist/repo-path");
+    if(rp.ok){
+      const { path } = await rp.json();
+      document.getElementById("mdMenuRepoPath").textContent = path ? `Local repo: ${path}` : "Repo not cloned";
+    } else {
+      document.getElementById("mdMenuRepoPath").textContent = "Repo not cloned";
+    }
   } catch(e){
     console.error("Error loading taskList_git_ssh_url:", e);
   }
@@ -2205,6 +2212,24 @@ document.getElementById("mdMenuSaveBtn").addEventListener("click", async () => {
     console.error("Error saving taskList_git_ssh_url:", e);
   }
   hideModal(document.getElementById("mdMenuModal"));
+});
+document.getElementById("mdMenuUpdateBtn").addEventListener("click", async () => {
+  try {
+    const content = document.getElementById("markdownInput").value;
+    const resp = await fetch("/api/markdown", {
+      method: "POST",
+      headers: { "Content-Type":"application/json" },
+      body: JSON.stringify({ content })
+    });
+    if(!resp.ok){
+      alert("Error updating markdown.");
+      return;
+    }
+    alert("Markdown updated and pushed.");
+  } catch(e){
+    console.error("Error updating markdown:", e);
+    alert("Unable to update markdown.");
+  }
 });
 document.getElementById("mdMenuCloseBtn").addEventListener("click", () => {
   hideModal(document.getElementById("mdMenuModal"));

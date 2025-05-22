@@ -1405,6 +1405,20 @@ function commitAndPushMarkdown(repoDir) {
   }
 }
 
+app.get("/api/tasklist/repo-path", (req, res) => {
+  try {
+    const gitUrl = db.getSetting("taskList_git_ssh_url");
+    if (!gitUrl) {
+      return res.json({ path: null });
+    }
+    const repoDir = ensureTaskListRepoCloned(gitUrl);
+    res.json({ path: repoDir });
+  } catch (err) {
+    console.error("Error in /api/tasklist/repo-path:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.get("/api/markdown", (req, res) => {
   try {
     if (fs.existsSync(mdFilePath)) {
