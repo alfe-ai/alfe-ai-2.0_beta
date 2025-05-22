@@ -25,6 +25,7 @@ let sterlingChatUrlVisible = true;
 let chatStreaming = true; // new toggle for streaming
 let enterSubmitsMessage = true; // new toggle for Enter key submit
 let navMenuVisible = false; // visibility of the top navigation menu
+let showArchivedTabs = false;
 let chatSubroutines = [];
 let actionHooks = [];
 let editingSubroutineId = null;
@@ -260,6 +261,15 @@ async function loadSettings(){
       }
     }
     toggleNavMenuVisibility(navMenuVisible);
+  }
+  {
+    const r = await fetch("/api/settings/show_archived_tabs");
+    if(r.ok){
+      const { value } = await r.json();
+      if(typeof value !== 'undefined'){
+        showArchivedTabs = !!value;
+      }
+    }
   }
 }
 async function saveSettings(){
@@ -825,6 +835,19 @@ async function deleteTab(tabId){
     await loadChatHistory(currentTabId, true);
   }
 }
+
+async function toggleArchiveTab(tabId, archived){
+  const r = await fetch('/api/chat/tabs/archive', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tabId, archived })
+  });
+  if(r.ok){
+    await loadTabs();
+    renderTabs();
+    renderSidebarTabs();
+  }
+}
 async function selectTab(tabId){
   currentTabId = tabId;
   await setSetting("last_chat_tab", tabId);
@@ -835,7 +858,7 @@ async function selectTab(tabId){
 function renderTabs(){
   const tc = $("#tabsContainer");
   tc.innerHTML="";
-  chatTabs.forEach(tab => {
+  chatTabs.filter(t => showArchivedTabs || !t.archived).forEach(tab => {
     const tabBtn = document.createElement("div");
     tabBtn.style.display="flex";
     tabBtn.style.alignItems="center";
@@ -852,8 +875,17 @@ function renderTabs(){
     }
 
     tabBtn.style.padding="4px 6px";
-    tabBtn.textContent = tab.name;
-    tabBtn.addEventListener("click", ()=>selectTab(tab.id));
+    const nameSpan = document.createElement("span");
+    nameSpan.textContent = tab.name;
+    nameSpan.style.flexGrow = "1";
+    nameSpan.addEventListener("click", ()=>selectTab(tab.id));
+    tabBtn.appendChild(nameSpan);
+
+    const archBtn = document.createElement("button");
+    archBtn.textContent = tab.archived ? "Unarchive" : "Archive";
+    archBtn.style.marginLeft = "4px";
+    archBtn.addEventListener("click", e=>{ e.stopPropagation(); toggleArchiveTab(tab.id, !tab.archived); });
+    tabBtn.appendChild(archBtn);
 
     tabBtn.addEventListener("contextmenu", e=>{
       e.preventDefault();
@@ -869,12 +901,16 @@ function renderTabs(){
 function renderSidebarTabs(){
   const container = document.getElementById("verticalTabsContainer");
   container.innerHTML="";
-  chatTabs.forEach(tab=>{
+  chatTabs.filter(t => showArchivedTabs || !t.archived).forEach(tab=>{
+    const wrapper = document.createElement("div");
+    wrapper.style.display = "flex";
+    wrapper.style.gap = "4px";
     const b = document.createElement("button");
     b.textContent = tab.name;
     if(tab.id===currentTabId){
       b.classList.add("active");
     }
+    b.style.flexGrow = "1";
     b.addEventListener("click", ()=>selectTab(tab.id));
     b.addEventListener("contextmenu", e=>{
       e.preventDefault();
@@ -882,7 +918,12 @@ function renderSidebarTabs(){
       if(choice==="rename") renameTab(tab.id);
       else if(choice==="delete") deleteTab(tab.id);
     });
-    container.appendChild(b);
+    const archBtn = document.createElement("button");
+    archBtn.textContent = tab.archived ? "Unarchive" : "Archive";
+    archBtn.addEventListener("click", e=>{ e.stopPropagation(); toggleArchiveTab(tab.id, !tab.archived); });
+    wrapper.appendChild(b);
+    wrapper.appendChild(archBtn);
+    container.appendChild(wrapper);
   });
 }
 
@@ -1303,6 +1344,7 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
   $("#showSubroutinePanelCheck").checked = subroutinePanelVisible;
   $("#enterSubmitCheck").checked = enterSubmitsMessage;
   $("#showNavMenuCheck").checked = navMenuVisible;
+  $("#showArchivedTabsCheck").checked = showArchivedTabs;
 
   try {
     const modelListResp = await fetch("/api/ai/models");
@@ -1412,6 +1454,7 @@ async function chatSettingsSaveFlow() {
   subroutinePanelVisible = $("#showSubroutinePanelCheck").checked;
   enterSubmitsMessage = $("#enterSubmitCheck").checked;
   navMenuVisible = $("#showNavMenuCheck").checked;
+  showArchivedTabs = $("#showArchivedTabsCheck").checked;
 
   await setSetting("chat_hide_metadata", chatHideMetadata);
   await setSetting("chat_tab_auto_naming", chatTabAutoNaming);
@@ -1422,6 +1465,7 @@ async function chatSettingsSaveFlow() {
   await setSetting("subroutine_panel_visible", subroutinePanelVisible);
   await setSetting("enter_submits_message", enterSubmitsMessage);
   await setSetting("nav_menu_visible", navMenuVisible);
+  await setSetting("show_archived_tabs", showArchivedTabs);
 
   const serviceSel = $("#aiServiceSelect").value;
   const modelSel = $("#aiModelSelect").value;
@@ -1448,6 +1492,8 @@ async function chatSettingsSaveFlow() {
   toggleNavMenuVisibility(navMenuVisible);
   document.getElementById("taskListPanel").style.display = markdownPanelVisible ? "" : "none";
   document.getElementById("chatSubroutinesPanel").style.display = subroutinePanelVisible ? "" : "none";
+  renderTabs();
+  renderSidebarTabs();
 }
 
 $("#chatSettingsSaveBtn").addEventListener("click", chatSettingsSaveFlow);
