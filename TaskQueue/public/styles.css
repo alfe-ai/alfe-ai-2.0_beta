@@ -417,3 +417,14 @@ body {
   border-color: #aaa;
   color: #fff;
 }
+
+/* New gear icon for the Markdown area */
+#markdownGearIcon {
+  position: relative;
+  z-index: 9999;
+  background: none;
+  border: none;
+  color: #ddd;
+  cursor: pointer;
+  margin-left: 4px;
+}
