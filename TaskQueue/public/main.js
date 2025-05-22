@@ -725,7 +725,7 @@ document.getElementById("createSterlingChatBtn").addEventListener("click", async
   try {
     const resp = await fetch("/api/createSterlingChat", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type":"application/json" },
       body: JSON.stringify({})
     });
     if(!resp.ok){
@@ -1551,7 +1551,7 @@ navFileTreeBtn.addEventListener("click", showFileTreePanel);
 btnChatTabs.addEventListener("click", showChatTabsPanel);
 btnActivityIframe.addEventListener("click", showActivityIframePanel);
 
-(async function init(){
+async function init(){
   await loadSettings();
   await populateFilters();
   await loadTasks();
@@ -1706,7 +1706,7 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
   } catch(e) {
     console.error("Error loading markdown content:", e);
   }
-})();
+}
 
 function initChatScrollLoading(){
   const chatMessagesEl = document.getElementById("chatMessages");
@@ -2256,6 +2256,10 @@ document.getElementById("saveMdBtn").addEventListener("click", async () => {
     console.error("Error saving markdown:", e);
     alert("Unable to save markdown content.");
   }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  init();
 });
 
 console.log("[Server Debug] main.js fully loaded. End of script.");
