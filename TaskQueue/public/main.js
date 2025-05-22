@@ -1038,8 +1038,10 @@ chatSendBtnEl.addEventListener("click", async () => {
 
   if (favElement) favElement.href = rotatingFavicon;
 
-  // 1) If there are images pending, process them to get descriptions, but do NOT call loadChatHistory now.
+  // 1) If there are images pending, process them to get descriptions and
+  //    collect info for showing thumbnails in the chat history.
   let descsForThisSend = [];
+  let imageInfosForThisSend = [];
   if(pendingImages.length>0){
     // Show the loading indicator for image processing
     const loaderEl = document.getElementById("imageProcessingIndicator");
@@ -1064,6 +1066,10 @@ chatSendBtnEl.addEventListener("click", async () => {
             if(json.desc){
               // Show bracketed text with filename
               descsForThisSend.push(`[filename: ${json.filename}] [desc: ${json.desc}]`);
+              imageInfosForThisSend.push({
+                url: `/uploads/${json.filename}`,
+                desc: json.desc
+              });
             }
           }
         } catch(e){
@@ -1110,7 +1116,16 @@ chatSendBtnEl.addEventListener("click", async () => {
   `;
   userDiv.appendChild(userHead);
 
-  // For each image desc, add a subbubble
+  // Show thumbnails for uploaded images
+  imageInfosForThisSend.forEach(info => {
+    const img = document.createElement("img");
+    img.src = info.url;
+    img.alt = info.desc;
+    img.className = "user-image-thumb";
+    userDiv.appendChild(img);
+  });
+
+  // For each image desc, also add text subbubble
   descsForThisSend.forEach(d => {
     const descBubble = document.createElement("div");
     descBubble.textContent = d;
