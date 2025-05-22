@@ -505,6 +505,18 @@ export default class TaskDB {
     this.db.prepare("DELETE FROM chat_pairs WHERE id=?").run(id);
   }
 
+  deleteAiPart(id) {
+    this.db.prepare(
+        "UPDATE chat_pairs SET ai_text='', model='', ai_timestamp=NULL, token_info=NULL WHERE id=?"
+    ).run(id);
+  }
+
+  deleteUserPart(id) {
+    this.db.prepare(
+        "UPDATE chat_pairs SET user_text='' WHERE id=?"
+    ).run(id);
+  }
+
   listProjectBranches() {
     return this.db
         .prepare("SELECT project, base_branch FROM project_branches ORDER BY project ASC")
