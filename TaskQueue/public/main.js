@@ -27,6 +27,7 @@ window.agentName = "Alfe";
 // For per-tab model arrays
 let modelTabs = [];
 let currentModelTabId = null;
+let modelTabsBarVisible = true;
 
 const defaultFavicon = "alfe_favicon_clean_64x64.ico";
 const rotatingFavicon = "alfe_favicon_clean_64x64.ico";
@@ -988,12 +989,18 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
     const { value } = await r6.json();
     markdownPanelVisible = !!value;
   }
+  const r7 = await fetch("/api/settings/model_tabs_bar_visible");
+  if(r7.ok){
+    const { value } = await r7.json();
+    modelTabsBarVisible = value !== false;
+  }
 
   $("#hideMetadataCheck").checked = chatHideMetadata;
   $("#autoNamingCheck").checked = chatTabAutoNaming;
   $("#subbubbleTokenCheck").checked = showSubbubbleToken;
   $("#sterlingUrlCheck").checked = sterlingChatUrlVisible;
   $("#showMarkdownTasksCheck").checked = markdownPanelVisible;
+  $("#showModelTabsCheck").checked = modelTabsBarVisible;
 
   try {
     const modelListResp = await fetch("/api/ai/models");
@@ -1100,6 +1107,7 @@ async function chatSettingsSaveFlow() {
   sterlingChatUrlVisible = $("#sterlingUrlCheck").checked;
   chatStreaming = $("#chatStreamingCheck").checked;
   markdownPanelVisible = $("#showMarkdownTasksCheck").checked;
+  modelTabsBarVisible = $("#showModelTabsCheck").checked;
 
   await setSetting("chat_hide_metadata", chatHideMetadata);
   await setSetting("chat_tab_auto_naming", chatTabAutoNaming);
@@ -1107,6 +1115,7 @@ async function chatSettingsSaveFlow() {
   await setSetting("sterling_chat_url_visible", sterlingChatUrlVisible);
   await setSetting("chat_streaming", chatStreaming);
   await setSetting("markdown_panel_visible", markdownPanelVisible);
+  await setSetting("model_tabs_bar_visible", modelTabsBarVisible);
 
   const serviceSel = $("#aiServiceSelect").value;
   const modelSel = $("#aiModelSelect").value;
@@ -1131,6 +1140,11 @@ async function chatSettingsSaveFlow() {
   await loadChatHistory(currentTabId, true);
   toggleSterlingUrlVisibility(sterlingChatUrlVisible);
   document.getElementById("taskListPanel").style.display = markdownPanelVisible ? "" : "none";
+  const mtEl = document.getElementById("modelTabs");
+  if(mtEl){
+    mtEl.style.display = modelTabsBarVisible ? "" : "none";
+    document.getElementById("toggleModelTabsBtn").textContent = modelTabsBarVisible ? "Hide model tabs bar" : "Show model tabs bar";
+  }
 }
 
 $("#chatSettingsSaveBtn").addEventListener("click", chatSettingsSaveFlow);
@@ -1634,6 +1648,16 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     favElement.href = defaultFavicon;
   }
 
+  try {
+    const rVis = await fetch("/api/settings/model_tabs_bar_visible");
+    if(rVis.ok){
+      const { value } = await rVis.json();
+      modelTabsBarVisible = value !== false;
+    }
+  } catch(e){
+    modelTabsBarVisible = true;
+  }
+
   await chatSettingsSaveFlow();
   await updateProjectInfo();
 
@@ -1998,6 +2022,13 @@ async function initModelTabs() {
     }
     currentModelTabId = lastModelTab || null;
     renderModelTabs();
+    const vis = await getSetting("model_tabs_bar_visible");
+    if(typeof vis === "boolean") modelTabsBarVisible = vis; else modelTabsBarVisible = true;
+    const mtEl = document.getElementById("modelTabs");
+    if(mtEl){
+      mtEl.style.display = modelTabsBarVisible ? "" : "none";
+      document.getElementById("toggleModelTabsBtn").textContent = modelTabsBarVisible ? "Hide model tabs bar" : "Show model tabs bar";
+    }
   } catch(e){
     console.error("Error init model tabs:", e);
   }
@@ -2149,10 +2180,16 @@ document.getElementById("toggleModelTabsBtn").addEventListener("click", async ()
   if(modelTabsEl.style.display === "none"){
     modelTabsEl.style.display = "";
     document.getElementById("toggleModelTabsBtn").textContent = "Hide model tabs bar";
+    modelTabsBarVisible = true;
+    const cb = document.getElementById("showModelTabsCheck");
+    if(cb) cb.checked = true;
     await setSetting("model_tabs_bar_visible", true);
   } else {
     modelTabsEl.style.display = "none";
     document.getElementById("toggleModelTabsBtn").textContent = "Show model tabs bar";
+    modelTabsBarVisible = false;
+    const cb = document.getElementById("showModelTabsCheck");
+    if(cb) cb.checked = false;
     await setSetting("model_tabs_bar_visible", false);
   }
 });
