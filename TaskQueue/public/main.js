@@ -22,6 +22,7 @@ let chatTabAutoNaming = false;
 let showSubbubbleToken = false;
 let sterlingChatUrlVisible = true;
 let chatStreaming = true; // new toggle for streaming
+let enterSubmitsMessage = true; // new toggle for Enter key submit
 window.agentName = "Alfe";
 
 // For per-tab model arrays
@@ -167,6 +168,15 @@ async function loadSettings(){
     $("#divider").style.display = sidebarVisible ? "" : "none";
     $("#toggleSidebarBtn").textContent = sidebarVisible ? "Hide sidebar" : "Show sidebar";
     document.getElementById("expandSidebarBtn").style.display = sidebarVisible ? "none" : "block";
+  }
+  {
+    const r = await fetch("/api/settings/enter_submits_message");
+    if(r.ok){
+      const { value } = await r.json();
+      if(typeof value !== "undefined"){
+        enterSubmitsMessage = (value !== false);
+      }
+    }
   }
   {
     const r = await fetch("/api/settings/sidebar_width");
@@ -851,7 +861,7 @@ scrollDownBtnEl.addEventListener("click", ()=>{
 });
 
 chatInputEl.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey) {
+  if (enterSubmitsMessage && e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
     chatSendBtnEl.click();
   }
@@ -1004,12 +1014,21 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
     const { value } = await r6.json();
     markdownPanelVisible = !!value;
   }
+  const r7 = await fetch("/api/settings/enter_submits_message");
+  if(r7.ok){
+    const { value } = await r7.json();
+    enterSubmitsMessage = (value !== false);
+  } else {
+    enterSubmitsMessage = true;
+    await setSetting("enter_submits_message", enterSubmitsMessage);
+  }
 
   $("#hideMetadataCheck").checked = chatHideMetadata;
   $("#autoNamingCheck").checked = chatTabAutoNaming;
   $("#subbubbleTokenCheck").checked = showSubbubbleToken;
   $("#sterlingUrlCheck").checked = sterlingChatUrlVisible;
   $("#showMarkdownTasksCheck").checked = markdownPanelVisible;
+  $("#enterSubmitCheck").checked = enterSubmitsMessage;
 
   try {
     const modelListResp = await fetch("/api/ai/models");
@@ -1116,6 +1135,7 @@ async function chatSettingsSaveFlow() {
   sterlingChatUrlVisible = $("#sterlingUrlCheck").checked;
   chatStreaming = $("#chatStreamingCheck").checked;
   markdownPanelVisible = $("#showMarkdownTasksCheck").checked;
+  enterSubmitsMessage = $("#enterSubmitCheck").checked;
 
   await setSetting("chat_hide_metadata", chatHideMetadata);
   await setSetting("chat_tab_auto_naming", chatTabAutoNaming);
@@ -1123,6 +1143,7 @@ async function chatSettingsSaveFlow() {
   await setSetting("sterling_chat_url_visible", sterlingChatUrlVisible);
   await setSetting("chat_streaming", chatStreaming);
   await setSetting("markdown_panel_visible", markdownPanelVisible);
+  await setSetting("enter_submits_message", enterSubmitsMessage);
 
   const serviceSel = $("#aiServiceSelect").value;
   const modelSel = $("#aiModelSelect").value;
