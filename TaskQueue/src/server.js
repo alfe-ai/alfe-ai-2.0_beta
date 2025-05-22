@@ -1284,7 +1284,7 @@ app.post("/api/chat/image", upload.single("imageFile"), async (req, res) => {
 // Generate an image using OpenAI's image API.
 app.post("/api/image/generate", async (req, res) => {
   try {
-    const { prompt, n, size, model } = req.body || {};
+    const { prompt, n, size, model, tabId } = req.body || {};
     if (!prompt) {
       return res.status(400).json({ error: "Missing prompt" });
     }
@@ -1354,6 +1354,11 @@ app.post("/api/image/generate", async (req, res) => {
       "Image generate",
       JSON.stringify({ prompt, url: first, model: modelName, n: countParsed })
     );
+
+    if (first) {
+      const tab = parseInt(tabId, 10) || 1;
+      db.createImagePair(first, prompt || '', tab);
+    }
 
     if (!first) {
       return res.status(502).json({ error: "Received empty response from AI service" });

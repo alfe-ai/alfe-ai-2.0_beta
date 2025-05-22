@@ -96,7 +96,9 @@ export default class TaskDB {
                                               ai_timestamp TEXT,
                                               chat_tab_id INTEGER DEFAULT 1,
                                               system_context TEXT,
-                                              token_info TEXT
+                                              token_info TEXT,
+                                              image_url TEXT,
+                                              image_alt TEXT DEFAULT ''
       );
     `);
 
@@ -128,6 +130,19 @@ export default class TaskDB {
       console.debug("[TaskDB Debug] Added chat_subroutines.action_hook column");
     } catch(e) {
       console.debug("[TaskDB Debug] action_hook column exists, skipping.", e.message);
+    }
+
+    try {
+      this.db.exec(`ALTER TABLE chat_pairs ADD COLUMN image_url TEXT;`);
+      console.debug("[TaskDB Debug] Added chat_pairs.image_url column");
+    } catch(e) {
+      console.debug("[TaskDB Debug] image_url column exists, skipping.", e.message);
+    }
+    try {
+      this.db.exec(`ALTER TABLE chat_pairs ADD COLUMN image_alt TEXT DEFAULT '';`);
+      console.debug("[TaskDB Debug] Added chat_pairs.image_alt column");
+    } catch(e) {
+      console.debug("[TaskDB Debug] image_alt column exists, skipping.", e.message);
     }
 
     // The is_image_desc column is no longer used, but we won't remove it in the schema for safety
@@ -456,8 +471,16 @@ export default class TaskDB {
   createChatPair(userText, chatTabId = 1, systemContext = "") {
     const timestamp = new Date().toISOString();
     const { lastInsertRowid } = this.db.prepare(`
-      INSERT INTO chat_pairs (user_text, ai_text, model, timestamp, ai_timestamp, chat_tab_id, system_context, token_info)
-      VALUES (@user_text, '', '', @timestamp, NULL, @chat_tab_id, @system_context, NULL)
+      INSERT INTO chat_pairs (
+        user_text, ai_text, model, timestamp, ai_timestamp,
+        chat_tab_id, system_context, token_info,
+        image_url, image_alt
+      )
+      VALUES (
+        @user_text, '', '', @timestamp, NULL,
+        @chat_tab_id, @system_context, NULL,
+        NULL, ''
+      )
     `).run({
       user_text: userText,
       timestamp,
@@ -482,6 +505,18 @@ export default class TaskDB {
       ai_timestamp: aiTimestamp,
       token_info: tokenInfo
     });
+  }
+
+  createImagePair(url, altText = '', chatTabId = 1) {
+    const ts = new Date().toISOString();
+    const { lastInsertRowid } = this.db.prepare(`
+      INSERT INTO chat_pairs (
+        user_text, ai_text, model, timestamp, ai_timestamp,
+        chat_tab_id, system_context, token_info,
+        image_url, image_alt
+      ) VALUES ('', '', '', @ts, @ts, @chat_tab_id, '', NULL, @url, @alt)
+    `).run({ ts, chat_tab_id: chatTabId, url, alt: altText });
+    return lastInsertRowid;
   }
 
   getAllChatPairs(tabId = 1) {

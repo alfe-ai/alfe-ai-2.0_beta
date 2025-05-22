@@ -2066,7 +2066,8 @@ async function loadChatHistory(tabId = 1, reset=false) {
         addChatMessage(
             p.id, p.user_text, p.timestamp,
             p.ai_text, p.ai_timestamp,
-            p.model, p.system_context, null, p.token_info
+            p.model, p.system_context, null, p.token_info,
+            p.image_url, p.image_alt
         );
       }
     } else {
@@ -2146,6 +2147,14 @@ async function loadChatHistory(tabId = 1, reset=false) {
         botHead.appendChild(aDel);
         botDiv.appendChild(botHead);
 
+        if(p.image_url){
+          const img = document.createElement("img");
+          img.src = p.image_url;
+          img.alt = p.image_alt || "";
+          img.style.maxWidth = "100%";
+          botDiv.appendChild(img);
+        }
+
         const botBody = document.createElement("div");
         botBody.textContent = p.ai_text || "";
         botDiv.appendChild(botBody);
@@ -2188,7 +2197,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
   }
 }
 
-function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemContext, fullHistory, tokenInfo) {
+function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemContext, fullHistory, tokenInfo, imageUrl=null, imageAlt='') {
   const seqDiv = document.createElement("div");
   seqDiv.className = "chat-sequence";
   seqDiv.dataset.pairId = pairId;
@@ -2264,6 +2273,14 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
   });
   botHead.appendChild(aiDelBtn);
   botDiv.appendChild(botHead);
+
+  if(imageUrl){
+    const img = document.createElement("img");
+    img.src = imageUrl;
+    img.alt = imageAlt;
+    img.style.maxWidth = "100%";
+    botDiv.appendChild(img);
+  }
 
   const botBody = document.createElement("div");
   botBody.textContent = aiText || "";
@@ -2797,7 +2814,7 @@ registerActionHook("generateImage", async ({response}) => {
     const r = await fetch('/api/image/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt })
+      body: JSON.stringify({ prompt, tabId: currentTabId })
     });
     const data = await r.json();
     if(r.ok && data.url){
