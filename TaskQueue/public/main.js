@@ -1662,6 +1662,20 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
   }
   toggleSterlingUrlVisibility(sterlingChatUrlVisible);
 
+  try {
+    const barVisible = await getSetting("model_tabs_bar_visible");
+    const modelTabsEl = document.getElementById("modelTabs");
+    if(barVisible === false){
+      modelTabsEl.style.display = "none";
+      document.getElementById("toggleModelTabsBtn").textContent = "Show model tabs bar";
+    } else {
+      modelTabsEl.style.display = "";
+      document.getElementById("toggleModelTabsBtn").textContent = "Hide model tabs bar";
+    }
+  } catch(e){
+    console.error("Error reading model_tabs_bar_visible setting:", e);
+  }
+
   let lastView = await getSetting("last_sidebar_view");
   if(!lastView) lastView = "tasks";
   switch(lastView){
@@ -1673,8 +1687,6 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
   }
 
   initChatScrollLoading();
-
-  // Initialize model tabs
   initModelTabs();
 
   // -----------------------------------------------------------------------
@@ -2075,8 +2087,11 @@ function renderModelTabs(){
 // Add a new model tab
 async function addModelTab(){
   let name = prompt("Enter Model Tab Name (e.g., GPT-4 or deepseek-latest):", "");
-  if(!name) return;
   let newId = 1;
+  if(!name) {
+    // Provide a default name if empty
+    name = "Untitled ModelTab " + (modelTabs.length + 1);
+  }
   if(modelTabs.length>0){
     const maxId = Math.max(...modelTabs.map(t=>t.id));
     newId = maxId+1;
