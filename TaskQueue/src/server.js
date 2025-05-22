@@ -20,7 +20,6 @@ function backupDb() {
   const backupsDir = path.resolve("backups");
   fs.mkdirSync(backupsDir, { recursive: true });
 
-  // ISO string is filesystem-friendly after removing colon/period characters.
   const ts = new Date().toISOString().replace(/[:.]/g, "-");
   const backupPath = path.join(backupsDir, `issues-${ts}.sqlite`);
 
@@ -30,9 +29,6 @@ function backupDb() {
 
 async function main() {
   try {
-    // ------------------------------------------------------------------
-    // 0. Safety first – create backup
-    // ------------------------------------------------------------------
     backupDb();
 
     const client = new GitHubClient({
@@ -41,7 +37,7 @@ async function main() {
       repo: process.env.GITHUB_REPO
     });
 
-    const db = new TaskDB(); // creates/open issues.sqlite in cwd
+    const db = new TaskDB();
     const queue = new TaskQueue();
 
     const label = process.env.GITHUB_LABEL;
@@ -53,26 +49,18 @@ async function main() {
 
     const issues = await client.fetchOpenIssues(label?.trim() || undefined);
 
-    // Build full repository slug once
     const repositorySlug = `${client.owner}/${client.repo}`;
 
-    // ------------------------------------------------------------------
-    // 1. Synchronise local DB
-    // ------------------------------------------------------------------
     issues.forEach((iss) => db.upsertIssue(iss, repositorySlug));
 
-    // Closed issue detection
     const openIds = issues.map((i) => i.id);
     db.markClosedExcept(openIds);
 
-    // ------------------------------------------------------------------
-    // 2. Populate in-memory queue (only open issues)
     issues.forEach((issue) => queue.enqueue(issue));
 
     console.log(`[TaskQueue] ${queue.size()} task(s) in queue.`);
     queue.print();
 
-    // Debug: show DB snapshot (can be removed)
     console.debug("[TaskQueue] Current DB state:", db.dump());
   } catch (err) {
     console.error("Fatal:", err.message);
@@ -105,10 +93,6 @@ if (!currentModel) {
 
 const app = express();
 
-/**
- * Returns a configured OpenAI client, depending on "ai_service" setting.
- * Added checks to help diagnose missing or invalid API keys.
- */
 function getOpenAiClient() {
   let service = db.getSetting("ai_service") || "openai";
   const openAiKey = process.env.OPENAI_API_KEY || "";
@@ -116,7 +100,6 @@ function getOpenAiClient() {
 
   console.debug("[Server Debug] Creating OpenAI client with service =", service);
 
-  // NEW override for DeepSeek models:
   const modelForCheck = db.getSetting("ai_model") || "";
   if (modelForCheck.startsWith("deepseek/")) {
     console.debug("[Server Debug] Overriding service to 'openrouter' for deepseek model =>", modelForCheck);
@@ -125,11 +108,8 @@ function getOpenAiClient() {
 
   if (service === "openrouter") {
     if (!openRouterKey) {
-      throw new Error(
-        "Missing OPENROUTER_API_KEY environment variable, please set it before using OpenRouter."
-      );
+      throw new Error("Missing OPENROUTER_API_KEY environment variable.");
     }
-    // Use openrouter.ai with app name and referer
     console.debug("[Server Debug] Using openrouter.ai with provided OPENROUTER_API_KEY.");
     return new OpenAI({
       apiKey: openRouterKey,
@@ -141,11 +121,8 @@ function getOpenAiClient() {
     });
   } else {
     if (!openAiKey) {
-      throw new Error(
-        "Missing OPENAI_API_KEY environment variable, please set it before using OpenAI."
-      );
+      throw new Error("Missing OPENAI_API_KEY environment variable.");
     }
-    // Default to openai
     console.debug("[Server Debug] Using openai with provided OPENAI_API_KEY.");
     return new OpenAI({
       apiKey: openAiKey
@@ -160,7 +137,6 @@ function parseProviderModel(model) {
   } else if (model.startsWith("openrouter/")) {
     return { provider: "openrouter", shortModel: model.replace(/^openrouter\//, "") };
   } else if (model.startsWith("deepseek/")) {
-    // Changed to treat deepseek/ as openrouter
     return { provider: "openrouter", shortModel: model.replace(/^deepseek\//, "") };
   }
   return { provider: "Unknown", shortModel: model };
@@ -171,7 +147,7 @@ function getEncoding(modelName) {
   try {
     return encoding_for_model(modelName);
   } catch (e) {
-    console.debug("[Server Debug] Tokenizer load failed, falling back to gpt-3.5-turbo =>", e.message);
+    console.debug("[Server Debug] Tokenizer load failed, fallback to gpt-3.5-turbo =>", e.message);
     return encoding_for_model("gpt-3.5-turbo");
   }
 }
@@ -180,14 +156,12 @@ function countTokens(encoder, text) {
   return encoder.encode(text || "").length;
 }
 
-// Explicit CORS configuration
 app.use(cors({
   origin: "*",
   methods: ["GET","POST","PUT","DELETE","OPTIONS","HEAD"],
   allowedHeaders: ["Content-Type","Authorization","Accept","X-Requested-With","Origin"]
 }));
 
-// Handle preflight requests
 app.options("*", cors({
   origin: "*",
   methods: ["GET","POST","PUT","DELETE","OPTIONS","HEAD"],
@@ -198,7 +172,6 @@ app.options("*", cors({
 
 app.use(bodyParser.json());
 
-// Determine uploads directory
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadsDir = path.join(__dirname, "../uploads");
 try {
@@ -208,10 +181,8 @@ try {
   console.error("[Server Debug] Error creating uploads folder:", err);
 }
 
-// Serve static files
 app.use("/uploads", express.static(uploadsDir));
 
-// Multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadsDir),
   filename: (req, file, cb) => {
@@ -221,8 +192,6 @@ const storage = multer.diskStorage({
   }
 });
 const upload = multer({ storage });
-
-// Database calls and API routes
 
 app.get("/api/tasks", (req, res) => {
   console.debug("[Server Debug] GET /api/tasks called.");
@@ -279,7 +248,7 @@ app.get("/api/projectBranches", (req, res) => {
 app.post("/api/projectBranches", (req, res) => {
   console.debug("[Server Debug] POST /api/projectBranches called.");
   try {
-    const { data } = req.body; // expects { project, base_branch }
+    const { data } = req.body;
     if (!Array.isArray(data)) {
       console.debug("[Server Debug] Provided data is not an array =>", data);
       return res.status(400).json({ error: "Must provide an array of branch data." });
@@ -296,7 +265,7 @@ app.post("/api/projectBranches", (req, res) => {
 });
 
 app.delete("/api/projectBranches/:project", (req, res) => {
-  console.debug("[Server Debug] DELETE /api/projectBranches called =>", req.params.project);
+  console.debug("[Server Debug] DELETE /api/projectBranches =>", req.params.project);
   try {
     const project = req.params.project;
     db.deleteProjectBranch(project);
@@ -309,7 +278,7 @@ app.delete("/api/projectBranches/:project", (req, res) => {
 });
 
 app.post("/api/tasks/hidden", (req, res) => {
-  console.debug("[Server Debug] POST /api/tasks/hidden called => body:", req.body);
+  console.debug("[Server Debug] POST /api/tasks/hidden => body:", req.body);
   try {
     const { id, hidden } = req.body;
     db.setHidden(id, hidden);
@@ -586,15 +555,8 @@ app.get("/api/activity", (req, res) => {
   }
 });
 
-/*
-  We combine both OpenAI and OpenRouter models (if available),
-  prefixing IDs with "openai/" or "openrouter/",
-  plus a static set of DeepSeek models for demonstration.
-*/
 app.get("/api/ai/models", async (req, res) => {
   console.debug("[Server Debug] GET /api/ai/models called.");
-
-  // Updated known token limits based on user-provided data
   const knownTokenLimits = {
     "openai/gpt-4o-mini": 128000,
     "openai/gpt-4.1": 1047576,
@@ -639,7 +601,6 @@ app.get("/api/ai/models", async (req, res) => {
     "openai/gpt-3.5-turbo-0301": "--"
   };
 
-  // Updated known costs based on user-provided data
   const knownCosts = {
     "openai/gpt-4o-mini": { input: "$0.15", output: "$0.60" },
     "openai/gpt-4.1": { input: "$2", output: "$8" },
@@ -691,7 +652,6 @@ app.get("/api/ai/models", async (req, res) => {
     const openAiKey = process.env.OPENAI_API_KEY || "";
     const openRouterKey = process.env.OPENROUTER_API_KEY || "";
 
-    // If we have OpenAI key, fetch from OpenAI
     if (openAiKey) {
       try {
         console.debug("[Server Debug] Fetching OpenAI model list...");
@@ -717,7 +677,6 @@ app.get("/api/ai/models", async (req, res) => {
       }
     }
 
-    // If we have OpenRouter key, fetch from OpenRouter
     if (openRouterKey) {
       try {
         console.debug("[Server Debug] Fetching OpenRouter model list...");
@@ -732,7 +691,6 @@ app.get("/api/ai/models", async (req, res) => {
         const rawModels = orResp.data?.data?.map((m) => m.id).sort() || [];
         openRouterModelData = rawModels.map((id) => {
           const combinedId = "openrouter/" + id;
-          // For demonstration, mark them as "N/A"
           return {
             id: combinedId,
             provider: "openrouter",
@@ -749,7 +707,6 @@ app.get("/api/ai/models", async (req, res) => {
     console.error("[TaskQueue] /api/ai/models error:", err);
   }
 
-  // Hardcode a set of DeepSeek models
   const deepseekModelData = [
     {
       id: "deepseek/deepseek-chat-v3-0324:free",
@@ -886,14 +843,12 @@ app.get("/api/ai/models", async (req, res) => {
     }
   ];
 
-  // Combine them into a single array
   const combinedModels = [
     ...openAIModelData,
     ...openRouterModelData,
     ...deepseekModelData
   ].sort((a, b) => a.id.localeCompare(b.id));
 
-  // Retrieve favorites from settings
   const favorites = db.getSetting("favorite_ai_models") || [];
   for (const m of combinedModels) {
     m.favorite = favorites.includes(m.id);
@@ -917,9 +872,7 @@ app.post("/api/chat", async (req, res) => {
     let model = db.getSetting("ai_model");
     const savedInstructions = db.getSetting("agent_instructions") || "";
 
-    // Grab provider
     const { provider, shortModel } = parseProviderModel(model || "gpt-3.5-turbo");
-    // Updated to also show provider
     const systemContext = `System Context:\n${savedInstructions}\n\nModel: ${model} (provider: ${provider})\nUserTime: ${userTime}\nTimeZone: Central`;
 
     const conversation = [{ role: "system", content: systemContext }];
@@ -938,14 +891,13 @@ app.post("/api/chat", async (req, res) => {
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.setHeader("Transfer-Encoding", "chunked");
 
-    console.debug("[Server Debug] Chat conversation assembled with length =>", conversation.length);
+    console.debug("[Server Debug] Chat conversation assembled => length:", conversation.length);
 
     const openaiClient = getOpenAiClient();
     if (!model) {
       model = "unknown";
     }
 
-    // Apply prefix stripping
     function stripModelPrefix(m) {
       if (!m) return "gpt-3.5-turbo";
       if (m.startsWith("openai/")) return m.substring("openai/".length);
@@ -954,7 +906,7 @@ app.post("/api/chat", async (req, res) => {
     }
     const modelForOpenAI = stripModelPrefix(model);
 
-    console.debug("[Server Debug] Using model =>", model, " (stripped =>", modelForOpenAI, ")");
+    console.debug("[Server Debug] Using model =>", model, "(stripped =>", modelForOpenAI, ")");
     const encoder = getEncoding(modelForOpenAI);
 
     let convTokens = 0;
@@ -971,19 +923,16 @@ app.post("/api/chat", async (req, res) => {
       convTokens += chunkTokens;
     }
 
-    console.debug("[Server Debug] Truncated conversation length =>", truncatedConversation.length);
+    console.debug("[Server Debug] Truncated conversation => length:", truncatedConversation.length);
 
     let assistantMessage = "";
 
-    // Measure AI response time
     let requestStartTime = Date.now();
 
-    // Check user setting for streaming
     const streamingSetting = db.getSetting("chat_streaming");
-    const useStreaming = (streamingSetting === false) ? false : true; // default true if unset
+    const useStreaming = (streamingSetting === false) ? false : true;
 
     if (useStreaming) {
-      // streaming logic
       const stream = await openaiClient.chat.completions.create({
         model: modelForOpenAI,
         messages: truncatedConversation,
@@ -1001,10 +950,9 @@ app.post("/api/chat", async (req, res) => {
         res.write(chunk);
       }
       res.end();
-      console.debug("[Server Debug] AI streaming finished, total length =>", assistantMessage.length);
+      console.debug("[Server Debug] AI streaming finished => length:", assistantMessage.length);
 
     } else {
-      // non-streaming logic
       const completion = await openaiClient.chat.completions.create({
         model: modelForOpenAI,
         messages: truncatedConversation
@@ -1012,12 +960,12 @@ app.post("/api/chat", async (req, res) => {
       assistantMessage = completion.choices?.[0]?.message?.content || "";
       res.write(assistantMessage);
       res.end();
-      console.debug("[Server Debug] AI non-streaming completed, length =>", assistantMessage.length);
+      console.debug("[Server Debug] AI non-streaming complete => length:", assistantMessage.length);
     }
 
     let requestEndTime = Date.now();
     let diffMs = requestEndTime - requestStartTime;
-    let responseTime = Math.ceil(diffMs * 0.01) / 100; // 2-decimal ceiling
+    let responseTime = Math.ceil(diffMs * 0.01) / 100;
 
     const systemTokens = countTokens(encoder, systemContext);
     let prevAssistantTokens = 0;
@@ -1053,7 +1001,6 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
-// Updated endpoint to return paged pairs, plus running token sums for input/output
 app.get("/api/chat/history", (req, res) => {
   console.debug("[Server Debug] GET /api/chat/history =>", req.query);
   try {
@@ -1082,7 +1029,7 @@ app.get("/api/chat/history", (req, res) => {
           output: outputT
         };
       } catch (e) {
-        console.debug("[Server Debug] Could not parse token_info for pair =>", pair.id, e.message);
+        console.debug("[Server Debug] Could not parse token_info =>", pair.id, e.message);
       }
     }
 
@@ -1261,12 +1208,10 @@ app.post("/api/createSterlingChat", async (req, res) => {
     });
     console.log('Response from /createChat:', createChatResponse.data);
 
-    // NEW: Immediately call /changeBranchOfChat to ensure the branch is updated in Sterling
     const allBranches = db.listProjectBranches();
     const foundBranchObj = allBranches.find(x => x.project === project);
     let sterlingBranch = foundBranchObj ? foundBranchObj.base_branch : "";
     if (!sterlingBranch) {
-      // fallback to a default
       sterlingBranch = "main";
     }
     console.log(`[Sterling Branch Fix] Setting branch to: ${sterlingBranch}`);
@@ -1318,7 +1263,6 @@ app.post("/api/projects/rename", (req, res) => {
   }
 });
 
-// New route to toggle favorites
 app.post("/api/ai/favorites", (req, res) => {
   try {
     const { modelId, favorite } = req.body;
@@ -1346,9 +1290,6 @@ app.post("/api/ai/favorites", (req, res) => {
   }
 });
 
-// -----------------------------------------------------------
-// New: Global Markdown file storage + Git push logic
-// -----------------------------------------------------------
 const mdFilePath = path.join(__dirname, "../markdown_global.txt");
 
 function ensureTaskListRepoCloned(gitUrl) {
@@ -1362,13 +1303,11 @@ function ensureTaskListRepoCloned(gitUrl) {
 
   try {
     if (!fs.existsSync(repoDir)) {
-      // clone
       console.log("[Git Debug] Cloning new repo =>", gitUrl, "into =>", repoDir);
       child_process.execSync(`git clone "${gitUrl}" "${repoDir}"`, {
         stdio: "inherit"
       });
     } else {
-      // pull
       console.log("[Git Debug] Pulling latest in =>", repoDir);
       child_process.execSync(`git pull`, {
         cwd: repoDir,
@@ -1396,7 +1335,6 @@ function commitAndPushMarkdown(repoDir) {
       stdio: "inherit"
     });
   } catch (err) {
-    // If there's nothing to commit, that's not necessarily fatal.
     const msg = String(err.message || "");
     if (msg.includes("nothing to commit, working tree clean")) {
       console.log("[Git Debug] Nothing to commit. Working tree is clean.");
@@ -1425,15 +1363,12 @@ app.post("/api/markdown", (req, res) => {
     const { content } = req.body;
     fs.writeFileSync(mdFilePath, content || "", "utf-8");
 
-    // Git logic:
     const gitUrl = db.getSetting("taskList_git_ssh_url");
     if (gitUrl) {
       const repoDir = ensureTaskListRepoCloned(gitUrl);
       if (repoDir) {
-        // Copy updated file
         const targetPath = path.join(repoDir, "markdown_global.txt");
         fs.copyFileSync(mdFilePath, targetPath);
-        // commit/push
         commitAndPushMarkdown(repoDir);
       }
     }
@@ -1444,13 +1379,34 @@ app.post("/api/markdown", (req, res) => {
     res.status(500).json({ error: "Unable to write markdown file." });
   }
 });
-// -----------------------------------------------------------
+
+/*
+  Add new route for diff page and a simple API to run the git diff
+*/
+app.get("/alfe-sterling-DEV2/diff", (req, res) => {
+  res.sendFile(path.join(__dirname, "../public/diff.html"));
+});
+
+app.get("/api/git-diff", (req, res) => {
+  const baseRev = req.query.base;
+  const compRev = req.query.comp;
+  if(!baseRev || !compRev) {
+    return res.status(400).json({ error: "Please specify base and comp parameters" });
+  }
+  // For demonstration: attempt a git diff in the current directory
+  try {
+    const diffResult = child_process.execSync(`git diff ${baseRev}..${compRev}`, {
+      cwd: process.cwd(),
+      encoding: "utf-8"
+    });
+    res.json({ diff: diffResult });
+  } catch(err) {
+    console.error("Error executing git diff:", err);
+    return res.json({ error: err.message });
+  }
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
-
-// The front-end chat UI expansions are generated in finalizeChatPair display logic below:
-//
-// [No further code. End of server.js here, changes concluded above with the relevant expansions.]

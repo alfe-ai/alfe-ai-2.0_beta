@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Git Diff Page</title>
+  <style>
+    body {
+      background-color: #1e1e1e;
+      color: #ddd;
+      font-family: sans-serif;
+      margin: 0;
+      padding: 1rem;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+    }
+    input[type=text] {
+      width: 300px;
+      border: 1px solid #444;
+      background: #2c2c2c;
+      color: #ddd;
+      padding: 6px;
+      margin-right: 1rem;
+    }
+    button {
+      background: #444;
+      border: 1px solid #666;
+      color: #ddd;
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #333;
+    }
+    textarea {
+      width: 100%;
+      height: 400px;
+      background: #2c2c2c;
+      color: #ddd;
+      border: 1px solid #444;
+      padding: 8px;
+      resize: vertical;
+    }
+    .links a {
+      color: #08f;
+      text-decoration: none;
+    }
+    .links a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Git Diff Viewer</h1>
+  <div>
+    <label>Base Revision:</label>
+    <input type="text" id="baseRev" placeholder="e.g. main or a1234..." />
+    <label>Comparison Revision:</label>
+    <input type="text" id="compRev" placeholder="e.g. feature-branch or b5678..." />
+    <button id="getDiffBtn">Get Diff</button>
+  </div>
+  <div style="margin-top:1rem;">
+    <textarea id="diffOutput" readonly></textarea>
+  </div>
+  <div class="links" style="margin-top:1rem;">
+    <a href="/">← Back to Home</a>
+  </div>
+</div>
+<script>
+  document.getElementById('getDiffBtn').addEventListener('click', async () => {
+    const base = document.getElementById('baseRev').value.trim();
+    const comp = document.getElementById('compRev').value.trim();
+    if(!base || !comp) {
+      alert('Please specify both base and comparison revisions.');
+      return;
+    }
+    const textArea = document.getElementById('diffOutput');
+    textArea.value = 'Loading diff...';
+    try {
+      const resp = await fetch(`/api/git-diff?base=${encodeURIComponent(base)}&comp=${encodeURIComponent(comp)}`);
+      if(!resp.ok) {
+        textArea.value = 'Error retrieving diff.';
+        return;
+      }
+      const data = await resp.json();
+      if(data.error) {
+        textArea.value = `Error: ${data.error}`;
+      } else {
+        textArea.value = data.diff;
+      }
+    } catch(e) {
+      textArea.value = 'Error: ' + e.message;
+    }
+  });
+</script>
+</body>
+</html>
