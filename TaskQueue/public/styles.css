@@ -450,6 +450,24 @@ body {
   color: #fff;
 }
 
+/* Secure uploader file table */
+#secureFilesList {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+#secureFilesList th,
+#secureFilesList td {
+  border: 1px solid #444;
+  padding: 4px 6px;
+}
+
+#secureFilesList th {
+  background: #3a3a3a;
+  text-align: left;
+}
+
 /* New gear icon for the Markdown area */
 #markdownGearIcon {
   position: relative;
