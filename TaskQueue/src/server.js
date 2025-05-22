@@ -1215,9 +1215,11 @@ app.post("/api/chat/image", upload.single("imageFile"), async (req, res) => {
 
     let desc = "";
     try {
-      const cmd = `${scriptPath} "${filePath}"`;
-      console.log("[Server Debug] Running command =>", cmd);
-      desc = child_process.execSync(cmd).toString().trim();
+      console.log("[Server Debug] Running script =>", scriptPath + " " + filePath);
+      desc = child_process
+        .execFileSync(scriptPath, [filePath], { stdio: 'pipe', timeout: 15000 })
+        .toString()
+        .trim();
     } catch(e){
       console.error("[Server Debug] Error calling imagedesc.sh =>", e);
       desc = "(Could not generate description.)";
