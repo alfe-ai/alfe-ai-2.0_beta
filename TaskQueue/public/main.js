@@ -1954,7 +1954,8 @@ async function loadChatHistory(tabId = 1, reset=false) {
             userDiv._tokenSections = { input: inputT, output: outputT };
             const userTokenDiv = document.createElement("div");
             userTokenDiv.className = "token-indicator";
-            userTokenDiv.textContent = `In: ${inputT}`;
+            const pairTokens = tInfo.inputTokens || 0;
+            userTokenDiv.textContent = `In: ${pairTokens} (${inputT})`;
             userDiv.appendChild(userTokenDiv);
           } catch (e) {
             console.debug("[Server Debug] Could not parse token_info for pair =>", p.id, e.message);
@@ -2067,9 +2068,10 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
     try {
       const tInfo = JSON.parse(tokenInfo);
       const userInTokens = (tInfo.systemTokens||0) + (tInfo.historyTokens||0) + (tInfo.inputTokens||0);
+      const pairTokens = tInfo.inputTokens || 0;
       const userTokenDiv = document.createElement("div");
       userTokenDiv.className = "token-indicator";
-      userTokenDiv.textContent = `In: ${userInTokens}`;
+      userTokenDiv.textContent = `In: ${pairTokens} (${userInTokens})`;
       userDiv.appendChild(userTokenDiv);
     } catch(e){
       console.debug("[Server Debug] Could not parse token_info for user subbubble =>", e.message);
