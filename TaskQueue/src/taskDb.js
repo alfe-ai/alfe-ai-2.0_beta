@@ -123,6 +123,9 @@ export default class TaskDB {
       console.debug("[TaskDB Debug] action_text column exists, skipping.", e.message);
     }
 
+    // The is_image_desc column is no longer used, but we won't remove it in the schema for safety
+    // The logic referencing it is removed.
+
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS project_branches (
                                                     project TEXT PRIMARY KEY,
@@ -607,6 +610,5 @@ export default class TaskDB {
         .run(name, trigger, action, id);
   }
 }
-
 
 

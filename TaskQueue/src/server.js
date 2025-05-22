@@ -118,13 +118,15 @@ function getOpenAiClient() {
 
   console.debug("[Server Debug] Creating OpenAI client with service =", service);
 
+  // Removed forced override for deepseek models.
+
   if (service === "openrouter") {
     if (!openRouterKey) {
       throw new Error(
           "Missing OPENROUTER_API_KEY environment variable, please set it before using OpenRouter."
       );
     }
-    // Use openrouter.ai
+    // Use openrouter.ai with app name and referer
     console.debug("[Server Debug] Using openrouter.ai with provided OPENROUTER_API_KEY.");
     return new OpenAI({
       apiKey: openRouterKey,
@@ -155,7 +157,7 @@ function parseProviderModel(model) {
   } else if (model.startsWith("openrouter/")) {
     return { provider: "openrouter", shortModel: model.replace(/^openrouter\//, "") };
   } else if (model.startsWith("deepseek/")) {
-    // Treat as openrouter for this approach
+    // Changed to treat deepseek/ as openrouter
     return { provider: "openrouter", shortModel: model.replace(/^deepseek\//, "") };
   }
   return { provider: "Unknown", shortModel: model };
@@ -266,7 +268,7 @@ app.get("/api/projectBranches", (req, res) => {
     console.debug("[Server Debug] Found projectBranches =>", result.length);
     res.json(result);
   } catch (err) {
-    console.error("[Server Debug] GET /api/projectBranches error:", err);
+    console.error("[TaskQueue] GET /api/projectBranches error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -1287,8 +1289,15 @@ app.post("/api/image/generate", async (req, res) => {
       return res.status(400).json({ error: "Missing prompt" });
     }
 
-    // Use the same helper so that the user’s chosen AI service or keys are matched
-    const openaiClient = getOpenAiClient();
+    const openAiKey = process.env.OPENAI_API_KEY;
+    if (!openAiKey) {
+      return res
+        .status(500)
+        .json({ error: "OPENAI_API_KEY environment variable not configured" });
+    }
+
+    // Always use ChatGPT/DALL-E for image generation
+    const openaiClient = new OpenAI({ apiKey: openAiKey });
 
     const count = Math.min(parseInt(n, 10) || 1, 4);
     const allowedSizes = ["1024x1024", "1024x1792", "1792x1024"];
@@ -1591,4 +1600,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
-
