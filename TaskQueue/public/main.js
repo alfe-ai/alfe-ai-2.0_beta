@@ -205,7 +205,7 @@ async function loadSettings(){
     const toggleBtn = document.getElementById("toggleModelTabsBtn");
     if(cont) cont.style.display = modelTabsBarVisible ? "" : "none";
     if(newBtn) newBtn.style.display = modelTabsBarVisible ? "" : "none";
-    if(toggleBtn) toggleBtn.textContent = modelTabsBarVisible ? "Hide model tabs bar" : "Show model tabs bar";
+    if(toggleBtn) toggleBtn.textContent = modelTabsBarVisible ? "Hide Models" : "Models";
   }
   {
     const r = await fetch("/api/settings/nav_menu_visible");
