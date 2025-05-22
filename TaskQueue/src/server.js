@@ -1284,7 +1284,7 @@ app.post("/api/chat/image", upload.single("imageFile"), async (req, res) => {
 // Generate an image using OpenAI's image API.
 app.post("/api/image/generate", async (req, res) => {
   try {
-    const { prompt, n, size } = req.body || {};
+    const { prompt, n, size, model } = req.body || {};
     if (!prompt) {
       return res.status(400).json({ error: "Missing prompt" });
     }
@@ -1304,6 +1304,7 @@ app.post("/api/image/generate", async (req, res) => {
     const imgSize = allowedSizes.includes(size) ? size : "512x512";
 
     const result = await openaiClient.images.generate({
+      model: model || "dall-e-3",
       prompt: prompt.slice(0, 1000),
       n: count,
       size: imgSize,
