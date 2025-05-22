@@ -82,9 +82,16 @@ export default class TaskDB {
       CREATE TABLE IF NOT EXISTS chat_tabs (
                                              id INTEGER PRIMARY KEY AUTOINCREMENT,
                                              name TEXT NOT NULL,
-                                             created_at TEXT NOT NULL
+                                             created_at TEXT NOT NULL,
+                                             archived INTEGER DEFAULT 0
       );
     `);
+    try {
+      this.db.exec('ALTER TABLE chat_tabs ADD COLUMN archived INTEGER DEFAULT 0;');
+      console.debug("[TaskDB Debug] Added chat_tabs.archived column");
+    } catch(e) {
+      console.debug("[TaskDB Debug] chat_tabs.archived column exists, skipping.", e.message);
+    }
 
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS chat_pairs (
@@ -559,6 +566,10 @@ export default class TaskDB {
 
   renameChatTab(tabId, newName) {
     this.db.prepare("UPDATE chat_tabs SET name=? WHERE id=?").run(newName, tabId);
+  }
+
+  setChatTabArchived(tabId, archived = 1) {
+    this.db.prepare("UPDATE chat_tabs SET archived=? WHERE id=?").run(archived ? 1 : 0, tabId);
   }
 
   deleteChatTab(tabId) {

@@ -1131,6 +1131,21 @@ app.post("/api/chat/tabs/rename", (req, res) => {
   }
 });
 
+app.post("/api/chat/tabs/archive", (req, res) => {
+  console.debug("[Server Debug] POST /api/chat/tabs/archive =>", req.body);
+  try {
+    const { tabId, archived = true } = req.body;
+    if (!tabId) {
+      return res.status(400).json({ error: "Missing tabId" });
+    }
+    db.setChatTabArchived(tabId, archived ? 1 : 0);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[TaskQueue] POST /api/chat/tabs/archive error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.get("/api/chat/subroutines", (req, res) => {
   console.debug("[Server Debug] GET /api/chat/subroutines");
   try {
