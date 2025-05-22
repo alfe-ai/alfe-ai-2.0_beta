@@ -104,6 +104,24 @@ app.post("/api/tasks", async (req, res) => {
   }
 });
 
+app.get("/api/projects", (req, res) => {
+  try {
+    res.json(db.listProjects());
+  } catch (err) {
+    console.error("[TaskQueue] /api/projects failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.get("/api/sprints", (req, res) => {
+  try {
+    res.json(db.listSprints());
+  } catch (err) {
+    console.error("[TaskQueue] /api/sprints failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 /* ------------------------------------------------------------------ */
 /*  (Other API routes remain unchanged)                                */
 /* ------------------------------------------------------------------ */
