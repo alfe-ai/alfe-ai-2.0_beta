@@ -34,6 +34,7 @@ let favElement = null;
 const $  = (sel, ctx=document) => ctx.querySelector(sel);
 const $$ = (sel, ctx=document) => [...ctx.querySelectorAll(sel)];
 
+/* Utility formatting functions, event handlers, rendering logic, etc. */
 function formatTimestamp(isoStr){
   if(!isoStr) return "(no time)";
   const d = new Date(isoStr);
@@ -2221,3 +2222,4 @@ document.getElementById("saveMdBtn").addEventListener("click", async () => {
 });
 
 console.log("[Server Debug] main.js fully loaded. End of script.");
+
