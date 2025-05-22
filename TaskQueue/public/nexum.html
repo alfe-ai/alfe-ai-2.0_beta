@@ -102,6 +102,9 @@
   <script>
     let tabs = [];
     let currentTabId = 1;
+    const urlParams = new URLSearchParams(location.search);
+    const startTab = parseInt(urlParams.get('tabId'), 10);
+    if(!Number.isNaN(startTab)) currentTabId = startTab;
 
     async function loadModelInfo(){
       try{
@@ -201,7 +204,11 @@
       loadModelInfo();
       await loadTabs();
       if(tabs.length>0){
-        currentTabId = tabs[0].id;
+        if(!Number.isNaN(startTab) && tabs.some(t=>t.id===startTab)){
+          currentTabId = startTab;
+        }else{
+          currentTabId = tabs[0].id;
+        }
       }
       renderTabs();
       loadHistory();

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Nexum Tabs</title>
+  <style>
+    body{ background:#1e1e1e; color:#ddd; font-family:sans-serif; margin:0; padding:1rem; }
+    table{ width:100%; border-collapse:collapse; margin-top:1rem; }
+    th,td{ border:1px solid #444; padding:6px 8px; }
+    th{ background:#333; }
+    button{ background:#333; color:#ddd; border:1px solid #444; padding:4px 8px; cursor:pointer; }
+    a{ color:#4af; text-decoration:none; }
+  </style>
+</head>
+<body>
+  <h1>Nexum Tabs</h1>
+  <button id="newTabBtn">New Tab</button>
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Name</th><th>Created</th><th>Actions</th></tr>
+    </thead>
+    <tbody id="tabsBody"></tbody>
+  </table>
+<script>
+let tabs = [];
+
+async function loadTabs(){
+  try{
+    const res = await fetch('/api/chat/tabs');
+    if(res.ok) tabs = await res.json();
+  }catch(e){console.error(e);}
+}
+
+function renderTabs(){
+  const tbody = document.getElementById('tabsBody');
+  tbody.innerHTML = '';
+  tabs.forEach(t => {
+    const tr = document.createElement('tr');
+    const tdId = document.createElement('td');
+    tdId.textContent = t.id;
+    tr.appendChild(tdId);
+    const tdName = document.createElement('td');
+    tdName.textContent = t.name;
+    tr.appendChild(tdName);
+    const tdCreated = document.createElement('td');
+    tdCreated.textContent = new Date(t.created_at).toLocaleString();
+    tr.appendChild(tdCreated);
+    const actions = document.createElement('td');
+    const openBtn = document.createElement('a');
+    openBtn.textContent = 'Open';
+    openBtn.href = '/nexum.html?tabId=' + t.id;
+    openBtn.style.marginRight = '4px';
+    actions.appendChild(openBtn);
+    const renameBtn = document.createElement('button');
+    renameBtn.textContent = 'Rename';
+    renameBtn.addEventListener('click', () => renameTab(t.id));
+    actions.appendChild(renameBtn);
+    const delBtn = document.createElement('button');
+    delBtn.textContent = 'Delete';
+    delBtn.style.marginLeft = '4px';
+    delBtn.addEventListener('click', () => deleteTab(t.id));
+    actions.appendChild(delBtn);
+    const archBtn = document.createElement('button');
+    archBtn.textContent = t.archived ? 'Unarchive' : 'Archive';
+    archBtn.style.marginLeft = '4px';
+    archBtn.addEventListener('click', () => toggleArchive(t.id, !t.archived));
+    actions.appendChild(archBtn);
+    tr.appendChild(actions);
+    tbody.appendChild(tr);
+  });
+}
+
+async function newTab(){
+  const name = prompt('Tab name:','New Tab');
+  if(!name) return;
+  try{
+    const r = await fetch('/api/chat/tabs/new',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})});
+    if(r.ok){
+      await loadTabs();
+      renderTabs();
+    }
+  }catch(e){console.error(e);}
+}
+
+async function renameTab(id){
+  const newName = prompt('New name:');
+  if(!newName) return;
+  try{
+    const r = await fetch('/api/chat/tabs/rename',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tabId:id,newName})});
+    if(r.ok){ await loadTabs(); renderTabs(); }
+  }catch(e){console.error(e);}
+}
+
+async function deleteTab(id){
+  if(!confirm('Delete this tab?')) return;
+  try{
+    const r = await fetch('/api/chat/tabs/'+id,{method:'DELETE'});
+    if(r.ok){ await loadTabs(); renderTabs(); }
+  }catch(e){console.error(e);}
+}
+
+async function toggleArchive(id,arch){
+  try{
+    const r = await fetch('/api/chat/tabs/archive',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tabId:id,archived:arch})});
+    if(r.ok){ await loadTabs(); renderTabs(); }
+  }catch(e){console.error(e);}
+}
+
+document.getElementById('newTabBtn').addEventListener('click', newTab);
+
+(async function(){
+  await loadTabs();
+  renderTabs();
+})();
+</script>
+</body>
+</html>
