@@ -947,8 +947,14 @@ function renderSidebarTabs(){
     const archBtn = document.createElement("button");
     archBtn.textContent = tab.archived ? "Unarchive" : "Archive";
     archBtn.addEventListener("click", e=>{ e.stopPropagation(); toggleArchiveTab(tab.id, !tab.archived); });
+
+    const dateSpan = document.createElement("span");
+    dateSpan.textContent = isoDate(tab.created_at);
+    dateSpan.className = "tab-date";
+
     wrapper.appendChild(b);
     wrapper.appendChild(archBtn);
+    wrapper.appendChild(dateSpan);
     container.appendChild(wrapper);
   });
 }
