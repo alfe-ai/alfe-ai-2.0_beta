@@ -2728,3 +2728,4 @@ registerActionHook("afterSendLog", ({message, response}) => {
 });
 
 console.log("[Server Debug] main.js fully loaded. End of script.");
+

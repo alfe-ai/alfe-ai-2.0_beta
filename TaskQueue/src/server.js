@@ -118,15 +118,13 @@ function getOpenAiClient() {
 
   console.debug("[Server Debug] Creating OpenAI client with service =", service);
 
-  // Removed forced override for deepseek models.
-
   if (service === "openrouter") {
     if (!openRouterKey) {
       throw new Error(
           "Missing OPENROUTER_API_KEY environment variable, please set it before using OpenRouter."
       );
     }
-    // Use openrouter.ai with app name and referer
+    // Use openrouter.ai
     console.debug("[Server Debug] Using openrouter.ai with provided OPENROUTER_API_KEY.");
     return new OpenAI({
       apiKey: openRouterKey,
@@ -157,7 +155,7 @@ function parseProviderModel(model) {
   } else if (model.startsWith("openrouter/")) {
     return { provider: "openrouter", shortModel: model.replace(/^openrouter\//, "") };
   } else if (model.startsWith("deepseek/")) {
-    // Changed to treat deepseek/ as openrouter
+    // Treat as openrouter for this approach
     return { provider: "openrouter", shortModel: model.replace(/^deepseek\//, "") };
   }
   return { provider: "Unknown", shortModel: model };
@@ -268,7 +266,7 @@ app.get("/api/projectBranches", (req, res) => {
     console.debug("[Server Debug] Found projectBranches =>", result.length);
     res.json(result);
   } catch (err) {
-    console.error("[TaskQueue] GET /api/projectBranches error:", err);
+    console.error("[Server Debug] GET /api/projectBranches error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -1284,27 +1282,19 @@ app.post("/api/chat/image", upload.single("imageFile"), async (req, res) => {
 // Generate an image using OpenAI's image API.
 app.post("/api/image/generate", async (req, res) => {
   try {
-    const { prompt, n, size, model } = req.body || {};
+    const { prompt, n, size } = req.body || {};
     if (!prompt) {
       return res.status(400).json({ error: "Missing prompt" });
     }
 
-    const openAiKey = process.env.OPENAI_API_KEY;
-    if (!openAiKey) {
-      return res
-        .status(500)
-        .json({ error: "OPENAI_API_KEY environment variable not configured" });
-    }
-
-    // Always use ChatGPT/DALL-E for image generation
-    const openaiClient = new OpenAI({ apiKey: openAiKey });
+    // Use the same helper so that the user’s chosen AI service or keys are matched
+    const openaiClient = getOpenAiClient();
 
     const count = Math.min(parseInt(n, 10) || 1, 4);
     const allowedSizes = ["256x256", "512x512", "1024x1024"];
     const imgSize = allowedSizes.includes(size) ? size : "512x512";
 
     const result = await openaiClient.images.generate({
-      model: model || "dall-e-3",
       prompt: prompt.slice(0, 1000),
       n: count,
       size: imgSize,
@@ -1600,3 +1590,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
 });
+
