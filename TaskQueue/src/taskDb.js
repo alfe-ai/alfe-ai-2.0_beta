@@ -137,7 +137,7 @@ export default class TaskDB {
       number: issue.number,
       title: issue.title,
       html_url: issue.html_url,
-      task_id_slug: \`\${repositorySlug}#\${issue.number}\`,
+      task_id_slug: `${repositorySlug}#${issue.number}`,
       priority_number: priorityNum,
       priority: existing?.priority ?? "Medium",
       hidden: 0,
