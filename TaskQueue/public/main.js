@@ -2744,9 +2744,60 @@ function updateImagePreviewList(){
   });
 }
 
+// Append an AI image bubble to the chat
+function addImageChatBubble(url, altText=""){
+  const chatMessagesEl = document.getElementById("chatMessages");
+  if(!chatMessagesEl || !url) return;
+
+  const seqDiv = document.createElement("div");
+  seqDiv.className = "chat-sequence";
+
+  const botDiv = document.createElement("div");
+  botDiv.className = "chat-bot";
+
+  const botHead = document.createElement("div");
+  botHead.className = "bubble-header";
+  botHead.innerHTML = `
+    <div class="name-oval name-oval-ai" title="${modelName}">${window.agentName}</div>
+    <span style="opacity:0.8;">${formatTimestamp(new Date().toISOString())}</span>
+  `;
+  botDiv.appendChild(botHead);
+
+  const img = document.createElement("img");
+  img.src = url;
+  img.alt = altText;
+  img.style.maxWidth = "100%";
+  botDiv.appendChild(img);
+
+  seqDiv.appendChild(botDiv);
+  chatMessagesEl.appendChild(seqDiv);
+  chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+}
+
 // Example hook registration
 registerActionHook("afterSendLog", ({message, response}) => {
   console.log("[Hook] afterSendLog", { message, response });
+});
+
+// Automatically generate an image from the AI response
+registerActionHook("generateImage", async ({response}) => {
+  try {
+    const prompt = (response || "").trim();
+    if(!prompt) return;
+    const r = await fetch('/api/image/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+    const data = await r.json();
+    if(r.ok && data.url){
+      addImageChatBubble(data.url, prompt);
+    } else {
+      console.error('[Hook generateImage] API error:', data.error);
+    }
+  } catch(err){
+    console.error('[Hook generateImage] failed:', err);
+  }
 });
 
 console.log("[Server Debug] main.js fully loaded. End of script.");
