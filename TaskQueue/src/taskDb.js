@@ -211,10 +211,10 @@ export default class TaskDB {
     if (direction === "up") {
       neighbor = this.db
           .prepare(
-              \`SELECT id, priority_number FROM issues
+              `SELECT id, priority_number FROM issues
                WHERE priority_number < ?
                ORDER BY priority_number DESC
-                 LIMIT 1\`
+                 LIMIT 1`
           )
           .get(current.priority_number);
       if (!neighbor) {
@@ -228,10 +228,10 @@ export default class TaskDB {
     } else {
       neighbor = this.db
           .prepare(
-              \`SELECT id, priority_number FROM issues
+              `SELECT id, priority_number FROM issues
                WHERE priority_number > ?
                ORDER BY priority_number ASC
-                 LIMIT 1\`
+                 LIMIT 1`
           )
           .get(current.priority_number);
       if (!neighbor) {
