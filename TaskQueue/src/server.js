@@ -1286,6 +1286,33 @@ app.post("/api/chat/image", upload.single("imageFile"), async (req, res) => {
   }
 });
 
+// Generate an image using OpenAI's image API.
+app.post("/api/image/generate", async (req, res) => {
+  try {
+    const { prompt, n, size } = req.body || {};
+    if (!prompt) {
+      return res.status(400).json({ error: "Missing prompt" });
+    }
+
+    const openaiClient = getOpenAiClient();
+    const count = parseInt(n, 10) || 1;
+    const imgSize = typeof size === "string" ? size : "512x512";
+
+    const result = await openaiClient.images.generate({
+      prompt,
+      n: count,
+      size: imgSize
+    });
+
+    const first = result.data?.[0]?.url || null;
+    db.logActivity("Image generate", JSON.stringify({ prompt, url: first }));
+    res.json({ success: true, url: first });
+  } catch (err) {
+    console.error("[Server Debug] /api/image/generate error:", err);
+    res.status(500).json({ error: "Failed to generate image" });
+  }
+});
+
 app.use(express.static(path.join(__dirname, "../public")));
 
 app.get("/test_projects", (req, res) => {
@@ -1301,6 +1328,11 @@ app.get("/activity", (req, res) => {
 app.get("/ai_models", (req, res) => {
   console.debug("[Server Debug] GET /ai_models => Serving ai_models.html");
   res.sendFile(path.join(__dirname, "../public/ai_models.html"));
+});
+
+app.get("/image_generator", (req, res) => {
+  console.debug("[Server Debug] GET /image_generator => Serving image_generator.html");
+  res.sendFile(path.join(__dirname, "../public/image_generator.html"));
 });
 
 app.delete("/api/chat/pair/:id", (req, res) => {
