@@ -161,7 +161,7 @@ async function toggleNavMenu(){
   if(check) check.checked = navMenuVisible;
   await setSetting("nav_menu_visible", navMenuVisible);
 }
-document.getElementById("navMenuToggle").addEventListener("click", toggleNavMenu);
+document.getElementById("navMenuToggle")?.addEventListener("click", toggleNavMenu);
 
   async function toggleTabGenerateImages(){
     tabGenerateImages = !tabGenerateImages;
