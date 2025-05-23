@@ -31,7 +31,7 @@
           <button id="codeBtn" style="display:none;">Code</button>
         </div>
       </div>
-      <div id="taskListPanel" style="display:none;border:1px dashed #666; padding:8px; margin:8px 0;">
+      <div id="taskListPanel" style="display:none;">
         <h2 style="margin:0;font-size:1.1rem;">Tasks</h2>
         <table id="tasks">
           <thead><tr id="headerRow"></tr></thead>
@@ -398,7 +398,10 @@
       if(suggestionsEl) suggestionsEl.style.display = v === 'tasks' ? 'none' : '';
 
       const chatPanel = document.getElementById('chatPanel');
-      if(chatPanel) chatPanel.style.display = '';
+      if(chatPanel){
+        chatPanel.classList.toggle('tasks-view', v === 'tasks');
+        chatPanel.style.display = '';
+      }
 
       if(v === 'chat') {
         loadHistory();

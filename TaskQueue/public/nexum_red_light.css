@@ -260,3 +260,16 @@ a {
 a:hover {
   text-decoration: underline;
 }
+#taskListPanel {
+  border: 1px dashed var(--border);
+  padding: 8px;
+  margin: 8px 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
+#chatPanel.tasks-view {
+  flex: none;
+}
