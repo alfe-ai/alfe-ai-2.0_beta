@@ -65,10 +65,13 @@ body {
   border: 1px solid var(--border);
   color: var(--text-color);
   padding: 4px 6px;
-  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   cursor: pointer;
   transition: background 0.3s;
   border-radius: 6px;
+}
 }
 
 #tabsList button:hover {
@@ -303,4 +306,4 @@ a:hover {
   flex: none;
 }
 
-#tabsList .type-icon { margin-right: 4px; font-size: 0.9rem; width: 1.2rem; text-align: center; }
+#tabsList .type-icon { margin-left: 4px; font-size: 0.9rem; width: 1.2rem; text-align: center; }
