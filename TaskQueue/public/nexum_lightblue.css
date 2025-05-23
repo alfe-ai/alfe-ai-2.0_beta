@@ -34,6 +34,17 @@ body {
   z-index: 1000;
 }
 
+/* Sidebar collapse/expand icon */
+.sidebar-toggle-icon {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  z-index: 1000;
+}
+
 #sidebar {
   width: 220px;
   background: linear-gradient(180deg, var(--bg-alt), var(--bg-main));
