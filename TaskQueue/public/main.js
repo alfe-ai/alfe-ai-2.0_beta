@@ -26,6 +26,7 @@ let chatStreaming = true; // new toggle for streaming
 let enterSubmitsMessage = true; // new toggle for Enter key submit
 let navMenuVisible = false; // visibility of the top navigation menu
 let showArchivedTabs = false;
+let showDependenciesColumn = false;
 let tabGenerateImages = true; // per-tab auto image toggle
 let chatSubroutines = [];
 let actionHooks = [];
@@ -309,6 +310,15 @@ async function loadSettings(){
       }
     }
   }
+  {
+    const r = await fetch("/api/settings/show_dependencies_column");
+    if(r.ok){
+      const { value } = await r.json();
+      if(typeof value !== 'undefined'){
+        showDependenciesColumn = !!value;
+      }
+    }
+  }
 }
 async function saveSettings(){
   await fetch("/api/settings",{
@@ -327,6 +337,7 @@ function renderHeader(){
   const tr = $("#headerRow");
   tr.innerHTML = "";
   columnsOrder.forEach(col => {
+    if(!showDependenciesColumn && col.key === "dependencies") return;
     if(!visibleCols.has(col.key)) return;
     const th = document.createElement("th");
     th.textContent = col.label;
@@ -402,6 +413,7 @@ function renderBody(){
           "drag","priority","status","number","title",
           "dependencies","project","created"
         ].forEach(key=>{
+          if(!showDependenciesColumn && key === "dependencies") return;
           if(!visibleCols.has(key)) return;
           const td = document.createElement("td");
           switch(key){
@@ -471,6 +483,7 @@ function openColModal(){
   const cnt = $("#colList");
   cnt.innerHTML="";
   columnsOrder.forEach((c,i)=>{
+    if(!showDependenciesColumn && c.key === "dependencies") return;
     const div = document.createElement("div");
     div.className="col-item";
     div.innerHTML = `<button class="col-move" data-idx="${i}" data-dir="up">⬆️</button>` +
@@ -896,6 +909,8 @@ async function selectTab(tabId){
   if(chk) chk.checked = tabGenerateImages;
   renderTabs();
   renderSidebarTabs();
+  renderHeader();
+  renderBody();
 }
 function renderTabs(){
   const tc = $("#tabsContainer");
@@ -1420,11 +1435,18 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
     navMenuVisible = value !== false;
   }
 
+  const rDepsFlag = await fetch("/api/settings/show_dependencies_column");
+  if(rDepsFlag.ok){
+    const { value } = await rDepsFlag.json();
+    showDependenciesColumn = !!value;
+  }
+
   $("#hideMetadataCheck").checked = chatHideMetadata;
   $("#autoNamingCheck").checked = chatTabAutoNaming;
   $("#subbubbleTokenCheck").checked = showSubbubbleToken;
   $("#sterlingUrlCheck").checked = sterlingChatUrlVisible;
   $("#showMarkdownTasksCheck").checked = markdownPanelVisible;
+  $("#showDependenciesColumnCheck").checked = showDependenciesColumn;
   $("#showSubroutinePanelCheck").checked = subroutinePanelVisible;
   $("#enterSubmitCheck").checked = enterSubmitsMessage;
   $("#showNavMenuCheck").checked = navMenuVisible;
@@ -1535,6 +1557,7 @@ async function chatSettingsSaveFlow() {
   sterlingChatUrlVisible = $("#sterlingUrlCheck").checked;
   chatStreaming = $("#chatStreamingCheck").checked;
   markdownPanelVisible = $("#showMarkdownTasksCheck").checked;
+  showDependenciesColumn = $("#showDependenciesColumnCheck").checked;
   subroutinePanelVisible = $("#showSubroutinePanelCheck").checked;
   enterSubmitsMessage = $("#enterSubmitCheck").checked;
   navMenuVisible = $("#showNavMenuCheck").checked;
@@ -1550,6 +1573,7 @@ async function chatSettingsSaveFlow() {
   await setSetting("enter_submits_message", enterSubmitsMessage);
   await setSetting("nav_menu_visible", navMenuVisible);
   await setSetting("show_archived_tabs", showArchivedTabs);
+  await setSetting("show_dependencies_column", showDependenciesColumn);
 
   const serviceSel = $("#aiServiceSelect").value;
   const modelSel = $("#aiModelSelect").value;
@@ -1580,6 +1604,8 @@ async function chatSettingsSaveFlow() {
   if(subPanel) subPanel.style.display = subroutinePanelVisible ? "" : "none";
   renderTabs();
   renderSidebarTabs();
+  renderHeader();
+  renderBody();
 }
 
 $("#chatSettingsSaveBtn").addEventListener("click", chatSettingsSaveFlow);
@@ -2169,6 +2195,7 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
   $("#sterlingUrlCheck").checked = sterlingChatUrlVisible;
   $("#chatStreamingCheck").checked = chatStreaming;
   $("#showMarkdownTasksCheck").checked = markdownPanelVisible;
+  $("#showDependenciesColumnCheck").checked = showDependenciesColumn;
   $("#showSubroutinePanelCheck").checked = subroutinePanelVisible;
   $("#enterSubmitCheck").checked = enterSubmitsMessage;
   $("#showNavMenuCheck").checked = navMenuVisible;
