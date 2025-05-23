@@ -30,6 +30,7 @@ let tabGenerateImages = true; // per-tab auto image toggle
 let chatSubroutines = [];
 let actionHooks = [];
 let editingSubroutineId = null;
+let currentView = 'chat';
 window.agentName = "Alfe";
 
 // For per-tab model arrays
@@ -120,7 +121,8 @@ $("#toggleTasksBtn").addEventListener("click", toggleTasks);
 
 async function toggleMarkdownPanel(){
   markdownPanelVisible = !markdownPanelVisible;
-  $("#taskListPanel").style.display = markdownPanelVisible ? "" : "none";
+  const pnl = document.getElementById("taskListPanel");
+  if(pnl) pnl.style.display = markdownPanelVisible ? "" : "none";
   await setSetting("markdown_panel_visible", markdownPanelVisible);
 }
 
@@ -160,21 +162,30 @@ async function toggleNavMenu(){
 }
 document.getElementById("navMenuToggle").addEventListener("click", toggleNavMenu);
 
-async function toggleTabGenerateImages(){
-  tabGenerateImages = !tabGenerateImages;
-  const chk = document.getElementById("tabGenerateImagesCheck");
-  if(chk) chk.checked = tabGenerateImages;
-  const r = await fetch('/api/chat/tabs/generate_images', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ tabId: currentTabId, enabled: tabGenerateImages })
-  });
-  if(r.ok){
-    const t = chatTabs.find(t => t.id===currentTabId);
-    if(t) t.generate_images = tabGenerateImages ? 1 : 0;
+  async function toggleTabGenerateImages(){
+    tabGenerateImages = !tabGenerateImages;
+    const chk = document.getElementById("tabGenerateImagesCheck");
+    if(chk) chk.checked = tabGenerateImages;
+    const r = await fetch('/api/chat/tabs/generate_images', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tabId: currentTabId, enabled: tabGenerateImages })
+    });
+    if(r.ok){
+      const t = chatTabs.find(t => t.id===currentTabId);
+      if(t) t.generate_images = tabGenerateImages ? 1 : 0;
+    }
   }
+  document.getElementById("tabGenerateImagesCheck").addEventListener("change", toggleTabGenerateImages);
+
+function updateView(v){
+  currentView = v;
+  $("#viewTabChat").classList.toggle("active", v === 'chat');
+  $("#viewTabTasks").classList.toggle("active", v === 'tasks');
+  $("#viewTabArchive").classList.toggle("active", v === 'archive');
+  const chatPanel = document.getElementById("chatPanel");
+  if(chatPanel) chatPanel.style.display = v === 'chat' ? "" : "none";
 }
-document.getElementById("tabGenerateImagesCheck").addEventListener("change", toggleTabGenerateImages);
 
 async function loadSettings(){
   {
@@ -216,7 +227,8 @@ async function loadSettings(){
         markdownPanelVisible = !!value;
       }
     }
-    $("#taskListPanel").style.display = markdownPanelVisible ? "" : "none";
+    const pnl = document.getElementById("taskListPanel");
+    if(pnl) pnl.style.display = markdownPanelVisible ? "" : "none";
   }
   {
     const r = await fetch("/api/settings/subroutine_panel_visible");
@@ -989,6 +1001,10 @@ document.getElementById("subroutineCancelBtn").addEventListener("click", () => {
   hideModal(document.getElementById("subroutineModal"));
 });
 
+document.getElementById("viewTabChat").addEventListener("click", () => updateView('chat'));
+document.getElementById("viewTabTasks").addEventListener("click", () => updateView('tasks'));
+document.getElementById("viewTabArchive").addEventListener("click", () => updateView('archive'));
+
 // New: Button to toggle top chat tabs bar
 document.getElementById("toggleTopChatTabsBtn").addEventListener("click", () => {
   const topTabs = document.getElementById("chatTabs");
@@ -1554,8 +1570,10 @@ async function chatSettingsSaveFlow() {
   await loadChatHistory(currentTabId, true);
   toggleSterlingUrlVisibility(sterlingChatUrlVisible);
   toggleNavMenuVisibility(navMenuVisible);
-  document.getElementById("taskListPanel").style.display = markdownPanelVisible ? "" : "none";
-  document.getElementById("chatSubroutinesPanel").style.display = subroutinePanelVisible ? "" : "none";
+  const pnl = document.getElementById("taskListPanel");
+  if(pnl) pnl.style.display = markdownPanelVisible ? "" : "none";
+  const subPanel = document.getElementById("chatSubroutinesPanel");
+  if(subPanel) subPanel.style.display = subroutinePanelVisible ? "" : "none";
   renderTabs();
   renderSidebarTabs();
 }
@@ -2177,6 +2195,8 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     case "activity": showActivityIframePanel(); break;
     default: showChatTabsPanel(); break;
   }
+
+  updateView('chat');
 
   initChatScrollLoading();
 
