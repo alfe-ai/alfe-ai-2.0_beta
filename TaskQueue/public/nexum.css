@@ -318,6 +318,36 @@ button:hover {
   border-radius: 6px;
 }
 
+/* Start dialog type buttons */
+#startTypeButtons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+#startTypeButtons .start-type-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 80px;
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: background 0.3s, color 0.3s;
+}
+#startTypeButtons .start-type-btn .icon {
+  font-size: 1.5rem;
+  margin-bottom: 4px;
+}
+#startTypeButtons .start-type-btn.selected {
+  background: var(--accent);
+  border-color: var(--accent-light);
+  color: #fff;
+}
+
 /* Table styles used on nexum_tabs.html */
 table {
   width: 100%;
