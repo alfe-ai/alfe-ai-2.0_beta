@@ -29,6 +29,7 @@
             <textarea id="prompt" rows="12" placeholder="Enter your message" style="width:600px;"></textarea>
             <div id="taskBtns">
               <button id="askBtn" style="display:none;">Ask</button>
+              <button id="renderBtn" style="display:none;">Render</button>
               <button id="codeBtn" style="display:none;">Code</button>
             </div>
           </div>
@@ -527,17 +528,20 @@
 
       const sendBtn = document.getElementById('sendBtn');
       const askBtn = document.getElementById('askBtn');
+      const renderBtn = document.getElementById('renderBtn');
       const codeBtn = document.getElementById('codeBtn');
-      if(sendBtn && askBtn && codeBtn){
+      if(sendBtn && askBtn && renderBtn && codeBtn){
         const t = tabs.find(tt => tt.id === currentTabId) || {};
         const hasRepo = !!(t.repo_ssh_url && t.repo_ssh_url.trim());
         if(v === 'chat'){
           sendBtn.style.display = '';
           askBtn.style.display = 'none';
+          renderBtn.style.display = 'none';
           codeBtn.style.display = 'none';
         } else {
           sendBtn.style.display = 'none';
           askBtn.style.display = '';
+          renderBtn.style.display = '';
           codeBtn.style.display = hasRepo ? '' : 'none';
         }
       }
@@ -616,9 +620,40 @@
         await loadTasksForCurrentProject();
       }catch(e){console.error(e);}
     }
+
+    async function generateImage(){
+      const promptEl=document.getElementById('prompt');
+      const text=promptEl.value.trim();
+      if(!text) return;
+      addMsg('user', text);
+      promptEl.value='';
+      const aiEl=document.createElement('div');
+      aiEl.className='msg ai';
+      aiEl.textContent='...';
+      document.getElementById('chat').appendChild(aiEl);
+      document.getElementById('chat').scrollTop=document.getElementById('chat').scrollHeight;
+      try{
+        const resp=await fetch('/api/image/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:text, tabId:currentTabId})});
+        const data=await resp.json();
+        if(resp.ok && data.url){
+          aiEl.textContent='';
+          const img=document.createElement('img');
+          img.src=data.url;
+          img.alt=text;
+          img.style.maxWidth='100%';
+          aiEl.appendChild(img);
+        }else{
+          aiEl.textContent=data.error||'[error]';
+        }
+      }catch(e){
+        aiEl.textContent='[error]';
+        console.error(e);
+      }
+    }
     document.getElementById('sendBtn').addEventListener('click',send);
     document.getElementById('askBtn').addEventListener('click',send);
     document.getElementById('codeBtn').addEventListener('click',createTask);
+    document.getElementById('renderBtn').addEventListener('click',generateImage);
     document.getElementById('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
     document.getElementById('newTabBtn').addEventListener('click', openNewTabModal);
     document.getElementById('newTabCreateBtn').addEventListener('click', createNewTab);
