@@ -108,6 +108,13 @@
       </div>
     </div>
   </div>
+  <div id="startDialog" class="modal" style="display:none;">
+    <div class="modal-content">
+      <h3>Get Started</h3>
+      <p>No chat tabs available.</p>
+      <button id="startDialogCloseBtn">Close</button>
+    </div>
+  </div>
   <script>
     let tabs = [];
     let currentTabId = 1;
@@ -195,10 +202,10 @@
       }catch(e){ tabs = [{id:1,name:'Tab 1'}]; console.error(e); }
     }
 
-    function renderTabs(){
-      const container = document.getElementById('tabsList');
-      container.innerHTML = '';
-      tabs.forEach(t => {
+  function renderTabs(){
+    const container = document.getElementById('tabsList');
+    container.innerHTML = '';
+    tabs.forEach(t => {
         const item = document.createElement('div');
         item.className = 'tab-item';
 
@@ -237,10 +244,17 @@
 
         item.appendChild(b);
         item.appendChild(gear);
-        item.appendChild(archBtn);
-        container.appendChild(item);
-      });
-    }
+      item.appendChild(archBtn);
+      container.appendChild(item);
+    });
+    checkNoTabsDialog();
+  }
+
+  function checkNoTabsDialog(){
+    const dlg = document.getElementById('startDialog');
+    if(!dlg) return;
+    dlg.style.display = tabs.length === 0 ? 'flex' : 'none';
+  }
 
     function isoDate(d){
       return new Date(d).toLocaleDateString([], {year:'2-digit',month:'2-digit',day:'2-digit'});
@@ -553,6 +567,12 @@
       document.getElementById('newTabModal').style.display = 'none';
     });
     document.getElementById('newTabModal').addEventListener('click', e => {
+      if(e.target === e.currentTarget) e.currentTarget.style.display = 'none';
+    });
+    document.getElementById('startDialogCloseBtn').addEventListener('click', () => {
+      document.getElementById('startDialog').style.display = 'none';
+    });
+    document.getElementById('startDialog').addEventListener('click', e => {
       if(e.target === e.currentTarget) e.currentTarget.style.display = 'none';
     });
     document.getElementById('viewTabChat').addEventListener('click', () => updateView('chat'));
