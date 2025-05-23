@@ -238,7 +238,8 @@ button:hover {
 
 #settingsModal,
 #tabConfigModal,
-#newTabModal {
+#newTabModal,
+#startDialog {
   position: fixed;
   top: 0;
   left: 0;
@@ -252,7 +253,8 @@ button:hover {
 
 #settingsModal .modal-content,
 #tabConfigModal .modal-content,
-#newTabModal .modal-content {
+#newTabModal .modal-content,
+#startDialog .modal-content {
   background: var(--bg-alt);
   border: 1px solid var(--border);
   padding: 1rem;

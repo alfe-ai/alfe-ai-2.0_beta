@@ -253,7 +253,12 @@
   function checkNoTabsDialog(){
     const dlg = document.getElementById('startDialog');
     if(!dlg) return;
-    dlg.style.display = tabs.length === 0 ? 'flex' : 'none';
+    const noTabs = tabs.length === 0;
+    dlg.style.display = noTabs ? 'flex' : 'none';
+    const chatPanel = document.getElementById('chatPanel');
+    if(chatPanel) chatPanel.style.display = noTabs ? 'none' : '';
+    const taskPanel = document.getElementById('taskListPanel');
+    if(taskPanel) taskPanel.style.display = noTabs ? 'none' : (currentView === 'tasks' ? '' : 'none');
   }
 
     function isoDate(d){
@@ -514,6 +519,13 @@
     }
 
     function applyTabView(){
+      if(tabs.length === 0){
+        const chatPanel = document.getElementById('chatPanel');
+        if(chatPanel) chatPanel.style.display = 'none';
+        const taskPanel = document.getElementById('taskListPanel');
+        if(taskPanel) taskPanel.style.display = 'none';
+        return;
+      }
       const t = tabs.find(tt => tt.id === currentTabId);
       const isTask = t && t.tab_type === 'task';
       updateView(isTask ? 'tasks' : 'chat');
