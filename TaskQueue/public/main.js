@@ -183,6 +183,12 @@ function updateView(v){
   $("#viewTabChat").classList.toggle("active", v === 'chat');
   $("#viewTabTasks").classList.toggle("active", v === 'tasks');
   $("#viewTabArchive").classList.toggle("active", v === 'archive');
+  const sendBtnLabel = document.getElementById("chatSendBtnText");
+  if(sendBtnLabel){
+    if(v === 'tasks'){ sendBtnLabel.textContent = 'Ask'; }
+    else if(v === 'archive'){ sendBtnLabel.textContent = 'Code'; }
+    else { sendBtnLabel.textContent = 'Send'; }
+  }
   const showSub = v !== 'chat';
   const taskPanel = document.getElementById("taskListPanel");
   if(taskPanel) taskPanel.style.display = showSub ? "" : "none";
