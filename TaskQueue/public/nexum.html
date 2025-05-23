@@ -224,8 +224,17 @@
         gear.className = 'config-btn';
         gear.addEventListener('click', (e) => { e.stopPropagation(); openTabConfig(t.id); });
 
+        const archBtn = document.createElement('button');
+        archBtn.textContent = t.archived ? 'Unarchive' : 'Archive';
+        archBtn.className = 'config-btn';
+        archBtn.addEventListener('click', e => {
+          e.stopPropagation();
+          toggleArchiveTab(t.id, !t.archived);
+        });
+
         item.appendChild(b);
         item.appendChild(gear);
+        item.appendChild(archBtn);
         container.appendChild(item);
       });
     }
@@ -412,6 +421,18 @@
           }else{
             currentTabId = 1;
           }
+          renderTabs();
+          if(currentView === 'chat') loadHistory();
+          if(currentView === 'tasks') loadTasksForCurrentProject();
+        }
+      }catch(e){console.error(e);}
+    }
+
+    async function toggleArchiveTab(tabId, archived){
+      try{
+        const r = await fetch('/api/chat/tabs/archive',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tabId, archived})});
+        if(r.ok){
+          await loadTabs();
           renderTabs();
           if(currentView === 'chat') loadHistory();
           if(currentView === 'tasks') loadTasksForCurrentProject();
