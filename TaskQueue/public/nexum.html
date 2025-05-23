@@ -29,11 +29,11 @@
             <textarea id="prompt" rows="12" placeholder="Enter your message" style="width:600px;"></textarea>
             <div id="taskBtns">
               <button id="askBtn" style="display:none;">Ask</button>
-              <button id="renderBtn" style="display:none;">Render</button>
               <button id="codeBtn" style="display:none;">Code</button>
+              <button id="renderBtn" style="display:none;">Render</button>
             </div>
           </div>
-          <button id="sendBtn"><span id="sendBtnText">Send</span></button>
+          <button id="sendBtn"><span id="sendBtnText">Chat</span></button>
         </div>
       </div>
       <div id="taskListPanel" style="display:none;">
@@ -585,17 +585,19 @@
       const codeBtn = document.getElementById('codeBtn');
       if(sendBtn && askBtn && renderBtn && codeBtn){
         const t = tabs.find(tt => tt.id === currentTabId) || {};
+        const type = t.tab_type || 'chat';
         const hasRepo = !!(t.repo_ssh_url && t.repo_ssh_url.trim());
+        const isCode = type === 'code';
         if(v === 'chat'){
           sendBtn.style.display = '';
-          askBtn.style.display = 'none';
-          renderBtn.style.display = 'none';
-          codeBtn.style.display = 'none';
+          renderBtn.style.display = '';
+          askBtn.style.display = isCode ? '' : 'none';
+          codeBtn.style.display = isCode && hasRepo ? '' : 'none';
         } else {
           sendBtn.style.display = 'none';
-          askBtn.style.display = '';
           renderBtn.style.display = '';
-          codeBtn.style.display = hasRepo ? '' : 'none';
+          askBtn.style.display = isCode ? '' : 'none';
+          codeBtn.style.display = isCode && hasRepo ? '' : 'none';
         }
       }
 
