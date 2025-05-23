@@ -155,7 +155,7 @@ main {
 .ai   { background: #222; align-self: flex-start; }
 
 #inputArea {
-  max-width: 800px;
+  max-width: 3200px;
   margin: 0 auto;
   display: flex;
   gap: 0.5rem;
