@@ -91,6 +91,12 @@ body {
   cursor: pointer;
   margin-left: 4px;
   transition: color 0.3s;
+  flex: 0 0 auto;
+  width: 28px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 #tabsList .config-btn:hover {
