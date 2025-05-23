@@ -233,7 +233,11 @@
         const b = document.createElement('button');
         b.textContent = t.name;
         if(t.id === currentTabId) b.classList.add('active');
-        b.addEventListener('click', () => { currentTabId = t.id; loadHistory(); renderTabs(); });
+        b.addEventListener('click', () => {
+          currentTabId = t.id;
+          if(currentView === 'chat') loadHistory();
+          renderTabs();
+        });
         b.addEventListener('contextmenu', e => { e.preventDefault(); renameTab(t.id); });
         container.appendChild(b);
       });
@@ -288,7 +292,7 @@
         }
         renderTabs();
 
-        loadHistory();
+        if(currentView === 'chat') loadHistory();
       }
     }
     async function renameTab(tabId){
@@ -313,8 +317,17 @@
       const taskPanel = document.getElementById('taskListPanel');
       if(taskPanel) taskPanel.style.display = v === 'tasks' ? '' : 'none';
 
+      const chatEl = document.getElementById('chat');
+      if(chatEl) chatEl.style.display = v === 'tasks' ? 'none' : '';
+      const suggestionsEl = document.getElementById('suggestions');
+      if(suggestionsEl) suggestionsEl.style.display = v === 'tasks' ? 'none' : '';
+
       const chatPanel = document.getElementById('chatPanel');
       if(chatPanel) chatPanel.style.display = '';
+
+      if(v === 'chat') {
+        loadHistory();
+      }
     }
 
 
@@ -386,8 +399,7 @@
       renderTabs();
       applyFeatureFlags();
       renderSuggestions(false); // show/hide after history loads
-      loadHistory();
-      updateView('chat');
+      updateView('tasks');
     }
     init();
   </script>
