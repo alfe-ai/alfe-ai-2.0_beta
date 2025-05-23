@@ -201,14 +201,11 @@
         </div>
       </div>
       <div id="taskListPanel" style="display:none;border:1px dashed #666; padding:8px; margin:8px 0;">
-        <!--        <h2 style="margin:0;font-size:1.1rem;">Task List</h2>-->
-        <!--        <div id="markdownContainer" style="margin-top:8px;border:1px solid #444; padding:8px;">-->
-        <!--          <label for="markdownInput" style="font-weight:bold;">Markdown Contents:</label>-->
-        <!--          <textarea id="markdownInput" name="markdownContent" style="width:100%; height:150px; background:#2b2b2b; color:#ddd;"></textarea>-->
-        <!--          <div style="margin-top:8px;">-->
-        <!--            <button id="saveMdBtn">Save</button>-->
-        <!--          </div>-->
-        <!--        </div>-->
+        <h2 style="margin:0;font-size:1.1rem;">Tasks</h2>
+        <table id="tasks">
+          <thead><tr id="headerRow"></tr></thead>
+          <tbody></tbody>
+        </table>
       </div>
     </main>
   </div>
@@ -241,6 +238,15 @@
     let tabs = [];
     let currentTabId = 1;
     let currentView = 'chat';
+    const taskColumns = [
+      {key:'priority', label:'Prio'},
+      {key:'status', label:'Status'},
+      {key:'number', label:'#'},
+      {key:'title', label:'Title'},
+      {key:'dependencies', label:'Depends On'},
+      {key:'project', label:'Project'},
+      {key:'created', label:'Created'}
+    ];
     const suggestions = [
       'Code a Pong Clone in JavaScript',
       'Create a basic to-do list in Python',
@@ -285,6 +291,7 @@
         b.addEventListener('click', () => {
           currentTabId = t.id;
           if(currentView === 'chat') loadHistory();
+          if(currentView === 'tasks') loadTasksForCurrentProject();
           renderTabs();
         });
         b.addEventListener('contextmenu', e => { e.preventDefault(); renameTab(t.id); });
@@ -298,6 +305,65 @@
         item.appendChild(gear);
         container.appendChild(item);
       });
+    }
+
+    function isoDate(d){
+      return new Date(d).toLocaleDateString([], {year:'2-digit',month:'2-digit',day:'2-digit'});
+    }
+
+    function renderTaskHeader(){
+      const tr = document.getElementById('headerRow');
+      if(!tr) return;
+      tr.innerHTML = '';
+      taskColumns.forEach(col => {
+        const th = document.createElement('th');
+        th.textContent = col.label;
+        tr.appendChild(th);
+      });
+    }
+
+    function renderTasks(tasks){
+      const tbody = document.querySelector('#tasks tbody');
+      if(!tbody) return;
+      tbody.innerHTML = '';
+      tasks.forEach(t => {
+        const tr = document.createElement('tr');
+        taskColumns.forEach(col => {
+          const td = document.createElement('td');
+          switch(col.key){
+            case 'number':
+              td.innerHTML = `<a href="${t.html_url}" target="_blank">#${t.number}</a>`;
+              break;
+            case 'created':
+              td.textContent = isoDate(t.created_at);
+              break;
+            default:
+              td.textContent = t[col.key] || '';
+          }
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function loadTasksForCurrentProject(){
+      const t = tabs.find(tt => tt.id === currentTabId);
+      if(!t || !t.project_name){
+        renderTasks([]);
+        return;
+      }
+      try{
+        const res = await fetch('/api/projects/' + encodeURIComponent(t.project_name));
+        if(res.ok){
+          const data = await res.json();
+          renderTasks(data);
+        }else{
+          renderTasks([]);
+        }
+      }catch(e){
+        console.error(e);
+        renderTasks([]);
+      }
     }
 
     function renderSuggestions(show = true){
@@ -351,6 +417,7 @@
         renderTabs();
 
         if(currentView === 'chat') loadHistory();
+        if(currentView === 'tasks') loadTasksForCurrentProject();
       }
     }
     async function renameTab(tabId){
@@ -409,6 +476,10 @@
 
       if(v === 'chat') {
         loadHistory();
+      }
+      if(v === 'tasks') {
+        renderTaskHeader();
+        loadTasksForCurrentProject();
       }
     }
 
@@ -479,6 +550,7 @@
       modal.style.display = 'none';
       await loadTabs();
       renderTabs();
+      if(currentView === 'tasks') loadTasksForCurrentProject();
     });
     document.getElementById('tabConfigCancelBtn').addEventListener('click', () => {
       document.getElementById('tabConfigModal').style.display = 'none';
