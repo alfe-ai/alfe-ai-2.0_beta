@@ -390,3 +390,8 @@ a:hover {
   border-color: var(--accent-light);
   color: #fff;
 }
+#renderBtn {
+  background: var(--accent);
+  border-color: var(--accent-light);
+  color: #fff;
+}
