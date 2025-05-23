@@ -166,14 +166,6 @@
     const startTab = parseInt(urlParams.get('tabId'), 10);
     if(!Number.isNaN(startTab)) currentTabId = startTab;
 
-    function updateView(view){
-      currentView = view;
-      document.getElementById('viewTabChat').classList.toggle('active', view === 'chat');
-      document.getElementById('viewTabTasks').classList.toggle('active', view === 'tasks');
-      document.getElementById('viewTabArchive').classList.toggle('active', view === 'archive');
-      const showTasks = view !== 'chat';
-      document.getElementById('taskListPanel').style.display = showTasks ? '' : 'none';
-    }
 
     async function loadModelInfo(){
       try{
@@ -278,10 +270,12 @@
       document.getElementById('viewTabChat').classList.toggle('active', v === 'chat');
       document.getElementById('viewTabTasks').classList.toggle('active', v === 'tasks');
       document.getElementById('viewTabArchive').classList.toggle('active', v === 'archive');
+
       const taskPanel = document.getElementById('taskListPanel');
-      if(taskPanel) taskPanel.style.display = v === 'chat' ? 'none' : '';
+      if(taskPanel) taskPanel.style.display = v === 'tasks' ? '' : 'none';
+
       const chatPanel = document.getElementById('chatPanel');
-      if(chatPanel) chatPanel.style.display = v === 'chat' ? '' : 'none';
+      if(chatPanel) chatPanel.style.display = '';
     }
 
 
