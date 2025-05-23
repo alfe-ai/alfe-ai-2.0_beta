@@ -1134,6 +1134,7 @@ app.post("/api/chat/tabs/new", (req, res) => {
     const nexum = req.body.nexum ? 1 : 0;
     const project = req.body.project || '';
     const repo = req.body.repo || '';
+    const type = req.body.type || 'chat';
 
     const autoNaming = db.getSetting("chat_tab_auto_naming");
     const projectName = db.getSetting("sterling_project") || "";
@@ -1141,7 +1142,7 @@ app.post("/api/chat/tabs/new", (req, res) => {
       name = `${projectName}: ${name}`;
     }
 
-    const tabId = db.createChatTab(name, nexum, project, repo);
+    const tabId = db.createChatTab(name, nexum, project, repo, type);
     res.json({ success: true, id: tabId });
   } catch (err) {
     console.error("[TaskQueue] POST /api/chat/tabs/new error:", err);
