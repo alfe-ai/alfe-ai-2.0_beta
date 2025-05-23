@@ -95,6 +95,20 @@
     button {
       padding:8px 12px;
     }
+
+    /* Tabs for switching between Chat, Tasks and Archive */
+    .view-tab {
+      background:#333;
+      color:#ddd;
+      border:1px solid #444;
+      padding:4px 8px;
+      cursor:pointer;
+    }
+    .view-tab.active {
+      background:#555;
+      border-color:#aaa;
+      color:#fff;
+    }
   </style>
 </head>
 <body>
@@ -106,18 +120,36 @@
     </aside>
     <main>
       <h1>Nexum Chat</h1>
+      <div id="viewTabsBar" style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
+        <button id="viewTabChat" class="view-tab active">Chat</button>
+        <button id="viewTabTasks" class="view-tab">Tasks</button>
+        <button id="viewTabArchive" class="view-tab">Archive</button>
+      </div>
       <div id="modelInfo" style="margin-bottom:0.5rem; color:#aaa;"></div>
+      <div id="taskListPanel" style="display:none;border:1px dashed #666; padding:8px; margin:8px 0;">
+        <h2 style="margin:0;font-size:1.1rem;">Task List</h2>
+        <div id="markdownContainer" style="margin-top:8px;border:1px solid #444; padding:8px;">
+          <label for="markdownInput" style="font-weight:bold;">Markdown Contents:</label>
+          <textarea id="markdownInput" name="markdownContent" style="width:100%; height:150px; background:#2b2b2b; color:#ddd;"></textarea>
+          <div style="margin-top:8px;">
+            <button id="saveMdBtn">Save</button>
+          </div>
+        </div>
+      </div>
       <div id="suggestions"></div>
-      <div id="chat"></div>
-      <div id="inputArea">
-        <textarea id="prompt" rows="3" placeholder="Enter your message"></textarea>
-        <button id="sendBtn">Send</button>
+      <div id="chatPanel">
+        <div id="chat"></div>
+        <div id="inputArea">
+          <textarea id="prompt" rows="3" placeholder="Enter your message"></textarea>
+          <button id="sendBtn">Send</button>
+        </div>
       </div>
     </main>
   </div>
   <script>
     let tabs = [];
     let currentTabId = 1;
+    let currentView = 'chat';
     const suggestions = [
       'Code a Pong Clone in JavaScript',
       'Create a basic to-do list in Python',
@@ -159,6 +191,17 @@
         b.addEventListener('contextmenu', e => { e.preventDefault(); renameTab(t.id); });
         container.appendChild(b);
       });
+    }
+
+    function updateView(v){
+      currentView = v;
+      document.getElementById('viewTabChat').classList.toggle('active', v === 'chat');
+      document.getElementById('viewTabTasks').classList.toggle('active', v === 'tasks');
+      document.getElementById('viewTabArchive').classList.toggle('active', v === 'archive');
+      const taskPanel = document.getElementById('taskListPanel');
+      if(taskPanel) taskPanel.style.display = v === 'chat' ? 'none' : '';
+      const chatPanel = document.getElementById('chatPanel');
+      if(chatPanel) chatPanel.style.display = v === 'chat' ? '' : 'none';
     }
 
     function renderSuggestions(){
@@ -251,6 +294,9 @@
     document.getElementById('sendBtn').addEventListener('click',send);
     document.getElementById('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
     document.getElementById('newTabBtn').addEventListener('click', newTab);
+    document.getElementById('viewTabChat').addEventListener('click', () => updateView('chat'));
+    document.getElementById('viewTabTasks').addEventListener('click', () => updateView('tasks'));
+    document.getElementById('viewTabArchive').addEventListener('click', () => updateView('archive'));
 
     async function init(){
       loadModelInfo();
@@ -265,6 +311,7 @@
       renderTabs();
       renderSuggestions();
       loadHistory();
+      updateView('chat');
     }
     init();
   </script>
