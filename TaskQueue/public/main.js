@@ -26,6 +26,7 @@ let chatStreaming = true; // new toggle for streaming
 let enterSubmitsMessage = true; // new toggle for Enter key submit
 let navMenuVisible = false; // visibility of the top navigation menu
 let showArchivedTabs = false;
+let topChatTabsBarVisible = true; // visibility of the top chat tabs bar
 let showDependenciesColumn = false;
 let tabGenerateImages = true; // per-tab auto image toggle
 let chatSubroutines = [];
@@ -290,6 +291,16 @@ async function loadSettings(){
     if(cont) cont.style.display = modelTabsBarVisible ? "" : "none";
     if(newBtn) newBtn.style.display = modelTabsBarVisible ? "" : "none";
     if(toggleBtn) toggleBtn.textContent = modelTabsBarVisible ? "Hide Models" : "Models";
+  }
+  {
+    const r = await fetch("/api/settings/top_chat_tabs_bar_visible");
+    if(r.ok){
+      const { value } = await r.json();
+      if(typeof value !== 'undefined'){
+        topChatTabsBarVisible = value !== false;
+      }
+    }
+    toggleTopChatTabsVisibility(topChatTabsBarVisible);
   }
   {
     const r = await fetch("/api/settings/nav_menu_visible");
@@ -1025,15 +1036,12 @@ document.getElementById("viewTabTasks").addEventListener("click", () => updateVi
 document.getElementById("viewTabArchive").addEventListener("click", () => updateView('archive'));
 
 // New: Button to toggle top chat tabs bar
-document.getElementById("toggleTopChatTabsBtn").addEventListener("click", () => {
-  const topTabs = document.getElementById("chatTabs");
-  if (topTabs.style.display === "none") {
-    topTabs.style.display = "";
-    document.getElementById("toggleTopChatTabsBtn").textContent = "Hide chat tabs bar";
-  } else {
-    topTabs.style.display = "none";
-    document.getElementById("toggleTopChatTabsBtn").textContent = "Show chat tabs bar";
-  }
+document.getElementById("toggleTopChatTabsBtn").addEventListener("click", async () => {
+  topChatTabsBarVisible = !topChatTabsBarVisible;
+  const chk = document.getElementById("showTopChatTabsCheck");
+  if(chk) chk.checked = topChatTabsBarVisible;
+  toggleTopChatTabsVisibility(topChatTabsBarVisible);
+  await setSetting("top_chat_tabs_bar_visible", topChatTabsBarVisible);
 });
 
 document.getElementById("createSterlingChatBtn").addEventListener("click", async () => {
@@ -1435,6 +1443,12 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
     navMenuVisible = value !== false;
   }
 
+  const rTopTabs = await fetch("/api/settings/top_chat_tabs_bar_visible");
+  if(rTopTabs.ok){
+    const { value } = await rTopTabs.json();
+    topChatTabsBarVisible = value !== false;
+  }
+
   const rDepsFlag = await fetch("/api/settings/show_dependencies_column");
   if(rDepsFlag.ok){
     const { value } = await rDepsFlag.json();
@@ -1450,6 +1464,7 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
   $("#showSubroutinePanelCheck").checked = subroutinePanelVisible;
   $("#enterSubmitCheck").checked = enterSubmitsMessage;
   $("#showNavMenuCheck").checked = navMenuVisible;
+  $("#showTopChatTabsCheck").checked = topChatTabsBarVisible;
   $("#showArchivedTabsCheck").checked = showArchivedTabs;
 
   try {
@@ -1561,6 +1576,7 @@ async function chatSettingsSaveFlow() {
   subroutinePanelVisible = $("#showSubroutinePanelCheck").checked;
   enterSubmitsMessage = $("#enterSubmitCheck").checked;
   navMenuVisible = $("#showNavMenuCheck").checked;
+  topChatTabsBarVisible = $("#showTopChatTabsCheck").checked;
   showArchivedTabs = $("#showArchivedTabsCheck").checked;
 
   await setSetting("chat_hide_metadata", chatHideMetadata);
@@ -1572,6 +1588,7 @@ async function chatSettingsSaveFlow() {
   await setSetting("subroutine_panel_visible", subroutinePanelVisible);
   await setSetting("enter_submits_message", enterSubmitsMessage);
   await setSetting("nav_menu_visible", navMenuVisible);
+  await setSetting("top_chat_tabs_bar_visible", topChatTabsBarVisible);
   await setSetting("show_archived_tabs", showArchivedTabs);
   await setSetting("show_dependencies_column", showDependenciesColumn);
 
@@ -1598,6 +1615,7 @@ async function chatSettingsSaveFlow() {
   await loadChatHistory(currentTabId, true);
   toggleSterlingUrlVisibility(sterlingChatUrlVisible);
   toggleNavMenuVisibility(navMenuVisible);
+  toggleTopChatTabsVisibility(topChatTabsBarVisible);
   const pnl = document.getElementById("taskListPanel");
   if(pnl) pnl.style.display = markdownPanelVisible ? "" : "none";
   const subPanel = document.getElementById("chatSubroutinesPanel");
@@ -1624,6 +1642,14 @@ function toggleNavMenuVisibility(visible) {
   const navEl = document.querySelector("nav.tree-menu");
   if(!navEl) return;
   navEl.style.display = visible ? "" : "none";
+}
+
+function toggleTopChatTabsVisibility(visible) {
+  const topTabs = document.getElementById("chatTabs");
+  const btn = document.getElementById("toggleTopChatTabsBtn");
+  if(!topTabs) return;
+  topTabs.style.display = visible ? "" : "none";
+  if(btn) btn.textContent = visible ? "Hide chat tabs bar" : "Show chat tabs bar";
 }
 
 (function installDividerDrag(){
