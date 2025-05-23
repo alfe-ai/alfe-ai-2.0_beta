@@ -105,6 +105,16 @@ if (!currentModel) {
   console.debug("[Server Debug] 'ai_model' found =>", currentModel);
 }
 
+// Theme setting for Nexum UI
+console.debug("[Server Debug] Checking or setting default 'nexum_theme' in DB...");
+const currentTheme = db.getSetting("nexum_theme");
+if (!currentTheme) {
+  console.debug("[Server Debug] 'nexum_theme' is missing in DB, setting default to 'purple'.");
+  db.setSetting("nexum_theme", "purple");
+} else {
+  console.debug("[Server Debug] 'nexum_theme' found =>", currentTheme);
+}
+
 const app = express();
 
 /**
