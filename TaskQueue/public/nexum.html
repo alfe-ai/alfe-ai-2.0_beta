@@ -109,6 +109,10 @@
     </div>
   </div>
   <div id="startDialog" class="modal" style="display:none;">
+    <div id="splashAnim">
+      <div id="splashTitle">Alfe AI:</div>
+      <div id="splashYour">Your</div>
+    </div>
     <div class="modal-content">
       <h3>Get Started</h3>
       <div>
@@ -164,6 +168,49 @@
 
     let currentColor = 'purple';
     let currentMode = 'dark';
+
+    const splashPhrases = [
+      "AI Software Engineer",
+      "AI Developer",
+      "AI Project Manager",
+      "AI Scrum Master",
+      "AI QA Tester",
+      "AI UX Designer",
+      "AI Data Scientist",
+      "AI DevOps Engineer",
+      "AI Security Analyst",
+      "AI Picasso",
+      "AI Van Gogh",
+      "AI Monet",
+      "AI Leonardo",
+      "AI Solutions Architect"
+    ];
+    let splashIdx = 0;
+    let splashTimer = null;
+
+    function spawnSplashWord(){
+      const container = document.getElementById('splashAnim');
+      if(!container) return;
+      const span = document.createElement('span');
+      span.className = 'splash-word';
+      span.textContent = splashPhrases[splashIdx % splashPhrases.length];
+      splashIdx++;
+      span.style.top = (60 + Math.random()*30) + 'vh';
+      container.appendChild(span);
+      span.addEventListener('animationend', () => span.remove());
+      splashTimer = setTimeout(spawnSplashWord, 700);
+    }
+
+    function startSplash(){
+      if(splashTimer === null) spawnSplashWord();
+    }
+
+    function stopSplash(){
+      if(splashTimer !== null){
+        clearTimeout(splashTimer);
+        splashTimer = null;
+      }
+    }
 
     async function loadTheme(){
       try{
@@ -277,7 +324,12 @@
     if(!dlg) return;
     const noTabs = tabs.length === 0;
     dlg.style.display = noTabs ? 'flex' : 'none';
-    if(noTabs) handleStartTypeChange();
+    if(noTabs){
+      handleStartTypeChange();
+      startSplash();
+    } else {
+      stopSplash();
+    }
     const chatPanel = document.getElementById('chatPanel');
     if(chatPanel) chatPanel.style.display = noTabs ? 'none' : '';
     const taskPanel = document.getElementById('taskListPanel');
@@ -453,6 +505,7 @@
       const r = await fetch('/api/chat/tabs/new',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
       if(r.ok){
         document.getElementById('startDialog').style.display = 'none';
+        stopSplash();
         await loadTabs();
         if(tabs.length>0){
           currentTabId = tabs[tabs.length-1].id;
@@ -630,11 +683,15 @@
     });
     document.getElementById('startDialogCloseBtn').addEventListener('click', () => {
       document.getElementById('startDialog').style.display = 'none';
+      stopSplash();
     });
     document.getElementById('startTypeSelect').addEventListener('change', handleStartTypeChange);
     document.getElementById('startDialogCreateBtn').addEventListener('click', createStartTab);
     document.getElementById('startDialog').addEventListener('click', e => {
-      if(e.target === e.currentTarget) e.currentTarget.style.display = 'none';
+      if(e.target === e.currentTarget) {
+        e.currentTarget.style.display = 'none';
+        stopSplash();
+      }
     });
     document.getElementById('viewTabChat').addEventListener('click', () => updateView('chat'));
     document.getElementById('viewTabTasks').addEventListener('click', () => updateView('tasks'));
