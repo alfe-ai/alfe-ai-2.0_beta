@@ -39,8 +39,8 @@ body {
   position: absolute;
   top: 8px;
   left: 8px;
-  width: 32px;
-  height: 32px;
+  width: 42px;
+  height: 42px;
   cursor: pointer;
   z-index: 1000;
 }
