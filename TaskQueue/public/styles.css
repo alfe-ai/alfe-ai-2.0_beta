@@ -513,19 +513,4 @@ body {
   cursor: pointer;
 }
 
-/* View tabs above chat panel */
-.view-tab {
-  background: #333;
-  color: #ddd;
-  border: 1px solid #444;
-  padding: 4px 8px;
-  cursor: pointer;
-}
-
-.view-tab.active {
-  background: #555;
-  border-color: #aaa;
-  color: #fff;
-}
-
 
