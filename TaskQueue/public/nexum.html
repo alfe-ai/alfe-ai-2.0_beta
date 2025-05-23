@@ -166,7 +166,7 @@
         <div id="chat"></div>
         <div id="inputArea">
           <textarea id="prompt" rows="3" placeholder="Enter your message"></textarea>
-          <button id="sendBtn">Send</button>
+          <button id="sendBtn"><span id="sendBtnText">Send</span></button>
         </div>
       </div>
       <div id="taskListPanel" style="display:none;border:1px dashed #666; padding:8px; margin:8px 0;">
@@ -313,6 +313,13 @@
       document.getElementById('viewTabChat').classList.toggle('active', v === 'chat');
       document.getElementById('viewTabTasks').classList.toggle('active', v === 'tasks');
       document.getElementById('viewTabArchive').classList.toggle('active', v === 'archive');
+
+      const sendBtnLabel = document.getElementById('sendBtnText');
+      if(sendBtnLabel){
+        if(v === 'tasks') sendBtnLabel.textContent = 'Ask';
+        else if(v === 'archive') sendBtnLabel.textContent = 'Code';
+        else sendBtnLabel.textContent = 'Send';
+      }
 
       const taskPanel = document.getElementById('taskListPanel');
       if(taskPanel) taskPanel.style.display = v === 'tasks' ? '' : 'none';
