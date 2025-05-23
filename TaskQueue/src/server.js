@@ -1111,6 +1111,8 @@ app.post("/api/chat/tabs/new", (req, res) => {
   try {
     let name = req.body.name || "Untitled";
     const nexum = req.body.nexum ? 1 : 0;
+    const project = req.body.project || '';
+    const repo = req.body.repo || '';
 
     const autoNaming = db.getSetting("chat_tab_auto_naming");
     const projectName = db.getSetting("sterling_project") || "";
@@ -1118,7 +1120,7 @@ app.post("/api/chat/tabs/new", (req, res) => {
       name = `${projectName}: ${name}`;
     }
 
-    const tabId = db.createChatTab(name, nexum);
+    const tabId = db.createChatTab(name, nexum, project, repo);
     res.json({ success: true, id: tabId });
   } catch (err) {
     console.error("[TaskQueue] POST /api/chat/tabs/new error:", err);
@@ -1167,6 +1169,21 @@ app.post("/api/chat/tabs/generate_images", (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error("[TaskQueue] POST /api/chat/tabs/generate_images error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/api/chat/tabs/config", (req, res) => {
+  console.debug("[Server Debug] POST /api/chat/tabs/config =>", req.body);
+  try {
+    const { tabId, project = '', repo = '' } = req.body;
+    if (!tabId) {
+      return res.status(400).json({ error: "Missing tabId" });
+    }
+    db.setChatTabConfig(tabId, project, repo);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[TaskQueue] POST /api/chat/tabs/config error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });

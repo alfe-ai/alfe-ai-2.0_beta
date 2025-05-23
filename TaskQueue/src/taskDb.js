@@ -85,7 +85,9 @@ export default class TaskDB {
                                              created_at TEXT NOT NULL,
                                              archived INTEGER DEFAULT 0,
                                              generate_images INTEGER DEFAULT 1,
-                                             nexum INTEGER DEFAULT 0
+                                             nexum INTEGER DEFAULT 0,
+                                             project_name TEXT DEFAULT '',
+                                             repo_ssh_url TEXT DEFAULT ''
       );
     `);
     try {
@@ -105,6 +107,18 @@ export default class TaskDB {
       console.debug("[TaskDB Debug] Added chat_tabs.nexum column");
     } catch(e) {
       console.debug("[TaskDB Debug] chat_tabs.nexum column exists, skipping.", e.message);
+    }
+    try {
+      this.db.exec("ALTER TABLE chat_tabs ADD COLUMN project_name TEXT DEFAULT '';" );
+      console.debug("[TaskDB Debug] Added chat_tabs.project_name column");
+    } catch(e) {
+      console.debug("[TaskDB Debug] chat_tabs.project_name column exists, skipping.", e.message);
+    }
+    try {
+      this.db.exec("ALTER TABLE chat_tabs ADD COLUMN repo_ssh_url TEXT DEFAULT '';" );
+      console.debug("[TaskDB Debug] Added chat_tabs.repo_ssh_url column");
+    } catch(e) {
+      console.debug("[TaskDB Debug] chat_tabs.repo_ssh_url column exists, skipping.", e.message);
     }
 
     this.db.exec(`
@@ -562,15 +576,17 @@ export default class TaskDB {
         .get(id);
   }
 
-  createChatTab(name, nexum = 0) {
+  createChatTab(name, nexum = 0, project = '', repo = '') {
     const ts = new Date().toISOString();
     const { lastInsertRowid } = this.db.prepare(`
-      INSERT INTO chat_tabs (name, created_at, generate_images, nexum)
-      VALUES (@name, @created_at, 1, @nexum)
+      INSERT INTO chat_tabs (name, created_at, generate_images, nexum, project_name, repo_ssh_url)
+      VALUES (@name, @created_at, 1, @nexum, @project_name, @repo_ssh_url)
     `).run({
       name,
       created_at: ts,
-      nexum: nexum ? 1 : 0
+      nexum: nexum ? 1 : 0,
+      project_name: project,
+      repo_ssh_url: repo
     });
     return lastInsertRowid;
   }
@@ -602,6 +618,16 @@ export default class TaskDB {
         .prepare("SELECT generate_images FROM chat_tabs WHERE id=?")
         .get(tabId);
     return row ? !!row.generate_images : true;
+  }
+
+  setChatTabConfig(tabId, project = '', repo = '') {
+    this.db.prepare(
+        "UPDATE chat_tabs SET project_name=?, repo_ssh_url=? WHERE id=?"
+    ).run(project, repo, tabId);
+  }
+
+  getChatTab(tabId) {
+    return this.db.prepare("SELECT * FROM chat_tabs WHERE id=?").get(tabId);
   }
 
   deleteChatTab(tabId) {

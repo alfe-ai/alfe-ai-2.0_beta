@@ -22,14 +22,17 @@
       overflow-y:auto;
       border-right:1px solid #444;
     }
+    #tabsList .tab-item {
+      display:flex;
+      align-items:center;
+      margin-bottom:4px;
+    }
     #tabsList button {
-      display:block;
-      width:100%;
+      flex:1;
       background:#333;
       border:1px solid #444;
       color:#ddd;
       padding:4px 6px;
-      margin-bottom:4px;
       text-align:left;
       cursor:pointer;
     }
@@ -37,6 +40,13 @@
       background:#555;
       border-color:#aaa;
       color:#fff;
+    }
+    #tabsList .config-btn {
+      background:none;
+      border:none;
+      color:#ddd;
+      cursor:pointer;
+      margin-left:4px;
     }
     main {
       flex:1;
@@ -143,6 +153,25 @@
       width:300px;
       color:#ddd;
     }
+
+    #tabConfigModal {
+      position:fixed;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+      background:rgba(0,0,0,0.6);
+      display:none;
+      justify-content:center;
+      align-items:center;
+    }
+    #tabConfigModal .modal-content {
+      background:#2d2d2d;
+      border:1px solid #444;
+      padding:1rem;
+      width:300px;
+      color:#ddd;
+    }
   </style>
 </head>
 <body>
@@ -193,6 +222,21 @@
       <button id="closeSettingsBtn" style="margin-top:1rem;">Close</button>
     </div>
   </div>
+  <div id="tabConfigModal">
+    <div class="modal-content">
+      <h3>Tab Configuration</h3>
+      <label>Project Name:<br/>
+        <input type="text" id="tabProjectInput" style="width:100%;" />
+      </label>
+      <label style="margin-top:8px;">Git Repo SSH URL:<br/>
+        <input type="text" id="tabRepoInput" style="width:100%;" />
+      </label>
+      <div style="margin-top:1rem;text-align:right;">
+        <button id="tabConfigSaveBtn">Save</button>
+        <button id="tabConfigCancelBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
   <script>
     let tabs = [];
     let currentTabId = 1;
@@ -232,6 +276,9 @@
       const container = document.getElementById('tabsList');
       container.innerHTML = '';
       tabs.forEach(t => {
+        const item = document.createElement('div');
+        item.className = 'tab-item';
+
         const b = document.createElement('button');
         b.textContent = t.name;
         if(t.id === currentTabId) b.classList.add('active');
@@ -241,7 +288,15 @@
           renderTabs();
         });
         b.addEventListener('contextmenu', e => { e.preventDefault(); renameTab(t.id); });
-        container.appendChild(b);
+
+        const gear = document.createElement('button');
+        gear.innerHTML = '&#9881;';
+        gear.className = 'config-btn';
+        gear.addEventListener('click', (e) => { e.stopPropagation(); openTabConfig(t.id); });
+
+        item.appendChild(b);
+        item.appendChild(gear);
+        container.appendChild(item);
       });
     }
 
@@ -291,6 +346,7 @@
         await loadTabs();
         if(tabs.length>0){
           currentTabId = tabs[tabs.length-1].id;
+          openTabConfig(currentTabId);
         }
         renderTabs();
 
@@ -308,6 +364,15 @@
           renderTabs();
         }
       }catch(e){console.error(e);}
+    }
+
+    function openTabConfig(tabId){
+      const t = tabs.find(tt => tt.id === tabId) || {};
+      document.getElementById('tabProjectInput').value = t.project_name || '';
+      document.getElementById('tabRepoInput').value = t.repo_ssh_url || '';
+      const modal = document.getElementById('tabConfigModal');
+      modal.dataset.tabId = tabId;
+      modal.style.display = 'flex';
     }
 
     function updateView(v){
@@ -402,6 +467,23 @@
       document.getElementById('settingsModal').style.display = 'none';
     });
     document.getElementById('settingsModal').addEventListener('click', e => {
+      if(e.target === e.currentTarget) e.currentTarget.style.display = 'none';
+    });
+
+    document.getElementById('tabConfigSaveBtn').addEventListener('click', async () => {
+      const modal = document.getElementById('tabConfigModal');
+      const tabId = parseInt(modal.dataset.tabId, 10);
+      const project = document.getElementById('tabProjectInput').value;
+      const repo = document.getElementById('tabRepoInput').value;
+      await fetch('/api/chat/tabs/config', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tabId, project, repo})});
+      modal.style.display = 'none';
+      await loadTabs();
+      renderTabs();
+    });
+    document.getElementById('tabConfigCancelBtn').addEventListener('click', () => {
+      document.getElementById('tabConfigModal').style.display = 'none';
+    });
+    document.getElementById('tabConfigModal').addEventListener('click', e => {
       if(e.target === e.currentTarget) e.currentTarget.style.display = 'none';
     });
 
