@@ -84,7 +84,8 @@ export default class TaskDB {
                                              name TEXT NOT NULL,
                                              created_at TEXT NOT NULL,
                                              archived INTEGER DEFAULT 0,
-                                             generate_images INTEGER DEFAULT 1
+                                             generate_images INTEGER DEFAULT 1,
+                                             nexum INTEGER DEFAULT 0
       );
     `);
     try {
@@ -98,6 +99,12 @@ export default class TaskDB {
       console.debug("[TaskDB Debug] Added chat_tabs.generate_images column");
     } catch(e) {
       console.debug("[TaskDB Debug] generate_images column exists, skipping.", e.message);
+    }
+    try {
+      this.db.exec('ALTER TABLE chat_tabs ADD COLUMN nexum INTEGER DEFAULT 0;');
+      console.debug("[TaskDB Debug] Added chat_tabs.nexum column");
+    } catch(e) {
+      console.debug("[TaskDB Debug] chat_tabs.nexum column exists, skipping.", e.message);
     }
 
     this.db.exec(`
@@ -555,20 +562,26 @@ export default class TaskDB {
         .get(id);
   }
 
-  createChatTab(name) {
+  createChatTab(name, nexum = 0) {
     const ts = new Date().toISOString();
     const { lastInsertRowid } = this.db.prepare(`
-      INSERT INTO chat_tabs (name, created_at, generate_images)
-      VALUES (@name, @created_at, 1)
+      INSERT INTO chat_tabs (name, created_at, generate_images, nexum)
+      VALUES (@name, @created_at, 1, @nexum)
     `).run({
       name,
-      created_at: ts
+      created_at: ts,
+      nexum: nexum ? 1 : 0
     });
     return lastInsertRowid;
   }
 
-  listChatTabs() {
-    return this.db.prepare("SELECT * FROM chat_tabs ORDER BY id ASC").all();
+  listChatTabs(nexum = null) {
+    if (nexum === null) {
+      return this.db.prepare("SELECT * FROM chat_tabs ORDER BY id ASC").all();
+    }
+    return this.db
+        .prepare("SELECT * FROM chat_tabs WHERE nexum=? ORDER BY id ASC")
+        .all(nexum ? 1 : 0);
   }
 
   renameChatTab(tabId, newName) {

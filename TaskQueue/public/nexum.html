@@ -117,7 +117,7 @@
 
     async function loadTabs(){
       try{
-        const res = await fetch('/api/chat/tabs');
+        const res = await fetch('/api/chat/tabs?nexum=1');
         if(res.ok){
           tabs = await res.json();
         } else {
@@ -161,7 +161,7 @@
     async function newTab(){
       const name = prompt('Tab name:','New Tab');
       if(!name) return;
-      const r = await fetch('/api/chat/tabs/new',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})});
+      const r = await fetch('/api/chat/tabs/new',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name, nexum:1})});
       if(r.ok){
         await loadTabs();
         if(tabs.length>0){
