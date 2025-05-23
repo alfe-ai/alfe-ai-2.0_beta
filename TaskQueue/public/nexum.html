@@ -35,9 +35,9 @@
           <button id="sendBtn"><span id="sendBtnText">Send</span></button>
         </div>
       </div>
-      <div id="taskListPanel" style="display:none;">
+      <div id="taskListPanel" class="tasks-card" style="display:none;">
         <h2 style="margin:0;font-size:1.1rem;">Tasks</h2>
-        <table id="tasks">
+        <table id="tasks" class="tasks-table">
           <thead><tr id="headerRow"></tr></thead>
           <tbody></tbody>
         </table>
@@ -339,15 +339,34 @@
       tbody.innerHTML = '';
       tasks.forEach(t => {
         const tr = document.createElement('tr');
+        tr.addEventListener('click', () => {
+          if(t.html_url) window.open(t.html_url, '_blank');
+        });
         taskColumns.forEach(col => {
           if(!showDependencies && col.key === 'dependencies') return;
           const td = document.createElement('td');
           switch(col.key){
             case 'number':
-              td.innerHTML = `<a href="${t.html_url}" target="_blank">#${t.number}</a>`;
+              td.innerHTML = `<a href="${t.html_url}" target="_blank" class="id-badge">#${t.number}</a>`;
               break;
             case 'created':
               td.textContent = isoDate(t.created_at);
+              break;
+            case 'status':
+              const sClass = {
+                'Done': 'status-done',
+                'In Progress': 'status-medium',
+                'Not Started': 'status-notstarted',
+                'High': 'status-high',
+                'Medium': 'status-medium'
+              }[t.status] || 'status-notstarted';
+              td.innerHTML = `<span class="status-badge ${sClass}">${t.status}</span>`;
+              break;
+            case 'priority':
+              let icon = '';
+              if(t.priority === 'High') icon = '🔥 ';
+              else if(t.priority === 'Medium') icon = '⚡ ';
+              td.textContent = icon + (t.priority || '');
               break;
             default:
               td.textContent = t[col.key] || '';
