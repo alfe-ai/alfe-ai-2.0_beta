@@ -197,9 +197,9 @@
         if(res.ok){
           tabs = await res.json();
         } else {
-          tabs = [{id:1,name:'Tab 1'}];
+          tabs = [];
         }
-      }catch(e){ tabs = [{id:1,name:'Tab 1'}]; console.error(e); }
+      }catch(e){ tabs = []; console.error(e); }
     }
 
   function renderTabs(){
