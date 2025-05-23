@@ -32,7 +32,16 @@ async function loadTheme(){
 function applyTheme(theme){
   const link = document.getElementById('themeStylesheet');
   if(!link) return;
-  link.href = theme === 'lightblue' ? 'nexum_lightblue.css' : 'nexum.css';
+  const files = {
+    purple: 'nexum.css',
+    lightblue: 'nexum_lightblue.css',
+    red: 'nexum_red.css',
+    green: 'nexum_green.css',
+    orange: 'nexum_orange.css',
+    teal: 'nexum_teal.css',
+    pink: 'nexum_pink.css'
+  };
+  link.href = files[theme] || 'nexum.css';
 }
 
 async function loadTabs(){

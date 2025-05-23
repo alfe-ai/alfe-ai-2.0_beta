@@ -52,6 +52,11 @@
           <select id="themeSelect">
             <option value="purple">Purple</option>
             <option value="lightblue">Light Blue</option>
+            <option value="red">Red</option>
+            <option value="green">Green</option>
+            <option value="orange">Orange</option>
+            <option value="teal">Teal</option>
+            <option value="pink">Pink</option>
           </select>
         </label>
       </div>
@@ -114,7 +119,16 @@
     function applyTheme(theme){
       const link = document.getElementById('themeStylesheet');
       if(!link) return;
-      link.href = theme === 'lightblue' ? 'nexum_lightblue.css' : 'nexum.css';
+      const files = {
+        purple: 'nexum.css',
+        lightblue: 'nexum_lightblue.css',
+        red: 'nexum_red.css',
+        green: 'nexum_green.css',
+        orange: 'nexum_orange.css',
+        teal: 'nexum_teal.css',
+        pink: 'nexum_pink.css'
+      };
+      link.href = files[theme] || 'nexum.css';
     }
     const urlParams = new URLSearchParams(location.search);
     const startTab = parseInt(urlParams.get('tabId'), 10);

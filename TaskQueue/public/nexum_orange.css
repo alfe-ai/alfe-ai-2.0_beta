@@ -1,9 +1,9 @@
-/* Nexum Light Blue Theme */
+/* Nexum Modern Fancy CSS Theme */
 :root {
   --bg-main: #111;
   --bg-alt: #1a1a1a;
-  --accent: #1e90ff;
-  --accent-light: #9be8ff;
+  --accent: #ff8c00;
+  --accent-light: #ffcc80;
   --text-color: #eee;
   --border: #333;
 }
