@@ -10,7 +10,7 @@
   <button id="newTabBtn">New Tab</button>
   <table>
     <thead>
-      <tr><th>ID</th><th>Name</th><th>Created</th><th>Actions</th></tr>
+      <tr><th>ID</th><th>Name</th><th>Type</th><th>Created</th><th>Actions</th></tr>
     </thead>
     <tbody id="tabsBody"></tbody>
   </table>
@@ -69,6 +69,9 @@ function renderTabs(){
     const tdName = document.createElement('td');
     tdName.textContent = t.name;
     tr.appendChild(tdName);
+    const tdType = document.createElement('td');
+    tdType.textContent = t.tab_type === 'task' ? '</>' : '💬';
+    tr.appendChild(tdType);
     const tdCreated = document.createElement('td');
     tdCreated.textContent = new Date(t.created_at).toLocaleString();
     tr.appendChild(tdCreated);

@@ -291,3 +291,5 @@ a:hover {
 #chatPanel.tasks-view {
   flex: none;
 }
+
+#tabsList .type-icon { margin-right: 4px; font-size: 0.9rem; width: 1.2rem; text-align: center; }

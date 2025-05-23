@@ -179,7 +179,11 @@
         item.className = 'tab-item';
 
         const b = document.createElement('button');
-        b.textContent = t.name;
+        const icon = document.createElement('span');
+        icon.className = 'type-icon';
+        icon.textContent = t.tab_type === 'task' ? '</>' : '💬';
+        b.appendChild(icon);
+        b.appendChild(document.createTextNode(t.name));
         if(t.id === currentTabId) b.classList.add('active');
         b.addEventListener('click', () => {
           currentTabId = t.id;
