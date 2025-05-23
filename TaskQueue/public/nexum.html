@@ -127,12 +127,41 @@
       const container = document.getElementById('tabsList');
       container.innerHTML = '';
       tabs.forEach(t => {
+        const wrapper = document.createElement('div');
+        wrapper.style.display = 'flex';
+        wrapper.style.alignItems = 'center';
+
         const b = document.createElement('button');
         b.textContent = t.name;
         if(t.id === currentTabId) b.classList.add('active');
         b.addEventListener('click', () => { currentTabId = t.id; loadHistory(); renderTabs(); });
-        container.appendChild(b);
+        wrapper.appendChild(b);
+
+        const gear = document.createElement('button');
+        gear.textContent = '⚙️';
+        gear.style.marginLeft = '4px';
+        gear.addEventListener('click', (e) => { e.stopPropagation(); configTab(t.id); });
+        wrapper.appendChild(gear);
+
+        container.appendChild(wrapper);
       });
+    }
+
+    async function configTab(tabId){
+      const t = tabs.find(tb => tb.id === tabId) || {};
+      const projectName = prompt('Project name:', t.project_name || '');
+      if(projectName === null) return;
+      const gitUrl = prompt('Git repository SSH URL:', t.git_ssh_url || '');
+      if(gitUrl === null) return;
+      const r = await fetch('/api/chat/tabs/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tabId, projectName, gitUrl })
+      });
+      if(r.ok){
+        await loadTabs();
+        renderTabs();
+      }
     }
 
     async function loadHistory(){
