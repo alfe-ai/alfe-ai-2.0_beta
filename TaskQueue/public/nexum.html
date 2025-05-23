@@ -306,13 +306,14 @@
 
     async function loadTasksForCurrentProject(){
       const t = tabs.find(tt => tt.id === currentTabId);
+      let url;
       if(!t || !t.project_name){
-        currentTasks = [];
-        renderTasks([]);
-        return;
+        url = '/api/tasks';
+      }else{
+        url = '/api/projects/' + encodeURIComponent(t.project_name);
       }
       try{
-        const res = await fetch('/api/projects/' + encodeURIComponent(t.project_name));
+        const res = await fetch(url);
         if(res.ok){
           currentTasks = await res.json();
           sortTasks();
