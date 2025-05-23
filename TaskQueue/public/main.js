@@ -30,6 +30,7 @@ let tabGenerateImages = true; // per-tab auto image toggle
 let chatSubroutines = [];
 let actionHooks = [];
 let editingSubroutineId = null;
+let currentView = 'chat';
 window.agentName = "Alfe";
 
 // For per-tab model arrays
@@ -160,21 +161,33 @@ async function toggleNavMenu(){
 }
 document.getElementById("navMenuToggle").addEventListener("click", toggleNavMenu);
 
-async function toggleTabGenerateImages(){
-  tabGenerateImages = !tabGenerateImages;
-  const chk = document.getElementById("tabGenerateImagesCheck");
-  if(chk) chk.checked = tabGenerateImages;
-  const r = await fetch('/api/chat/tabs/generate_images', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ tabId: currentTabId, enabled: tabGenerateImages })
-  });
-  if(r.ok){
-    const t = chatTabs.find(t => t.id===currentTabId);
-    if(t) t.generate_images = tabGenerateImages ? 1 : 0;
+  async function toggleTabGenerateImages(){
+    tabGenerateImages = !tabGenerateImages;
+    const chk = document.getElementById("tabGenerateImagesCheck");
+    if(chk) chk.checked = tabGenerateImages;
+    const r = await fetch('/api/chat/tabs/generate_images', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tabId: currentTabId, enabled: tabGenerateImages })
+    });
+    if(r.ok){
+      const t = chatTabs.find(t => t.id===currentTabId);
+      if(t) t.generate_images = tabGenerateImages ? 1 : 0;
+    }
   }
+  document.getElementById("tabGenerateImagesCheck").addEventListener("change", toggleTabGenerateImages);
+
+function updateView(v){
+  currentView = v;
+  $("#viewTabChat").classList.toggle("active", v === 'chat');
+  $("#viewTabTasks").classList.toggle("active", v === 'tasks');
+  $("#viewTabArchive").classList.toggle("active", v === 'archive');
+  const showSub = v !== 'chat';
+  const taskPanel = document.getElementById("taskListPanel");
+  if(taskPanel) taskPanel.style.display = showSub ? "" : "none";
+  const chatPanel = document.getElementById("chatPanel");
+  if(chatPanel) chatPanel.style.display = v === 'chat' ? "" : "none";
 }
-document.getElementById("tabGenerateImagesCheck").addEventListener("change", toggleTabGenerateImages);
 
 async function loadSettings(){
   {
@@ -988,6 +1001,10 @@ document.getElementById("subroutineCancelBtn").addEventListener("click", () => {
   editingSubroutineId = null;
   hideModal(document.getElementById("subroutineModal"));
 });
+
+document.getElementById("viewTabChat").addEventListener("click", () => updateView('chat'));
+document.getElementById("viewTabTasks").addEventListener("click", () => updateView('tasks'));
+document.getElementById("viewTabArchive").addEventListener("click", () => updateView('archive'));
 
 // New: Button to toggle top chat tabs bar
 document.getElementById("toggleTopChatTabsBtn").addEventListener("click", () => {
@@ -2177,6 +2194,8 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     case "activity": showActivityIframePanel(); break;
     default: showChatTabsPanel(); break;
   }
+
+  updateView('chat');
 
   initChatScrollLoading();
 
