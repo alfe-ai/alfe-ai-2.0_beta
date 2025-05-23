@@ -183,12 +183,9 @@ function updateView(v){
   $("#viewTabChat").classList.toggle("active", v === 'chat');
   $("#viewTabTasks").classList.toggle("active", v === 'tasks');
   $("#viewTabArchive").classList.toggle("active", v === 'archive');
-<<<<<<< HEAD
   const showSub = v !== 'chat';
   const taskPanel = document.getElementById("taskListPanel");
   if(taskPanel) taskPanel.style.display = showSub ? "" : "none";
-=======
->>>>>>> Aurora/Aurelix/dev/nexum2
   const chatPanel = document.getElementById("chatPanel");
   if(chatPanel) chatPanel.style.display = v === 'chat' ? "" : "none";
 }
