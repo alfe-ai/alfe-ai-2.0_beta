@@ -45,6 +45,7 @@ body {
   text-align: left;
   cursor: pointer;
   transition: background 0.3s;
+  border-radius: 6px;
 }
 
 #tabsList button:hover {
@@ -112,6 +113,7 @@ main {
   text-align: left;
   cursor: pointer;
   transition: background 0.3s;
+  border-radius: 6px;
 }
 
 #suggestions button:hover {
@@ -144,6 +146,7 @@ main {
   padding: 8px;
   font-family: monospace;
   resize: vertical;
+  border-radius: 6px;
 }
 
 button {
@@ -153,6 +156,7 @@ button {
   padding: 6px 12px;
   cursor: pointer;
   transition: background 0.3s, color 0.3s;
+  border-radius: 6px;
 }
 
 button:hover {
@@ -167,6 +171,7 @@ button:hover {
   padding: 4px 8px;
   cursor: pointer;
   transition: background 0.3s;
+  border-radius: 6px;
 }
 
 .view-tab.active {
@@ -204,6 +209,7 @@ button:hover {
   width: 300px;
   color: var(--text-color);
   box-shadow: 0 0 8px rgba(0,0,0,0.7);
+  border-radius: 6px;
 }
 
 /* Table styles used on nexum_tabs.html */
