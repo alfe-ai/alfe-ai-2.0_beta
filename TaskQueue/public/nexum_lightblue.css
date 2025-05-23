@@ -161,6 +161,7 @@ main {
   max-width: 3200px;
   margin: 0 auto;
   display: flex;
+  justify-content: center;
   gap: 0.5rem;
   width: 100%;
 }
