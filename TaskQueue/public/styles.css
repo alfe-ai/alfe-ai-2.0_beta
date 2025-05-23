@@ -17,9 +17,10 @@ body {
 
 /* Sidebar */
 .sidebar {
+  position: relative;
   width: 300px;
   background: #2d2d2d;
-  padding: 1rem;
+  padding: 3.5rem 1rem 1rem 1rem; /* leave room for toggle icon */
   overflow-y: auto;
   border-right: 1px solid #444;
   flex: none; /* Keep fixed width */
@@ -422,6 +423,17 @@ body {
   left: auto;
   width: 42px;
   height: 42px;
+  cursor: pointer;
+  z-index: 1000;
+}
+
+/* Sidebar collapse/expand icon */
+.sidebar-toggle-icon {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 32px;
+  height: 32px;
   cursor: pointer;
   z-index: 1000;
 }
