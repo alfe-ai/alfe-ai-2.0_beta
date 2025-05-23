@@ -14,7 +14,25 @@
     </thead>
     <tbody id="tabsBody"></tbody>
   </table>
-<script>
+  <div id="newTabModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <h3>New Tab</h3>
+      <label>Tab Name:<br/>
+        <input type="text" id="newTabNameInput" style="width:100%;" />
+      </label>
+      <label style="margin-top:8px;">Tab Type:<br/>
+        <select id="newTabTypeSelect" style="width:100%;">
+          <option value="chat">Chat</option>
+          <option value="task">Task</option>
+        </select>
+      </label>
+      <div style="margin-top:1rem;text-align:right;">
+        <button id="newTabCreateBtn">Create</button>
+        <button id="newTabCancelBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
+  <script>
 let tabs = [];
 
 let currentColor = 'purple';
@@ -100,14 +118,19 @@ function renderTabs(){
   });
 }
 
-async function newTab(){
-  const name = prompt('Tab name:','New Tab');
+function openNewTabModal(){
+  document.getElementById('newTabNameInput').value = 'New Tab';
+  document.getElementById('newTabTypeSelect').value = 'chat';
+  document.getElementById('newTabModal').style.display = 'flex';
+}
+async function createNewTab(){
+  const name = document.getElementById('newTabNameInput').value.trim();
   if(!name) return;
-  let type = prompt('Tab type (chat/task):','chat');
-  type = (type||'chat').toLowerCase().startsWith('t') ? 'task' : 'chat';
+  const type = document.getElementById('newTabTypeSelect').value;
   try{
     const r = await fetch('/api/chat/tabs/new',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name, nexum:1, type})});
     if(r.ok){
+      document.getElementById('newTabModal').style.display = 'none';
       await loadTabs();
       renderTabs();
     }
@@ -138,7 +161,14 @@ async function toggleArchive(id,arch){
   }catch(e){console.error(e);}
 }
 
-document.getElementById('newTabBtn').addEventListener('click', newTab);
+document.getElementById('newTabBtn').addEventListener('click', openNewTabModal);
+document.getElementById('newTabCreateBtn').addEventListener('click', createNewTab);
+document.getElementById('newTabCancelBtn').addEventListener('click', () => {
+  document.getElementById('newTabModal').style.display = 'none';
+});
+document.getElementById('newTabModal').addEventListener('click', e => {
+  if(e.target === e.currentTarget) e.currentTarget.style.display = 'none';
+});
 
 (async function(){
   await loadTheme();
