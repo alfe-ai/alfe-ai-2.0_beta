@@ -1109,16 +1109,18 @@ app.get("/api/model", (req, res) => {
 
 app.get("/api/chat/tabs", (req, res) => {
   const nexumParam = req.query.nexum;
+  const showArchivedParam = req.query.showArchived;
   console.debug(
-      `[Server Debug] GET /api/chat/tabs => listing tabs (nexum=${nexumParam})`
+      `[Server Debug] GET /api/chat/tabs => listing tabs (nexum=${nexumParam}, showArchived=${showArchivedParam})`
   );
   try {
     let tabs;
+    const includeArchived = showArchivedParam === "1" || showArchivedParam === "true";
     if (nexumParam === undefined) {
-      tabs = db.listChatTabs();
+      tabs = db.listChatTabs(null, includeArchived);
     } else {
       const flag = parseInt(nexumParam, 10);
-      tabs = db.listChatTabs(flag ? 1 : 0);
+      tabs = db.listChatTabs(flag ? 1 : 0, includeArchived);
     }
     res.json(tabs);
   } catch (err) {
