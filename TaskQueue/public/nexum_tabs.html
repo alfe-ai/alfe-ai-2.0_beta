@@ -17,31 +17,38 @@
 <script>
 let tabs = [];
 
+let currentColor = 'purple';
+let currentMode = 'dark';
+
 async function loadTheme(){
   try{
-    const res = await fetch('/api/settings/nexum_theme');
-    if(res.ok){
-      const data = await res.json();
-      applyTheme(data.value || 'purple');
-    } else {
-      applyTheme('purple');
-    }
-  }catch(e){ applyTheme('purple'); console.error(e); }
+    const resColor = await fetch('/api/settings/nexum_theme_color');
+    const resMode = await fetch('/api/settings/nexum_theme_mode');
+    if(resColor.ok){
+      const data = await resColor.json();
+      currentColor = data.value || 'purple';
+    } else { currentColor = 'purple'; }
+    if(resMode.ok){
+      const data = await resMode.json();
+      currentMode = data.value || 'dark';
+    } else { currentMode = 'dark'; }
+    applyTheme(currentColor, currentMode);
+  }catch(e){ applyTheme('purple','dark'); console.error(e); }
 }
 
-function applyTheme(theme){
+function applyTheme(color, mode){
   const link = document.getElementById('themeStylesheet');
   if(!link) return;
   const files = {
-    purple: 'nexum.css',
-    lightblue: 'nexum_lightblue.css',
-    red: 'nexum_red.css',
-    green: 'nexum_green.css',
-    orange: 'nexum_orange.css',
-    teal: 'nexum_teal.css',
-    pink: 'nexum_pink.css'
+    purple: {dark:'nexum.css', light:'nexum_purple_light.css'},
+    lightblue: {dark:'nexum_lightblue.css', light:'nexum_lightblue_light.css'},
+    red: {dark:'nexum_red.css', light:'nexum_red_light.css'},
+    green: {dark:'nexum_green.css', light:'nexum_green_light.css'},
+    orange: {dark:'nexum_orange.css', light:'nexum_orange_light.css'},
+    teal: {dark:'nexum_teal.css', light:'nexum_teal_light.css'},
+    pink: {dark:'nexum_pink.css', light:'nexum_pink_light.css'}
   };
-  link.href = files[theme] || 'nexum.css';
+  link.href = files[color]?.[mode] || 'nexum.css';
 }
 
 async function loadTabs(){

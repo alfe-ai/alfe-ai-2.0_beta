@@ -106,14 +106,21 @@ if (!currentModel) {
 }
 
 // Theme setting for Nexum UI
-console.debug("[Server Debug] Checking or setting default 'nexum_theme' in DB...");
-const currentTheme = db.getSetting("nexum_theme");
-if (!currentTheme) {
-  console.debug("[Server Debug] 'nexum_theme' is missing in DB, setting default to 'purple'.");
-  db.setSetting("nexum_theme", "purple");
-} else {
-  console.debug("[Server Debug] 'nexum_theme' found =>", currentTheme);
+console.debug("[Server Debug] Checking or setting default theme settings in DB...");
+let themeColor = db.getSetting("nexum_theme_color");
+let themeMode = db.getSetting("nexum_theme_mode");
+const legacyTheme = db.getSetting("nexum_theme");
+if (!themeColor) {
+  console.debug("[Server Debug] 'nexum_theme_color' is missing in DB, setting default to", legacyTheme || 'purple');
+  db.setSetting("nexum_theme_color", legacyTheme || "purple");
+  themeColor = legacyTheme || "purple";
 }
+if (!themeMode) {
+  console.debug("[Server Debug] 'nexum_theme_mode' is missing in DB, setting default to 'dark'.");
+  db.setSetting("nexum_theme_mode", "dark");
+  themeMode = "dark";
+}
+console.debug("[Server Debug] theme_color =>", themeColor, "mode =>", themeMode);
 
 const app = express();
 
