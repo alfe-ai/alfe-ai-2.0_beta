@@ -30,8 +30,10 @@
           <div id="taskBtns">
             <button id="askBtn" style="display:none;">Ask</button>
             <button id="codeBtn" style="display:none;">Code</button>
+            <button id="renderBtn" style="display:none;">Render</button>
           </div>
         </div>
+        <div id="imageResult" style="margin-top:0.5rem;"></div>
       </div>
       <div id="taskListPanel" style="display:none;">
         <h2 style="margin:0;font-size:1.1rem;">Tasks</h2>
@@ -379,15 +381,18 @@
       const sendBtn = document.getElementById('sendBtn');
       const askBtn = document.getElementById('askBtn');
       const codeBtn = document.getElementById('codeBtn');
-      if(sendBtn && askBtn && codeBtn){
+      const renderBtn = document.getElementById('renderBtn');
+      if(sendBtn && askBtn && codeBtn && renderBtn){
         if(v === 'chat'){
           sendBtn.style.display = '';
           askBtn.style.display = 'none';
           codeBtn.style.display = 'none';
+          renderBtn.style.display = 'none';
         } else {
           sendBtn.style.display = 'none';
           askBtn.style.display = '';
           codeBtn.style.display = '';
+          renderBtn.style.display = '';
         }
       }
 
@@ -452,9 +457,31 @@
         await loadTasksForCurrentProject();
       }catch(e){console.error(e);}
     }
+
+    async function renderImage(){
+      const promptEl=document.getElementById('prompt');
+      const text=promptEl.value.trim();
+      if(!text) return;
+      const resultDiv=document.getElementById('imageResult');
+      if(resultDiv) resultDiv.textContent='Generating...';
+      try{
+        const resp=await fetch('/api/image/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:text,tabId:currentTabId})});
+        const data=await resp.json();
+        if(resp.ok && data.url){
+          const safeAlt=text.replace(/"/g,'&quot;');
+          if(resultDiv) resultDiv.innerHTML=`<img src="${data.url}" alt="${safeAlt}" style="max-width:100%;"/>`;
+          promptEl.value='';
+        }else{
+          if(resultDiv) resultDiv.textContent=data.error||'Error generating image';
+        }
+      }catch(err){
+        if(resultDiv) resultDiv.textContent='Error: '+err.message;
+      }
+    }
     document.getElementById('sendBtn').addEventListener('click',send);
     document.getElementById('askBtn').addEventListener('click',send);
     document.getElementById('codeBtn').addEventListener('click',createTask);
+    document.getElementById('renderBtn').addEventListener('click',renderImage);
     document.getElementById('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
     document.getElementById('newTabBtn').addEventListener('click', newTab);
     document.getElementById('viewTabChat').addEventListener('click', () => updateView('chat'));
