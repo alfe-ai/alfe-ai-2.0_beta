@@ -161,10 +161,12 @@
       });
     }
 
-    function renderSuggestions(){
+    function renderSuggestions(show = true){
       const container = document.getElementById('suggestions');
       if(!container) return;
       container.innerHTML = '';
+      container.style.display = show ? 'grid' : 'none';
+      if(!show) return;
       suggestions.forEach(text => {
         const b = document.createElement('button');
         b.textContent = text;
@@ -188,6 +190,7 @@
           if(p.ai_text) addMsg('ai', p.ai_text);
         });
         chatDiv.scrollTop = chatDiv.scrollHeight;
+        renderSuggestions((data.pairs || []).length === 0);
       }catch(e){console.error(e);}
     }
     function addMsg(role,text){
@@ -228,6 +231,7 @@
       const promptEl=document.getElementById('prompt');
       const text=promptEl.value.trim();
       if(!text) return;
+      renderSuggestions(false);
       addMsg('user',text);
       promptEl.value='';
       const aiEl=document.createElement('div');
@@ -263,7 +267,7 @@
         }
       }
       renderTabs();
-      renderSuggestions();
+      renderSuggestions(false); // show/hide after history loads
       loadHistory();
     }
     init();
