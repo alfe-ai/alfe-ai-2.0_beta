@@ -267,16 +267,38 @@ table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 1rem;
+  font-size: 0.9rem;
 }
 
-td, th {
-  border: 1px solid var(--border);
+#tasks td,
+#tasks th {
   padding: 6px 8px;
 }
 
-th {
-  background: var(--bg-main);
+#tasks tbody tr {
+  border-bottom: 1px solid var(--border);
+}
+
+#tasks th {
+  background: var(--bg-alt);
   text-align: left;
+}
+
+#tasks tbody tr:nth-child(even) {
+  background: var(--bg-alt);
+}
+
+#tasks tbody tr:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+#tasks tbody tr:hover a {
+  color: #fff;
+}
+
+#tasks tbody tr:last-child {
+  border-bottom: none;
 }
 
 a {
