@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Alfe AI</title>
-  <link rel="stylesheet" href="nexum.css" />
+  <link id="themeStylesheet" rel="stylesheet" href="nexum.css" />
 </head>
 <body>
   <div class="app">
@@ -47,6 +47,14 @@
         <h4>Nexum Feature Flags</h4>
         <label><input type="checkbox" id="flagHideChat"> Hide Chat Tab</label>
       </div>
+      <div style="margin-top:0.5rem;">
+        <label>Theme:
+          <select id="themeSelect">
+            <option value="purple">Purple</option>
+            <option value="lightblue">Light Blue</option>
+          </select>
+        </label>
+      </div>
       <button id="closeSettingsBtn" style="margin-top:1rem;">Close</button>
     </div>
   </div>
@@ -84,6 +92,27 @@
       'Explain how recursion works',
       'Design a responsive navbar'
     ];
+
+    async function loadTheme(){
+      try{
+        const res = await fetch('/api/settings/nexum_theme');
+        if(res.ok){
+          const data = await res.json();
+          const theme = data.value || 'purple';
+          const sel = document.getElementById('themeSelect');
+          if(sel) sel.value = theme;
+          applyTheme(theme);
+        } else {
+          applyTheme('purple');
+        }
+      }catch(e){ applyTheme('purple'); console.error(e); }
+    }
+
+    function applyTheme(theme){
+      const link = document.getElementById('themeStylesheet');
+      if(!link) return;
+      link.href = theme === 'lightblue' ? 'nexum_lightblue.css' : 'nexum.css';
+    }
     const urlParams = new URLSearchParams(location.search);
     const startTab = parseInt(urlParams.get('tabId'), 10);
     if(!Number.isNaN(startTab)) currentTabId = startTab;
@@ -362,6 +391,12 @@
       applyFeatureFlags();
     });
 
+    document.getElementById('themeSelect').addEventListener('change', async e => {
+      const theme = e.target.value;
+      applyTheme(theme);
+      await fetch('/api/settings', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key:'nexum_theme', value: theme})});
+    });
+
     document.getElementById('settingsBtn').addEventListener('click', () => {
       document.getElementById('settingsModal').style.display = 'flex';
     });
@@ -392,6 +427,7 @@
 
     async function init(){
       loadModelInfo();
+      await loadTheme();
       await loadTabs();
       if(tabs.length>0){
         if(!Number.isNaN(startTab) && tabs.some(t=>t.id===startTab)){

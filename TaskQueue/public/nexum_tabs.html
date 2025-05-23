@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Nexum Tabs</title>
-  <link rel="stylesheet" href="nexum.css" />
+  <link id="themeStylesheet" rel="stylesheet" href="nexum.css" />
 </head>
 <body>
   <h1>Nexum Tabs</h1>
@@ -16,6 +16,24 @@
   </table>
 <script>
 let tabs = [];
+
+async function loadTheme(){
+  try{
+    const res = await fetch('/api/settings/nexum_theme');
+    if(res.ok){
+      const data = await res.json();
+      applyTheme(data.value || 'purple');
+    } else {
+      applyTheme('purple');
+    }
+  }catch(e){ applyTheme('purple'); console.error(e); }
+}
+
+function applyTheme(theme){
+  const link = document.getElementById('themeStylesheet');
+  if(!link) return;
+  link.href = theme === 'lightblue' ? 'nexum_lightblue.css' : 'nexum.css';
+}
 
 async function loadTabs(){
   try{
@@ -102,6 +120,7 @@ async function toggleArchive(id,arch){
 document.getElementById('newTabBtn').addEventListener('click', newTab);
 
 (async function(){
+  await loadTheme();
   await loadTabs();
   renderTabs();
 })();
