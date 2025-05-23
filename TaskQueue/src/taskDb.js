@@ -87,7 +87,8 @@ export default class TaskDB {
                                              generate_images INTEGER DEFAULT 1,
                                              nexum INTEGER DEFAULT 0,
                                              project_name TEXT DEFAULT '',
-                                             repo_ssh_url TEXT DEFAULT ''
+                                             repo_ssh_url TEXT DEFAULT '',
+                                             tab_type TEXT DEFAULT 'chat'
       );
     `);
     try {
@@ -119,6 +120,12 @@ export default class TaskDB {
       console.debug("[TaskDB Debug] Added chat_tabs.repo_ssh_url column");
     } catch(e) {
       console.debug("[TaskDB Debug] chat_tabs.repo_ssh_url column exists, skipping.", e.message);
+    }
+    try {
+      this.db.exec("ALTER TABLE chat_tabs ADD COLUMN tab_type TEXT DEFAULT 'chat';" );
+      console.debug("[TaskDB Debug] Added chat_tabs.tab_type column");
+    } catch(e) {
+      console.debug("[TaskDB Debug] chat_tabs.tab_type column exists, skipping.", e.message);
     }
 
     this.db.exec(`
@@ -576,17 +583,18 @@ export default class TaskDB {
         .get(id);
   }
 
-  createChatTab(name, nexum = 0, project = '', repo = '') {
+  createChatTab(name, nexum = 0, project = '', repo = '', type = 'chat') {
     const ts = new Date().toISOString();
     const { lastInsertRowid } = this.db.prepare(`
-      INSERT INTO chat_tabs (name, created_at, generate_images, nexum, project_name, repo_ssh_url)
-      VALUES (@name, @created_at, 1, @nexum, @project_name, @repo_ssh_url)
+      INSERT INTO chat_tabs (name, created_at, generate_images, nexum, project_name, repo_ssh_url, tab_type)
+      VALUES (@name, @created_at, 1, @nexum, @project_name, @repo_ssh_url, @tab_type)
     `).run({
       name,
       created_at: ts,
       nexum: nexum ? 1 : 0,
       project_name: project,
-      repo_ssh_url: repo
+      repo_ssh_url: repo,
+      tab_type: type
     });
     return lastInsertRowid;
   }

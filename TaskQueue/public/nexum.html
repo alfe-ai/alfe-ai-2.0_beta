@@ -181,8 +181,7 @@
         if(t.id === currentTabId) b.classList.add('active');
         b.addEventListener('click', () => {
           currentTabId = t.id;
-          if(currentView === 'chat') loadHistory();
-          if(currentView === 'tasks') loadTasksForCurrentProject();
+          applyTabView();
           renderTabs();
         });
         b.addEventListener('contextmenu', e => { e.preventDefault(); renameTab(t.id); });
@@ -333,7 +332,9 @@
     async function newTab(){
       const name = prompt('Tab name:','New Tab');
       if(!name) return;
-      const r = await fetch('/api/chat/tabs/new',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name, nexum:1})});
+      let type = prompt('Tab type (chat/task):','chat');
+      type = (type||'chat').toLowerCase().startsWith('t') ? 'task' : 'chat';
+      const r = await fetch('/api/chat/tabs/new',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name, nexum:1, type})});
       if(r.ok){
         await loadTabs();
         if(tabs.length>0){
@@ -341,9 +342,7 @@
           openTabConfig(currentTabId);
         }
         renderTabs();
-
-        if(currentView === 'chat') loadHistory();
-        if(currentView === 'tasks') loadTasksForCurrentProject();
+        applyTabView();
       }
     }
     async function renameTab(tabId){
@@ -410,6 +409,16 @@
         renderTaskHeader();
         loadTasksForCurrentProject();
       }
+    }
+
+    function applyTabView(){
+      const t = tabs.find(tt => tt.id === currentTabId);
+      const isTask = t && t.tab_type === 'task';
+      const chatBtn = document.getElementById('viewTabChat');
+      const tasksBtn = document.getElementById('viewTabTasks');
+      if(chatBtn) chatBtn.style.display = isTask ? 'none' : '';
+      if(tasksBtn) tasksBtn.style.display = isTask ? '' : 'none';
+      updateView(isTask ? 'tasks' : 'chat');
     }
 
 
@@ -525,7 +534,7 @@
       renderTabs();
       applyFeatureFlags();
       renderSuggestions(false); // show/hide after history loads
-      updateView('tasks');
+      applyTabView();
     }
     init();
 
