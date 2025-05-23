@@ -178,8 +178,8 @@ main {
 }
 
 #prompt {
-  width: 100%;
-  flex: 4;
+  width: auto;
+  flex: none;
   background: var(--bg-alt);
   color: var(--text-color);
   border: 1px solid var(--border);
