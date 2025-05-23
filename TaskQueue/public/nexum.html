@@ -438,6 +438,8 @@
       const askBtn = document.getElementById('askBtn');
       const codeBtn = document.getElementById('codeBtn');
       if(sendBtn && askBtn && codeBtn){
+        const t = tabs.find(tt => tt.id === currentTabId) || {};
+        const hasRepo = !!(t.repo_ssh_url && t.repo_ssh_url.trim());
         if(v === 'chat'){
           sendBtn.style.display = '';
           askBtn.style.display = 'none';
@@ -445,7 +447,7 @@
         } else {
           sendBtn.style.display = 'none';
           askBtn.style.display = '';
-          codeBtn.style.display = '';
+          codeBtn.style.display = hasRepo ? '' : 'none';
         }
       }
 
@@ -579,6 +581,7 @@
       modal.style.display = 'none';
       await loadTabs();
       renderTabs();
+      applyTabView();
       if(currentView === 'tasks') loadTasksForCurrentProject();
     });
     document.getElementById('tabConfigCancelBtn').addEventListener('click', () => {
