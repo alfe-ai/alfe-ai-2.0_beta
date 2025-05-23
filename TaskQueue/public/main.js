@@ -121,7 +121,8 @@ $("#toggleTasksBtn").addEventListener("click", toggleTasks);
 
 async function toggleMarkdownPanel(){
   markdownPanelVisible = !markdownPanelVisible;
-  $("#taskListPanel").style.display = markdownPanelVisible ? "" : "none";
+  const pnl = document.getElementById("taskListPanel");
+  if(pnl) pnl.style.display = markdownPanelVisible ? "" : "none";
   await setSetting("markdown_panel_visible", markdownPanelVisible);
 }
 
@@ -182,9 +183,12 @@ function updateView(v){
   $("#viewTabChat").classList.toggle("active", v === 'chat');
   $("#viewTabTasks").classList.toggle("active", v === 'tasks');
   $("#viewTabArchive").classList.toggle("active", v === 'archive');
+<<<<<<< HEAD
   const showSub = v !== 'chat';
   const taskPanel = document.getElementById("taskListPanel");
   if(taskPanel) taskPanel.style.display = showSub ? "" : "none";
+=======
+>>>>>>> Aurora/Aurelix/dev/nexum2
   const chatPanel = document.getElementById("chatPanel");
   if(chatPanel) chatPanel.style.display = v === 'chat' ? "" : "none";
 }
@@ -229,7 +233,8 @@ async function loadSettings(){
         markdownPanelVisible = !!value;
       }
     }
-    $("#taskListPanel").style.display = markdownPanelVisible ? "" : "none";
+    const pnl = document.getElementById("taskListPanel");
+    if(pnl) pnl.style.display = markdownPanelVisible ? "" : "none";
   }
   {
     const r = await fetch("/api/settings/subroutine_panel_visible");
@@ -1571,8 +1576,10 @@ async function chatSettingsSaveFlow() {
   await loadChatHistory(currentTabId, true);
   toggleSterlingUrlVisibility(sterlingChatUrlVisible);
   toggleNavMenuVisibility(navMenuVisible);
-  document.getElementById("taskListPanel").style.display = markdownPanelVisible ? "" : "none";
-  document.getElementById("chatSubroutinesPanel").style.display = subroutinePanelVisible ? "" : "none";
+  const pnl = document.getElementById("taskListPanel");
+  if(pnl) pnl.style.display = markdownPanelVisible ? "" : "none";
+  const subPanel = document.getElementById("chatSubroutinesPanel");
+  if(subPanel) subPanel.style.display = subroutinePanelVisible ? "" : "none";
   renderTabs();
   renderSidebarTabs();
 }
