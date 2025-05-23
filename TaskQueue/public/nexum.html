@@ -106,7 +106,8 @@
       <label style="margin-top:8px;">Tab Type:<br/>
         <select id="newTabTypeSelect" style="width:100%;">
           <option value="chat">Chat</option>
-          <option value="task">Task</option>
+          <option value="code">Code</option>
+          <option value="design">Design</option>
         </select>
       </label>
       <div style="margin-top:1rem;text-align:right;">
@@ -295,7 +296,13 @@
         const b = document.createElement('button');
         const icon = document.createElement('span');
         icon.className = 'type-icon';
-        icon.textContent = t.tab_type === 'task' ? '</>' : '💬';
+        if(t.tab_type === 'code' || t.tab_type === 'task') {
+          icon.textContent = '</>';
+        } else if(t.tab_type === 'design') {
+          icon.textContent = '🎨';
+        } else {
+          icon.textContent = '💬';
+        }
         b.appendChild(document.createTextNode(t.name));
         b.appendChild(icon);
         if(t.id === currentTabId) b.classList.add('active');
@@ -647,7 +654,7 @@
         return;
       }
       const t = tabs.find(tt => tt.id === currentTabId);
-      const isTask = t && t.tab_type === 'task';
+      const isTask = t && (t.tab_type === 'code' || t.tab_type === 'design' || t.tab_type === 'task');
       updateView(isTask ? 'tasks' : 'chat');
     }
 
