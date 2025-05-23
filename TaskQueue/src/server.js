@@ -1503,6 +1503,11 @@ app.get("/image_generator", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/image_generator.html"));
 });
 
+app.get("/splash", (req, res) => {
+  console.debug("[Server Debug] GET /splash => Serving splash.html");
+  res.sendFile(path.join(__dirname, "../public/splash.html"));
+});
+
 app.delete("/api/chat/pair/:id", (req, res) => {
   console.debug("[Server Debug] DELETE /api/chat/pair =>", req.params.id);
   try {
