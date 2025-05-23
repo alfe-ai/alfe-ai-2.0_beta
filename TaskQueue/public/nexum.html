@@ -123,13 +123,20 @@
     <div class="modal-content">
       <h3>Get Started</h3>
       <div>
-        <label>What do you want to do?<br/>
-          <select id="startTypeSelect" style="width:100%;">
-            <option value="chat">Chat</option>
-            <option value="code">Code</option>
-            <option value="design">Design</option>
-          </select>
-        </label>
+        <div id="startTypeButtons">
+          <button data-type="chat" class="start-type-btn selected">
+            <div class="icon">💬</div>
+            <div>Chat</div>
+          </button>
+          <button data-type="code" class="start-type-btn">
+            <div class="icon">💻</div>
+            <div>Code</div>
+          </button>
+          <button data-type="design" class="start-type-btn">
+            <div class="icon">🎨</div>
+            <div>Design</div>
+          </button>
+        </div>
         <label style="margin-top:8px;">Project Name:<br/>
           <input type="text" id="startProjectInput" style="width:100%;" />
         </label>
@@ -503,8 +510,10 @@
       }
     }
 
+    let startSelectedType = 'chat';
+
     async function createStartTab(){
-      const type = document.getElementById('startTypeSelect').value;
+      const type = startSelectedType;
       const project = document.getElementById('startProjectInput').value.trim();
       const repo = document.getElementById('startRepoInput').value.trim();
       const name = project || 'New Tab';
@@ -523,9 +532,8 @@
     }
 
     function handleStartTypeChange(){
-      const type = document.getElementById('startTypeSelect').value;
       const section = document.getElementById('startRepoSection');
-      if(section) section.style.display = type === 'code' ? '' : 'none';
+      if(section) section.style.display = startSelectedType === 'code' ? '' : 'none';
     }
     async function renameTab(tabId){
       const t = tabs.find(tt => tt.id === tabId);
@@ -728,7 +736,14 @@
       document.getElementById('startDialog').style.display = 'none';
       stopSplash();
     });
-    document.getElementById('startTypeSelect').addEventListener('change', handleStartTypeChange);
+    document.querySelectorAll('#startTypeButtons .start-type-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        startSelectedType = btn.dataset.type;
+        document.querySelectorAll('#startTypeButtons .start-type-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        handleStartTypeChange();
+      });
+    });
     document.getElementById('startDialogCreateBtn').addEventListener('click', createStartTab);
     document.getElementById('startDialog').addEventListener('click', e => {
       if(e.target === e.currentTarget) {
