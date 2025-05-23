@@ -109,7 +109,8 @@ function renderTabs(){
     delBtn.addEventListener('click', () => deleteTab(t.id));
     actions.appendChild(delBtn);
     const archBtn = document.createElement('button');
-    archBtn.textContent = t.archived ? 'Unarchive' : 'Archive';
+    archBtn.innerHTML = t.archived ? 'Unarchive' : '&#128452;';
+    archBtn.title = t.archived ? 'Unarchive' : 'Archive';
     archBtn.style.marginLeft = '4px';
     archBtn.addEventListener('click', () => toggleArchive(t.id, !t.archived));
     actions.appendChild(archBtn);

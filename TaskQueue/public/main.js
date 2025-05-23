@@ -939,7 +939,8 @@ function renderTabs(){
     tabBtn.appendChild(nameSpan);
 
     const archBtn = document.createElement("button");
-    archBtn.textContent = tab.archived ? "Unarchive" : "Archive";
+    archBtn.innerHTML = tab.archived ? "Unarchive" : "&#128452;";
+    archBtn.title = tab.archived ? "Unarchive" : "Archive";
     archBtn.style.marginLeft = "4px";
     archBtn.addEventListener("click", e=>{ e.stopPropagation(); toggleArchiveTab(tab.id, !tab.archived); });
     tabBtn.appendChild(archBtn);
@@ -995,7 +996,8 @@ function renderSidebarTabs(){
     info.appendChild(dateSpan);
 
     const archBtn = document.createElement("button");
-    archBtn.textContent = tab.archived ? "Unarchive" : "Archive";
+    archBtn.innerHTML = tab.archived ? "Unarchive" : "&#128452;";
+    archBtn.title = tab.archived ? "Unarchive" : "Archive";
     archBtn.addEventListener("click", e => {
       e.stopPropagation();
       toggleArchiveTab(tab.id, !tab.archived);

@@ -225,7 +225,8 @@
         gear.addEventListener('click', (e) => { e.stopPropagation(); openTabConfig(t.id); });
 
         const archBtn = document.createElement('button');
-        archBtn.textContent = t.archived ? 'Unarchive' : 'Archive';
+        archBtn.innerHTML = t.archived ? 'Unarchive' : '&#128452;';
+        archBtn.title = t.archived ? 'Unarchive' : 'Archive';
         archBtn.className = 'config-btn';
         archBtn.addEventListener('click', e => {
           e.stopPropagation();
