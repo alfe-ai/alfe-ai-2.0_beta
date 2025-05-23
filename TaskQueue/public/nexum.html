@@ -167,6 +167,8 @@
         <div id="inputArea">
           <textarea id="prompt" rows="3" placeholder="Enter your message"></textarea>
           <button id="sendBtn"><span id="sendBtnText">Send</span></button>
+          <button id="askBtn" style="display:none;">Ask</button>
+          <button id="codeBtn" style="display:none;">Code</button>
         </div>
       </div>
       <div id="taskListPanel" style="display:none;border:1px dashed #666; padding:8px; margin:8px 0;">
@@ -314,11 +316,19 @@
       document.getElementById('viewTabTasks').classList.toggle('active', v === 'tasks');
       document.getElementById('viewTabArchive').classList.toggle('active', v === 'archive');
 
-      const sendBtnLabel = document.getElementById('sendBtnText');
-      if(sendBtnLabel){
-        if(v === 'tasks') sendBtnLabel.textContent = 'Ask';
-        else if(v === 'archive') sendBtnLabel.textContent = 'Code';
-        else sendBtnLabel.textContent = 'Send';
+      const sendBtn = document.getElementById('sendBtn');
+      const askBtn = document.getElementById('askBtn');
+      const codeBtn = document.getElementById('codeBtn');
+      if(sendBtn && askBtn && codeBtn){
+        if(v === 'chat'){
+          sendBtn.style.display = '';
+          askBtn.style.display = 'none';
+          codeBtn.style.display = 'none';
+        } else {
+          sendBtn.style.display = 'none';
+          askBtn.style.display = '';
+          codeBtn.style.display = '';
+        }
       }
 
       const taskPanel = document.getElementById('taskListPanel');
@@ -364,6 +374,8 @@
       }catch(e){aiEl.textContent='[error]';console.error(e);}
     }
     document.getElementById('sendBtn').addEventListener('click',send);
+    document.getElementById('askBtn').addEventListener('click',send);
+    document.getElementById('codeBtn').addEventListener('click',send);
     document.getElementById('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
     document.getElementById('newTabBtn').addEventListener('click', newTab);
     document.getElementById('viewTabChat').addEventListener('click', () => updateView('chat'));
