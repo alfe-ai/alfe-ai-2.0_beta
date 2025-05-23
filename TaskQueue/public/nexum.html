@@ -46,6 +46,8 @@
       <div>
         <h4>Nexum Feature Flags</h4>
         <label><input type="checkbox" id="flagHideChat"> Hide Chat Tab</label>
+        <br/>
+        <label><input type="checkbox" id="flagShowDependencies"> Show "Depends On" Column</label>
       </div>
       <div style="margin-top:0.5rem;">
         <label>Color:
@@ -91,6 +93,7 @@
     let currentTasks = [];
     let taskSortColumn = 'priority';
     let taskSortAsc = true;
+    let showDependencies = false;
     const taskColumns = [
       {key:'priority', label:'Prio'},
       {key:'status', label:'Status'},
@@ -203,6 +206,9 @@
     }
 
     function sortTasks(){
+      if(!showDependencies && taskSortColumn === 'dependencies'){
+        taskSortColumn = 'priority';
+      }
       currentTasks.sort((a,b)=>{
         let va = a[taskSortColumn];
         let vb = b[taskSortColumn];
@@ -223,6 +229,7 @@
       if(!tr) return;
       tr.innerHTML = '';
       taskColumns.forEach(col => {
+        if(!showDependencies && col.key === 'dependencies') return;
         const th = document.createElement('th');
         th.textContent = col.label;
         th.dataset.key = col.key;
@@ -250,6 +257,7 @@
       tasks.forEach(t => {
         const tr = document.createElement('tr');
         taskColumns.forEach(col => {
+          if(!showDependencies && col.key === 'dependencies') return;
           const td = document.createElement('td');
           switch(col.key){
             case 'number':
@@ -465,10 +473,22 @@
       if(chatBtn) chatBtn.style.display = hideChat ? 'none' : '';
       const cb = document.getElementById('flagHideChat');
       if(cb) cb.checked = hideChat;
+      showDependencies = localStorage.getItem('flagShowDependencies') === 'true';
+      const cbDeps = document.getElementById('flagShowDependencies');
+      if(cbDeps) cbDeps.checked = showDependencies;
+      if(currentView === 'tasks'){
+        renderTaskHeader();
+        renderTasks(currentTasks);
+      }
     }
 
     document.getElementById('flagHideChat').addEventListener('change', e => {
       localStorage.setItem('flagHideChat', e.target.checked);
+      applyFeatureFlags();
+    });
+
+    document.getElementById('flagShowDependencies').addEventListener('change', e => {
+      localStorage.setItem('flagShowDependencies', e.target.checked);
       applyFeatureFlags();
     });
 
