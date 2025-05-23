@@ -306,3 +306,8 @@ a:hover {
 }
 
 #tabsList .type-icon { margin-left: 4px; font-size: 0.9rem; width: 1.2rem; text-align: center; }
+#codeBtn {
+  background: var(--accent);
+  border-color: var(--accent-light);
+  color: #fff;
+}
