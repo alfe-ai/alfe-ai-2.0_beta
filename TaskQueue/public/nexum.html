@@ -187,7 +187,12 @@
           if(currentView === 'tasks') loadTasksForCurrentProject();
           renderTabs();
         });
-        b.addEventListener('contextmenu', e => { e.preventDefault(); renameTab(t.id); });
+        b.addEventListener('contextmenu', e => {
+          e.preventDefault();
+          const choice = prompt("Type 'rename' or 'delete':", "");
+          if(choice === 'rename') renameTab(t.id);
+          else if(choice === 'delete') deleteTab(t.id);
+        });
 
         const gear = document.createElement('button');
         gear.innerHTML = '&#9881;';
@@ -357,6 +362,24 @@
         if(r.ok){
           await loadTabs();
           renderTabs();
+        }
+      }catch(e){console.error(e);}
+    }
+
+    async function deleteTab(tabId){
+      if(!confirm('Are you sure you want to delete this tab (and all its messages)?')) return;
+      try{
+        const r = await fetch('/api/chat/tabs/' + tabId,{method:'DELETE'});
+        if(r.ok){
+          await loadTabs();
+          if(tabs.length>0){
+            currentTabId = tabs[0].id;
+          }else{
+            currentTabId = 1;
+          }
+          renderTabs();
+          if(currentView === 'chat') loadHistory();
+          if(currentView === 'tasks') loadTasksForCurrentProject();
         }
       }catch(e){console.error(e);}
     }
