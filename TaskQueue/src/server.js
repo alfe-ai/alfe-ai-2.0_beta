@@ -463,7 +463,7 @@ app.post("/api/tasks/blocking", (req, res) => {
 app.post("/api/tasks/new", async (req, res) => {
   console.debug("[Server Debug] POST /api/tasks/new => body:", req.body);
   try {
-    const { title, body } = req.body;
+    const { title, body, project } = req.body;
     if (!title) {
       return res.status(400).json({ error: "Title required" });
     }
@@ -476,14 +476,18 @@ app.post("/api/tasks/new", async (req, res) => {
 
     const newIssue = await gh.createIssue(title, body || "");
     db.upsertIssue(newIssue, `${gh.owner}/${gh.repo}`);
-    db.logActivity("New task", JSON.stringify({ title, body }));
+    db.logActivity(
+        "New task",
+        JSON.stringify({ title, body, project: project || null })
+    );
 
     const defaultProject = db.getSetting("default_project");
     const defaultSprint = db.getSetting("default_sprint");
     if (defaultProject) db.setProjectByGithubId(newIssue.id, defaultProject);
     if (defaultSprint) db.setSprintByGithubId(newIssue.id, defaultSprint);
+    if (project) db.setProjectByGithubId(newIssue.id, project);
 
-    res.json({ success: true });
+    res.json({ success: true, id: newIssue.id });
   } catch (err) {
     console.error("POST /api/tasks/new error:", err);
     res.status(500).json({ error: "Internal server error" });

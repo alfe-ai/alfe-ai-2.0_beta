@@ -370,9 +370,21 @@
         }
       }catch(e){aiEl.textContent='[error]';console.error(e);}
     }
+    async function createTask(){
+      const promptEl=document.getElementById('prompt');
+      const text=promptEl.value.trim();
+      if(!text) return;
+      const tab=tabs.find(tt=>tt.id===currentTabId) || {};
+      const project=tab.project_name || '';
+      promptEl.value='';
+      try{
+        await fetch('/api/tasks/new',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({title:text, project})});
+        await loadTasksForCurrentProject();
+      }catch(e){console.error(e);}
+    }
     document.getElementById('sendBtn').addEventListener('click',send);
     document.getElementById('askBtn').addEventListener('click',send);
-    document.getElementById('codeBtn').addEventListener('click',send);
+    document.getElementById('codeBtn').addEventListener('click',createTask);
     document.getElementById('prompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
     document.getElementById('newTabBtn').addEventListener('click', newTab);
     document.getElementById('viewTabChat').addEventListener('click', () => updateView('chat'));
