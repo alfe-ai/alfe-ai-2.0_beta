@@ -84,7 +84,9 @@ export default class TaskDB {
                                              name TEXT NOT NULL,
                                              created_at TEXT NOT NULL,
                                              archived INTEGER DEFAULT 0,
-                                             generate_images INTEGER DEFAULT 1
+                                             generate_images INTEGER DEFAULT 1,
+                                             project_name TEXT DEFAULT '',
+                                             git_ssh_url TEXT DEFAULT ''
       );
     `);
     try {
@@ -98,6 +100,18 @@ export default class TaskDB {
       console.debug("[TaskDB Debug] Added chat_tabs.generate_images column");
     } catch(e) {
       console.debug("[TaskDB Debug] generate_images column exists, skipping.", e.message);
+    }
+    try {
+      this.db.exec("ALTER TABLE chat_tabs ADD COLUMN project_name TEXT DEFAULT '';\");
+      console.debug("[TaskDB Debug] Added chat_tabs.project_name column");
+    } catch(e) {
+      console.debug("[TaskDB Debug] project_name column exists, skipping.", e.message);
+    }
+    try {
+      this.db.exec("ALTER TABLE chat_tabs ADD COLUMN git_ssh_url TEXT DEFAULT '';\");
+      console.debug("[TaskDB Debug] Added chat_tabs.git_ssh_url column");
+    } catch(e) {
+      console.debug("[TaskDB Debug] git_ssh_url column exists, skipping.", e.message);
     }
 
     this.db.exec(`
@@ -555,14 +569,16 @@ export default class TaskDB {
         .get(id);
   }
 
-  createChatTab(name) {
+  createChatTab(name, projectName = '', gitSshUrl = '') {
     const ts = new Date().toISOString();
     const { lastInsertRowid } = this.db.prepare(`
-      INSERT INTO chat_tabs (name, created_at, generate_images)
-      VALUES (@name, @created_at, 1)
+      INSERT INTO chat_tabs (name, created_at, generate_images, project_name, git_ssh_url)
+      VALUES (@name, @created_at, 1, @project_name, @git_ssh_url)
     `).run({
       name,
-      created_at: ts
+      created_at: ts,
+      project_name: projectName,
+      git_ssh_url: gitSshUrl
     });
     return lastInsertRowid;
   }
@@ -582,6 +598,12 @@ export default class TaskDB {
   setChatTabGenerateImages(tabId, enabled = 1) {
     this.db.prepare("UPDATE chat_tabs SET generate_images=? WHERE id=?")
         .run(enabled ? 1 : 0, tabId);
+  }
+
+  updateChatTabConfig(tabId, projectName = '', gitSshUrl = '') {
+    this.db
+        .prepare("UPDATE chat_tabs SET project_name=?, git_ssh_url=? WHERE id=?")
+        .run(projectName, gitSshUrl, tabId);
   }
 
   getChatTabGenerateImages(tabId) {
