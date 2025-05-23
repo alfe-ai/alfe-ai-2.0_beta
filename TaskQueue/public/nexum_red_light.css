@@ -166,6 +166,11 @@ main {
   width: 100%;
 }
 
+
+#promptWrapper {
+  position: relative;
+  display: inline-block;
+}
 #taskBtns {
   position: absolute;
   bottom: 8px;

@@ -25,12 +25,14 @@
         <div id="suggestions"></div>
         <div id="chat"></div>
         <div id="inputArea">
-          <textarea id="prompt" rows="12" placeholder="Enter your message" style="width:400px;"></textarea>
-          <button id="sendBtn"><span id="sendBtnText">Send</span></button>
-          <div id="taskBtns">
-            <button id="askBtn" style="display:none;">Ask</button>
-            <button id="codeBtn" style="display:none;">Code</button>
+          <div id="promptWrapper" style="position:relative;display:inline-block;">
+            <textarea id="prompt" rows="12" placeholder="Enter your message" style="width:600px;"></textarea>
+            <div id="taskBtns">
+              <button id="askBtn" style="display:none;">Ask</button>
+              <button id="codeBtn" style="display:none;">Code</button>
+            </div>
           </div>
+          <button id="sendBtn"><span id="sendBtnText">Send</span></button>
         </div>
       </div>
       <div id="taskListPanel" style="display:none;">
