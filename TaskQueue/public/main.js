@@ -693,7 +693,7 @@ $("#createTaskBtn").addEventListener("click", async ()=>{
 $("#cancelTaskBtn").addEventListener("click",()=>hideModal($("#newTaskModal")));
 
 async function loadTabs(){
-  const res = await fetch("/api/chat/tabs");
+  const res = await fetch("/api/chat/tabs?nexum=0");
   chatTabs = await res.json();
 }
 
@@ -820,7 +820,7 @@ async function addNewTab() {
   const r = await fetch("/api/chat/tabs/new", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name })
+    body: JSON.stringify({ name, nexum: 0 })
   });
   if(r.ok){
     await loadTabs();
@@ -2065,7 +2065,7 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
       await fetch("/api/chat/tabs/new", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "Main" })
+        body: JSON.stringify({ name: "Main", nexum: 0 })
       });
       await loadTabs();
       currentTabId = chatTabs[0].id;
