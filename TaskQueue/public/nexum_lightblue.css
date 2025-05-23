@@ -22,6 +22,18 @@ body {
   overflow: hidden;
 }
 
+/* Toggle icon in top-right corner */
+.nav-toggle-icon {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  left: auto;
+  width: 42px;
+  height: 42px;
+  cursor: pointer;
+  z-index: 1000;
+}
+
 #sidebar {
   width: 220px;
   background: linear-gradient(180deg, var(--bg-alt), var(--bg-main));

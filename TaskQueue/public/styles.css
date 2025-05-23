@@ -416,9 +416,10 @@ body {
 
 /* Toggle icon in top-left corner */
 .nav-toggle-icon {
-  position: absolute;
+  position: fixed;
   top: 8px;
-  left: 8px;
+  right: 8px;
+  left: auto;
   width: 42px;
   height: 42px;
   cursor: pointer;
