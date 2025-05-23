@@ -111,8 +111,30 @@
   <div id="startDialog" class="modal" style="display:none;">
     <div class="modal-content">
       <h3>Get Started</h3>
-      <p>No chat tabs available.</p>
-      <button id="startDialogCloseBtn">Close</button>
+      <div>
+        <label>What do you want to do?<br/>
+          <select id="startTypeSelect" style="width:100%;">
+            <option value="chat">Chat</option>
+            <option value="code">Code</option>
+            <option value="design">Design</option>
+          </select>
+        </label>
+        <label style="margin-top:8px;">Project Name:<br/>
+          <input type="text" id="startProjectInput" style="width:100%;" />
+        </label>
+        <div id="startRepoSection" style="margin-top:8px; display:none;">
+          <label>Git Repo SSH URL:<br/>
+            <input type="text" id="startRepoInput" style="width:100%;" />
+          </label>
+          <div style="font-size:0.9rem; margin-top:4px;">
+            note: We will update to do setup with GitHub connector/other external connectors/self host git/ AND THE URL SPECIFICATION FOR MANUAL REMOTE WILL ALSO BE AN OPTION AT THIS STEP, BUT AT THIS POINT, IT IS THE ONLY OPTION
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:1rem;text-align:right;">
+        <button id="startDialogCreateBtn">Create</button>
+        <button id="startDialogCloseBtn">Close</button>
+      </div>
     </div>
   </div>
   <script>
@@ -255,6 +277,7 @@
     if(!dlg) return;
     const noTabs = tabs.length === 0;
     dlg.style.display = noTabs ? 'flex' : 'none';
+    if(noTabs) handleStartTypeChange();
     const chatPanel = document.getElementById('chatPanel');
     if(chatPanel) chatPanel.style.display = noTabs ? 'none' : '';
     const taskPanel = document.getElementById('taskListPanel');
@@ -420,6 +443,30 @@
         applyTabView();
       }
     }
+
+    async function createStartTab(){
+      const type = document.getElementById('startTypeSelect').value;
+      const project = document.getElementById('startProjectInput').value.trim();
+      const repo = document.getElementById('startRepoInput').value.trim();
+      const name = project || 'New Tab';
+      const body = { name, nexum:1, type, project, repo };
+      const r = await fetch('/api/chat/tabs/new',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      if(r.ok){
+        document.getElementById('startDialog').style.display = 'none';
+        await loadTabs();
+        if(tabs.length>0){
+          currentTabId = tabs[tabs.length-1].id;
+        }
+        renderTabs();
+        applyTabView();
+      }
+    }
+
+    function handleStartTypeChange(){
+      const type = document.getElementById('startTypeSelect').value;
+      const section = document.getElementById('startRepoSection');
+      if(section) section.style.display = type === 'code' ? '' : 'none';
+    }
     async function renameTab(tabId){
       const t = tabs.find(tt => tt.id === tabId);
       const newName = prompt("New name:", t ? t.name : "");
@@ -584,6 +631,8 @@
     document.getElementById('startDialogCloseBtn').addEventListener('click', () => {
       document.getElementById('startDialog').style.display = 'none';
     });
+    document.getElementById('startTypeSelect').addEventListener('change', handleStartTypeChange);
+    document.getElementById('startDialogCreateBtn').addEventListener('click', createStartTab);
     document.getElementById('startDialog').addEventListener('click', e => {
       if(e.target === e.currentTarget) e.currentTarget.style.display = 'none';
     });
