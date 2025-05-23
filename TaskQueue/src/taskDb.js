@@ -599,12 +599,24 @@ export default class TaskDB {
     return lastInsertRowid;
   }
 
-  listChatTabs(nexum = null) {
+  listChatTabs(nexum = null, includeArchived = true) {
     if (nexum === null) {
-      return this.db.prepare("SELECT * FROM chat_tabs ORDER BY id ASC").all();
+      if (includeArchived) {
+        return this.db.prepare("SELECT * FROM chat_tabs ORDER BY id ASC").all();
+      }
+      return this.db
+          .prepare("SELECT * FROM chat_tabs WHERE archived=0 ORDER BY id ASC")
+          .all();
+    }
+    if (includeArchived) {
+      return this.db
+          .prepare("SELECT * FROM chat_tabs WHERE nexum=? ORDER BY id ASC")
+          .all(nexum ? 1 : 0);
     }
     return this.db
-        .prepare("SELECT * FROM chat_tabs WHERE nexum=? ORDER BY id ASC")
+        .prepare(
+            "SELECT * FROM chat_tabs WHERE nexum=? AND archived=0 ORDER BY id ASC"
+        )
         .all(nexum ? 1 : 0);
   }
 

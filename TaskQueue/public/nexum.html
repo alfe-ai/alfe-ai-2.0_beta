@@ -51,6 +51,7 @@
         <h4>Nexum Feature Flags</h4>
         <!-- Chat and task tabs are now always visible -->
         <label><input type="checkbox" id="flagShowDependencies"> Show "Depends On" Column</label>
+        <label style="margin-left:0.5rem;"><input type="checkbox" id="flagShowArchived"> Show Archived Chats</label>
       </div>
       <div style="margin-top:0.5rem;">
         <label>Color:
@@ -115,6 +116,7 @@
     let taskSortColumn = 'priority';
     let taskSortAsc = true;
     let showDependencies = false;
+    let showArchived = false;
     const taskColumns = [
       {key:'priority', label:'Prio'},
       {key:'status', label:'Status'},
@@ -184,7 +186,7 @@
 
     async function loadTabs(){
       try{
-        const res = await fetch('/api/chat/tabs?nexum=1');
+        const res = await fetch('/api/chat/tabs?nexum=1&showArchived=' + (showArchived ? '1' : '0'));
         if(res.ok){
           tabs = await res.json();
         } else {
@@ -559,8 +561,11 @@
       const chatBtn = document.getElementById('viewTabChat');
       if(chatBtn) chatBtn.style.display = '';
       showDependencies = localStorage.getItem('flagShowDependencies') === 'true';
+      showArchived = localStorage.getItem('flagShowArchived') === 'true';
       const cbDeps = document.getElementById('flagShowDependencies');
       if(cbDeps) cbDeps.checked = showDependencies;
+      const cbArch = document.getElementById('flagShowArchived');
+      if(cbArch) cbArch.checked = showArchived;
       if(currentView === 'tasks'){
         renderTaskHeader();
         renderTasks(currentTasks);
@@ -570,6 +575,12 @@
     document.getElementById('flagShowDependencies').addEventListener('change', e => {
       localStorage.setItem('flagShowDependencies', e.target.checked);
       applyFeatureFlags();
+    });
+
+    document.getElementById('flagShowArchived').addEventListener('change', e => {
+      localStorage.setItem('flagShowArchived', e.target.checked);
+      applyFeatureFlags();
+      loadTabs().then(renderTabs);
     });
 
     document.getElementById('themeColorSelect').addEventListener('change', async e => {
@@ -615,6 +626,7 @@
     async function init(){
       loadModelInfo();
       await loadTheme();
+      applyFeatureFlags();
       await loadTabs();
       if(tabs.length>0){
         if(!Number.isNaN(startTab) && tabs.some(t=>t.id===startTab)){
@@ -624,7 +636,6 @@
         }
       }
       renderTabs();
-      applyFeatureFlags();
       renderSuggestions(false); // show/hide after history loads
       applyTabView();
     }
