@@ -134,6 +134,7 @@
         b.textContent = t.name;
         if(t.id === currentTabId) b.classList.add('active');
         b.addEventListener('click', () => { currentTabId = t.id; loadHistory(); renderTabs(); });
+        b.addEventListener('contextmenu', e => { e.preventDefault(); renameTab(t.id); });
         container.appendChild(b);
       });
     }
@@ -168,9 +169,23 @@
           currentTabId = tabs[tabs.length-1].id;
         }
         renderTabs();
+
         loadHistory();
       }
     }
+    async function renameTab(tabId){
+      const t = tabs.find(tt => tt.id === tabId);
+      const newName = prompt("New name:", t ? t.name : "");
+      if(!newName) return;
+      try{
+        const r = await fetch("/api/chat/tabs/rename",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({tabId,newName})});
+        if(r.ok){
+          await loadTabs();
+          renderTabs();
+        }
+      }catch(e){console.error(e);}
+    }
+
 
     async function send(){
       const promptEl=document.getElementById('prompt');
