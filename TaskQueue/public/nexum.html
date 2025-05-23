@@ -49,8 +49,7 @@
       <h3>Nexum Settings</h3>
       <div>
         <h4>Nexum Feature Flags</h4>
-        <label><input type="checkbox" id="flagHideChat"> Hide Chat Tab</label>
-        <br/>
+        <!-- Chat and task tabs are now always visible -->
         <label><input type="checkbox" id="flagShowDependencies"> Show "Depends On" Column</label>
       </div>
       <div style="margin-top:0.5rem;">
@@ -453,10 +452,6 @@
     function applyTabView(){
       const t = tabs.find(tt => tt.id === currentTabId);
       const isTask = t && t.tab_type === 'task';
-      const chatBtn = document.getElementById('viewTabChat');
-      const tasksBtn = document.getElementById('viewTabTasks');
-      if(chatBtn) chatBtn.style.display = isTask ? 'none' : '';
-      if(tasksBtn) tasksBtn.style.display = isTask ? '' : 'none';
       updateView(isTask ? 'tasks' : 'chat');
     }
 
@@ -508,11 +503,8 @@
     document.getElementById('viewTabArchive').addEventListener('click', () => updateView('archive'));
 
     function applyFeatureFlags(){
-      const hideChat = localStorage.getItem('flagHideChat') === 'true';
       const chatBtn = document.getElementById('viewTabChat');
-      if(chatBtn) chatBtn.style.display = hideChat ? 'none' : '';
-      const cb = document.getElementById('flagHideChat');
-      if(cb) cb.checked = hideChat;
+      if(chatBtn) chatBtn.style.display = '';
       showDependencies = localStorage.getItem('flagShowDependencies') === 'true';
       const cbDeps = document.getElementById('flagShowDependencies');
       if(cbDeps) cbDeps.checked = showDependencies;
@@ -521,11 +513,6 @@
         renderTasks(currentTasks);
       }
     }
-
-    document.getElementById('flagHideChat').addEventListener('change', e => {
-      localStorage.setItem('flagHideChat', e.target.checked);
-      applyFeatureFlags();
-    });
 
     document.getElementById('flagShowDependencies').addEventListener('change', e => {
       localStorage.setItem('flagShowDependencies', e.target.checked);
