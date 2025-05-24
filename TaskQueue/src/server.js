@@ -194,6 +194,21 @@ function countTokens(encoder, text) {
   return encoder.encode(text || "").length;
 }
 
+function deriveImageTitle(prompt) {
+  if (!prompt) return '';
+  let str = prompt.trim();
+  const sentEnd = str.search(/[.!?]/);
+  if (sentEnd !== -1) {
+    str = str.slice(0, sentEnd);
+  }
+  const words = str.split(/\s+/).slice(0, 6);
+  let title = words.join(' ');
+  if (title) {
+    title = title.charAt(0).toUpperCase() + title.slice(1);
+  }
+  return title;
+}
+
 // Explicit CORS configuration
 app.use(cors({
   origin: "*",
@@ -1463,9 +1478,10 @@ app.post("/api/image/generate", async (req, res) => {
     );
 
     const tab = parseInt(tabId, 10) || 1;
-    db.createImagePair(localUrl, prompt || '', tab);
+    const imageTitle = deriveImageTitle(prompt);
+    db.createImagePair(localUrl, prompt || '', tab, imageTitle);
 
-    res.json({ success: true, url: localUrl });
+    res.json({ success: true, url: localUrl, title: imageTitle });
   } catch (err) {
     console.error("[Server Debug] /api/image/generate error:", err);
     const status = err?.status || err?.response?.status || 500;

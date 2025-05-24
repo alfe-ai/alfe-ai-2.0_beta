@@ -140,7 +140,8 @@ export default class TaskDB {
                                               system_context TEXT,
                                               token_info TEXT,
                                               image_url TEXT,
-                                              image_alt TEXT DEFAULT ''
+                                              image_alt TEXT DEFAULT '',
+                                              image_title TEXT DEFAULT ''
       );
     `);
 
@@ -185,6 +186,12 @@ export default class TaskDB {
       console.debug("[TaskDB Debug] Added chat_pairs.image_alt column");
     } catch(e) {
       console.debug("[TaskDB Debug] image_alt column exists, skipping.", e.message);
+    }
+    try {
+      this.db.exec(`ALTER TABLE chat_pairs ADD COLUMN image_title TEXT DEFAULT '';`);
+      console.debug("[TaskDB Debug] Added chat_pairs.image_title column");
+    } catch(e) {
+      console.debug("[TaskDB Debug] image_title column exists, skipping.", e.message);
     }
 
     // The is_image_desc column is no longer used, but we won't remove it in the schema for safety
@@ -516,12 +523,12 @@ export default class TaskDB {
       INSERT INTO chat_pairs (
         user_text, ai_text, model, timestamp, ai_timestamp,
         chat_tab_id, system_context, token_info,
-        image_url, image_alt
+        image_url, image_alt, image_title
       )
       VALUES (
         @user_text, '', '', @timestamp, NULL,
         @chat_tab_id, @system_context, NULL,
-        NULL, ''
+        NULL, '', ''
       )
     `).run({
       user_text: userText,
@@ -549,15 +556,15 @@ export default class TaskDB {
     });
   }
 
-  createImagePair(url, altText = '', chatTabId = 1) {
+  createImagePair(url, altText = '', chatTabId = 1, title = '') {
     const ts = new Date().toISOString();
     const { lastInsertRowid } = this.db.prepare(`
       INSERT INTO chat_pairs (
         user_text, ai_text, model, timestamp, ai_timestamp,
         chat_tab_id, system_context, token_info,
-        image_url, image_alt
-      ) VALUES ('', '', '', @ts, @ts, @chat_tab_id, '', NULL, @url, @alt)
-    `).run({ ts, chat_tab_id: chatTabId, url, alt: altText });
+        image_url, image_alt, image_title
+      ) VALUES ('', '', '', @ts, @ts, @chat_tab_id, '', NULL, @url, @alt, @title)
+    `).run({ ts, chat_tab_id: chatTabId, url, alt: altText, title });
     return lastInsertRowid;
   }
 
