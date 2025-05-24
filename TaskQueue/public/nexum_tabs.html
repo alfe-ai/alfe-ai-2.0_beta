@@ -23,7 +23,8 @@
       <label style="margin-top:8px;">Tab Type:<br/>
         <select id="newTabTypeSelect" style="width:100%;">
           <option value="chat">Chat</option>
-          <option value="task">Task</option>
+          <option value="code">Code</option>
+          <option value="design">Design</option>
         </select>
       </label>
       <div style="margin-top:1rem;text-align:right;">
@@ -88,7 +89,13 @@ function renderTabs(){
     tdName.textContent = t.name;
     tr.appendChild(tdName);
     const tdType = document.createElement('td');
-    tdType.textContent = t.tab_type === 'task' ? '</>' : '💬';
+    if(t.tab_type === 'code' || t.tab_type === 'task') {
+      tdType.textContent = '</>';
+    } else if(t.tab_type === 'design') {
+      tdType.textContent = '🎨';
+    } else {
+      tdType.textContent = '💬';
+    }
     tr.appendChild(tdType);
     const tdCreated = document.createElement('td');
     tdCreated.textContent = new Date(t.created_at).toLocaleString();
