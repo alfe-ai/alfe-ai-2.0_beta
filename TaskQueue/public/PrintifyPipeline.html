@@ -10,6 +10,7 @@
   <ul id="stageList"></ul>
   <div id="fileContainer"></div>
   <button id="upscaleButton">Submit to Upscale</button>
+  <pre id="upscaleTerminal" style="background:#000;color:#0f0;padding:0.5rem;margin-top:0.5rem;height:200px;overflow:auto;font-family:monospace;"></pre>
   <script>
     const params = new URLSearchParams(window.location.search);
     const file = params.get('file');
@@ -56,22 +57,31 @@
     }
 
     const upscaleBtn = document.getElementById('upscaleButton');
+    const terminalEl = document.getElementById('upscaleTerminal');
     if (file) {
       upscaleBtn.addEventListener('click', async () => {
+        terminalEl.textContent = '';
         try {
           const res = await fetch('/api/upscale', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ file })
           });
-          if (res.ok) {
-            alert('Upscale submitted.');
+          if (res.ok && res.body) {
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            while (true) {
+              const { value, done } = await reader.read();
+              if (done) break;
+              terminalEl.textContent += decoder.decode(value);
+              terminalEl.scrollTop = terminalEl.scrollHeight;
+            }
           } else {
             const data = await res.json().catch(() => ({}));
-            alert(data.error || 'Upscale request failed.');
+            terminalEl.textContent = data.error || 'Upscale request failed.';
           }
         } catch (err) {
-          alert('Upscale request failed.');
+          terminalEl.textContent = 'Upscale request failed.';
         }
       });
     } else {
