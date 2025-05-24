@@ -2318,7 +2318,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
             p.id, p.user_text, p.timestamp,
             p.ai_text, p.ai_timestamp,
             p.model, p.system_context, null, p.token_info,
-            p.image_url, p.image_alt
+            p.image_url, p.image_alt, p.image_title
         );
       }
     } else {
@@ -2402,6 +2402,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
           const img = document.createElement("img");
           img.src = p.image_url;
           img.alt = p.image_alt || "";
+          if(p.image_title) img.title = p.image_title;
           img.style.maxWidth = "100%";
           botDiv.appendChild(img);
         }
@@ -2448,7 +2449,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
   }
 }
 
-function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemContext, fullHistory, tokenInfo, imageUrl=null, imageAlt='') {
+function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemContext, fullHistory, tokenInfo, imageUrl=null, imageAlt='', imageTitle='') {
   const seqDiv = document.createElement("div");
   seqDiv.className = "chat-sequence";
   seqDiv.dataset.pairId = pairId;
@@ -2529,6 +2530,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
     const img = document.createElement("img");
     img.src = imageUrl;
     img.alt = imageAlt;
+    if(imageTitle) img.title = imageTitle;
     img.style.maxWidth = "100%";
     botDiv.appendChild(img);
   }
@@ -3027,7 +3029,7 @@ function updateImagePreviewList(){
 }
 
 // Append an AI image bubble to the chat
-function addImageChatBubble(url, altText=""){
+function addImageChatBubble(url, altText="", title=""){
   const chatMessagesEl = document.getElementById("chatMessages");
   if(!chatMessagesEl || !url) return;
 
@@ -3048,6 +3050,7 @@ function addImageChatBubble(url, altText=""){
   const img = document.createElement("img");
   img.src = url;
   img.alt = altText;
+  if(title) img.title = title;
   img.style.maxWidth = "100%";
   botDiv.appendChild(img);
 
@@ -3074,7 +3077,7 @@ registerActionHook("generateImage", async ({response}) => {
     });
     const data = await r.json();
     if(r.ok && data.url){
-      addImageChatBubble(data.url, prompt);
+      addImageChatBubble(data.url, prompt, data.title || "");
     } else {
       console.error('[Hook generateImage] API error:', data.error);
     }
