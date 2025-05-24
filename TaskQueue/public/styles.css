@@ -233,6 +233,16 @@ body {
   cursor: pointer;
 }
 
+.bubble-copy-btn {
+  position: absolute;
+  top: 4px;
+  right: 24px;
+  background: transparent;
+  border: none;
+  color: #888;
+  cursor: pointer;
+}
+
 /* Avatars replaced with name ovals */
 .name-oval {
   display: inline-block;
