@@ -640,10 +640,10 @@ export default class TaskDB {
     return row ? !!row.generate_images : true;
   }
 
-  setChatTabConfig(tabId, project = '', repo = '') {
+  setChatTabConfig(tabId, project = '', repo = '', type = 'chat') {
     this.db.prepare(
-        "UPDATE chat_tabs SET project_name=?, repo_ssh_url=? WHERE id=?"
-    ).run(project, repo, tabId);
+        "UPDATE chat_tabs SET project_name=?, repo_ssh_url=?, tab_type=? WHERE id=?"
+    ).run(project, repo, type, tabId);
   }
 
   getChatTab(tabId) {

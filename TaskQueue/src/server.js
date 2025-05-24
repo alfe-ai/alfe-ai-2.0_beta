@@ -1200,11 +1200,11 @@ app.post("/api/chat/tabs/generate_images", (req, res) => {
 app.post("/api/chat/tabs/config", (req, res) => {
   console.debug("[Server Debug] POST /api/chat/tabs/config =>", req.body);
   try {
-    const { tabId, project = '', repo = '' } = req.body;
+    const { tabId, project = '', repo = '', type = 'chat' } = req.body;
     if (!tabId) {
       return res.status(400).json({ error: "Missing tabId" });
     }
-    db.setChatTabConfig(tabId, project, repo);
+    db.setChatTabConfig(tabId, project, repo, type);
     res.json({ success: true });
   } catch (err) {
     console.error("[TaskQueue] POST /api/chat/tabs/config error:", err);
