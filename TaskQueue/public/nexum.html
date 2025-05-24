@@ -531,11 +531,11 @@
         await loadTabs();
         currentTabId = data.id;
         renderTabs();
-        applyTabView();
         if(message){
           document.getElementById('prompt').value = message;
           await send();
         }
+        applyTabView();
       }
     }
 
