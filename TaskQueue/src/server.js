@@ -563,6 +563,21 @@ app.post("/api/settings", (req, res) => {
   }
 });
 
+app.post("/api/feedback", (req, res) => {
+  console.debug("[Server Debug] POST /api/feedback =>", req.body);
+  try {
+    const { message } = req.body;
+    if (!message) {
+      return res.status(400).json({ error: "Message required" });
+    }
+    db.addFeedback(message);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[TaskQueue] POST /api/feedback failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.get("/api/tasks/:id", (req, res) => {
   console.debug("[Server Debug] GET /api/tasks/:id =>", req.params.id);
   try {

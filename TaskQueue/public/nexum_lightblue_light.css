@@ -235,7 +235,8 @@ button:hover {
   color: #fff;
 }
 
-#settingsBtn {
+#settingsBtn,
+#feedbackBtn {
   background: none;
   border: none;
   color: var(--text-color);
@@ -244,6 +245,7 @@ button:hover {
 }
 
 #settingsModal,
+#feedbackModal,
 #tabConfigModal {
   position: fixed;
   top: 0;
@@ -257,6 +259,7 @@ button:hover {
 }
 
 #settingsModal .modal-content,
+#feedbackModal .modal-content,
 #tabConfigModal .modal-content {
   background: var(--bg-alt);
   border: 1px solid var(--border);
