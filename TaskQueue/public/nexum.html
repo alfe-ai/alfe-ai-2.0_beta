@@ -186,6 +186,7 @@
         <label style="margin-top:8px;">Message:<br/>
           <textarea id="startChatInput" rows="3" style="width:100%;" placeholder="Start chatting..."></textarea>
         </label>
+        <div id="startSuggestions"></div>
         <div id="startRepoSection" style="margin-top:8px; display:none;">
           <label>Git Repo SSH URL:<br/>
             <input type="text" id="startRepoInput" style="width:100%;" />
@@ -389,8 +390,10 @@
     if(noTabs){
       handleStartTypeChange();
       startSplash();
+      renderSuggestions(true, 'startSuggestions', 'startChatInput');
     } else {
       stopSplash();
+      renderSuggestions(false, 'startSuggestions', 'startChatInput');
     }
     const chatPanel = document.getElementById('chatPanel');
     if(chatPanel) chatPanel.style.display = noTabs ? 'none' : '';
@@ -498,8 +501,8 @@
       }
     }
 
-    function renderSuggestions(show = true){
-      const container = document.getElementById('suggestions');
+    function renderSuggestions(show = true, id = 'suggestions', inputId = 'prompt'){
+      const container = document.getElementById(id);
       if(!container) return;
       container.innerHTML = '';
       container.style.display = show ? 'grid' : 'none';
@@ -508,8 +511,11 @@
         const b = document.createElement('button');
         b.textContent = text;
         b.addEventListener('click', () => {
-          document.getElementById('prompt').value = text;
-          document.getElementById('prompt').focus();
+          const inp = document.getElementById(inputId);
+          if(inp){
+            inp.value = text;
+            inp.focus();
+          }
         });
         container.appendChild(b);
       });
@@ -527,7 +533,7 @@
           if(p.ai_text) addMsg('ai', p.ai_text);
         });
         chatDiv.scrollTop = chatDiv.scrollHeight;
-        renderSuggestions((data.pairs || []).length === 0);
+        renderSuggestions((data.pairs || []).length === 0, 'suggestions', 'prompt');
       }catch(e){console.error(e);}
     }
     function addMsg(role,text){
@@ -724,7 +730,7 @@
         if(!text) return;
         inputHistory.push(text);
         inputHistoryPos = -1;
-        renderSuggestions(false);
+        renderSuggestions(false, 'suggestions', 'prompt');
         addMsg('user',text);
         promptEl.value='';
       const aiEl=document.createElement('div');
@@ -946,7 +952,7 @@
         }
       }
       renderTabs();
-      renderSuggestions(false); // show/hide after history loads
+      renderSuggestions(false, 'suggestions', 'prompt'); // show/hide after history loads
       applyTabView();
     }
     init();
