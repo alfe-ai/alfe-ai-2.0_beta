@@ -151,7 +151,6 @@
       </div>
       <div style="margin-top:1rem;text-align:right;">
         <button id="startDialogCreateBtn">Create</button>
-        <button id="startDialogCloseBtn">Close</button>
       </div>
     </div>
   </div>
@@ -732,10 +731,6 @@
     document.getElementById('newTabModal').addEventListener('click', e => {
       if(e.target === e.currentTarget) e.currentTarget.style.display = 'none';
     });
-    document.getElementById('startDialogCloseBtn').addEventListener('click', () => {
-      document.getElementById('startDialog').style.display = 'none';
-      stopSplash();
-    });
     document.querySelectorAll('#startTypeButtons .start-type-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         startSelectedType = btn.dataset.type;
@@ -745,12 +740,6 @@
       });
     });
     document.getElementById('startDialogCreateBtn').addEventListener('click', createStartTab);
-    document.getElementById('startDialog').addEventListener('click', e => {
-      if(e.target === e.currentTarget) {
-        e.currentTarget.style.display = 'none';
-        stopSplash();
-      }
-    });
     document.getElementById('viewTabChat').addEventListener('click', () => updateView('chat'));
     document.getElementById('viewTabTasks').addEventListener('click', () => updateView('tasks'));
     document.getElementById('viewTabArchive').addEventListener('click', () => updateView('archive'));
