@@ -1154,13 +1154,41 @@ const chatSendBtnEl = document.getElementById("chatSendBtn");
 const waitingElem = document.getElementById("waitingCounter");
 const scrollDownBtnEl = document.getElementById("scrollDownBtn");
 
+// Keep a history of user-entered messages for quick recall
+let inputHistory = [];
+let inputHistoryPos = -1;
+
 scrollDownBtnEl.addEventListener("click", ()=>{
   const chatMessagesEl = document.getElementById("chatMessages");
   chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
 });
 
 chatInputEl.addEventListener("keydown", (e) => {
-  if (enterSubmitsMessage && e.key === "Enter" && !e.shiftKey) {
+  if (e.key === "ArrowUp") {
+    if (inputHistory.length > 0) {
+      if (inputHistoryPos === -1) inputHistoryPos = inputHistory.length - 1;
+      else if (inputHistoryPos > 0) inputHistoryPos--;
+      chatInputEl.value = inputHistory[inputHistoryPos] || "";
+      setTimeout(() => {
+        chatInputEl.setSelectionRange(chatInputEl.value.length, chatInputEl.value.length);
+      }, 0);
+    }
+    e.preventDefault();
+  } else if (e.key === "ArrowDown") {
+    if (inputHistory.length > 0) {
+      if (inputHistoryPos >= 0 && inputHistoryPos < inputHistory.length - 1) {
+        inputHistoryPos++;
+        chatInputEl.value = inputHistory[inputHistoryPos] || "";
+      } else {
+        inputHistoryPos = -1;
+        chatInputEl.value = "";
+      }
+      setTimeout(() => {
+        chatInputEl.setSelectionRange(chatInputEl.value.length, chatInputEl.value.length);
+      }, 0);
+    }
+    e.preventDefault();
+  } else if (enterSubmitsMessage && e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
     chatSendBtnEl.click();
   }
@@ -1170,6 +1198,10 @@ chatSendBtnEl.addEventListener("click", async () => {
   const chatMessagesEl = document.getElementById("chatMessages");
   const userMessage = chatInputEl.value.trim();
   if(!userMessage && pendingImages.length===0) return;
+  if(userMessage){
+    inputHistory.push(userMessage);
+    inputHistoryPos = -1;
+  }
 
   if (favElement) favElement.href = rotatingFavicon;
 
