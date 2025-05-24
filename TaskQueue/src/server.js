@@ -1442,6 +1442,7 @@ app.post("/api/upscale", async (req, res) => {
     }
 
     const scriptPath =
+      process.env.UPSCALE_SCRIPT_PATH ||
       "/mnt/part5/dot_fayra/Whimsical/git/PrintifyPuppet-PuppetCore-Sterling/LeonardoUpscalePuppet/loop.sh";
     console.debug("[Server Debug] /api/upscale => using scriptPath =>", scriptPath);
     const filePath = path.join(uploadsDir, file);
