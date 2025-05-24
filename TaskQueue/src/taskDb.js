@@ -747,6 +747,13 @@ export default class TaskDB {
         )
         .run(name, trigger, action, hook, id);
   }
+
+  getImageTitleForUrl(url) {
+    const row = this.db
+        .prepare("SELECT image_title FROM chat_pairs WHERE image_url=? ORDER BY id DESC LIMIT 1")
+        .get(url);
+    return row ? row.image_title : "";
+  }
 }
 
 

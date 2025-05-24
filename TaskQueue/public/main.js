@@ -1719,6 +1719,8 @@ function renderFileList(){
     link.target = "_blank";
     link.textContent = f.name;
     tdName.appendChild(link);
+    const tdTitle = document.createElement("td");
+    tdTitle.textContent = f.title || "";
     const tdSize = document.createElement("td");
     tdSize.textContent = f.size;
     const tdMtime = document.createElement("td");
@@ -1733,6 +1735,7 @@ function renderFileList(){
     tdAction.appendChild(openBtn);
     tr.appendChild(tdIndex);
     tr.appendChild(tdName);
+    tr.appendChild(tdTitle);
     tr.appendChild(tdSize);
     tr.appendChild(tdMtime);
     tr.appendChild(tdAction);
