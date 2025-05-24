@@ -1344,11 +1344,13 @@ app.get("/api/upload/list", (req, res) => {
     const fileNames = fs.readdirSync(uploadsDir);
     const files = fileNames.map((name, idx) => {
       const { size, mtime } = fs.statSync(path.join(uploadsDir, name));
+      const title = db.getImageTitleForUrl(`/uploads/${name}`);
       return {
         index: idx + 1,
         name,
         size,
-        mtime
+        mtime,
+        title
       };
     });
     res.json(files);
