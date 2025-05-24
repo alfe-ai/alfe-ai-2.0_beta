@@ -17,15 +17,30 @@
   <div id="newTabModal" class="modal" style="display:none;">
     <div class="modal-content">
       <h3>New Tab</h3>
-      <label>Tab Name:<br/>
-        <input type="text" id="newTabNameInput" style="width:100%;" />
-      </label>
-      <label style="margin-top:8px;">Tab Type:<br/>
-        <select id="newTabTypeSelect" style="width:100%;">
-          <option value="chat">Chat</option>
-          <option value="task">Task</option>
-        </select>
-      </label>
+      <div>
+        <div id="newTabTypeButtons">
+          <button data-type="chat" class="start-type-btn selected">
+            <div class="icon">💬</div>
+            <div>Chat</div>
+          </button>
+          <button data-type="code" class="start-type-btn">
+            <div class="icon">💻</div>
+            <div>Code</div>
+          </button>
+          <button data-type="design" class="start-type-btn">
+            <div class="icon">🎨</div>
+            <div>Design</div>
+          </button>
+        </div>
+        <label style="margin-top:8px;">Project Name:<br/>
+          <input type="text" id="newTabProjectInput" style="width:100%;" />
+        </label>
+        <div id="newTabRepoSection" style="margin-top:8px; display:none;">
+          <label>Git Repo SSH URL:<br/>
+            <input type="text" id="newTabRepoInput" style="width:100%;" />
+          </label>
+        </div>
+      </div>
       <div style="margin-top:1rem;text-align:right;">
         <button id="newTabCreateBtn">Create</button>
         <button id="newTabCancelBtn">Cancel</button>
@@ -119,17 +134,32 @@ function renderTabs(){
   });
 }
 
+let newTabSelectedType = 'chat';
+
+function handleNewTabTypeChange(){
+  const section = document.getElementById('newTabRepoSection');
+  if(section) section.style.display = newTabSelectedType === 'code' ? '' : 'none';
+}
+
 function openNewTabModal(){
-  document.getElementById('newTabNameInput').value = 'New Tab';
-  document.getElementById('newTabTypeSelect').value = 'chat';
+  document.getElementById('newTabProjectInput').value = '';
+  document.getElementById('newTabRepoInput').value = '';
+  newTabSelectedType = 'chat';
+  document.querySelectorAll('#newTabTypeButtons .start-type-btn').forEach(b => b.classList.remove('selected'));
+  const chatBtn = document.querySelector('#newTabTypeButtons .start-type-btn[data-type="chat"]');
+  if(chatBtn) chatBtn.classList.add('selected');
+  handleNewTabTypeChange();
   document.getElementById('newTabModal').style.display = 'flex';
 }
+
 async function createNewTab(){
-  const name = document.getElementById('newTabNameInput').value.trim();
-  if(!name) return;
-  const type = document.getElementById('newTabTypeSelect').value;
+  const type = newTabSelectedType;
+  const project = document.getElementById('newTabProjectInput').value.trim();
+  const repo = document.getElementById('newTabRepoInput').value.trim();
+  const name = project || 'New Tab';
   try{
-    const r = await fetch('/api/chat/tabs/new',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name, nexum:1, type})});
+    const body = { name, nexum:1, type, project, repo };
+    const r = await fetch('/api/chat/tabs/new',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     if(r.ok){
       document.getElementById('newTabModal').style.display = 'none';
       await loadTabs();
@@ -169,6 +199,14 @@ document.getElementById('newTabCancelBtn').addEventListener('click', () => {
 });
 document.getElementById('newTabModal').addEventListener('click', e => {
   if(e.target === e.currentTarget) e.currentTarget.style.display = 'none';
+});
+document.querySelectorAll('#newTabTypeButtons .start-type-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    newTabSelectedType = btn.dataset.type;
+    document.querySelectorAll('#newTabTypeButtons .start-type-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    handleNewTabTypeChange();
+  });
 });
 
 (async function(){
