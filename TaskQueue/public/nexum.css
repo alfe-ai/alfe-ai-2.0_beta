@@ -319,12 +319,14 @@ button:hover {
 }
 
 /* Start dialog type buttons */
-#startTypeButtons {
+#startTypeButtons,
+#newTabTypeButtons {
   display: flex;
   gap: 0.5rem;
   justify-content: space-between;
 }
-#startTypeButtons .start-type-btn {
+#startTypeButtons .start-type-btn,
+#newTabTypeButtons .start-type-btn {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -338,11 +340,13 @@ button:hover {
   font-size: 1.1rem;
   transition: background 0.3s, color 0.3s;
 }
-#startTypeButtons .start-type-btn .icon {
+#startTypeButtons .start-type-btn .icon,
+#newTabTypeButtons .start-type-btn .icon {
   font-size: 1.5rem;
   margin-bottom: 4px;
 }
-#startTypeButtons .start-type-btn.selected {
+#startTypeButtons .start-type-btn.selected,
+#newTabTypeButtons .start-type-btn.selected {
   background: var(--accent);
   border-color: var(--accent-light);
   color: #fff;
