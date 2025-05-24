@@ -92,6 +92,12 @@
       <label style="margin-top:8px;">Git Repo SSH URL:<br/>
         <input type="text" id="tabRepoInput" style="width:100%;" />
       </label>
+      <label style="margin-top:8px;">Tab Type:<br/>
+        <select id="tabTypeSelect" style="width:100%;">
+          <option value="chat">Chat</option>
+          <option value="task">Task</option>
+        </select>
+      </label>
       <div style="margin-top:1rem;text-align:right;">
         <button id="tabConfigSaveBtn">Save</button>
         <button id="tabConfigCancelBtn">Cancel</button>
@@ -584,6 +590,7 @@
       const t = tabs.find(tt => tt.id === tabId) || {};
       document.getElementById('tabProjectInput').value = t.project_name || '';
       document.getElementById('tabRepoInput').value = t.repo_ssh_url || '';
+      document.getElementById('tabTypeSelect').value = t.tab_type || 'chat';
       const modal = document.getElementById('tabConfigModal');
       modal.dataset.tabId = tabId;
       modal.style.display = 'flex';
@@ -799,7 +806,8 @@
       const tabId = parseInt(modal.dataset.tabId, 10);
       const project = document.getElementById('tabProjectInput').value;
       const repo = document.getElementById('tabRepoInput').value;
-      await fetch('/api/chat/tabs/config', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tabId, project, repo})});
+      const type = document.getElementById('tabTypeSelect').value;
+      await fetch('/api/chat/tabs/config', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tabId, project, repo, type})});
       modal.style.display = 'none';
       await loadTabs();
       renderTabs();
