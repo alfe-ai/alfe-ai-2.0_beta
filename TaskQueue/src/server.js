@@ -71,10 +71,10 @@ async function main() {
       resolvedIssues.forEach((issue) => queue.enqueue(issue));
 
       console.log(`[TaskQueue] ${queue.size()} task(s) in queue.`);
-      queue.print();
+      // Intentionally omit printing the full issue list to keep logs concise
 
       // Debug: show DB snapshot (can be removed)
-      console.debug("[TaskQueue] Current DB state:", db.dump());
+      // console.debug("[TaskQueue] Current DB state:", db.dump());
     });
   } catch (err) {
     console.error("Fatal:", err.message);
