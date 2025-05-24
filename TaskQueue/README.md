@@ -20,6 +20,7 @@ npm start
 | `GITHUB_LABEL`   | (Optional) Issue label to filter on. If omitted, **all** open issues are returned. |
 | `OPENAI_API_KEY` | OpenAI API key for AI features ([get here](https://platform.openai.com/api-keys)) |
 | `OPENAI_MODEL`   | (Optional) Model ID for completions (default: gpt-4)  |
+| `UPSCALE_SCRIPT_PATH` | (Optional) Path to the image upscale script. Defaults to the included loop.sh |
 
 ### Obtaining API Keys
 1. **GitHub Token**:  
