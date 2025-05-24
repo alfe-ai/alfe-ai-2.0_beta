@@ -1721,6 +1721,8 @@ function renderFileList(){
     tdName.appendChild(link);
     const tdTitle = document.createElement("td");
     tdTitle.textContent = f.title || "";
+    const tdSource = document.createElement("td");
+    tdSource.textContent = f.source || "";
     const tdSize = document.createElement("td");
     tdSize.textContent = f.size;
     const tdMtime = document.createElement("td");
@@ -1736,6 +1738,7 @@ function renderFileList(){
     tr.appendChild(tdIndex);
     tr.appendChild(tdName);
     tr.appendChild(tdTitle);
+    tr.appendChild(tdSource);
     tr.appendChild(tdSize);
     tr.appendChild(tdMtime);
     tr.appendChild(tdAction);

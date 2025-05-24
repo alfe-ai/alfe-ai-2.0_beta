@@ -754,6 +754,13 @@ export default class TaskDB {
         .get(url);
     return row ? row.image_title : "";
   }
+
+  isGeneratedImage(url) {
+    const row = this.db
+        .prepare("SELECT 1 FROM chat_pairs WHERE image_url=? LIMIT 1")
+        .get(url);
+    return !!row;
+  }
 }
 
 

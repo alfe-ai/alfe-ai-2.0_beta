@@ -1369,12 +1369,14 @@ app.get("/api/upload/list", (req, res) => {
     const files = fileNames.map((name, idx) => {
       const { size, mtime } = fs.statSync(path.join(uploadsDir, name));
       const title = db.getImageTitleForUrl(`/uploads/${name}`);
+      const source = db.isGeneratedImage(`/uploads/${name}`) ? 'Generated' : 'Uploaded';
       return {
         index: idx + 1,
         name,
         size,
         mtime,
-        title
+        title,
+        source
       };
     });
     res.json(files);
@@ -1543,6 +1545,11 @@ app.get("/ai_models", (req, res) => {
 app.get("/image_generator", (req, res) => {
   console.debug("[Server Debug] GET /image_generator => Serving image_generator.html");
   res.sendFile(path.join(__dirname, "../public/image_generator.html"));
+});
+
+app.get("/images", (req, res) => {
+  console.debug("[Server Debug] GET /images => Serving generated_images.html");
+  res.sendFile(path.join(__dirname, "../public/generated_images.html"));
 });
 
 app.get("/splash", (req, res) => {
