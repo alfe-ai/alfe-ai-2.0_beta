@@ -95,37 +95,37 @@ export default class TaskDB {
       this.db.exec('ALTER TABLE chat_tabs ADD COLUMN archived INTEGER DEFAULT 0;');
       console.debug("[TaskDB Debug] Added chat_tabs.archived column");
     } catch(e) {
-      console.debug("[TaskDB Debug] chat_tabs.archived column exists, skipping.", e.message);
+      //console.debug("[TaskDB Debug] chat_tabs.archived column exists, skipping.", e.message);
     }
     try {
       this.db.exec('ALTER TABLE chat_tabs ADD COLUMN generate_images INTEGER DEFAULT 1;');
       console.debug("[TaskDB Debug] Added chat_tabs.generate_images column");
     } catch(e) {
-      console.debug("[TaskDB Debug] generate_images column exists, skipping.", e.message);
+      //console.debug("[TaskDB Debug] generate_images column exists, skipping.", e.message);
     }
     try {
       this.db.exec('ALTER TABLE chat_tabs ADD COLUMN nexum INTEGER DEFAULT 0;');
       console.debug("[TaskDB Debug] Added chat_tabs.nexum column");
     } catch(e) {
-      console.debug("[TaskDB Debug] chat_tabs.nexum column exists, skipping.", e.message);
+      //console.debug("[TaskDB Debug] chat_tabs.nexum column exists, skipping.", e.message);
     }
     try {
       this.db.exec("ALTER TABLE chat_tabs ADD COLUMN project_name TEXT DEFAULT '';" );
       console.debug("[TaskDB Debug] Added chat_tabs.project_name column");
     } catch(e) {
-      console.debug("[TaskDB Debug] chat_tabs.project_name column exists, skipping.", e.message);
+      //console.debug("[TaskDB Debug] chat_tabs.project_name column exists, skipping.", e.message);
     }
     try {
       this.db.exec("ALTER TABLE chat_tabs ADD COLUMN repo_ssh_url TEXT DEFAULT '';" );
       console.debug("[TaskDB Debug] Added chat_tabs.repo_ssh_url column");
     } catch(e) {
-      console.debug("[TaskDB Debug] chat_tabs.repo_ssh_url column exists, skipping.", e.message);
+      //console.debug("[TaskDB Debug] chat_tabs.repo_ssh_url column exists, skipping.", e.message);
     }
     try {
       this.db.exec("ALTER TABLE chat_tabs ADD COLUMN tab_type TEXT DEFAULT 'chat';" );
       console.debug("[TaskDB Debug] Added chat_tabs.tab_type column");
     } catch(e) {
-      console.debug("[TaskDB Debug] chat_tabs.tab_type column exists, skipping.", e.message);
+      //console.debug("[TaskDB Debug] chat_tabs.tab_type column exists, skipping.", e.message);
     }
 
     this.db.exec(`
@@ -160,38 +160,38 @@ export default class TaskDB {
       this.db.exec(`ALTER TABLE chat_subroutines ADD COLUMN trigger_text TEXT DEFAULT '';`);
       console.debug("[TaskDB Debug] Added chat_subroutines.trigger_text column");
     } catch(e) {
-      console.debug("[TaskDB Debug] trigger_text column exists, skipping.", e.message);
+      //console.debug("[TaskDB Debug] trigger_text column exists, skipping.", e.message);
     }
     try {
       this.db.exec(`ALTER TABLE chat_subroutines ADD COLUMN action_text TEXT DEFAULT '';`);
       console.debug("[TaskDB Debug] Added chat_subroutines.action_text column");
     } catch(e) {
-      console.debug("[TaskDB Debug] action_text column exists, skipping.", e.message);
+      //console.debug("[TaskDB Debug] action_text column exists, skipping.", e.message);
     }
     try {
       this.db.exec(`ALTER TABLE chat_subroutines ADD COLUMN action_hook TEXT DEFAULT '';`);
       console.debug("[TaskDB Debug] Added chat_subroutines.action_hook column");
     } catch(e) {
-      console.debug("[TaskDB Debug] action_hook column exists, skipping.", e.message);
+      //console.debug("[TaskDB Debug] action_hook column exists, skipping.", e.message);
     }
 
     try {
       this.db.exec(`ALTER TABLE chat_pairs ADD COLUMN image_url TEXT;`);
       console.debug("[TaskDB Debug] Added chat_pairs.image_url column");
     } catch(e) {
-      console.debug("[TaskDB Debug] image_url column exists, skipping.", e.message);
+      //console.debug("[TaskDB Debug] image_url column exists, skipping.", e.message);
     }
     try {
       this.db.exec(`ALTER TABLE chat_pairs ADD COLUMN image_alt TEXT DEFAULT '';`);
       console.debug("[TaskDB Debug] Added chat_pairs.image_alt column");
     } catch(e) {
-      console.debug("[TaskDB Debug] image_alt column exists, skipping.", e.message);
+      //console.debug("[TaskDB Debug] image_alt column exists, skipping.", e.message);
     }
     try {
       this.db.exec(`ALTER TABLE chat_pairs ADD COLUMN image_title TEXT DEFAULT '';`);
       console.debug("[TaskDB Debug] Added chat_pairs.image_title column");
     } catch(e) {
-      console.debug("[TaskDB Debug] image_title column exists, skipping.", e.message);
+      //console.debug("[TaskDB Debug] image_title column exists, skipping.", e.message);
     }
 
     this.db.exec(`
@@ -206,7 +206,7 @@ export default class TaskDB {
       this.db.exec(`ALTER TABLE feedback ADD COLUMN type TEXT NOT NULL DEFAULT 'misc';`);
       console.debug("[TaskDB Debug] Added feedback.type column");
     } catch(e) {
-      console.debug("[TaskDB Debug] feedback.type column exists, skipping.", e.message);
+      //console.debug("[TaskDB Debug] feedback.type column exists, skipping.", e.message);
     }
 
     // The is_image_desc column is no longer used, but we won't remove it in the schema for safety
