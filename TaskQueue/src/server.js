@@ -1429,7 +1429,8 @@ app.post("/api/chat/image", upload.single("imageFile"), async (req, res) => {
   }
 });
 
-// Trigger the Leonardo upscaler script for a given uploaded file.
+// Trigger the Leonardo upscaler script for a given uploaded file and stream
+// the script output back to the client.
 app.post("/api/upscale", async (req, res) => {
   try {
     const { file } = req.body || {};
@@ -1437,23 +1438,40 @@ app.post("/api/upscale", async (req, res) => {
       return res.status(400).json({ error: "Missing file" });
     }
 
-    const scriptPath = "/mnt/part5/dot_fayra/Whimsical/git/PrintifyPuppet-PuppetCore-Sterling/LeonardoUpscalePuppet/loop.sh";
+    const scriptPath =
+      "/mnt/part5/dot_fayra/Whimsical/git/PrintifyPuppet-PuppetCore-Sterling/LeonardoUpscalePuppet/loop.sh";
     const filePath = path.join(uploadsDir, file);
 
     if (!fs.existsSync(filePath)) {
       return res.status(400).json({ error: "File not found" });
     }
 
-    child_process.exec(`${scriptPath} "${filePath}"`, err => {
-      if (err) {
-        console.error("[Upscale Error]", err);
-      }
+    // Stream the script output so the frontend can display a live terminal.
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader("Transfer-Encoding", "chunked");
+
+    const child = child_process.spawn(scriptPath, [filePath]);
+
+    child.stdout.on("data", chunk => {
+      res.write(chunk.toString());
     });
 
-    res.json({ success: true });
+    child.stderr.on("data", chunk => {
+      res.write(chunk.toString());
+    });
+
+    child.on("close", () => {
+      res.end();
+    });
+
+    req.on("close", () => {
+      child.kill();
+    });
   } catch (err) {
     console.error("Error in /api/upscale:", err);
-    res.status(500).json({ error: "Internal server error" });
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Internal server error" });
+    }
   }
 });
 
