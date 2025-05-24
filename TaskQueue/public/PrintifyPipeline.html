@@ -58,34 +58,43 @@
 
     const upscaleBtn = document.getElementById('upscaleButton');
     const terminalEl = document.getElementById('upscaleTerminal');
+    console.debug('Loaded PrintifyPipeline for file =>', file);
     if (file) {
       upscaleBtn.addEventListener('click', async () => {
+        console.debug('Submit to Upscale clicked with file =>', file);
         terminalEl.textContent = '';
         try {
+          console.debug('Sending POST /api/upscale');
           const res = await fetch('/api/upscale', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ file })
           });
+          console.debug('Received response =>', res.status);
           if (res.ok && res.body) {
             const reader = res.body.getReader();
             const decoder = new TextDecoder();
             while (true) {
               const { value, done } = await reader.read();
               if (done) break;
-              terminalEl.textContent += decoder.decode(value);
+              const chunk = decoder.decode(value);
+              terminalEl.textContent += chunk;
+              console.debug('Received chunk =>', chunk);
               terminalEl.scrollTop = terminalEl.scrollHeight;
             }
           } else {
             const data = await res.json().catch(() => ({}));
             terminalEl.textContent = data.error || 'Upscale request failed.';
+            console.debug('Upscale failed =>', terminalEl.textContent);
           }
         } catch (err) {
+          console.error('Upscale request error =>', err);
           terminalEl.textContent = 'Upscale request failed.';
         }
       });
     } else {
       upscaleBtn.disabled = true;
+      console.debug('No file parameter found => Upscale disabled');
     }
   </script>
 </body>
