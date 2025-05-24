@@ -771,8 +771,6 @@
     document.getElementById('newTabModal').addEventListener('click', e => {
       if(e.target === e.currentTarget) e.currentTarget.style.display = 'none';
     });
-<<<<<<< HEAD
-=======
     document.querySelectorAll('#newTabTypeButtons .start-type-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         newTabSelectedType = btn.dataset.type;
@@ -785,7 +783,6 @@
       document.getElementById('startDialog').style.display = 'none';
       stopSplash();
     });
->>>>>>> origin/codex/make-new-tab-use-same-ui
     document.querySelectorAll('#startTypeButtons .start-type-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         startSelectedType = btn.dataset.type;
@@ -795,6 +792,12 @@
       });
     });
     document.getElementById('startDialogCreateBtn').addEventListener('click', createStartTab);
+    document.getElementById('startDialog').addEventListener('click', e => {
+      if(e.target === e.currentTarget) {
+        e.currentTarget.style.display = 'none';
+        stopSplash();
+      }
+    });
     document.getElementById('viewTabChat').addEventListener('click', () => updateView('chat'));
     document.getElementById('viewTabTasks').addEventListener('click', () => updateView('tasks'));
     document.getElementById('viewTabArchive').addEventListener('click', () => updateView('archive'));
