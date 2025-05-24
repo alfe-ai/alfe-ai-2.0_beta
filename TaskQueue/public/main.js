@@ -53,8 +53,9 @@ let pendingImageDescs = [];
 
 // Data and state for the secure files list
 let fileListData = [];
-let fileSortColumn = "index";
-let fileSortAsc = true;
+// Default to sorting by last modified descending so newest files appear first
+let fileSortColumn = "mtime";
+let fileSortAsc = false;
 
 /* Utility formatting functions, event handlers, rendering logic, etc. */
 function formatTimestamp(isoStr){
@@ -1699,6 +1700,7 @@ function sortFileData(){
     let va=a[fileSortColumn];
     let vb=b[fileSortColumn];
     if(fileSortColumn==='name'){ va = va.toLowerCase(); vb = vb.toLowerCase(); }
+    if(fileSortColumn==='mtime'){ va = new Date(va).getTime(); vb = new Date(vb).getTime(); }
     if(va<vb) return fileSortAsc ? -1 : 1;
     if(va>vb) return fileSortAsc ? 1 : -1;
     return 0;
