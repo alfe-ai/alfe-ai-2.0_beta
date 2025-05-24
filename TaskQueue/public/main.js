@@ -3011,11 +3011,14 @@ registerActionHook("generateImage", async ({response}) => {
     if(!tabGenerateImages) return;
     const prompt = (response || "").trim();
     if(!prompt) return;
+    const genIndicator = document.getElementById("imageGenerationIndicator");
+    if(genIndicator) genIndicator.style.display = "";
     const r = await fetch('/api/image/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt, tabId: currentTabId })
     });
+    if(genIndicator) genIndicator.style.display = "none";
     const data = await r.json();
     if(r.ok && data.url){
       addImageChatBubble(data.url, prompt);
@@ -3023,6 +3026,8 @@ registerActionHook("generateImage", async ({response}) => {
       console.error('[Hook generateImage] API error:', data.error);
     }
   } catch(err){
+    const genIndicator = document.getElementById("imageGenerationIndicator");
+    if(genIndicator) genIndicator.style.display = "none";
     console.error('[Hook generateImage] failed:', err);
   }
 });
