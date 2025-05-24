@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Generated Images</title>
+  <style>
+    body {
+      background:#1e1e1e;
+      color:#ddd;
+      font-family:sans-serif;
+      padding:1rem;
+    }
+    h1 { margin-top:0; }
+    .grid {
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+    }
+    .grid img {
+      max-width:200px;
+      border:1px solid #444;
+    }
+    a { color:#0af; text-decoration:none; }
+  </style>
+</head>
+<body>
+  <h1>Generated Images</h1>
+  <div id="grid" class="grid"></div>
+  <script>
+    async function loadImages(){
+      try {
+        const resp = await fetch('/api/upload/list');
+        const data = await resp.json();
+        const grid = document.getElementById('grid');
+        grid.innerHTML = '';
+        data.filter(f => f.source === 'Generated').forEach(f => {
+          const link = document.createElement('a');
+          link.href = '/uploads/' + encodeURIComponent(f.name);
+          link.target = '_blank';
+          const img = document.createElement('img');
+          img.src = '/uploads/' + encodeURIComponent(f.name);
+          img.alt = f.title || f.name;
+          link.appendChild(img);
+          grid.appendChild(link);
+        });
+      } catch(err){
+        console.error('Failed to load images', err);
+      }
+    }
+    loadImages();
+  </script>
+</body>
+</html>
