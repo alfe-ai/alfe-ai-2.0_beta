@@ -138,8 +138,8 @@
             <div>Design</div>
           </button>
         </div>
-        <label style="margin-top:8px;">Project Name:<br/>
-          <input type="text" id="startProjectInput" style="width:100%;" />
+        <label style="margin-top:8px;">Message:<br/>
+          <textarea id="startChatInput" rows="3" style="width:100%;" placeholder="Start chatting..."></textarea>
         </label>
         <div id="startRepoSection" style="margin-top:8px; display:none;">
           <label>Git Repo SSH URL:<br/>
@@ -514,20 +514,22 @@
 
     async function createStartTab(){
       const type = startSelectedType;
-      const project = document.getElementById('startProjectInput').value.trim();
+      const message = document.getElementById('startChatInput').value.trim();
       const repo = document.getElementById('startRepoInput').value.trim();
-      const name = project || 'New Tab';
-      const body = { name, nexum:1, type, project, repo };
+      const body = { name:'New Tab', nexum:1, type, project:'', repo };
       const r = await fetch('/api/chat/tabs/new',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
       if(r.ok){
+        const data = await r.json();
         document.getElementById('startDialog').style.display = 'none';
         stopSplash();
         await loadTabs();
-        if(tabs.length>0){
-          currentTabId = tabs[tabs.length-1].id;
-        }
+        currentTabId = data.id;
         renderTabs();
         applyTabView();
+        if(message){
+          document.getElementById('prompt').value = message;
+          await send();
+        }
       }
     }
 
