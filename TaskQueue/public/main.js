@@ -2345,17 +2345,25 @@ async function loadChatHistory(tabId = 1, reset=false) {
             <div class="name-oval name-oval-user">User</div>
             <span style="opacity:0.8;">${formatTimestamp(p.timestamp)}</span>
           `;
-          const uDel = document.createElement("button");
-          uDel.className = "delete-chat-btn bubble-delete-btn";
-          uDel.textContent = "x";
-          uDel.title = "Delete user message";
-          uDel.addEventListener("click", async () => {
-            if(!confirm("Delete this user message?")) return;
-            const r = await fetch(`/api/chat/pair/${p.id}/user`, { method:"DELETE" });
-            if(r.ok) userDiv.remove();
-          });
-          userHead.appendChild(uDel);
-          userDiv.appendChild(userHead);
+        const uDel = document.createElement("button");
+        uDel.className = "delete-chat-btn bubble-delete-btn";
+        uDel.textContent = "x";
+        uDel.title = "Delete user message";
+        uDel.addEventListener("click", async () => {
+          if(!confirm("Delete this user message?")) return;
+          const r = await fetch(`/api/chat/pair/${p.id}/user`, { method:"DELETE" });
+          if(r.ok) userDiv.remove();
+        });
+        const uCopy = document.createElement("button");
+        uCopy.className = "bubble-copy-btn";
+        uCopy.textContent = "\u2398"; // copy icon
+        uCopy.title = "Copy message";
+        uCopy.addEventListener("click", () => {
+          navigator.clipboard.writeText(p.user_text || "");
+        });
+        userHead.appendChild(uCopy);
+        userHead.appendChild(uDel);
+        userDiv.appendChild(userHead);
 
           const userBody = document.createElement("div");
           userBody.textContent = p.user_text;
@@ -2401,6 +2409,14 @@ async function loadChatHistory(tabId = 1, reset=false) {
           const r = await fetch(`/api/chat/pair/${p.id}/ai`, { method:"DELETE" });
           if(r.ok) botDiv.remove();
         });
+        const aCopy = document.createElement("button");
+        aCopy.className = "bubble-copy-btn";
+        aCopy.textContent = "\u2398";
+        aCopy.title = "Copy message";
+        aCopy.addEventListener("click", () => {
+          navigator.clipboard.writeText(p.ai_text || "");
+        });
+        botHead.appendChild(aCopy);
         botHead.appendChild(aDel);
         botDiv.appendChild(botHead);
 
@@ -2482,6 +2498,14 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
       alert("Failed to delete user message.");
     }
   });
+  const userCopyBtn = document.createElement("button");
+  userCopyBtn.className = "bubble-copy-btn";
+  userCopyBtn.textContent = "\u2398";
+  userCopyBtn.title = "Copy message";
+  userCopyBtn.addEventListener("click", () => {
+    navigator.clipboard.writeText(userText || "");
+  });
+  userHead.appendChild(userCopyBtn);
   userHead.appendChild(userDelBtn);
   userDiv.appendChild(userHead);
 
@@ -2529,6 +2553,14 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
       alert("Failed to delete AI reply.");
     }
   });
+  const aiCopyBtn = document.createElement("button");
+  aiCopyBtn.className = "bubble-copy-btn";
+  aiCopyBtn.textContent = "\u2398";
+  aiCopyBtn.title = "Copy message";
+  aiCopyBtn.addEventListener("click", () => {
+    navigator.clipboard.writeText(aiText || "");
+  });
+  botHead.appendChild(aiCopyBtn);
   botHead.appendChild(aiDelBtn);
   botDiv.appendChild(botHead);
 
@@ -3051,6 +3083,14 @@ function addImageChatBubble(url, altText="", title=""){
     <div class="name-oval name-oval-ai" title="${modelName}">${window.agentName}</div>
     <span style="opacity:0.8;">${formatTimestamp(new Date().toISOString())}</span>
   `;
+  const imgCopyBtn = document.createElement("button");
+  imgCopyBtn.className = "bubble-copy-btn";
+  imgCopyBtn.textContent = "\u2398";
+  imgCopyBtn.title = "Copy alt text";
+  imgCopyBtn.addEventListener("click", () => {
+    navigator.clipboard.writeText(altText || "");
+  });
+  botHead.appendChild(imgCopyBtn);
   botDiv.appendChild(botHead);
 
   const img = document.createElement("img");
