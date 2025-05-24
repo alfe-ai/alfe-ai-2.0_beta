@@ -107,18 +107,28 @@
   <div id="newTabModal" style="display:none;" class="modal">
     <div class="modal-content">
       <h3>New Tab</h3>
-      <label>Tab Name:<br/>
-        <input type="text" id="newTabNameInput" style="width:100%;" />
-      </label>
-      <label style="margin-top:8px;">Tab Type:<br/>
-        <select id="newTabTypeSelect" style="width:100%;">
-          <option value="chat">Chat</option>
-          <option value="task">Task</option>
-        </select>
-      </label>
+      <div>
+        <div id="newTabTypeButtons">
+          <button data-type="chat" class="start-type-btn selected">
+            <div class="icon">💬</div>
+            <div>Chat</div>
+          </button>
+          <button data-type="code" class="start-type-btn">
+            <div class="icon">💻</div>
+            <div>Code</div>
+          </button>
+          <button data-type="design" class="start-type-btn">
+            <div class="icon">🎨</div>
+            <div>Design</div>
+          </button>
+        </div>
+        <label style="margin-top:8px;">Project Name:<br/>
+          <input type="text" id="newTabProjectInput" style="width:100%;" />
+        </label>
+      </div>
       <div style="margin-top:1rem;text-align:right;">
         <button id="newTabCreateBtn">Create</button>
-        <button id="newTabCancelBtn">Cancel</button>
+        <button id="newTabCancelBtn">Close</button>
       </div>
     </div>
   </div>
@@ -494,16 +504,20 @@
       el.textContent=text;
       document.getElementById('chat').appendChild(el);
     }
+    let newTabSelectedType = 'chat';
+
     function openNewTabModal(){
-      document.getElementById('newTabNameInput').value = 'New Tab';
-      document.getElementById('newTabTypeSelect').value = 'chat';
+      newTabSelectedType = 'chat';
+      document.getElementById('newTabProjectInput').value = '';
+      document.querySelectorAll('#newTabTypeButtons .start-type-btn').forEach(b => b.classList.remove('selected'));
+      const first = document.querySelector('#newTabTypeButtons .start-type-btn[data-type="chat"]');
+      if(first) first.classList.add('selected');
       document.getElementById('newTabModal').style.display = 'flex';
     }
     async function createNewTab(){
-      const name = document.getElementById('newTabNameInput').value.trim();
-      if(!name) return;
-      const type = document.getElementById('newTabTypeSelect').value;
-      const r = await fetch('/api/chat/tabs/new',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name, nexum:1, type})});
+      const project = document.getElementById('newTabProjectInput').value.trim();
+      const type = newTabSelectedType;
+      const r = await fetch('/api/chat/tabs/new',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'New Tab', nexum:1, type, project})});
       if(r.ok){
         document.getElementById('newTabModal').style.display = 'none';
         await loadTabs();
@@ -740,6 +754,13 @@
     });
     document.getElementById('newTabModal').addEventListener('click', e => {
       if(e.target === e.currentTarget) e.currentTarget.style.display = 'none';
+    });
+    document.querySelectorAll('#newTabTypeButtons .start-type-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        newTabSelectedType = btn.dataset.type;
+        document.querySelectorAll('#newTabTypeButtons .start-type-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+      });
     });
     document.querySelectorAll('#startTypeButtons .start-type-btn').forEach(btn => {
       btn.addEventListener('click', () => {
