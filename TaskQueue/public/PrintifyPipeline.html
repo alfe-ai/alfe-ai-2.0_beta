@@ -14,21 +14,23 @@
     const file = params.get('file');
     const stageParam = parseInt(params.get('stage'));
     const stages = [
-      'Generated (Initial Stage)',
-      'Upscaled',
-      'Background Removed',
-      'Printify Image Uploaded',
-      'Printify 2',
-      'Printify 3',
-      'Ebay Shipping Updated',
-      'Done'
+      { name: 'Generated (Initial Stage)' },
+      { name: 'Upscaled' },
+      { name: 'Background Removed' },
+      { name: 'Border Added', disabled: true },
+      { name: 'Printify Image Uploaded' },
+      { name: 'Printify 2' },
+      { name: 'Printify 3' },
+      { name: 'Ebay Shipping Updated' },
+      { name: 'Done' }
     ];
 
     const stageList = document.getElementById('stageList');
     const currentStage = isNaN(stageParam) ? 0 : Math.min(Math.max(stageParam, 0), stages.length - 1);
     stages.forEach((stage, idx) => {
       const li = document.createElement('li');
-      li.textContent = stage;
+      li.textContent = stage.name;
+      if (stage.disabled) li.classList.add('disabled');
       if (idx === currentStage) li.classList.add('current');
       stageList.appendChild(li);
     });
