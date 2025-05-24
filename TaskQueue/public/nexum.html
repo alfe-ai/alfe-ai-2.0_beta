@@ -87,6 +87,13 @@
   <div id="feedbackModal" style="display:none;" class="modal">
     <div class="modal-content">
       <h3>Send Feedback</h3>
+      <label>Type:
+        <select id="feedbackTypeSelect" style="width:100%;">
+          <option value="feature">Feature Request</option>
+          <option value="bug">Bug Report</option>
+          <option value="misc">Misc</option>
+        </select>
+      </label>
       <textarea id="feedbackText" rows="4" style="width:100%;"></textarea>
       <div style="margin-top:1rem;text-align:right;">
         <button id="feedbackSubmitBtn">Submit</button>
@@ -911,7 +918,8 @@
     });
     document.getElementById('feedbackSubmitBtn').addEventListener('click', async () => {
       const msg = document.getElementById('feedbackText').value;
-      await fetch('/api/feedback', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({message: msg})});
+      const type = document.getElementById('feedbackTypeSelect').value;
+      await fetch('/api/feedback', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({message: msg, type})});
       document.getElementById('feedbackModal').style.display = 'none';
       document.getElementById('feedbackText').value = '';
     });
