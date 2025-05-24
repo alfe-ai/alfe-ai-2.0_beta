@@ -544,4 +544,27 @@ body {
   color: #fff;
 }
 
+/* Printify Pipeline stage list */
+#stageList {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 1rem;
+}
+
+#stageList li {
+  background: #2c2c2c;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 4px 8px;
+  color: #ddd;
+}
+
+#stageList li.current {
+  background: cyan;
+  color: #000;
+}
+
 

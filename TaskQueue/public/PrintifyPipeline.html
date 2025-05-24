@@ -7,10 +7,32 @@
 </head>
 <body style="padding:1rem;">
   <h2>PrintifyPipeline</h2>
+  <ul id="stageList"></ul>
   <div id="fileContainer"></div>
   <script>
     const params = new URLSearchParams(window.location.search);
     const file = params.get('file');
+    const stageParam = parseInt(params.get('stage'));
+    const stages = [
+      'Generated (Initial Stage)',
+      'Upscaled',
+      'Background Removed',
+      'Printify Image Uploaded',
+      'Printify 2',
+      'Printify 3',
+      'Ebay Shipping Updated',
+      'Done'
+    ];
+
+    const stageList = document.getElementById('stageList');
+    const currentStage = isNaN(stageParam) ? 0 : Math.min(Math.max(stageParam, 0), stages.length - 1);
+    stages.forEach((stage, idx) => {
+      const li = document.createElement('li');
+      li.textContent = stage;
+      if (idx === currentStage) li.classList.add('current');
+      stageList.appendChild(li);
+    });
+
     const container = document.getElementById('fileContainer');
     if (file) {
       const ext = file.split('.').pop().toLowerCase();
