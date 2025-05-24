@@ -25,6 +25,7 @@
         <button id="viewTabTasks" class="view-tab" style="position:relative; left: 40px;">☑️ Tasks</button>
         <button id="viewTabArchive" class="view-tab" style="position:relative; left: 40px;" hidden>Archive</button>
         <button id="settingsBtn" title="Settings" style="margin-left:auto;background:none;border:none;color:#ddd;font-size:1.2rem;cursor:pointer;">&#9881;</button>
+        <button id="feedbackBtn" title="Send Feedback" style="background:none;border:none;color:#ddd;font-size:1.2rem;cursor:pointer;margin-left:0.5rem;">📝</button>
       </div>
 <!--      <h1>Nexum Chat</h1>-->
       <div id="modelInfo" style="margin-bottom:0.5rem; color:#aaa;"></div>
@@ -81,6 +82,16 @@
         </label>
       </div>
       <button id="closeSettingsBtn" style="margin-top:1rem;">Close</button>
+    </div>
+  </div>
+  <div id="feedbackModal" style="display:none;" class="modal">
+    <div class="modal-content">
+      <h3>Send Feedback</h3>
+      <textarea id="feedbackText" rows="4" style="width:100%;"></textarea>
+      <div style="margin-top:1rem;text-align:right;">
+        <button id="feedbackSubmitBtn">Submit</button>
+        <button id="feedbackCancelBtn">Close</button>
+      </div>
     </div>
   </div>
   <div id="tabConfigModal">
@@ -883,6 +894,22 @@
       document.getElementById('settingsModal').style.display = 'none';
     });
     document.getElementById('settingsModal').addEventListener('click', e => {
+      if(e.target === e.currentTarget) e.currentTarget.style.display = 'none';
+    });
+
+    document.getElementById('feedbackBtn').addEventListener('click', () => {
+      document.getElementById('feedbackModal').style.display = 'flex';
+    });
+    document.getElementById('feedbackCancelBtn').addEventListener('click', () => {
+      document.getElementById('feedbackModal').style.display = 'none';
+    });
+    document.getElementById('feedbackSubmitBtn').addEventListener('click', async () => {
+      const msg = document.getElementById('feedbackText').value;
+      await fetch('/api/feedback', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({message: msg})});
+      document.getElementById('feedbackModal').style.display = 'none';
+      document.getElementById('feedbackText').value = '';
+    });
+    document.getElementById('feedbackModal').addEventListener('click', e => {
       if(e.target === e.currentTarget) e.currentTarget.style.display = 'none';
     });
 

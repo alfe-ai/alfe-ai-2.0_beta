@@ -234,7 +234,8 @@ button:hover {
   color: #fff;
 }
 
-#settingsBtn {
+#settingsBtn,
+#feedbackBtn {
   background: none;
   border: none;
   color: var(--text-color);
@@ -243,6 +244,7 @@ button:hover {
 }
 
 #settingsModal,
+#feedbackModal,
 #tabConfigModal,
 #newTabModal,
 #startDialog {
@@ -306,6 +308,7 @@ button:hover {
 }
 
 #settingsModal .modal-content,
+#feedbackModal .modal-content,
 #tabConfigModal .modal-content,
 #newTabModal .modal-content,
 #startDialog .modal-content {

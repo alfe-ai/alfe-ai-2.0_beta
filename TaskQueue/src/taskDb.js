@@ -194,6 +194,14 @@ export default class TaskDB {
       console.debug("[TaskDB Debug] image_title column exists, skipping.", e.message);
     }
 
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS feedback (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        message TEXT NOT NULL,
+        timestamp TEXT NOT NULL
+      );
+    `);
+
     // The is_image_desc column is no longer used, but we won't remove it in the schema for safety
     // The logic referencing it is removed.
 
@@ -515,6 +523,12 @@ export default class TaskDB {
     return this.db
         .prepare("SELECT * FROM activity_timeline ORDER BY id DESC")
         .all();
+  }
+
+  addFeedback(message) {
+    this.db
+        .prepare("INSERT INTO feedback (message, timestamp) VALUES (?, ?)")
+        .run(message, new Date().toISOString());
   }
 
   createChatPair(userText, chatTabId = 1, systemContext = "") {
