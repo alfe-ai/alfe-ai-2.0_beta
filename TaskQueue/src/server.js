@@ -194,8 +194,32 @@ function countTokens(encoder, text) {
   return encoder.encode(text || "").length;
 }
 
-function deriveImageTitle(prompt) {
+async function deriveImageTitle(prompt, client = null) {
   if (!prompt) return '';
+
+  const openAiKey = process.env.OPENAI_API_KEY || '';
+  if (!client && openAiKey) {
+    client = new OpenAI({ apiKey: openAiKey });
+  }
+
+  if (client) {
+    try {
+      const completion = await client.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: 'Create a short 3-6 word title describing the image prompt.' },
+          { role: 'user', content: prompt }
+        ],
+        max_tokens: 16,
+        temperature: 0.5
+      });
+      const title = completion.choices?.[0]?.message?.content?.trim();
+      if (title) return title.replace(/^"|"$/g, '');
+    } catch (e) {
+      console.debug('[Server Debug] AI title generation failed, falling back =>', e.message);
+    }
+  }
+
   let str = prompt.trim();
   const sentEnd = str.search(/[.!?]/);
   if (sentEnd !== -1) {
@@ -1480,7 +1504,7 @@ app.post("/api/image/generate", async (req, res) => {
     );
 
     const tab = parseInt(tabId, 10) || 1;
-    const imageTitle = deriveImageTitle(prompt);
+    const imageTitle = await deriveImageTitle(prompt, openaiClient);
     db.createImagePair(localUrl, prompt || '', tab, imageTitle);
 
     res.json({ success: true, url: localUrl, title: imageTitle });
