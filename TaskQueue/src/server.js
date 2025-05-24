@@ -1429,6 +1429,34 @@ app.post("/api/chat/image", upload.single("imageFile"), async (req, res) => {
   }
 });
 
+// Trigger the Leonardo upscaler script for a given uploaded file.
+app.post("/api/upscale", async (req, res) => {
+  try {
+    const { file } = req.body || {};
+    if (!file) {
+      return res.status(400).json({ error: "Missing file" });
+    }
+
+    const scriptPath = "/mnt/part5/dot_fayra/Whimsical/git/PrintifyPuppet-PuppetCore-Sterling/LeonardoUpscalePuppet/loop.sh";
+    const filePath = path.join(uploadsDir, file);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(400).json({ error: "File not found" });
+    }
+
+    child_process.exec(`${scriptPath} "${filePath}"`, err => {
+      if (err) {
+        console.error("[Upscale Error]", err);
+      }
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Error in /api/upscale:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // Generate an image using OpenAI's image API.
 app.post("/api/image/generate", async (req, res) => {
   try {

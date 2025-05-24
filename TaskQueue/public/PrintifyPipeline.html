@@ -9,6 +9,7 @@
   <h2>PrintifyPipeline</h2>
   <ul id="stageList"></ul>
   <div id="fileContainer"></div>
+  <button id="upscaleButton">Submit to Upscale</button>
   <script>
     const params = new URLSearchParams(window.location.search);
     const file = params.get('file');
@@ -52,6 +53,29 @@
       }
     } else {
       container.textContent = 'No file specified.';
+    }
+
+    const upscaleBtn = document.getElementById('upscaleButton');
+    if (file) {
+      upscaleBtn.addEventListener('click', async () => {
+        try {
+          const res = await fetch('/api/upscale', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ file })
+          });
+          if (res.ok) {
+            alert('Upscale submitted.');
+          } else {
+            const data = await res.json().catch(() => ({}));
+            alert(data.error || 'Upscale request failed.');
+          }
+        } catch (err) {
+          alert('Upscale request failed.');
+        }
+      });
+    } else {
+      upscaleBtn.disabled = true;
     }
   </script>
 </body>
