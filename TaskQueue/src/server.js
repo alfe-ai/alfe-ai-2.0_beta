@@ -1435,22 +1435,37 @@ app.post("/api/chat/image", upload.single("imageFile"), async (req, res) => {
 app.post("/api/upscale", async (req, res) => {
   try {
     const { file } = req.body || {};
+    console.debug("[Server Debug] /api/upscale called with file =>", file);
     if (!file) {
+      console.debug("[Server Debug] /api/upscale => missing 'file' in request body");
       return res.status(400).json({ error: "Missing file" });
     }
 
     const scriptPath =
       "/mnt/part5/dot_fayra/Whimsical/git/PrintifyPuppet-PuppetCore-Sterling/LeonardoUpscalePuppet/loop.sh";
+    console.debug("[Server Debug] /api/upscale => using scriptPath =>", scriptPath);
     const filePath = path.join(uploadsDir, file);
+    console.debug("[Server Debug] /api/upscale => resolved filePath =>", filePath);
 
     if (!fs.existsSync(filePath)) {
+      console.debug("[Server Debug] /api/upscale => file does not exist:", filePath);
       return res.status(400).json({ error: "File not found" });
+    }
+
+    if (!fs.existsSync(scriptPath)) {
+      console.debug("[Server Debug] /api/upscale => script not found:", scriptPath);
+      return res.status(500).json({ error: "Upscale script missing" });
     }
 
     // Stream the script output so the frontend can display a live terminal.
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.setHeader("Transfer-Encoding", "chunked");
 
+    console.debug(
+      "[Server Debug] /api/upscale => spawning child process",
+      scriptPath,
+      filePath
+    );
     const child = child_process.spawn(scriptPath, [filePath]);
 
     child.stdout.on("data", chunk => {
@@ -1461,11 +1476,20 @@ app.post("/api/upscale", async (req, res) => {
       res.write(chunk.toString());
     });
 
-    child.on("close", () => {
+    child.on("error", err => {
+      console.error("[Server Debug] /api/upscale child process error =>", err);
+      if (!res.headersSent) {
+        res.write(`[error] ${err.toString()}`);
+      }
+    });
+
+    child.on("close", code => {
+      console.debug("[Server Debug] /api/upscale child process closed with code", code);
       res.end();
     });
 
     req.on("close", () => {
+      console.debug("[Server Debug] /api/upscale request closed, killing child");
       child.kill();
     });
   } catch (err) {
