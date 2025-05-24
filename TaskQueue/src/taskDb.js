@@ -198,9 +198,16 @@ export default class TaskDB {
       CREATE TABLE IF NOT EXISTS feedback (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         message TEXT NOT NULL,
+        type TEXT NOT NULL DEFAULT 'misc',
         timestamp TEXT NOT NULL
       );
     `);
+    try {
+      this.db.exec(`ALTER TABLE feedback ADD COLUMN type TEXT NOT NULL DEFAULT 'misc';`);
+      console.debug("[TaskDB Debug] Added feedback.type column");
+    } catch(e) {
+      console.debug("[TaskDB Debug] feedback.type column exists, skipping.", e.message);
+    }
 
     // The is_image_desc column is no longer used, but we won't remove it in the schema for safety
     // The logic referencing it is removed.
@@ -525,10 +532,10 @@ export default class TaskDB {
         .all();
   }
 
-  addFeedback(message) {
+  addFeedback(message, type = 'misc') {
     this.db
-        .prepare("INSERT INTO feedback (message, timestamp) VALUES (?, ?)")
-        .run(message, new Date().toISOString());
+        .prepare("INSERT INTO feedback (message, type, timestamp) VALUES (?, ?, ?)")
+        .run(message, type, new Date().toISOString());
   }
 
   createChatPair(userText, chatTabId = 1, systemContext = "") {

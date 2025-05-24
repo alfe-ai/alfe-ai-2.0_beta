@@ -566,11 +566,12 @@ app.post("/api/settings", (req, res) => {
 app.post("/api/feedback", (req, res) => {
   console.debug("[Server Debug] POST /api/feedback =>", req.body);
   try {
-    const { message } = req.body;
+    const { message, type } = req.body;
     if (!message) {
       return res.status(400).json({ error: "Message required" });
     }
-    db.addFeedback(message);
+    const fbType = typeof type === 'string' && type ? type : 'misc';
+    db.addFeedback(message, fbType);
     res.json({ success: true });
   } catch (err) {
     console.error("[TaskQueue] POST /api/feedback failed:", err);
