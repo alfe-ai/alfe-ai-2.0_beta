@@ -1,5 +1,6 @@
 #!/bin/bash
 
+clear
 git pull
 git log -n 3
 bash -c "cd TaskQueue && ./run_full.sh"
