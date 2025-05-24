@@ -122,9 +122,17 @@
             <div>Design</div>
           </button>
         </div>
-        <label style="margin-top:8px;">Project Name:<br/>
-          <input type="text" id="newTabProjectInput" style="width:100%;" />
+        <label style="margin-top:8px;">Message:<br/>
+          <textarea id="newTabChatInput" rows="3" style="width:100%;" placeholder="Start chatting..."></textarea>
         </label>
+        <div id="newTabRepoSection" style="margin-top:8px; display:none;">
+          <label>Git Repo SSH URL:<br/>
+            <input type="text" id="newTabRepoInput" style="width:100%;" />
+          </label>
+          <div style="font-size:0.9rem; margin-top:4px;">
+            note: We will update to do setup with GitHub connector/other external connectors/self host git/ AND THE URL SPECIFICATION FOR MANUAL REMOTE WILL ALSO BE AN OPTION AT THIS STEP, BUT AT THIS POINT, IT IS THE ONLY OPTION
+          </div>
+        </div>
       </div>
       <div style="margin-top:1rem;text-align:right;">
         <button id="newTabCreateBtn">Create</button>
@@ -508,26 +516,37 @@
 
     function openNewTabModal(){
       newTabSelectedType = 'chat';
-      document.getElementById('newTabProjectInput').value = '';
+      document.getElementById('newTabChatInput').value = '';
+      document.getElementById('newTabRepoInput').value = '';
       document.querySelectorAll('#newTabTypeButtons .start-type-btn').forEach(b => b.classList.remove('selected'));
       const first = document.querySelector('#newTabTypeButtons .start-type-btn[data-type="chat"]');
       if(first) first.classList.add('selected');
+      handleNewTabTypeChange();
       document.getElementById('newTabModal').style.display = 'flex';
     }
     async function createNewTab(){
-      const project = document.getElementById('newTabProjectInput').value.trim();
       const type = newTabSelectedType;
-      const r = await fetch('/api/chat/tabs/new',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'New Tab', nexum:1, type, project})});
+      const message = document.getElementById('newTabChatInput').value.trim();
+      const repo = document.getElementById('newTabRepoInput').value.trim();
+      const body = { name:'New Tab', nexum:1, type, project:'', repo };
+      const r = await fetch('/api/chat/tabs/new',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
       if(r.ok){
+        const data = await r.json();
         document.getElementById('newTabModal').style.display = 'none';
         await loadTabs();
-        if(tabs.length>0){
-          currentTabId = tabs[tabs.length-1].id;
-          openTabConfig(currentTabId);
-        }
+        currentTabId = data.id;
         renderTabs();
+        if(message){
+          document.getElementById('prompt').value = message;
+          await send();
+        }
         applyTabView();
       }
+    }
+
+    function handleNewTabTypeChange(){
+      const section = document.getElementById('newTabRepoSection');
+      if(section) section.style.display = newTabSelectedType === 'code' ? '' : 'none';
     }
 
     let startSelectedType = 'chat';
@@ -760,6 +779,7 @@
         newTabSelectedType = btn.dataset.type;
         document.querySelectorAll('#newTabTypeButtons .start-type-btn').forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
+        handleNewTabTypeChange();
       });
     });
     document.querySelectorAll('#startTypeButtons .start-type-btn').forEach(btn => {
