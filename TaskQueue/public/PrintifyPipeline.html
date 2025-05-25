@@ -23,7 +23,7 @@
     const file = params.get('file');
     const stageParam = parseInt(params.get('stage'));
     const stages = [
-      { name: 'Generated (Initial Stage)' },
+      { name: 'Generated' },
       { name: 'Border Added', disabled: true },
       { name: 'Upscaled' },
       { name: 'Printify Image Uploaded' },
@@ -35,12 +35,13 @@
 
     const stageList = document.getElementById('stageList');
     const stageItems = [];
-    const currentStage = isNaN(stageParam) ? 0 : Math.min(Math.max(stageParam, 0), stages.length - 1);
+    const currentStage = isNaN(stageParam) ? null : Math.min(Math.max(stageParam, 0), stages.length - 1);
     stages.forEach((stage, idx) => {
       const li = document.createElement('li');
       li.textContent = stage.name;
       if (stage.disabled) li.classList.add('disabled');
-      if (idx === currentStage) li.classList.add('current');
+      if (idx === 0) li.classList.add('completed');
+      if (currentStage !== null && idx === currentStage && idx !== 0) li.classList.add('current');
       stageList.appendChild(li);
       stageItems.push(li);
     });
@@ -93,8 +94,15 @@
         const res = await fetch(`/api/upscale/result?file=${encodeURIComponent(file)}`);
         const data = await res.json();
         if(data.url){
-          upscaledImg.src = data.url;
+          if(upscaledImg.src !== data.url){
+            upscaledImg.src = `${data.url}?t=${Date.now()}`;
+            upscaledImg.addEventListener('load', () => {
+              resEl.textContent = `Resolution: ${upscaledImg.naturalWidth} x ${upscaledImg.naturalHeight}`;
+            }, { once: true });
+          }
           document.getElementById('tabUpscaled').style.display = '';
+          if(stageItems[2]) stageItems[2].classList.add('completed');
+          showUpscaled();
         }
       } catch(err){
         console.error('Failed to check upscaled image =>', err);
