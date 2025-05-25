@@ -7,6 +7,19 @@
 </head>
 <body style="padding:1rem;">
   <h2>Printify Pipeline Queue</h2>
+  <div id="addJob" style="margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;">
+    <label>Type:
+      <select id="jobType">
+        <option value="upscale">Upscale</option>
+        <option value="printify">Printify</option>
+      </select>
+    </label>
+    <label>Image:
+      <select id="imageSelect"></select>
+    </label>
+    <img id="imagePreview" style="display:none;max-height:80px;border:1px solid #444;" />
+    <button id="enqueueBtn">Add to Queue</button>
+  </div>
   <table id="queueTable" style="width:100%;border-collapse:collapse;">
     <thead>
       <tr>
@@ -44,7 +57,52 @@
         console.error('Failed to load queue', e);
       }
     }
+    async function loadImages(){
+      try{
+        const res = await fetch('/api/upload/list');
+        const files = await res.json();
+        const select = document.getElementById('imageSelect');
+        select.innerHTML = '<option value="">-- choose --</option>';
+        files.forEach(f => {
+          const o = document.createElement('option');
+          o.value = f.name;
+          o.textContent = f.name;
+          select.appendChild(o);
+        });
+      }catch(e){
+        console.error('Failed to load images', e);
+      }
+    }
+
+    document.getElementById('imageSelect').addEventListener('change', e => {
+      const val = e.target.value;
+      const img = document.getElementById('imagePreview');
+      if(val){
+        img.src = '/uploads/' + encodeURIComponent(val);
+        img.style.display = '';
+      }else{
+        img.style.display = 'none';
+      }
+    });
+
+    document.getElementById('enqueueBtn').addEventListener('click', async () => {
+      const file = document.getElementById('imageSelect').value;
+      const type = document.getElementById('jobType').value;
+      if(!file) return;
+      try{
+        await fetch('/api/pipelineQueue', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ file, type })
+        });
+        await loadQueue();
+      }catch(e){
+        console.error('Failed to enqueue job', e);
+      }
+    });
+
     loadQueue();
+    loadImages();
     setInterval(loadQueue, 5000);
   </script>
 </body>
