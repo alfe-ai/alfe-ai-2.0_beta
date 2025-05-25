@@ -1860,9 +1860,7 @@ document.addEventListener("click", async ev => {
     "Upscaled",
     "Background Removed",
     "Border Added",
-    "Printify Image Uploaded",
-    "Printify 2",
-    "Printify 3",
+    "Printify Step",
     "Ebay Shipping Updated",
     "Done"
   ].forEach(v => {
