@@ -124,7 +124,7 @@
         try {
           const res = await fetch('/api/jobs');
           const jobs = await res.json();
-          const filtered = jobs.filter(j => j.file === file && j.status === 'running');
+          const filtered = jobs.filter(j => j.file === file);
           jobsListEl.innerHTML = '';
           filtered.forEach(j => {
             const li = document.createElement('li');
