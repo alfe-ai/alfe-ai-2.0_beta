@@ -92,9 +92,9 @@ import { fileURLToPath } from "url";
 import OpenAI from "openai";
 import { encoding_for_model } from "tiktoken";
 import axios from "axios";
+import http from "http";
 import os from "os";
 import child_process from "child_process";
-import JobManager from "./jobManager.js";
 
 const db = new TaskDB();
 console.debug("[Server Debug] Checking or setting default 'ai_model' in DB...");
@@ -124,7 +124,28 @@ if (!themeMode) {
 console.debug("[Server Debug] theme_color =>", themeColor, "mode =>", themeMode);
 
 const app = express();
-const jobManager = new JobManager();
+
+// JobRunner nodes configuration
+const nodesFile = path.join(path.dirname(fileURLToPath(import.meta.url)), '../jobrunner_nodes.json');
+function loadJobRunnerNodes() {
+  try {
+    const data = fs.readFileSync(nodesFile, 'utf8');
+    return JSON.parse(data);
+  } catch (e) {
+    return [];
+  }
+}
+function saveJobRunnerNodes(list) {
+  fs.writeFileSync(nodesFile, JSON.stringify(list, null, 2));
+}
+let jobRunnerNodes = loadJobRunnerNodes();
+let nodeIndex = 0;
+function getNextNode() {
+  if (jobRunnerNodes.length === 0) return null;
+  const node = jobRunnerNodes[nodeIndex % jobRunnerNodes.length];
+  nodeIndex++;
+  return node;
+}
 
 /**
  * Returns a configured OpenAI client, depending on "ai_service" setting.
@@ -374,6 +395,29 @@ app.delete("/api/projectBranches/:project", (req, res) => {
     console.error("[TaskQueue] DELETE /api/projectBranches/:project error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
+});
+
+// ------------------------------------------------------------------
+// JobRunner nodes management
+// ------------------------------------------------------------------
+app.get('/api/jobrunner/nodes', (req,res)=>{
+  res.json(jobRunnerNodes);
+});
+
+app.post('/api/jobrunner/nodes', (req,res)=>{
+  const { host, port } = req.body || {};
+  if(!host || !port) return res.status(400).json({ error: 'Missing host or port' });
+  const node = { id: Date.now().toString(36)+Math.random().toString(36).slice(2,8), host, port };
+  jobRunnerNodes.push(node);
+  saveJobRunnerNodes(jobRunnerNodes);
+  res.json({ success: true, node });
+});
+
+app.delete('/api/jobrunner/nodes/:id', (req,res)=>{
+  const id = req.params.id;
+  jobRunnerNodes = jobRunnerNodes.filter(n => n.id !== id);
+  saveJobRunnerNodes(jobRunnerNodes);
+  res.json({ success: true });
 });
 
 app.post("/api/tasks/hidden", (req, res) => {
@@ -1466,173 +1510,91 @@ app.post("/api/chat/image", upload.single("imageFile"), async (req, res) => {
 // the script output back to the client.
 app.post("/api/upscale", async (req, res) => {
   try {
-    const { file } = req.body || {};
-    console.debug("[Server Debug] /api/upscale called with file =>", file);
-    if (!file) {
-      console.debug("[Server Debug] /api/upscale => missing 'file' in request body");
-      return res.status(400).json({ error: "Missing file" });
-    }
-
-    const scriptPath =
-      process.env.UPSCALE_SCRIPT_PATH ||
-      "/mnt/part5/dot_fayra/Whimsical/git/PrintifyPuppet-PuppetCore-Sterling/LeonardoUpscalePuppet/loop.sh";
-    console.debug(
-      "[Server Debug] /api/upscale => using scriptPath =>",
-      scriptPath
-    );
-    const scriptCwd = path.dirname(scriptPath);
-    console.debug(
-      "[Server Debug] /api/upscale => using scriptCwd =>",
-      scriptCwd
-    );
-    const filePath = path.join(uploadsDir, file);
-    console.debug("[Server Debug] /api/upscale => resolved filePath =>", filePath);
-
-    if (!fs.existsSync(filePath)) {
-      console.debug("[Server Debug] /api/upscale => file does not exist:", filePath);
-      return res.status(400).json({ error: "File not found" });
-    }
-
-    if (!fs.existsSync(scriptPath)) {
-      console.debug("[Server Debug] /api/upscale => script not found:", scriptPath);
-      return res.status(500).json({ error: "Upscale script missing" });
-    }
-
-    const job = jobManager.createJob(scriptPath, [filePath], { cwd: scriptCwd, file });
-    jobManager.addDoneListener(job, () => {
-      const m = job.log.match(/Final output saved to:\s*(.+)/i);
-      if (m) {
-        job.resultPath = m[1].trim();
-        console.debug("[Server Debug] Recorded resultPath =>", job.resultPath);
-        const originalUrl = `/uploads/${file}`;
-        db.setUpscaledImage(originalUrl, job.resultPath);
-        db.setImageStatus(originalUrl, 'Upscaled');
-      }
-    });
-    console.debug("[Server Debug] /api/upscale => job started", job.id);
-    res.json({ jobId: job.id });
+    const node = getNextNode();
+    if (!node) return res.status(500).json({ error: "No JobRunner nodes configured" });
+    const url = `http://${node.host}:${node.port}/api/upscale`;
+    const resp = await axios.post(url, req.body);
+    res.json({ jobId: `${node.id}:${resp.data.jobId}` });
   } catch (err) {
-    console.error("Error in /api/upscale:", err);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Error forwarding /api/upscale:", err.message);
+    res.status(500).json({ error: "JobRunner request failed" });
   }
 });
 
 // Trigger the Printify submission script for a given file.
 app.post("/api/printify", async (req, res) => {
   try {
-    const { file } = req.body || {};
-    console.debug("[Server Debug] /api/printify called with file =>", file);
-    if (!file) {
-      console.debug("[Server Debug] /api/printify => missing 'file' in request body");
-      return res.status(400).json({ error: "Missing file" });
-    }
-
-    const scriptPath =
-      process.env.PRINTIFY_SCRIPT_PATH ||
-      "/mnt/part5/dot_fayra/Whimsical/git/PrintifyPuppet-PuppetCore-Sterling/PrintifyPuppet/run.sh";
-    console.debug(
-      "[Server Debug] /api/printify => using scriptPath =>",
-      scriptPath
-    );
-    const scriptCwd = path.dirname(scriptPath);
-    console.debug(
-      "[Server Debug] /api/printify => using scriptCwd =>",
-      scriptCwd
-    );
-    const filePath = path.join(uploadsDir, file);
-    console.debug("[Server Debug] /api/printify => resolved filePath =>", filePath);
-
-    if (!fs.existsSync(filePath)) {
-      console.debug("[Server Debug] /api/printify => file does not exist:", filePath);
-      return res.status(400).json({ error: "File not found" });
-    }
-
-    if (!fs.existsSync(scriptPath)) {
-      console.debug("[Server Debug] /api/printify => script not found:", scriptPath);
-      return res.status(500).json({ error: "Printify script missing" });
-    }
-
-    const job = jobManager.createJob(scriptPath, [filePath], { cwd: scriptCwd, file });
-    console.debug("[Server Debug] /api/printify => job started", job.id);
-    res.json({ jobId: job.id });
+    const node = getNextNode();
+    if (!node) return res.status(500).json({ error: "No JobRunner nodes configured" });
+    const url = `http://${node.host}:${node.port}/api/printify`;
+    const resp = await axios.post(url, req.body);
+    res.json({ jobId: `${node.id}:${resp.data.jobId}` });
   } catch (err) {
-    console.error("Error in /api/printify:", err);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Error forwarding /api/printify:", err.message);
+    res.status(500).json({ error: "JobRunner request failed" });
   }
 });
 
-app.get("/api/jobs", (req, res) => {
-  res.json(jobManager.listJobs());
+app.get("/api/jobs", async (req, res) => {
+  const results = [];
+  for (const node of jobRunnerNodes) {
+    try {
+      const r = await axios.get(`http://${node.host}:${node.port}/api/jobs`);
+      r.data.forEach(j => results.push({ ...j, id: `${node.id}:${j.id}` }));
+    } catch (e) {
+      console.error("Failed fetching jobs from", node.host, e.message);
+    }
+  }
+  res.json(results);
 });
 
-app.get("/api/jobs/:id/log", (req, res) => {
-  const job = jobManager.getJob(req.params.id);
-  if (!job) return res.status(404).json({ error: "Job not found" });
-  res.type("text/plain").send(job.log);
+app.get("/api/jobs/:id/log", async (req, res) => {
+  const [nodeId, jobId] = req.params.id.split(":");
+  const node = jobRunnerNodes.find(n => n.id === nodeId);
+  if (!node) return res.status(404).json({ error: "Job not found" });
+  try {
+    const r = await axios.get(`http://${node.host}:${node.port}/api/jobs/${jobId}/log`, { responseType: 'text' });
+    res.type("text/plain").send(r.data);
+  } catch (e) {
+    res.status(500).json({ error: "JobRunner request failed" });
+  }
 });
+
 
 app.get("/api/jobs/:id/stream", (req, res) => {
-  const job = jobManager.getJob(req.params.id);
-  if (!job) return res.status(404).end();
-  res.writeHead(200, {
-    "Content-Type": "text/event-stream",
-    "Cache-Control": "no-cache",
-    Connection: "keep-alive",
-  });
-  res.flushHeaders();
-  res.write(`event: log\ndata:${JSON.stringify(job.log)}\n\n`);
-  const logListener = (chunk) => {
-    res.write(`event: log\ndata:${JSON.stringify(chunk)}\n\n`);
-  };
-  const doneListener = () => {
-    res.write(`event: done\ndata:done\n\n`);
-  };
-  jobManager.addListener(job, logListener);
-  jobManager.addDoneListener(job, doneListener);
-  req.on("close", () => {
-    jobManager.removeListener(job, logListener);
-    jobManager.removeDoneListener(job, doneListener);
-  });
+  const [nodeId, jobId] = req.params.id.split(":");
+  const node = jobRunnerNodes.find(n => n.id === nodeId);
+  if (!node) return res.status(404).end();
+  const url = `http://${node.host}:${node.port}/api/jobs/${jobId}/stream`;
+  http.get(url, runnerRes => {
+    res.writeHead(runnerRes.statusCode || 500, runnerRes.headers);
+    runnerRes.pipe(res);
+  }).on('error', () => res.status(500).end());
 });
 
-app.post("/api/jobs/:id/stop", (req, res) => {
-  const ok = jobManager.stopJob(req.params.id);
-  if (!ok) return res.status(404).json({ error: "Job not found" });
-  res.json({ stopped: true });
+app.post("/api/jobs/:id/stop", async (req, res) => {
+  const [nodeId, jobId] = req.params.id.split(":");
+  const node = jobRunnerNodes.find(n => n.id === nodeId);
+  if (!node) return res.status(404).json({ error: "Job not found" });
+  try {
+    const r = await axios.post(`http://${node.host}:${node.port}/api/jobs/${jobId}/stop`);
+    res.json(r.data);
+  } catch (e) {
+    res.status(500).json({ error: "JobRunner request failed" });
+  }
 });
 
 // Check if an upscaled version of a file exists.
-app.get("/api/upscale/result", (req, res) => {
+app.get("/api/upscale/result", async (req, res) => {
   try {
     const file = req.query.file;
     if (!file) return res.status(400).json({ error: "Missing file" });
-
-    const ext = path.extname(file);
-    const base = path.basename(file, ext);
-    const candidates = [
-      path.join(uploadsDir, `${base}_4096${ext}`),
-      path.join(uploadsDir, `${base}-4096${ext}`),
-      path.join(uploadsDir, `${base}_upscaled${ext}`),
-      path.join(uploadsDir, `${base}-upscaled${ext}`),
-    ];
-    for (const p of candidates) {
-      if (fs.existsSync(p)) {
-        return res.json({ url: p });
-      }
+    for (const node of jobRunnerNodes) {
+      try {
+        const r = await axios.get(`http://${node.host}:${node.port}/api/upscale/result`, { params: { file } });
+        if (r.data.url) return res.json(r.data);
+      } catch (e) {}
     }
-
-    const fromDb = db.getUpscaledImage(`/uploads/${file}`);
-    if (fromDb && fs.existsSync(fromDb)) {
-      return res.json({ url: fromDb });
-    }
-
-    const jobs = jobManager.listJobs();
-    for (const j of jobs) {
-      if (j.file === file && j.resultPath && fs.existsSync(j.resultPath)) {
-        return res.json({ url: j.resultPath });
-      }
-    }
-
     res.json({ url: null });
   } catch (err) {
     console.error("/api/upscale/result error:", err);

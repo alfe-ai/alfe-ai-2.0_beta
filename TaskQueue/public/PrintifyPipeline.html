@@ -25,6 +25,13 @@
     </thead>
     <tbody id="jobsList"></tbody>
   </table>
+  <h3>JobRunner Nodes</h3>
+  <div id="nodesContainer" style="margin-bottom:0.5rem;">
+    <ul id="nodesList"></ul>
+    <input id="nodeHost" placeholder="host" style="width:140px;" />
+    <input id="nodePort" placeholder="port" style="width:60px;" />
+    <button id="addNodeBtn">Add Node</button>
+  </div>
   <div style="margin-top:0.5rem;">
     <button id="upscaleButton">Submit to Upscale</button>
     <button id="printifyButton">Submit to Printify</button>
@@ -131,6 +138,52 @@
     const printifyBtn = document.getElementById('printifyButton');
     const terminalEl = document.getElementById('upscaleTerminal');
     const jobsListEl = document.getElementById('jobsList');
+    const nodesListEl = document.getElementById('nodesList');
+    const hostInput = document.getElementById('nodeHost');
+    const portInput = document.getElementById('nodePort');
+    let nodes = [];
+
+    async function loadNodes(){
+      try {
+        const r = await fetch('/api/jobrunner/nodes');
+        nodes = await r.json();
+        renderNodes();
+      } catch(e){ console.error('Failed to load nodes', e); }
+    }
+
+    async function addNode(){
+      const host = hostInput.value.trim();
+      const port = portInput.value.trim();
+      if(!host || !port) return;
+      await fetch('/api/jobrunner/nodes', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({host, port})
+      });
+      hostInput.value='';
+      portInput.value='';
+      loadNodes();
+    }
+
+    function renderNodes(){
+      nodesListEl.innerHTML='';
+      nodes.forEach(n=>{
+        const li=document.createElement('li');
+        li.textContent=`${n.host}:${n.port}`;
+        const del=document.createElement('button');
+        del.textContent='Delete';
+        del.style.marginLeft='0.5rem';
+        del.addEventListener('click', async()=>{
+          await fetch(`/api/jobrunner/nodes/${n.id}`,{method:'DELETE'});
+          loadNodes();
+        });
+        li.appendChild(del);
+        nodesListEl.appendChild(li);
+      });
+    }
+
+    document.getElementById('addNodeBtn').addEventListener('click', addNode);
+    loadNodes();
     console.debug('Loaded PrintifyPipeline for file =>', file);
     if (file) {
       upscaleBtn.addEventListener('click', async () => {
