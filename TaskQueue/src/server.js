@@ -1592,6 +1592,12 @@ app.get("/api/jobs/:id/stream", (req, res) => {
   });
 });
 
+app.post("/api/jobs/:id/stop", (req, res) => {
+  const ok = jobManager.stopJob(req.params.id);
+  if (!ok) return res.status(404).json({ error: "Job not found" });
+  res.json({ stopped: true });
+});
+
 // Check if an upscaled version of a file exists.
 app.get("/api/upscale/result", (req, res) => {
   try {

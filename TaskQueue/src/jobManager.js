@@ -39,7 +39,9 @@ export default class JobManager {
     });
 
     child.on("close", (code) => {
-      job.status = "finished";
+      if (job.status === "running") {
+        job.status = "finished";
+      }
       this._append(job, `\n[process exited with code ${code}]`);
       this._notifyDone(job);
     });
@@ -85,5 +87,15 @@ export default class JobManager {
 
   removeDoneListener(job, listener) {
     job.doneListeners = job.doneListeners.filter((l) => l !== listener);
+  }
+
+  stopJob(id) {
+    const job = this.jobs.get(id);
+    if (!job) return false;
+    if (job.child && job.status === "running") {
+      job.status = "stopped";
+      job.child.kill();
+    }
+    return true;
   }
 }
