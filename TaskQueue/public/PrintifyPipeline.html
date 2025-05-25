@@ -80,6 +80,24 @@
       }
     }
 
+    async function checkStatus(){
+      if(!file) return;
+      try{
+        const current = await loadStatus();
+        if(statusSelect.value !== current) statusSelect.value = current;
+        if(current === 'Ebay Shipping Updated'){
+          if(stageItems[3]) stageItems[3].classList.add('completed');
+          if(stageItems[4]) stageItems[4].classList.add('current');
+        } else if(current === 'Done'){
+          if(stageItems[3]) stageItems[3].classList.add('completed');
+          if(stageItems[4]) stageItems[4].classList.add('completed');
+          if(stageItems[5]) stageItems[5].classList.add('completed');
+        }
+      }catch(e){
+        console.error('Failed to check status =>', e);
+      }
+    }
+
 
     const container = document.getElementById('fileContainer');
     const resEl = document.getElementById('resolutionDisplay');
@@ -266,6 +284,7 @@
           const jobs = await res.json();
           const filtered = jobs.filter(j => j.file === file);
           jobsListEl.innerHTML = '';
+          let anyFinished = false;
           for(const j of filtered){
             const tr = document.createElement('tr');
             tr.style.cursor = 'pointer';
@@ -277,6 +296,7 @@
             tdStatus.textContent = j.status;
             const tdPath = document.createElement('td');
             if(j.status === 'finished'){
+              anyFinished = true;
               if(j.resultPath){
                 tdPath.textContent = j.resultPath;
               } else {
@@ -297,6 +317,14 @@
             tr.appendChild(tdPath);
             jobsListEl.appendChild(tr);
           }
+
+          if(anyFinished){
+            if(stageItems[3] && !stageItems[3].classList.contains('completed')){
+              stageItems[3].classList.add('completed');
+              if(stageItems[4]) stageItems[4].classList.add('current');
+            }
+            checkStatus();
+          }
         } catch(err){
           console.error('Failed to load jobs =>', err);
         }
@@ -305,6 +333,8 @@
       setInterval(loadJobs, 5000);
       checkUpscaled();
       setInterval(checkUpscaled, 5000);
+      checkStatus();
+      setInterval(checkStatus, 5000);
     } else {
       upscaleBtn.disabled = true;
       printifyBtn.disabled = true;

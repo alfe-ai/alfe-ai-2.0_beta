@@ -1582,6 +1582,30 @@ app.post("/api/printify", async (req, res) => {
 
     const job = jobManager.createJob(scriptPath, [filePath], { cwd: scriptCwd, file });
     console.debug("[Server Debug] /api/printify => job started", job.id);
+
+    // Detect the "All steps completed" message and finish the job early.
+    const doneRegex = /All steps completed/i;
+    const logListener = (chunk) => {
+      if (doneRegex.test(chunk) && job.child) {
+        try {
+          job.child.kill();
+        } catch (e) {
+          console.error('[Server Debug] Error killing printify job =>', e);
+        }
+      }
+    };
+    jobManager.addListener(job, logListener);
+
+    jobManager.addDoneListener(job, () => {
+      jobManager.removeListener(job, logListener);
+      try {
+        const url = `/uploads/${file}`;
+        db.setImageStatus(url, 'Ebay Shipping Updated');
+      } catch (e) {
+        console.error('[Server Debug] Failed to set status after printify job =>', e);
+      }
+    });
+
     res.json({ jobId: job.id });
   } catch (err) {
     console.error("Error in /api/printify:", err);
