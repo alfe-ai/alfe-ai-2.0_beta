@@ -100,6 +100,7 @@
       document.getElementById('tabUpscaled').classList.add('active');
     }
 
+    let upscaledFile = null;
     async function checkUpscaled(){
       if(!file) return;
       try {
@@ -112,6 +113,7 @@
               resEl.textContent = `Resolution: ${upscaledImg.naturalWidth} x ${upscaledImg.naturalHeight}`;
             }, { once: true });
           }
+          upscaledFile = data.url.split(/[/\\]/).pop();
           document.getElementById('tabUpscaled').style.display = '';
           if(stageItems[2]) stageItems[2].classList.add('completed');
           showUpscaled();
@@ -156,14 +158,19 @@
         }
       });
       printifyBtn.addEventListener('click', async () => {
-        console.debug('Submit to Printify clicked with file =>', file);
+        console.debug('Submit to Printify clicked with file =>', upscaledFile);
         terminalEl.textContent = '';
+        if(!upscaledFile){
+          terminalEl.textContent = 'Upscaled 4096 image not available.';
+          console.debug('Printify aborted => upscaled image missing');
+          return;
+        }
         try {
           console.debug('Sending POST /api/printify');
           const res = await fetch('/api/printify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ file })
+            body: JSON.stringify({ file: upscaledFile })
           });
           console.debug('Received response =>', res.status);
           const data = await res.json().catch(() => ({}));
