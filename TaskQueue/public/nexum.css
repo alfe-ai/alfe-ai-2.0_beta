@@ -271,7 +271,8 @@ button:hover {
 #feedbackModal,
 #tabConfigModal,
 #newTabModal,
-#startDialog {
+#startDialog,
+#aboutOverlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -286,6 +287,14 @@ button:hover {
 #startDialog {
   background: linear-gradient(to top, #000, #333);
   overflow: hidden;
+}
+
+#aboutOverlay {
+  background: rgba(0,0,0,0.9);
+  flex-direction: column;
+  color: var(--text-color);
+  padding: 1rem;
+  overflow-y: auto;
 }
 
 #splashAnim {
