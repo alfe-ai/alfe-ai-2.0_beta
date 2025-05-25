@@ -4,6 +4,15 @@
   <meta charset="UTF-8">
   <title>Printify Pipeline Queue</title>
   <link rel="stylesheet" href="styles.css">
+  <style>
+    #imageSelect option {
+      padding-left: 48px;
+      line-height: 40px;
+      background-size: 40px 40px;
+      background-repeat: no-repeat;
+      background-position: left center;
+    }
+  </style>
 </head>
 <body style="padding:1rem;">
   <h2>Printify Pipeline Queue</h2>
@@ -15,7 +24,7 @@
       </select>
     </label>
     <label>Image:
-      <select id="imageSelect"></select>
+      <select id="imageSelect" style="min-width:200px;"></select>
     </label>
     <img id="imagePreview" style="display:none;max-height:80px;border:1px solid #444;" />
     <button id="enqueueBtn">Add to Queue</button>
@@ -67,6 +76,12 @@
           const o = document.createElement('option');
           o.value = f.name;
           o.textContent = f.name;
+          o.style.backgroundImage = `url('/uploads/${encodeURIComponent(f.name)}')`;
+          o.style.backgroundSize = '40px 40px';
+          o.style.backgroundRepeat = 'no-repeat';
+          o.style.backgroundPosition = 'left center';
+          o.style.paddingLeft = '48px';
+          o.style.lineHeight = '40px';
           select.appendChild(o);
         });
       }catch(e){
