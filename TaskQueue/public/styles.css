@@ -587,4 +587,20 @@ body {
   pointer-events: none;
 }
 
+/* Inline loading spinner used in status indicators */
+.loading-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-left: 6px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  border-right-color: transparent;
+  animation: loading-spin 0.75s linear infinite;
+}
+
+@keyframes loading-spin {
+  to { transform: rotate(360deg); }
+}
+
 
