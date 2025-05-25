@@ -35,7 +35,8 @@
   <pre id="upscaleTerminal" style="background:#000;color:#0f0;padding:0.5rem;margin-top:0.5rem;height:200px;overflow:auto;font-family:monospace;"></pre>
   <script>
     const params = new URLSearchParams(window.location.search);
-    const file = params.get('file');
+    let file = params.get('file');
+    const idParam = params.get('id');
     const stageParam = parseInt(params.get('stage'));
     const stages = [
       { name: 'Generated' },
@@ -224,8 +225,19 @@
     const printifyBtn = document.getElementById('printifyButton');
     const terminalEl = document.getElementById('upscaleTerminal');
     const jobsListEl = document.getElementById('jobsList');
-    console.debug('Loaded PrintifyPipeline for file =>', file);
-    if (file) {
+
+    async function init(){
+      if(!file && idParam){
+        try{
+          const r = await fetch(`/api/upload/byId?id=${encodeURIComponent(idParam)}`);
+          const d = await r.json();
+          if(r.ok && d.file) file = d.file;
+        }catch(e){
+          console.error('Failed to load file for id =>', e);
+        }
+      }
+      console.debug('Loaded PrintifyPipeline for file =>', file);
+      if (file) {
       upscaleBtn.addEventListener('click', async () => {
         console.debug('Submit to Upscale clicked with file =>', file);
         terminalEl.textContent = '';
@@ -342,6 +354,8 @@
       printifyBtn.disabled = true;
       console.debug('No file parameter found => Upscale disabled');
     }
+    }
+    init();
   </script>
 </body>
 </html>
