@@ -5,12 +5,45 @@
   <title>Printify Pipeline Queue</title>
   <link rel="stylesheet" href="styles.css">
   <style>
-    #imageSelect option {
-      padding-left: 48px;
-      line-height: 40px;
-      background-size: 40px 40px;
-      background-repeat: no-repeat;
-      background-position: left center;
+    .img-dropdown {
+      position: relative;
+      min-width: 200px;
+      cursor: pointer;
+    }
+    .img-dropdown .selected {
+      border: 1px solid #444;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background-color: #222;
+    }
+    .img-dropdown .selected img {
+      max-height: 40px;
+    }
+    .img-dropdown .options {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 100%;
+      background-color: #222;
+      border: 1px solid #444;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 1000;
+      display: none;
+    }
+    .img-dropdown .option {
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .img-dropdown .option img {
+      max-height: 40px;
+    }
+    .img-dropdown .option:hover {
+      background-color: #333;
     }
   </style>
 </head>
@@ -24,7 +57,10 @@
       </select>
     </label>
     <label>Image:
-      <select id="imageSelect" style="min-width:200px;"></select>
+      <div id="imageSelect" class="img-dropdown">
+        <div class="selected">-- choose --</div>
+        <div class="options"></div>
+      </div>
     </label>
     <img id="imagePreview" style="display:none;max-height:80px;border:1px solid #444;" />
     <button id="enqueueBtn">Add to Queue</button>
@@ -66,31 +102,44 @@
         console.error('Failed to load queue', e);
       }
     }
+    const dropdown = document.getElementById('imageSelect');
+    const selectedDiv = dropdown.querySelector('.selected');
+    const optionsDiv = dropdown.querySelector('.options');
+
     async function loadImages(){
       try{
         const res = await fetch('/api/upload/list');
         const files = await res.json();
-        const select = document.getElementById('imageSelect');
-        select.innerHTML = '<option value="">-- choose --</option>';
+        optionsDiv.innerHTML = '';
+        dropdown.dataset.value = '';
+        selectedDiv.textContent = '-- choose --';
         files.forEach(f => {
-          const o = document.createElement('option');
-          o.value = f.name;
-          o.textContent = f.name;
-          o.style.backgroundImage = `url('/uploads/${encodeURIComponent(f.name)}')`;
-          o.style.backgroundSize = '40px 40px';
-          o.style.backgroundRepeat = 'no-repeat';
-          o.style.backgroundPosition = 'left center';
-          o.style.paddingLeft = '48px';
-          o.style.lineHeight = '40px';
-          select.appendChild(o);
+          const item = document.createElement('div');
+          item.className = 'option';
+          item.dataset.value = f.name;
+          item.innerHTML = `<img src="/uploads/${encodeURIComponent(f.name)}" /> <span>${f.name}</span>`;
+          item.addEventListener('click', () => {
+            selectedDiv.innerHTML = `<img src="/uploads/${encodeURIComponent(f.name)}" /> <span>${f.name}</span>`;
+            dropdown.dataset.value = f.name;
+            optionsDiv.style.display = 'none';
+            updatePreview(f.name);
+          });
+          optionsDiv.appendChild(item);
         });
       }catch(e){
         console.error('Failed to load images', e);
       }
     }
 
-    document.getElementById('imageSelect').addEventListener('change', e => {
-      const val = e.target.value;
+    dropdown.addEventListener('click', () => {
+      optionsDiv.style.display = optionsDiv.style.display === 'block' ? 'none' : 'block';
+    });
+
+    document.addEventListener('click', e => {
+      if(!dropdown.contains(e.target)) optionsDiv.style.display = 'none';
+    });
+
+    function updatePreview(val){
       const img = document.getElementById('imagePreview');
       if(val){
         img.src = '/uploads/' + encodeURIComponent(val);
@@ -98,10 +147,10 @@
       }else{
         img.style.display = 'none';
       }
-    });
+    }
 
     document.getElementById('enqueueBtn').addEventListener('click', async () => {
-      const file = document.getElementById('imageSelect').value;
+      const file = document.getElementById('imageSelect').dataset.value;
       const type = document.getElementById('jobType').value;
       if(!file) return;
       try{
