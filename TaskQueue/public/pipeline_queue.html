@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Printify Pipeline Queue</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body style="padding:1rem;">
+  <h2>Printify Pipeline Queue</h2>
+  <table id="queueTable" style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>File</th>
+        <th>Type</th>
+        <th>Status</th>
+        <th>Job ID</th>
+        <th>Result Path</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <script>
+    async function loadQueue(){
+      try{
+        const res = await fetch('/api/pipelineQueue');
+        const queue = await res.json();
+        const tbody = document.querySelector('#queueTable tbody');
+        tbody.innerHTML = '';
+        queue.forEach(job => {
+          const tr = document.createElement('tr');
+          const jobLink = job.jobId ? `<a href="jobs.html?jobId=${job.jobId}" target="_blank">${job.jobId}</a>` : '';
+          tr.innerHTML = `
+            <td>${job.id}</td>
+            <td>${job.file}</td>
+            <td>${job.type}</td>
+            <td>${job.status}</td>
+            <td>${jobLink}</td>
+            <td>${job.resultPath || ''}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }catch(e){
+        console.error('Failed to load queue', e);
+      }
+    }
+    loadQueue();
+    setInterval(loadQueue, 5000);
+  </script>
+</body>
+</html>
