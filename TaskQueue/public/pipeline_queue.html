@@ -83,6 +83,7 @@
         <th>Status</th>
         <th>Job ID</th>
         <th>Result Path</th>
+        <th>Actions</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -108,8 +109,12 @@
             <td>${job.status}</td>
             <td>${jobLink}</td>
             <td>${job.resultPath || ''}</td>
+            <td><button data-id="${job.id}" class="removeBtn">Remove</button></td>
           `;
           tbody.appendChild(tr);
+          tr.querySelector('.removeBtn').addEventListener('click', async () => {
+            await removeJob(job.id);
+          });
         });
       }catch(e){
         console.error('Failed to load queue', e);
@@ -184,6 +189,15 @@
         console.error('Failed to enqueue job', e);
       }
     });
+
+    async function removeJob(id){
+      try{
+        await fetch(`/api/pipelineQueue/${id}`, { method: 'DELETE' });
+        await loadQueue();
+      }catch(e){
+        console.error('Failed to remove job', e);
+      }
+    }
 
     loadQueue();
     loadImages();

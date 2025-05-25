@@ -71,6 +71,22 @@ export default class PrintifyJobQueue {
     }));
   }
 
+  remove(id) {
+    const idx = this.jobs.findIndex(j => j.id === id);
+    if (idx === -1) return false;
+    const job = this.jobs[idx];
+    if (job.status === 'running' && job.jobId) {
+      this.jobManager.stopJob(job.jobId);
+    }
+    this.jobs.splice(idx, 1);
+    if (this.current && this.current.id === id) {
+      this.current = null;
+    }
+    this._saveJobs();
+    this._processNext();
+    return true;
+  }
+
   _processNext() {
     if (this.current) return;
     const job = this.jobs.find(j => j.status === 'queued');
