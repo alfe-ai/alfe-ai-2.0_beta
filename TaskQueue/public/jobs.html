@@ -7,6 +7,7 @@
 </head>
 <body style="padding:1rem;">
   <h2>Jobs</h2>
+<<<<<<< HEAD
   <ul id="jobList"></ul>
   <pre id="jobOutput" style="background:#000;color:#0f0;padding:0.5rem;height:200px;overflow:auto;font-family:monospace;"></pre>
 <script>
@@ -44,6 +45,47 @@ function streamJob(id){
 const params=new URLSearchParams(window.location.search);
 const jobId=params.get('id');
 loadJobs().then(()=>{ if(jobId) streamJob(jobId); });
+=======
+  <ul id="jobsList"></ul>
+  <pre id="terminal" style="background:#000;color:#0f0;padding:0.5rem;margin-top:0.5rem;height:200px;overflow:auto;font-family:monospace;"></pre>
+<script>
+async function loadJobs() {
+  const res = await fetch('/api/jobs');
+  const jobs = await res.json();
+  const ul = document.getElementById('jobsList');
+  ul.innerHTML = '';
+  jobs.forEach(j => {
+    const li = document.createElement('li');
+    li.textContent = `${j.file || j.command} - ${j.status}`;
+    li.style.cursor = 'pointer';
+    li.addEventListener('click', () => openJob(j.id));
+    ul.appendChild(li);
+  });
+}
+let evt;
+async function openJob(id) {
+  if (evt) evt.close();
+  const term = document.getElementById('terminal');
+  const logRes = await fetch(`/api/jobs/${id}/log`);
+  term.textContent = await logRes.text();
+  evt = new EventSource(`/api/jobs/${id}/stream`);
+  evt.addEventListener('log', e => {
+    term.textContent += JSON.parse(e.data);
+    term.scrollTop = term.scrollHeight;
+  });
+  evt.addEventListener('done', () => {
+    evt.close();
+  });
+}
+loadJobs();
+setInterval(loadJobs, 5000);
+
+const params = new URLSearchParams(window.location.search);
+const initialJob = params.get('jobId');
+if(initialJob){
+  openJob(initialJob);
+}
+>>>>>>> origin/codex/run-upscale-step-as-job,-add-jobs-list
 </script>
 </body>
 </html>

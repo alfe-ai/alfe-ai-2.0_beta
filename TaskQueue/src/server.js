@@ -124,6 +124,7 @@ if (!themeMode) {
 console.debug("[Server Debug] theme_color =>", themeColor, "mode =>", themeMode);
 
 const app = express();
+const jobManager = new JobManager();
 
 /**
  * Returns a configured OpenAI client, depending on "ai_service" setting.
@@ -1484,15 +1485,53 @@ app.post("/api/upscale", async (req, res) => {
       return res.status(500).json({ error: "Upscale script missing" });
     }
 
+<<<<<<< HEAD
     const job = JobManager.start(scriptPath, [filePath], { cwd: scriptCwd });
     console.debug("[Server Debug] /api/upscale => started job", job.id);
+=======
+    const job = jobManager.createJob(scriptPath, [filePath], { cwd: scriptCwd, file });
+    console.debug("[Server Debug] /api/upscale => job started", job.id);
+
+>>>>>>> origin/codex/run-upscale-step-as-job,-add-jobs-list
     res.json({ jobId: job.id });
   } catch (err) {
     console.error("Error in /api/upscale:", err);
-    if (!res.headersSent) {
-      res.status(500).json({ error: "Internal server error" });
-    }
+    res.status(500).json({ error: "Internal server error" });
   }
+});
+
+app.get("/api/jobs", (req, res) => {
+  res.json(jobManager.listJobs());
+});
+
+app.get("/api/jobs/:id/log", (req, res) => {
+  const job = jobManager.getJob(req.params.id);
+  if (!job) return res.status(404).json({ error: "Job not found" });
+  res.type("text/plain").send(job.log);
+});
+
+app.get("/api/jobs/:id/stream", (req, res) => {
+  const job = jobManager.getJob(req.params.id);
+  if (!job) return res.status(404).end();
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
+  });
+  res.flushHeaders();
+  res.write(`event: log\ndata:${JSON.stringify(job.log)}\n\n`);
+  const logListener = (chunk) => {
+    res.write(`event: log\ndata:${JSON.stringify(chunk)}\n\n`);
+  };
+  const doneListener = () => {
+    res.write(`event: done\ndata:done\n\n`);
+  };
+  jobManager.addListener(job, logListener);
+  jobManager.addDoneListener(job, doneListener);
+  req.on("close", () => {
+    jobManager.removeListener(job, logListener);
+    jobManager.removeDoneListener(job, doneListener);
+  });
 });
 
 // Generate an image using OpenAI's image API.
