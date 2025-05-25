@@ -804,10 +804,11 @@
         console.error(e);
       }
     }
-    document.getElementById('sendBtn').addEventListener('click',send);
-    document.getElementById('askBtn').addEventListener('click',send);
-    document.getElementById('codeBtn').addEventListener('click',createTask);
-    document.getElementById('renderBtn').addEventListener('click',generateImage);
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('sendBtn').addEventListener('click',send);
+      document.getElementById('askBtn').addEventListener('click',send);
+      document.getElementById('codeBtn').addEventListener('click',createTask);
+      document.getElementById('renderBtn').addEventListener('click',generateImage);
     document.getElementById('prompt').addEventListener('keydown', e => {
       if(e.key==='ArrowUp'){
         if(inputHistory.length>0){
@@ -943,33 +944,35 @@
     document.getElementById('tabConfigCancelBtn').addEventListener('click', () => {
       document.getElementById('tabConfigModal').style.display = 'none';
     });
-    document.getElementById('tabConfigModal').addEventListener('click', e => {
-      if(e.target === e.currentTarget) e.currentTarget.style.display = 'none';
-    });
+      document.getElementById('tabConfigModal').addEventListener('click', e => {
+        if(e.target === e.currentTarget) e.currentTarget.style.display = 'none';
+      });
 
-    async function init(){
-      loadModelInfo();
-      await loadTheme();
-      applyFeatureFlags();
-      await loadTabs();
-      if(tabs.length>0){
-        if(!Number.isNaN(startTab) && tabs.some(t=>t.id===startTab)){
-          currentTabId = startTab;
-        }else{
-          currentTabId = tabs[0].id;
+      async function init(){
+        loadModelInfo();
+        await loadTheme();
+        applyFeatureFlags();
+        await loadTabs();
+        if(tabs.length>0){
+          if(!Number.isNaN(startTab) && tabs.some(t=>t.id===startTab)){
+            currentTabId = startTab;
+          }else{
+            currentTabId = tabs[0].id;
+          }
         }
+        renderTabs();
+        renderSuggestions(false, 'suggestions', 'prompt'); // show/hide after history loads
+        applyTabView();
       }
-      renderTabs();
-      renderSuggestions(false, 'suggestions', 'prompt'); // show/hide after history loads
-      applyTabView();
-    }
-    init();
+      init();
 
-    document.getElementById('sidebarToggle').addEventListener('click', () => {
-      const sb = document.getElementById('sidebar');
-      if(sb.style.display === 'none') sb.style.display = '';
-      else sb.style.display = 'none';
+      document.getElementById('sidebarToggle').addEventListener('click', () => {
+        const sb = document.getElementById('sidebar');
+        if(sb.style.display === 'none') sb.style.display = '';
+        else sb.style.display = 'none';
+      });
     });
+
   </script>
 </body>
 </html>
