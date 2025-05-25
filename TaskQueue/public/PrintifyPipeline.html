@@ -8,6 +8,10 @@
 <body style="padding:1rem;">
   <h2>PrintifyPipeline</h2>
   <ul id="stageList"></ul>
+  <div id="imageTabs" style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
+    <button id="tabOriginal" class="view-tab active">Original</button>
+    <button id="tabUpscaled" class="view-tab" style="display:none;">4096x4096</button>
+  </div>
   <div id="fileContainer"></div>
   <div id="resolutionDisplay" style="margin-top:0.5rem;"></div>
   <button id="upscaleButton">Submit to Upscale</button>
@@ -29,6 +33,7 @@
     ];
 
     const stageList = document.getElementById('stageList');
+    const stageItems = [];
     const currentStage = isNaN(stageParam) ? 0 : Math.min(Math.max(stageParam, 0), stages.length - 1);
     stages.forEach((stage, idx) => {
       const li = document.createElement('li');
@@ -36,20 +41,26 @@
       if (stage.disabled) li.classList.add('disabled');
       if (idx === currentStage) li.classList.add('current');
       stageList.appendChild(li);
+      stageItems.push(li);
     });
 
     const container = document.getElementById('fileContainer');
     const resEl = document.getElementById('resolutionDisplay');
+    const origImg = document.createElement('img');
+    const upscaledImg = document.createElement('img');
+    origImg.style.maxWidth = '100%';
+    upscaledImg.style.maxWidth = '100%';
+    upscaledImg.style.display = 'none';
+    container.appendChild(origImg);
+    container.appendChild(upscaledImg);
+
     if (file) {
       const ext = file.split('.').pop().toLowerCase();
       if (["png","jpg","jpeg","gif","webp","svg"].includes(ext)) {
-        const img = document.createElement('img');
-        img.src = `/uploads/${file}`;
-        img.style.maxWidth = '100%';
-        img.addEventListener('load', () => {
-          resEl.textContent = `Resolution: ${img.naturalWidth} x ${img.naturalHeight}`;
+        origImg.src = `/uploads/${file}`;
+        origImg.addEventListener('load', () => {
+          resEl.textContent = `Resolution: ${origImg.naturalWidth} x ${origImg.naturalHeight}`;
         });
-        container.appendChild(img);
       } else {
         const link = document.createElement('a');
         link.href = `/uploads/${file}`;
@@ -60,6 +71,24 @@
     } else {
       container.textContent = 'No file specified.';
     }
+
+    function showOriginal() {
+      origImg.style.display = '';
+      upscaledImg.style.display = 'none';
+      document.getElementById('tabOriginal').classList.add('active');
+      document.getElementById('tabUpscaled').classList.remove('active');
+    }
+
+    function showUpscaled() {
+      origImg.style.display = 'none';
+      upscaledImg.style.display = '';
+      document.getElementById('tabOriginal').classList.remove('active');
+      document.getElementById('tabUpscaled').classList.add('active');
+    }
+
+    document.getElementById('tabOriginal').addEventListener('click', showOriginal);
+    document.getElementById('tabUpscaled').addEventListener('click', showUpscaled);
+    showOriginal();
 
     const upscaleBtn = document.getElementById('upscaleButton');
     const terminalEl = document.getElementById('upscaleTerminal');
@@ -84,6 +113,13 @@
               if (done) break;
               const chunk = decoder.decode(value);
               terminalEl.textContent += chunk;
+              const match = chunk.match(/Final output saved to:\s*(.*)/i);
+              if (match) {
+                const path = match[1].trim();
+                upscaledImg.src = path;
+                document.getElementById('tabUpscaled').style.display = '';
+                stageItems[1]?.classList.add('completed');
+              }
               console.debug('Received chunk =>', chunk);
               terminalEl.scrollTop = terminalEl.scrollHeight;
             }

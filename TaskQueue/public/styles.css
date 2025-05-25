@@ -577,6 +577,11 @@ body {
   color: #000;
 }
 
+#stageList li.completed {
+  background: #0a0;
+  color: #000;
+}
+
 #stageList li.disabled {
   opacity: 0.5;
   pointer-events: none;
