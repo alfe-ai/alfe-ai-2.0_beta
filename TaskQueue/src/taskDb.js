@@ -202,6 +202,13 @@ export default class TaskDB {
     }
 
     this.db.exec(`
+      CREATE TABLE IF NOT EXISTS upscaled_images (
+        original TEXT PRIMARY KEY,
+        upscaled TEXT NOT NULL
+      );
+    `);
+
+    this.db.exec(`
       CREATE TABLE IF NOT EXISTS feedback (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         message TEXT NOT NULL,
@@ -803,6 +810,22 @@ export default class TaskDB {
         .prepare("SELECT 1 FROM chat_pairs WHERE image_url=? LIMIT 1")
         .get(url);
     return !!row;
+  }
+
+  setUpscaledImage(originalUrl, upscaledPath) {
+    this.db
+        .prepare(
+            "INSERT INTO upscaled_images (original, upscaled) VALUES (?, ?) " +
+            "ON CONFLICT(original) DO UPDATE SET upscaled=excluded.upscaled"
+        )
+        .run(originalUrl, upscaledPath);
+  }
+
+  getUpscaledImage(originalUrl) {
+    const row = this.db
+        .prepare("SELECT upscaled FROM upscaled_images WHERE original=?")
+        .get(originalUrl);
+    return row ? row.upscaled : null;
   }
 }
 

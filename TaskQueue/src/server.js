@@ -1504,6 +1504,9 @@ app.post("/api/upscale", async (req, res) => {
       if (m) {
         job.resultPath = m[1].trim();
         console.debug("[Server Debug] Recorded resultPath =>", job.resultPath);
+        const originalUrl = `/uploads/${file}`;
+        db.setUpscaledImage(originalUrl, job.resultPath);
+        db.setImageStatus(originalUrl, 'Upscaled');
       }
     });
     console.debug("[Server Debug] /api/upscale => job started", job.id);
@@ -1610,6 +1613,11 @@ app.get("/api/upscale/result", (req, res) => {
       if (fs.existsSync(p)) {
         return res.json({ url: p });
       }
+    }
+
+    const fromDb = db.getUpscaledImage(`/uploads/${file}`);
+    if (fromDb && fs.existsSync(fromDb)) {
+      return res.json({ url: fromDb });
     }
 
     const jobs = jobManager.listJobs();
