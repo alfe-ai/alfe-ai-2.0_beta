@@ -104,26 +104,10 @@
             body: JSON.stringify({ file })
           });
           console.debug('Received response =>', res.status);
-          if (res.ok && res.body) {
-            const reader = res.body.getReader();
-            const decoder = new TextDecoder();
-            while (true) {
-              const { value, done } = await reader.read();
-              if (done) break;
-              const chunk = decoder.decode(value);
-              terminalEl.textContent += chunk;
-              const match = chunk.match(/Final output saved to:\s*(.*)/i);
-              if (match) {
-                const path = match[1].trim();
-                upscaledImg.src = path;
-                document.getElementById('tabUpscaled').style.display = '';
-                stageItems[1]?.classList.add('completed');
-              }
-              console.debug('Received chunk =>', chunk);
-              terminalEl.scrollTop = terminalEl.scrollHeight;
-            }
+          const data = await res.json().catch(() => ({}));
+          if (res.ok && data.jobId) {
+            window.open(`/jobs.html?id=${encodeURIComponent(data.jobId)}`, '_blank');
           } else {
-            const data = await res.json().catch(() => ({}));
             terminalEl.textContent = data.error || 'Upscale request failed.';
             console.debug('Upscale failed =>', terminalEl.textContent);
           }
