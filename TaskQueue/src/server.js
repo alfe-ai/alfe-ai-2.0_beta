@@ -1461,6 +1461,12 @@ app.post("/api/upscale", async (req, res) => {
     // Stream the script output so the frontend can display a live terminal.
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.setHeader("Transfer-Encoding", "chunked");
+    // Keep the connection alive and disable proxy buffering. This helps
+    // prevent premature termination when the script takes a long time and
+    // allows the frontend terminal to display output continuously.
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
+    res.flushHeaders();
 
     console.debug(
       "[Server Debug] /api/upscale => spawning child process",
@@ -1489,9 +1495,10 @@ app.post("/api/upscale", async (req, res) => {
       res.end();
     });
 
+    // If the client disconnects, allow the upscale process to continue running.
+    // Simply log the event instead of forcefully terminating the child.
     req.on("close", () => {
-      console.debug("[Server Debug] /api/upscale request closed, killing child");
-      child.kill();
+      console.debug("[Server Debug] /api/upscale request closed before process completion");
     });
   } catch (err) {
     console.error("Error in /api/upscale:", err);
