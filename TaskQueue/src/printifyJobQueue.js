@@ -11,7 +11,7 @@ export default class PrintifyJobQueue {
     this.printifyScript = options.printifyScript || '';
   }
 
-  enqueue(file, type) {
+  enqueue(file, type, dbId = null) {
     const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
     const job = {
       id,
@@ -19,7 +19,8 @@ export default class PrintifyJobQueue {
       type,
       status: 'queued',
       jobId: null,
-      resultPath: null
+      resultPath: null,
+      dbId
     };
     this.jobs.push(job);
     this._processNext();
@@ -33,7 +34,8 @@ export default class PrintifyJobQueue {
       type: j.type,
       status: j.status,
       jobId: j.jobId,
-      resultPath: j.resultPath || null
+      resultPath: j.resultPath || null,
+      dbId: j.dbId || null
     }));
   }
 

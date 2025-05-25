@@ -76,6 +76,7 @@
       <tr>
         <th>ID</th>
         <th>File</th>
+        <th>DB ID</th>
         <th>Type</th>
         <th>Status</th>
         <th>Job ID</th>
@@ -97,6 +98,7 @@
           tr.innerHTML = `
             <td>${job.id}</td>
             <td>${job.file}</td>
+            <td>${job.dbId ?? ''}</td>
             <td>${job.type}</td>
             <td>${job.status}</td>
             <td>${jobLink}</td>
@@ -118,11 +120,13 @@
         const files = await res.json();
         optionsDiv.innerHTML = '';
         dropdown.dataset.value = '';
+        dropdown.dataset.id = '';
         selectedDiv.textContent = '-- choose --';
         files.forEach(f => {
           const item = document.createElement('div');
           item.className = 'option';
           item.dataset.value = f.name;
+          item.dataset.id = f.id ?? '';
           const idx = (f.id !== null && f.id !== undefined) ? f.id : '';
           const upscaled = f.status && /upscaled/i.test(f.status);
           const label = upscaled ? '<span class="upscaled-label">[upscaled]</span>' : '';
@@ -130,6 +134,7 @@
           item.addEventListener('click', () => {
             selectedDiv.innerHTML = `<img src="/uploads/${encodeURIComponent(f.name)}" /> <span>${idx}: ${f.name}${label}</span>`;
             dropdown.dataset.value = f.name;
+            dropdown.dataset.id = f.id ?? '';
             optionsDiv.style.display = 'none';
             updatePreview(f.name);
           });
@@ -160,13 +165,14 @@
 
     document.getElementById('enqueueBtn').addEventListener('click', async () => {
       const file = document.getElementById('imageSelect').dataset.value;
+      const dbId = document.getElementById('imageSelect').dataset.id;
       const type = document.getElementById('jobType').value;
       if(!file) return;
       try{
         await fetch('/api/pipelineQueue', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ file, type })
+          body: JSON.stringify({ file, type, dbId })
         });
         await loadQueue();
       }catch(e){
