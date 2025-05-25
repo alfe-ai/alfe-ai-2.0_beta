@@ -9,6 +9,7 @@ export default class PrintifyJobQueue {
     this.uploadsDir = options.uploadsDir || '';
     this.upscaleScript = options.upscaleScript || '';
     this.printifyScript = options.printifyScript || '';
+    this.db = options.db || null;
     this.persistencePath = options.persistencePath || null;
 
     this._loadJobs();
@@ -107,6 +108,17 @@ export default class PrintifyJobQueue {
     this.jobManager.addDoneListener(jmJob, () => {
       job.status = jmJob.status;
       job.resultPath = jmJob.resultPath;
+      if (job.type === 'upscale') {
+        const m = jmJob.log.match(/Final output saved to:\s*(.+)/i);
+        if (m) {
+          job.resultPath = m[1].trim();
+          if (this.db) {
+            const originalUrl = `/uploads/${job.file}`;
+            this.db.setUpscaledImage(originalUrl, job.resultPath);
+            this.db.setImageStatus(originalUrl, 'Upscaled');
+          }
+        }
+      }
       this.current = null;
       this._saveJobs();
       this._processNext();

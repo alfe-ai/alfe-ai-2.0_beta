@@ -275,6 +275,7 @@ const printifyQueue = new PrintifyJobQueue(jobManager, {
   printifyScript:
     process.env.PRINTIFY_SCRIPT_PATH ||
     "/mnt/part5/dot_fayra/Whimsical/git/PrintifyPuppet-PuppetCore-Sterling/PrintifyPuppet/run.sh",
+  db,
 });
 
 // Serve static files
