@@ -264,8 +264,11 @@ try {
   console.error("[Server Debug] Error creating uploads folder:", err);
 }
 
+const queueDataPath = path.join(__dirname, "../printifyQueue.json");
+
 const printifyQueue = new PrintifyJobQueue(jobManager, {
   uploadsDir,
+  persistencePath: queueDataPath,
   upscaleScript:
     process.env.UPSCALE_SCRIPT_PATH ||
     "/mnt/part5/dot_fayra/Whimsical/git/PrintifyPuppet-PuppetCore-Sterling/LeonardoUpscalePuppet/loop.sh",
