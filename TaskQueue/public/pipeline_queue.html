@@ -119,9 +119,10 @@
           const item = document.createElement('div');
           item.className = 'option';
           item.dataset.value = f.name;
-          item.innerHTML = `<img src="/uploads/${encodeURIComponent(f.name)}" /> <span>${f.index}: ${f.name}</span>`;
+          const idx = (f.id !== null && f.id !== undefined) ? f.id : '';
+          item.innerHTML = `<img src="/uploads/${encodeURIComponent(f.name)}" /> <span>${idx}: ${f.name}</span>`;
           item.addEventListener('click', () => {
-            selectedDiv.innerHTML = `<img src="/uploads/${encodeURIComponent(f.name)}" /> <span>${f.index}: ${f.name}</span>`;
+            selectedDiv.innerHTML = `<img src="/uploads/${encodeURIComponent(f.name)}" /> <span>${idx}: ${f.name}</span>`;
             dropdown.dataset.value = f.name;
             optionsDiv.style.display = 'none';
             updatePreview(f.name);
