@@ -47,6 +47,10 @@
     .img-dropdown .option:hover {
       background-color: #333;
     }
+    .upscaled-label {
+      color: cyan;
+      margin-left: 0.25rem;
+    }
   </style>
 </head>
 <body style="padding:1rem;">
@@ -120,9 +124,11 @@
           item.className = 'option';
           item.dataset.value = f.name;
           const idx = (f.id !== null && f.id !== undefined) ? f.id : '';
-          item.innerHTML = `<img src="/uploads/${encodeURIComponent(f.name)}" /> <span>${idx}: ${f.name}</span>`;
+          const upscaled = f.status && /upscaled/i.test(f.status);
+          const label = upscaled ? '<span class="upscaled-label">[upscaled]</span>' : '';
+          item.innerHTML = `<img src="/uploads/${encodeURIComponent(f.name)}" /> <span>${idx}: ${f.name}${label}</span>`;
           item.addEventListener('click', () => {
-            selectedDiv.innerHTML = `<img src="/uploads/${encodeURIComponent(f.name)}" /> <span>${idx}: ${f.name}</span>`;
+            selectedDiv.innerHTML = `<img src="/uploads/${encodeURIComponent(f.name)}" /> <span>${idx}: ${f.name}${label}</span>`;
             dropdown.dataset.value = f.name;
             optionsDiv.style.display = 'none';
             updatePreview(f.name);
