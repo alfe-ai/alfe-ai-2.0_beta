@@ -94,6 +94,7 @@ import { encoding_for_model } from "tiktoken";
 import axios from "axios";
 import os from "os";
 import child_process from "child_process";
+import JobManager from "./jobManager.js";
 
 const db = new TaskDB();
 console.debug("[Server Debug] Checking or setting default 'ai_model' in DB...");
@@ -1483,50 +1484,9 @@ app.post("/api/upscale", async (req, res) => {
       return res.status(500).json({ error: "Upscale script missing" });
     }
 
-    // Stream the script output so the frontend can display a live terminal.
-    res.setHeader("Content-Type", "text/plain; charset=utf-8");
-    res.setHeader("Transfer-Encoding", "chunked");
-    // Keep the connection alive and disable proxy buffering. This helps
-    // prevent premature termination when the script takes a long time and
-    // allows the frontend terminal to display output continuously.
-    res.setHeader("Connection", "keep-alive");
-    res.setHeader("X-Accel-Buffering", "no");
-    res.flushHeaders();
-
-    console.debug(
-      "[Server Debug] /api/upscale => spawning child process",
-      scriptPath,
-      filePath
-    );
-    const child = child_process.spawn(scriptPath, [filePath], {
-      cwd: scriptCwd,
-    });
-
-    child.stdout.on("data", chunk => {
-      res.write(chunk.toString());
-    });
-
-    child.stderr.on("data", chunk => {
-      res.write(chunk.toString());
-    });
-
-    child.on("error", err => {
-      console.error("[Server Debug] /api/upscale child process error =>", err);
-      if (!res.headersSent) {
-        res.write(`[error] ${err.toString()}`);
-      }
-    });
-
-    child.on("close", code => {
-      console.debug("[Server Debug] /api/upscale child process closed with code", code);
-      res.end();
-    });
-
-    // If the client disconnects, allow the upscale process to continue running.
-    // Simply log the event instead of forcefully terminating the child.
-    req.on("close", () => {
-      console.debug("[Server Debug] /api/upscale request closed before process completion");
-    });
+    const job = JobManager.start(scriptPath, [filePath], { cwd: scriptCwd });
+    console.debug("[Server Debug] /api/upscale => started job", job.id);
+    res.json({ jobId: job.id });
   } catch (err) {
     console.error("Error in /api/upscale:", err);
     if (!res.headersSent) {
@@ -1921,6 +1881,24 @@ app.post("/api/markdown", (req, res) => {
   } catch (err) {
     console.error("Error writing markdown_global.txt:", err);
     res.status(500).json({ error: "Unable to write markdown file." });
+  }
+});
+
+// ---- Job management endpoints ----
+app.get("/api/jobs", (req, res) => {
+  try {
+    res.json({ jobs: JobManager.list() });
+  } catch (err) {
+    console.error("Error in /api/jobs:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.get("/api/jobs/:id/stream", (req, res) => {
+  const { id } = req.params;
+  const ok = JobManager.stream(id, res);
+  if (!ok) {
+    res.status(404).end("Job not found");
   }
 });
 
