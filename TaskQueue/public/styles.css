@@ -316,6 +316,13 @@ body {
   border: 1px solid #555;
 }
 
+/* Thumbnail images in the secure uploader table */
+.table-thumb {
+  max-width: 40px;
+  max-height: 40px;
+  border: 1px solid #555;
+}
+
 /* Additional details styling */
 .chat-system,
 .chat-instructions {

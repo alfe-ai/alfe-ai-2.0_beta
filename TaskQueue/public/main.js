@@ -1748,6 +1748,12 @@ function renderFileList(){
     tr.dataset.fileName = f.name;
     const tdIndex = document.createElement("td");
     tdIndex.textContent = idx + 1;
+    const tdThumb = document.createElement("td");
+    const thumbImg = document.createElement("img");
+    thumbImg.src = `/uploads/${encodeURIComponent(f.name)}`;
+    thumbImg.alt = f.title || f.name;
+    thumbImg.className = "table-thumb";
+    tdThumb.appendChild(thumbImg);
     const tdName = document.createElement("td");
     const link = document.createElement("a");
     link.href = `/uploads/${f.name}`;
@@ -1774,6 +1780,7 @@ function renderFileList(){
     });
     tdAction.appendChild(openBtn);
     tr.appendChild(tdIndex);
+    tr.appendChild(tdThumb);
     tr.appendChild(tdName);
     tr.appendChild(tdTitle);
     tr.appendChild(tdSource);
