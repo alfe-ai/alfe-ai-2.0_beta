@@ -15,7 +15,16 @@
   <div id="fileContainer"></div>
   <div id="resolutionDisplay" style="margin-top:0.5rem;"></div>
   <h3>Jobs for this Image</h3>
-  <ul id="jobsList"></ul>
+  <table id="jobsTable" style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr>
+        <th>Job ID</th>
+        <th>Status</th>
+        <th>4096 Path</th>
+      </tr>
+    </thead>
+    <tbody id="jobsList"></tbody>
+  </table>
   <button id="upscaleButton">Submit to Upscale</button>
   <pre id="upscaleTerminal" style="background:#000;color:#0f0;padding:0.5rem;margin-top:0.5rem;height:200px;overflow:auto;font-family:monospace;"></pre>
   <script>
@@ -148,13 +157,33 @@
           const jobs = await res.json();
           const filtered = jobs.filter(j => j.file === file);
           jobsListEl.innerHTML = '';
-          filtered.forEach(j => {
-            const li = document.createElement('li');
-            li.textContent = `Job ${j.id} - ${j.status}`;
-            li.style.cursor = 'pointer';
-            li.addEventListener('click', () => window.open(`jobs.html?jobId=${j.id}`, '_blank'));
-            jobsListEl.appendChild(li);
-          });
+          for(const j of filtered){
+            const tr = document.createElement('tr');
+            tr.style.cursor = 'pointer';
+            tr.addEventListener('click', () => window.open(`jobs.html?jobId=${j.id}`, '_blank'));
+
+            const tdId = document.createElement('td');
+            tdId.textContent = j.id;
+            const tdStatus = document.createElement('td');
+            tdStatus.textContent = j.status;
+            const tdPath = document.createElement('td');
+            if(j.status === 'finished'){
+              try{
+                const r = await fetch(`/api/upscale/result?file=${encodeURIComponent(j.file)}`);
+                const d = await r.json();
+                tdPath.textContent = d.url || '';
+              }catch(e){
+                tdPath.textContent = '';
+              }
+            } else {
+              tdPath.textContent = '';
+            }
+
+            tr.appendChild(tdId);
+            tr.appendChild(tdStatus);
+            tr.appendChild(tdPath);
+            jobsListEl.appendChild(tr);
+          }
         } catch(err){
           console.error('Failed to load jobs =>', err);
         }
