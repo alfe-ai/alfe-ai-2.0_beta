@@ -516,6 +516,14 @@ body {
   text-align: left;
 }
 
+/* Links in the secure uploader table */
+#secureFilesList a {
+  color: cyan;
+}
+#secureFilesList a:visited {
+  color: cyan;
+}
+
 /* New gear icon for the Markdown area */
 #markdownGearIcon {
   position: relative;
