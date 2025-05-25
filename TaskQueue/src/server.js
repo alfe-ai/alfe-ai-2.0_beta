@@ -1592,7 +1592,23 @@ app.post("/api/printify", async (req, res) => {
         killTimer = setTimeout(() => {
           if (job.child) {
             try {
-              job.child.kill();
+              job.child.kill(); // send SIGTERM first
+              // Force kill after 5s if the process doesn't exit
+              setTimeout(() => {
+                if (job.child && !job.child.killed) {
+                  try {
+                    job.child.kill('SIGKILL');
+                  } catch (err) {
+                    console.error('[Server Debug] SIGKILL failed =>', err);
+                  }
+                }
+                // Fallback: mark job finished if still running
+                setTimeout(() => {
+                  if (job.status === 'running') {
+                    jobManager.forceFinishJob(job.id);
+                  }
+                }, 2000);
+              }, 5000);
             } catch (e) {
               console.error('[Server Debug] Error killing printify job =>', e);
             }
