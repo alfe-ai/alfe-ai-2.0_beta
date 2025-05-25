@@ -87,6 +87,20 @@
       document.getElementById('tabUpscaled').classList.add('active');
     }
 
+    async function checkUpscaled(){
+      if(!file) return;
+      try {
+        const res = await fetch(`/api/upscale/result?file=${encodeURIComponent(file)}`);
+        const data = await res.json();
+        if(data.url){
+          upscaledImg.src = data.url;
+          document.getElementById('tabUpscaled').style.display = '';
+        }
+      } catch(err){
+        console.error('Failed to check upscaled image =>', err);
+      }
+    }
+
     document.getElementById('tabOriginal').addEventListener('click', showOriginal);
     document.getElementById('tabUpscaled').addEventListener('click', showUpscaled);
     showOriginal();
@@ -139,6 +153,8 @@
       }
       loadJobs();
       setInterval(loadJobs, 5000);
+      checkUpscaled();
+      setInterval(checkUpscaled, 5000);
     } else {
       upscaleBtn.disabled = true;
       console.debug('No file parameter found => Upscale disabled');
