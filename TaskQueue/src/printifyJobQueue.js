@@ -9,6 +9,37 @@ export default class PrintifyJobQueue {
     this.uploadsDir = options.uploadsDir || '';
     this.upscaleScript = options.upscaleScript || '';
     this.printifyScript = options.printifyScript || '';
+    this.persistencePath = options.persistencePath || null;
+
+    this._loadJobs();
+    this._processNext();
+  }
+
+  _loadJobs() {
+    if (!this.persistencePath) return;
+    try {
+      const data = JSON.parse(fs.readFileSync(this.persistencePath, 'utf8'));
+      if (Array.isArray(data.jobs)) {
+        this.jobs = data.jobs.map(j => {
+          if (j.status === 'running') j.status = 'queued';
+          return j;
+        });
+      }
+    } catch (err) {
+      // ignore if file doesn't exist or can't be read
+    }
+  }
+
+  _saveJobs() {
+    if (!this.persistencePath) return;
+    try {
+      fs.writeFileSync(
+        this.persistencePath,
+        JSON.stringify({ jobs: this.jobs }, null, 2)
+      );
+    } catch (err) {
+      // ignore write errors
+    }
   }
 
   enqueue(file, type, dbId = null) {
@@ -23,6 +54,7 @@ export default class PrintifyJobQueue {
       dbId
     };
     this.jobs.push(job);
+    this._saveJobs();
     this._processNext();
     return job;
   }
@@ -45,6 +77,7 @@ export default class PrintifyJobQueue {
     if (!job) return;
     this.current = job;
     job.status = 'running';
+    this._saveJobs();
 
     const filePath = path.join(this.uploadsDir, job.file);
     let script = '';
@@ -55,6 +88,7 @@ export default class PrintifyJobQueue {
     } else {
       job.status = 'error';
       this.current = null;
+      this._saveJobs();
       this._processNext();
       return;
     }
@@ -62,6 +96,7 @@ export default class PrintifyJobQueue {
     if (!fs.existsSync(filePath) || !fs.existsSync(script)) {
       job.status = 'error';
       this.current = null;
+      this._saveJobs();
       this._processNext();
       return;
     }
@@ -73,6 +108,7 @@ export default class PrintifyJobQueue {
       job.status = jmJob.status;
       job.resultPath = jmJob.resultPath;
       this.current = null;
+      this._saveJobs();
       this._processNext();
     });
   }
