@@ -1567,6 +1567,14 @@ app.get("/api/upscale/result", (req, res) => {
         return res.json({ url: p });
       }
     }
+
+    const jobs = jobManager.listJobs();
+    for (const j of jobs) {
+      if (j.file === file && j.resultPath && fs.existsSync(j.resultPath)) {
+        return res.json({ url: j.resultPath });
+      }
+    }
+
     res.json({ url: null });
   } catch (err) {
     console.error("/api/upscale/result error:", err);
