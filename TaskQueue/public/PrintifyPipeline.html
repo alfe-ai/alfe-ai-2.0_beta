@@ -123,6 +123,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: file, status: statusSelect.value })
       });
+      await checkStatus();
     });
     const origImg = document.createElement('img');
     const upscaledImg = document.createElement('img');
