@@ -1507,6 +1507,34 @@ app.post("/api/upscale", async (req, res) => {
         const originalUrl = `/uploads/${file}`;
         db.setUpscaledImage(originalUrl, job.resultPath);
         db.setImageStatus(originalUrl, 'Upscaled');
+
+        // ----- Run RIBT background removal on the upscaled result -----
+        const ribtScript =
+          process.env.RIBT_SCRIPT_PATH ||
+          '/mnt/part5/dot_fayra/Whimsical/git/LogisticaRIBT/run.sh';
+        const ribtCwd = path.dirname(ribtScript);
+        const ribtOutput = path.join(ribtCwd, 'output.png');
+        try {
+          console.debug(
+            '[Server Debug] Running RIBT script =>',
+            ribtScript,
+            job.resultPath
+          );
+          child_process.execFileSync(ribtScript, [job.resultPath], { cwd: ribtCwd });
+          if (fs.existsSync(ribtOutput)) {
+            const ext = path.extname(job.resultPath);
+            const base = path.basename(job.resultPath, ext);
+            const dest = path.join(uploadsDir, `${base}_nobg${ext}`);
+            fs.copyFileSync(ribtOutput, dest);
+            job.nobgPath = dest;
+            console.debug('[Server Debug] Copied RIBT output to =>', dest);
+            db.setUpscaledImage(`${originalUrl}-nobg`, dest);
+          } else {
+            console.debug('[Server Debug] RIBT output not found at', ribtOutput);
+          }
+        } catch (err) {
+          console.error('[Server Debug] RIBT step failed =>', err);
+        }
       }
     });
     console.debug("[Server Debug] /api/upscale => job started", job.id);
@@ -1615,25 +1643,44 @@ app.get("/api/upscale/result", (req, res) => {
       path.join(uploadsDir, `${base}_upscaled${ext}`),
       path.join(uploadsDir, `${base}-upscaled${ext}`),
     ];
+    const nobgCandidates = [
+      path.join(uploadsDir, `${base}_4096_nobg${ext}`),
+      path.join(uploadsDir, `${base}-4096-nobg${ext}`),
+      path.join(uploadsDir, `${base}_upscaled_nobg${ext}`),
+      path.join(uploadsDir, `${base}-upscaled-nobg${ext}`),
+    ];
+    let found = null;
     for (const p of candidates) {
       if (fs.existsSync(p)) {
-        return res.json({ url: p });
+        found = p;
+        break;
       }
+    }
+    let nobgFound = null;
+    for (const p of nobgCandidates) {
+      if (fs.existsSync(p)) {
+        nobgFound = p;
+        break;
+      }
+    }
+    if (found || nobgFound) {
+      return res.json({ url: found, nobgUrl: nobgFound });
     }
 
     const fromDb = db.getUpscaledImage(`/uploads/${file}`);
-    if (fromDb && fs.existsSync(fromDb)) {
-      return res.json({ url: fromDb });
+    const fromDbNoBg = db.getUpscaledImage(`/uploads/${file}-nobg`);
+    if ((fromDb && fs.existsSync(fromDb)) || (fromDbNoBg && fs.existsSync(fromDbNoBg))) {
+      return res.json({ url: fromDb || null, nobgUrl: fromDbNoBg || null });
     }
 
     const jobs = jobManager.listJobs();
     for (const j of jobs) {
       if (j.file === file && j.resultPath && fs.existsSync(j.resultPath)) {
-        return res.json({ url: j.resultPath });
+        return res.json({ url: j.resultPath, nobgUrl: j.nobgPath || null });
       }
     }
 
-    res.json({ url: null });
+    res.json({ url: null, nobgUrl: null });
   } catch (err) {
     console.error("/api/upscale/result error:", err);
     res.status(500).json({ error: "Internal server error" });

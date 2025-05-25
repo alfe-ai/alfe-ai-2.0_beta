@@ -11,6 +11,7 @@
   <div id="imageTabs" style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
     <button id="tabOriginal" class="view-tab active">Original</button>
     <button id="tabUpscaled" class="view-tab" style="display:none;">4096x4096</button>
+    <button id="tabNoBg" class="view-tab" style="display:none;">4096 (no background)</button>
   </div>
   <div id="fileContainer"></div>
   <div id="resolutionDisplay" style="margin-top:0.5rem;"></div>
@@ -62,11 +63,15 @@
     const resEl = document.getElementById('resolutionDisplay');
     const origImg = document.createElement('img');
     const upscaledImg = document.createElement('img');
+    const nobgImg = document.createElement('img');
     origImg.style.maxWidth = '100%';
     upscaledImg.style.maxWidth = '100%';
+    nobgImg.style.maxWidth = '100%';
     upscaledImg.style.display = 'none';
+    nobgImg.style.display = 'none';
     container.appendChild(origImg);
     container.appendChild(upscaledImg);
+    container.appendChild(nobgImg);
 
     if (file) {
       const ext = file.split('.').pop().toLowerCase();
@@ -89,18 +94,32 @@
     function showOriginal() {
       origImg.style.display = '';
       upscaledImg.style.display = 'none';
+      nobgImg.style.display = 'none';
       document.getElementById('tabOriginal').classList.add('active');
       document.getElementById('tabUpscaled').classList.remove('active');
+      document.getElementById('tabNoBg').classList.remove('active');
     }
 
     function showUpscaled() {
       origImg.style.display = 'none';
       upscaledImg.style.display = '';
+      nobgImg.style.display = 'none';
       document.getElementById('tabOriginal').classList.remove('active');
       document.getElementById('tabUpscaled').classList.add('active');
+      document.getElementById('tabNoBg').classList.remove('active');
+    }
+
+    function showNoBg() {
+      origImg.style.display = 'none';
+      upscaledImg.style.display = 'none';
+      nobgImg.style.display = '';
+      document.getElementById('tabOriginal').classList.remove('active');
+      document.getElementById('tabUpscaled').classList.remove('active');
+      document.getElementById('tabNoBg').classList.add('active');
     }
 
     let upscaledFile = null;
+    let nobgFile = null;
     async function checkUpscaled(){
       if(!file) return;
       try {
@@ -118,6 +137,14 @@
           if(stageItems[2]) stageItems[2].classList.add('completed');
           showUpscaled();
         }
+        if(data.nobgUrl){
+          if(nobgImg.src !== data.nobgUrl){
+            nobgImg.src = `${data.nobgUrl}?t=${Date.now()}`;
+          }
+          nobgFile = data.nobgUrl.split(/[/\\]/).pop();
+          document.getElementById('tabNoBg').style.display = '';
+          showNoBg();
+        }
       } catch(err){
         console.error('Failed to check upscaled image =>', err);
       }
@@ -125,6 +152,7 @@
 
     document.getElementById('tabOriginal').addEventListener('click', showOriginal);
     document.getElementById('tabUpscaled').addEventListener('click', showUpscaled);
+    document.getElementById('tabNoBg').addEventListener('click', showNoBg);
     showOriginal();
 
     const upscaleBtn = document.getElementById('upscaleButton');
@@ -158,9 +186,10 @@
         }
       });
       printifyBtn.addEventListener('click', async () => {
-        console.debug('Submit to Printify clicked with file =>', upscaledFile);
+        const targetFile = nobgFile || upscaledFile;
+        console.debug('Submit to Printify clicked with file =>', targetFile);
         terminalEl.textContent = '';
-        if(!upscaledFile){
+        if(!targetFile){
           terminalEl.textContent = 'Upscaled 4096 image not available.';
           console.debug('Printify aborted => upscaled image missing');
           return;
@@ -170,7 +199,7 @@
           const res = await fetch('/api/printify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ file: upscaledFile })
+            body: JSON.stringify({ file: targetFile })
           });
           console.debug('Received response =>', res.status);
           const data = await res.json().catch(() => ({}));
@@ -209,7 +238,7 @@
                 try{
                   const r = await fetch(`/api/upscale/result?file=${encodeURIComponent(j.file)}`);
                   const d = await r.json();
-                  tdPath.textContent = d.url || '';
+                  tdPath.textContent = d.nobgUrl || d.url || '';
                 }catch(e){
                   tdPath.textContent = '';
                 }
