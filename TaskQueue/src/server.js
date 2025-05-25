@@ -1514,6 +1514,50 @@ app.post("/api/upscale", async (req, res) => {
   }
 });
 
+// Trigger the Printify submission script for a given file.
+app.post("/api/printify", async (req, res) => {
+  try {
+    const { file } = req.body || {};
+    console.debug("[Server Debug] /api/printify called with file =>", file);
+    if (!file) {
+      console.debug("[Server Debug] /api/printify => missing 'file' in request body");
+      return res.status(400).json({ error: "Missing file" });
+    }
+
+    const scriptPath =
+      process.env.PRINTIFY_SCRIPT_PATH ||
+      "/mnt/part5/dot_fayra/Whimsical/git/PrintifyPuppet-PuppetCore-Sterling/PrintifyPuppet/run.sh";
+    console.debug(
+      "[Server Debug] /api/printify => using scriptPath =>",
+      scriptPath
+    );
+    const scriptCwd = path.dirname(scriptPath);
+    console.debug(
+      "[Server Debug] /api/printify => using scriptCwd =>",
+      scriptCwd
+    );
+    const filePath = path.join(uploadsDir, file);
+    console.debug("[Server Debug] /api/printify => resolved filePath =>", filePath);
+
+    if (!fs.existsSync(filePath)) {
+      console.debug("[Server Debug] /api/printify => file does not exist:", filePath);
+      return res.status(400).json({ error: "File not found" });
+    }
+
+    if (!fs.existsSync(scriptPath)) {
+      console.debug("[Server Debug] /api/printify => script not found:", scriptPath);
+      return res.status(500).json({ error: "Printify script missing" });
+    }
+
+    const job = jobManager.createJob(scriptPath, [filePath], { cwd: scriptCwd, file });
+    console.debug("[Server Debug] /api/printify => job started", job.id);
+    res.json({ jobId: job.id });
+  } catch (err) {
+    console.error("Error in /api/printify:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.get("/api/jobs", (req, res) => {
   res.json(jobManager.listJobs());
 });

@@ -21,6 +21,7 @@ npm start
 | `OPENAI_API_KEY` | OpenAI API key for AI features ([get here](https://platform.openai.com/api-keys)) |
 | `OPENAI_MODEL`   | (Optional) Model ID for completions (default: gpt-4)  |
 | `UPSCALE_SCRIPT_PATH` | (Optional) Path to the image upscale script. Defaults to the included loop.sh |
+| `PRINTIFY_SCRIPT_PATH` | (Optional) Path to the Printify submission script. Defaults to the included run.sh |
 
 ### Obtaining API Keys
 1. **GitHub Token**:  
