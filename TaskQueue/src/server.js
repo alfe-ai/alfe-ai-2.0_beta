@@ -1485,14 +1485,8 @@ app.post("/api/upscale", async (req, res) => {
       return res.status(500).json({ error: "Upscale script missing" });
     }
 
-<<<<<<< HEAD
-    const job = JobManager.start(scriptPath, [filePath], { cwd: scriptCwd });
-    console.debug("[Server Debug] /api/upscale => started job", job.id);
-=======
     const job = jobManager.createJob(scriptPath, [filePath], { cwd: scriptCwd, file });
     console.debug("[Server Debug] /api/upscale => job started", job.id);
-
->>>>>>> origin/codex/run-upscale-step-as-job,-add-jobs-list
     res.json({ jobId: job.id });
   } catch (err) {
     console.error("Error in /api/upscale:", err);
@@ -1923,23 +1917,6 @@ app.post("/api/markdown", (req, res) => {
   }
 });
 
-// ---- Job management endpoints ----
-app.get("/api/jobs", (req, res) => {
-  try {
-    res.json({ jobs: JobManager.list() });
-  } catch (err) {
-    console.error("Error in /api/jobs:", err);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-app.get("/api/jobs/:id/stream", (req, res) => {
-  const { id } = req.params;
-  const ok = JobManager.stream(id, res);
-  if (!ok) {
-    res.status(404).end("Job not found");
-  }
-});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

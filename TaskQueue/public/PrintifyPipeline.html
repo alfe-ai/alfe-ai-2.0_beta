@@ -106,12 +106,8 @@
           console.debug('Received response =>', res.status);
           const data = await res.json().catch(() => ({}));
           if (res.ok && data.jobId) {
-<<<<<<< HEAD
-            window.open(`/jobs.html?id=${encodeURIComponent(data.jobId)}`, '_blank');
-=======
             window.open(`jobs.html?jobId=${data.jobId}`, '_blank');
             terminalEl.textContent = `Job started with ID ${data.jobId}. Open the Jobs List to view progress.`;
->>>>>>> origin/codex/run-upscale-step-as-job,-add-jobs-list
           } else {
             terminalEl.textContent = data.error || 'Upscale request failed.';
             console.debug('Upscale failed =>', terminalEl.textContent);
