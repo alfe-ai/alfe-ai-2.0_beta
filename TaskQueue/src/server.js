@@ -1698,11 +1698,11 @@ app.get("/api/pipelineQueue", (req, res) => {
 });
 
 app.post("/api/pipelineQueue", (req, res) => {
-  const { file, type } = req.body || {};
+  const { file, type, dbId } = req.body || {};
   if (!file || !type) {
     return res.status(400).json({ error: "Missing file or type" });
   }
-  const job = printifyQueue.enqueue(file, type);
+  const job = printifyQueue.enqueue(file, type, dbId || null);
   res.json({ jobId: job.id });
 });
 
