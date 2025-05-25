@@ -96,10 +96,13 @@
         queue.forEach(job => {
           const tr = document.createElement('tr');
           const jobLink = job.jobId ? `<a href="jobs.html?jobId=${job.jobId}" target="_blank">${job.jobId}</a>` : '';
+          const dbLink = job.dbId
+            ? `<a href="PrintifyPipeline.html?id=${job.dbId}" target="_blank">${job.dbId}</a>`
+            : '';
           tr.innerHTML = `
             <td>${job.id}</td>
             <td>${job.file}</td>
-            <td>${job.dbId ?? ''}</td>
+            <td>${dbLink}</td>
             <td>${job.type}</td>
             <td>${job.status}</td>
             <td>${jobLink}</td>

@@ -1434,6 +1434,20 @@ app.get("/api/upload/list", (req, res) => {
   }
 });
 
+app.get("/api/upload/byId", (req, res) => {
+  try {
+    const id = parseInt(req.query.id, 10);
+    if (Number.isNaN(id)) return res.status(400).json({ error: "Invalid id" });
+    const pair = db.getPairById(id);
+    if (!pair || !pair.image_url) return res.status(404).json({ error: "Not found" });
+    const name = pair.image_url.replace(/^\/?uploads\//, "");
+    res.json({ file: name });
+  } catch (err) {
+    console.error("[Server Debug] /api/upload/byId error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.post("/api/upload/status", (req, res) => {
   try {
     const { name, status } = req.body || {};
