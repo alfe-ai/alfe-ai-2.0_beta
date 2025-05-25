@@ -13,6 +13,7 @@ export default class JobManager {
       args,
       cwd,
       file,
+      resultPath: null,
       status: "running",
       startTime: Date.now(),
       log: "",
@@ -66,6 +67,7 @@ export default class JobManager {
       file: j.file,
       status: j.status,
       startTime: j.startTime,
+      resultPath: j.resultPath,
     }));
   }
 

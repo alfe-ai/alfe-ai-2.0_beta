@@ -168,12 +168,16 @@
             tdStatus.textContent = j.status;
             const tdPath = document.createElement('td');
             if(j.status === 'finished'){
-              try{
-                const r = await fetch(`/api/upscale/result?file=${encodeURIComponent(j.file)}`);
-                const d = await r.json();
-                tdPath.textContent = d.url || '';
-              }catch(e){
-                tdPath.textContent = '';
+              if(j.resultPath){
+                tdPath.textContent = j.resultPath;
+              } else {
+                try{
+                  const r = await fetch(`/api/upscale/result?file=${encodeURIComponent(j.file)}`);
+                  const d = await r.json();
+                  tdPath.textContent = d.url || '';
+                }catch(e){
+                  tdPath.textContent = '';
+                }
               }
             } else {
               tdPath.textContent = '';

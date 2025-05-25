@@ -17,7 +17,11 @@ async function loadJobs() {
   ul.innerHTML = '';
   jobs.forEach(j => {
     const li = document.createElement('li');
-    li.textContent = `${j.file || j.command} - ${j.status}`;
+    let text = `${j.file || j.command} - ${j.status}`;
+    if(j.resultPath){
+      text += ` -> ${j.resultPath}`;
+    }
+    li.textContent = text;
     li.style.cursor = 'pointer';
     li.addEventListener('click', () => openJob(j.id));
     ul.appendChild(li);
