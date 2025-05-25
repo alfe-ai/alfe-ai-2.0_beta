@@ -1499,6 +1499,13 @@ app.post("/api/upscale", async (req, res) => {
     }
 
     const job = jobManager.createJob(scriptPath, [filePath], { cwd: scriptCwd, file });
+    jobManager.addDoneListener(job, () => {
+      const m = job.log.match(/Final output saved to:\s*(.+)/i);
+      if (m) {
+        job.resultPath = m[1].trim();
+        console.debug("[Server Debug] Recorded resultPath =>", job.resultPath);
+      }
+    });
     console.debug("[Server Debug] /api/upscale => job started", job.id);
     res.json({ jobId: job.id });
   } catch (err) {
