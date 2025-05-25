@@ -29,6 +29,8 @@ let showArchivedTabs = false;
 let topChatTabsBarVisible = true; // visibility of the top chat tabs bar
 let showDependenciesColumn = false;
 let tabGenerateImages = true; // per-tab auto image toggle
+let imageLoopEnabled = false; // automatic image generation loop mode
+let imageLoopMessage = "Next image";
 let chatSubroutines = [];
 let actionHooks = [];
 let editingSubroutineId = null;
@@ -923,6 +925,10 @@ async function selectTab(tabId){
   renderSidebarTabs();
   renderHeader();
   renderBody();
+  setLoopUi(imageLoopEnabled);
+  if(imageLoopEnabled){
+    setTimeout(runImageLoop, 0);
+  }
 }
 function renderTabs(){
   const tc = $("#tabsContainer");
@@ -1154,6 +1160,8 @@ const chatInputEl = document.getElementById("chatInput");
 const chatSendBtnEl = document.getElementById("chatSendBtn");
 const waitingElem = document.getElementById("waitingCounter");
 const scrollDownBtnEl = document.getElementById("scrollDownBtn");
+
+setLoopUi(imageLoopEnabled);
 
 // Keep a history of user-entered messages for quick recall
 let inputHistory = [];
@@ -1501,6 +1509,8 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
   $("#showNavMenuCheck").checked = navMenuVisible;
   $("#showTopChatTabsCheck").checked = topChatTabsBarVisible;
   $("#showArchivedTabsCheck").checked = showArchivedTabs;
+  $("#imageLoopCheck").checked = imageLoopEnabled;
+  $("#imageLoopMessageInput").value = imageLoopMessage;
 
   try {
     const modelListResp = await fetch("/api/ai/models");
@@ -1613,6 +1623,8 @@ async function chatSettingsSaveFlow() {
   navMenuVisible = $("#showNavMenuCheck").checked;
   topChatTabsBarVisible = $("#showTopChatTabsCheck").checked;
   showArchivedTabs = $("#showArchivedTabsCheck").checked;
+  imageLoopEnabled = $("#imageLoopCheck").checked;
+  imageLoopMessage = $("#imageLoopMessageInput").value.trim() || imageLoopMessage;
 
   await setSetting("chat_hide_metadata", chatHideMetadata);
   await setSetting("chat_tab_auto_naming", chatTabAutoNaming);
@@ -1659,6 +1671,10 @@ async function chatSettingsSaveFlow() {
   renderSidebarTabs();
   renderHeader();
   renderBody();
+  setLoopUi(imageLoopEnabled);
+  if(imageLoopEnabled){
+    setTimeout(runImageLoop, 0);
+  }
 }
 
 $("#chatSettingsSaveBtn").addEventListener("click", chatSettingsSaveFlow);
@@ -1685,6 +1701,17 @@ function toggleTopChatTabsVisibility(visible) {
   if(!topTabs) return;
   topTabs.style.display = visible ? "" : "none";
   if(btn) btn.textContent = visible ? "Hide chat tabs bar" : "Show chat tabs bar";
+}
+
+function setLoopUi(active){
+  if(chatInputEl) chatInputEl.disabled = active;
+  if(chatSendBtnEl) chatSendBtnEl.style.display = active ? 'none' : '';
+}
+
+function runImageLoop(){
+  if(!imageLoopEnabled) return;
+  if(chatInputEl) chatInputEl.value = imageLoopMessage;
+  if(chatSendBtnEl) chatSendBtnEl.click();
 }
 
 (function installDividerDrag(){
@@ -3206,6 +3233,9 @@ registerActionHook("generateImage", async ({response}) => {
     const data = await r.json();
     if(r.ok && data.url){
       addImageChatBubble(data.url, prompt, data.title || "");
+      if(imageLoopEnabled){
+        setTimeout(runImageLoop, 0);
+      }
     } else {
       console.error('[Hook generateImage] API error:', data.error);
     }
