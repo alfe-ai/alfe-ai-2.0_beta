@@ -1541,6 +1541,32 @@ app.get("/api/jobs/:id/stream", (req, res) => {
   });
 });
 
+// Check if an upscaled version of a file exists.
+app.get("/api/upscale/result", (req, res) => {
+  try {
+    const file = req.query.file;
+    if (!file) return res.status(400).json({ error: "Missing file" });
+
+    const ext = path.extname(file);
+    const base = path.basename(file, ext);
+    const candidates = [
+      path.join(uploadsDir, `${base}_4096${ext}`),
+      path.join(uploadsDir, `${base}-4096${ext}`),
+      path.join(uploadsDir, `${base}_upscaled${ext}`),
+      path.join(uploadsDir, `${base}-upscaled${ext}`),
+    ];
+    for (const p of candidates) {
+      if (fs.existsSync(p)) {
+        return res.json({ url: p });
+      }
+    }
+    res.json({ url: null });
+  } catch (err) {
+    console.error("/api/upscale/result error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // Generate an image using OpenAI's image API.
 app.post("/api/image/generate", async (req, res) => {
   try {
