@@ -7,6 +7,7 @@
 </head>
 <body style="padding:1rem;">
   <h2>Jobs</h2>
+  <button id="stopBtn" style="display:none;margin-bottom:0.5rem;">Stop Job</button>
   <ul id="jobsList"></ul>
   <pre id="terminal" style="background:#000;color:#0f0;padding:0.5rem;margin-top:0.5rem;height:200px;overflow:auto;font-family:monospace;"></pre>
 <script>
@@ -28,20 +29,31 @@ async function loadJobs() {
   });
 }
 let evt;
+let currentJobId = null;
 async function openJob(id) {
   if (evt) evt.close();
+  currentJobId = id;
   const term = document.getElementById('terminal');
   const logRes = await fetch(`/api/jobs/${id}/log`);
   term.textContent = await logRes.text();
   evt = new EventSource(`/api/jobs/${id}/stream`);
+  document.getElementById('stopBtn').style.display = 'inline';
   evt.addEventListener('log', e => {
     term.textContent += JSON.parse(e.data);
     term.scrollTop = term.scrollHeight;
   });
   evt.addEventListener('done', () => {
     evt.close();
+    document.getElementById('stopBtn').style.display = 'none';
   });
 }
+
+async function stopJob(){
+  if(!currentJobId) return;
+  await fetch(`/api/jobs/${currentJobId}/stop`, { method: 'POST' });
+}
+
+document.getElementById('stopBtn').addEventListener('click', stopJob);
 loadJobs();
 setInterval(loadJobs, 5000);
 
