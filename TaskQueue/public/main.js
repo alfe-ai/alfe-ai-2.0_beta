@@ -1745,6 +1745,7 @@ function renderFileList(){
   tbody.innerHTML = "";
   fileListData.forEach((f, idx) => {
     const tr = document.createElement("tr");
+    tr.dataset.fileName = f.name;
     const tdIndex = document.createElement("td");
     tdIndex.textContent = idx + 1;
     const tdName = document.createElement("td");
@@ -1757,6 +1758,9 @@ function renderFileList(){
     tdTitle.textContent = f.title || "";
     const tdSource = document.createElement("td");
     tdSource.textContent = f.source || "";
+    const tdStatus = document.createElement("td");
+    tdStatus.textContent = f.status || "";
+    tdStatus.className = "img-status-cell";
     const tdSize = document.createElement("td");
     tdSize.textContent = f.size;
     const tdMtime = document.createElement("td");
@@ -1773,6 +1777,7 @@ function renderFileList(){
     tr.appendChild(tdName);
     tr.appendChild(tdTitle);
     tr.appendChild(tdSource);
+    tr.appendChild(tdStatus);
     tr.appendChild(tdSize);
     tr.appendChild(tdMtime);
     tr.appendChild(tdAction);
@@ -1841,6 +1846,46 @@ $("#secureUploadForm").addEventListener("submit", async e => {
     console.error("[Uploader Debug] Upload error:", err);
     alert("Upload error. Check console.");
   }
+});
+
+document.addEventListener("click", async ev => {
+  if(!ev.target.classList.contains("img-status-cell")) return;
+  const cell = ev.target;
+  const row = cell.closest("tr");
+  const fileName = row.dataset.fileName;
+  const current = cell.textContent.trim();
+  const sel = document.createElement("select");
+  [
+    "Generated",
+    "Upscaled",
+    "Background Removed",
+    "Border Added",
+    "Printify Image Uploaded",
+    "Printify 2",
+    "Printify 3",
+    "Ebay Shipping Updated",
+    "Done"
+  ].forEach(v => {
+    const o = document.createElement("option");
+    o.value = v;
+    o.textContent = v;
+    if(v === current) o.selected = true;
+    sel.appendChild(o);
+  });
+  cell.textContent = "";
+  cell.appendChild(sel);
+  sel.focus();
+  sel.addEventListener("change", async () => {
+    await fetch("/api/upload/status", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: fileName, status: sel.value })
+    });
+    await loadFileList();
+  });
+  sel.addEventListener("blur", async () => {
+    await loadFileList();
+  });
 });
 
 document.addEventListener("click", async (ev) => {
