@@ -8,6 +8,7 @@
 <body style="padding:1rem;">
 <!--  <h2>PrintifyPipeline</h2>-->
   <h2>PrintifyPipeline</h2>
+  <div id="errorMessage" style="color:red;margin-bottom:0.5rem;"></div>
   <ul id="stageList"></ul>
   <div id="imageTabs" style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
     <button id="tabOriginal" class="view-tab active">Original</button>
@@ -37,6 +38,7 @@
     const params = new URLSearchParams(window.location.search);
     let file = params.get('file');
     const idParam = params.get('id');
+    const errorEl = document.getElementById('errorMessage');
     const stageParam = parseInt(params.get('stage'));
     const stages = [
       { name: 'Generated' },
@@ -231,9 +233,14 @@
         try{
           const r = await fetch(`/api/upload/byId?id=${encodeURIComponent(idParam)}`);
           const d = await r.json();
-          if(r.ok && d.file) file = d.file;
+          if(r.ok && d.file){
+            file = d.file;
+          } else {
+            errorEl.textContent = `No file found for ID ${idParam}`;
+          }
         }catch(e){
           console.error('Failed to load file for id =>', e);
+          errorEl.textContent = `Error fetching file for ID ${idParam}`;
         }
       }
       console.debug('Loaded PrintifyPipeline for file =>', file);
@@ -353,6 +360,9 @@
       upscaleBtn.disabled = true;
       printifyBtn.disabled = true;
       console.debug('No file parameter found => Upscale disabled');
+      if(!errorEl.textContent){
+        errorEl.textContent = 'No file specified.';
+      }
     }
     }
     init();
