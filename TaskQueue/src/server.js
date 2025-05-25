@@ -1386,18 +1386,35 @@ app.get("/api/upload/list", (req, res) => {
       const { size, mtime } = fs.statSync(path.join(uploadsDir, name));
       const title = db.getImageTitleForUrl(`/uploads/${name}`);
       const source = db.isGeneratedImage(`/uploads/${name}`) ? 'Generated' : 'Uploaded';
+      const status = db.getImageStatusForUrl(`/uploads/${name}`) || (source === 'Generated' ? 'Generated' : 'Uploaded');
       return {
         index: idx + 1,
         name,
         size,
         mtime,
         title,
-        source
+        source,
+        status
       };
     });
     res.json(files);
   } catch (err) {
     console.error("[Server Debug] /api/upload/list error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/api/upload/status", (req, res) => {
+  try {
+    const { name, status } = req.body || {};
+    if(!name){
+      return res.status(400).json({ error: "Missing name" });
+    }
+    const url = `/uploads/${name}`;
+    db.setImageStatus(url, status || "");
+    res.json({ success: true });
+  } catch(err){
+    console.error("[Server Debug] /api/upload/status error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -1611,7 +1628,7 @@ app.post("/api/image/generate", async (req, res) => {
 
     const tab = parseInt(tabId, 10) || 1;
     const imageTitle = await deriveImageTitle(prompt, openaiClient);
-    db.createImagePair(localUrl, prompt || '', tab, imageTitle);
+    db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated');
 
     res.json({ success: true, url: localUrl, title: imageTitle });
   } catch (err) {

@@ -141,7 +141,8 @@ export default class TaskDB {
                                               token_info TEXT,
                                               image_url TEXT,
                                               image_alt TEXT DEFAULT '',
-                                              image_title TEXT DEFAULT ''
+                                              image_title TEXT DEFAULT '',
+                                              image_status TEXT DEFAULT ''
       );
     `);
 
@@ -192,6 +193,12 @@ export default class TaskDB {
       console.debug("[TaskDB Debug] Added chat_pairs.image_title column");
     } catch(e) {
       //console.debug("[TaskDB Debug] image_title column exists, skipping.", e.message);
+    }
+    try {
+      this.db.exec(`ALTER TABLE chat_pairs ADD COLUMN image_status TEXT DEFAULT '';`);
+      console.debug("[TaskDB Debug] Added chat_pairs.image_status column");
+    } catch(e) {
+      //console.debug("[TaskDB Debug] image_status column exists, skipping.", e.message);
     }
 
     this.db.exec(`
@@ -577,15 +584,15 @@ export default class TaskDB {
     });
   }
 
-  createImagePair(url, altText = '', chatTabId = 1, title = '') {
+  createImagePair(url, altText = '', chatTabId = 1, title = '', status = 'Generated') {
     const ts = new Date().toISOString();
     const { lastInsertRowid } = this.db.prepare(`
       INSERT INTO chat_pairs (
         user_text, ai_text, model, timestamp, ai_timestamp,
         chat_tab_id, system_context, token_info,
-        image_url, image_alt, image_title
-      ) VALUES ('', '', '', @ts, @ts, @chat_tab_id, '', NULL, @url, @alt, @title)
-    `).run({ ts, chat_tab_id: chatTabId, url, alt: altText, title });
+        image_url, image_alt, image_title, image_status
+      ) VALUES ('', '', '', @ts, @ts, @chat_tab_id, '', NULL, @url, @alt, @title, @status)
+    `).run({ ts, chat_tab_id: chatTabId, url, alt: altText, title, status });
     return lastInsertRowid;
   }
 
@@ -774,6 +781,21 @@ export default class TaskDB {
         .prepare("SELECT image_title FROM chat_pairs WHERE image_url=? ORDER BY id DESC LIMIT 1")
         .get(url);
     return row ? row.image_title : "";
+  }
+
+  getImageStatusForUrl(url) {
+    const row = this.db
+        .prepare("SELECT image_status FROM chat_pairs WHERE image_url=? ORDER BY id DESC LIMIT 1")
+        .get(url);
+    return row ? row.image_status : "";
+  }
+
+  setImageStatus(url, status) {
+    const stmt = this.db.prepare("UPDATE chat_pairs SET image_status=? WHERE image_url=?");
+    const info = stmt.run(status, url);
+    if(info.changes === 0){
+      this.createImagePair(url, '', 1, '', status);
+    }
   }
 
   isGeneratedImage(url) {
