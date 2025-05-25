@@ -37,6 +37,29 @@ export default class PrintifyJobQueue {
     }));
   }
 
+  /**
+   * Remove a job from the queue. If the job is currently running,
+   * the underlying JobManager process will be stopped as well.
+   * @param {string} id Job id
+   * @returns {boolean} True if a job was removed, false otherwise
+   */
+  remove(id) {
+    const idx = this.jobs.findIndex(j => j.id === id);
+    if (idx === -1) return false;
+    const job = this.jobs[idx];
+    // Stop the running process if needed
+    if (job.status === 'running' && job.jobId) {
+      this.jobManager.stopJob(job.jobId);
+    }
+    // If removing the current job, clear and process next
+    if (this.current && this.current.id === id) {
+      this.current = null;
+    }
+    this.jobs.splice(idx, 1);
+    this._processNext();
+    return true;
+  }
+
   _processNext() {
     if (this.current) return;
     const job = this.jobs.find(j => j.status === 'queued');

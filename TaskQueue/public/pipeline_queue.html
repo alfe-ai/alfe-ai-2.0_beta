@@ -76,6 +76,7 @@
         <th>Status</th>
         <th>Job ID</th>
         <th>Result Path</th>
+        <th>Actions</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -90,6 +91,7 @@
         queue.forEach(job => {
           const tr = document.createElement('tr');
           const jobLink = job.jobId ? `<a href="jobs.html?jobId=${job.jobId}" target="_blank">${job.jobId}</a>` : '';
+          const removeBtn = `<button class="remove-btn" data-id="${job.id}">Remove</button>`;
           tr.innerHTML = `
             <td>${job.id}</td>
             <td>${job.file}</td>
@@ -97,6 +99,7 @@
             <td>${job.status}</td>
             <td>${jobLink}</td>
             <td>${job.resultPath || ''}</td>
+            <td>${removeBtn}</td>
           `;
           tbody.appendChild(tr);
         });
@@ -152,25 +155,37 @@
       }
     }
 
-    document.getElementById('enqueueBtn').addEventListener('click', async () => {
-      const file = document.getElementById('imageSelect').dataset.value;
-      const type = document.getElementById('jobType').value;
-      if(!file) return;
-      try{
-        await fetch('/api/pipelineQueue', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ file, type })
-        });
-        await loadQueue();
-      }catch(e){
-        console.error('Failed to enqueue job', e);
-      }
-    });
+      document.getElementById('enqueueBtn').addEventListener('click', async () => {
+        const file = document.getElementById('imageSelect').dataset.value;
+        const type = document.getElementById('jobType').value;
+        if(!file) return;
+        try{
+          await fetch('/api/pipelineQueue', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ file, type })
+          });
+          await loadQueue();
+        }catch(e){
+          console.error('Failed to enqueue job', e);
+        }
+      });
 
-    loadQueue();
-    loadImages();
-    setInterval(loadQueue, 5000);
+      document.getElementById('queueTable').addEventListener('click', async e => {
+        if(e.target.classList.contains('remove-btn')){
+          const id = e.target.dataset.id;
+          try{
+            await fetch(`/api/pipelineQueue/${encodeURIComponent(id)}/remove`, { method:'POST' });
+            await loadQueue();
+          }catch(err){
+            console.error('Failed to remove job', err);
+          }
+        }
+      });
+
+      loadQueue();
+      loadImages();
+      setInterval(loadQueue, 5000);
   </script>
 </body>
 </html>

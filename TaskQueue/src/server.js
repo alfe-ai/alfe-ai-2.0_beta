@@ -1706,6 +1706,12 @@ app.post("/api/pipelineQueue", (req, res) => {
   res.json({ jobId: job.id });
 });
 
+app.post("/api/pipelineQueue/:id/remove", (req, res) => {
+  const ok = printifyQueue.remove(req.params.id);
+  if (!ok) return res.status(404).json({ error: "Job not found" });
+  res.json({ removed: true });
+});
+
 // Check if an upscaled version of a file exists.
 app.get("/api/upscale/result", (req, res) => {
   try {
