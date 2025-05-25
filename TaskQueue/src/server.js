@@ -1411,10 +1411,11 @@ app.get("/api/upload/list", (req, res) => {
     const files = fileNames.map((name, idx) => {
       const { size, mtime } = fs.statSync(path.join(uploadsDir, name));
       const title = db.getImageTitleForUrl(`/uploads/${name}`);
+      const id = db.getImageIdForUrl(`/uploads/${name}`);
       const source = db.isGeneratedImage(`/uploads/${name}`) ? 'Generated' : 'Uploaded';
       const status = db.getImageStatusForUrl(`/uploads/${name}`) || (source === 'Generated' ? 'Generated' : 'Uploaded');
       return {
-        index: idx + 1,
+        id,
         name,
         size,
         mtime,

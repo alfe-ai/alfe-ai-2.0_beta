@@ -797,6 +797,13 @@ export default class TaskDB {
     return row ? row.image_status : "";
   }
 
+  getImageIdForUrl(url) {
+    const row = this.db
+        .prepare("SELECT id FROM chat_pairs WHERE image_url=? ORDER BY id DESC LIMIT 1")
+        .get(url);
+    return row ? row.id : null;
+  }
+
   setImageStatus(url, status) {
     const stmt = this.db.prepare("UPDATE chat_pairs SET image_status=? WHERE image_url=?");
     const info = stmt.run(status, url);
