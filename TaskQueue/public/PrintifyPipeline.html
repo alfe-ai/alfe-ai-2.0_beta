@@ -76,19 +76,11 @@
             body: JSON.stringify({ file })
           });
           console.debug('Received response =>', res.status);
-          if (res.ok && res.body) {
-            const reader = res.body.getReader();
-            const decoder = new TextDecoder();
-            while (true) {
-              const { value, done } = await reader.read();
-              if (done) break;
-              const chunk = decoder.decode(value);
-              terminalEl.textContent += chunk;
-              console.debug('Received chunk =>', chunk);
-              terminalEl.scrollTop = terminalEl.scrollHeight;
-            }
+          const data = await res.json().catch(() => ({}));
+          if (res.ok && data.jobId) {
+            window.open(`jobs.html?jobId=${data.jobId}`, '_blank');
+            terminalEl.textContent = `Job started with ID ${data.jobId}. Open the Jobs List to view progress.`;
           } else {
-            const data = await res.json().catch(() => ({}));
             terminalEl.textContent = data.error || 'Upscale request failed.';
             console.debug('Upscale failed =>', terminalEl.textContent);
           }

@@ -94,6 +94,7 @@ import { encoding_for_model } from "tiktoken";
 import axios from "axios";
 import os from "os";
 import child_process from "child_process";
+import JobManager from "./jobManager.js";
 
 const db = new TaskDB();
 console.debug("[Server Debug] Checking or setting default 'ai_model' in DB...");
@@ -123,6 +124,7 @@ if (!themeMode) {
 console.debug("[Server Debug] theme_color =>", themeColor, "mode =>", themeMode);
 
 const app = express();
+const jobManager = new JobManager();
 
 /**
  * Returns a configured OpenAI client, depending on "ai_service" setting.
@@ -1466,56 +1468,48 @@ app.post("/api/upscale", async (req, res) => {
       return res.status(500).json({ error: "Upscale script missing" });
     }
 
-    // Stream the script output so the frontend can display a live terminal.
-    res.setHeader("Content-Type", "text/plain; charset=utf-8");
-    res.setHeader("Transfer-Encoding", "chunked");
-    // Keep the connection alive and disable proxy buffering. This helps
-    // prevent premature termination when the script takes a long time and
-    // allows the frontend terminal to display output continuously.
-    res.setHeader("Connection", "keep-alive");
-    res.setHeader("X-Accel-Buffering", "no");
-    res.flushHeaders();
+    const job = jobManager.createJob(scriptPath, [filePath], { cwd: scriptCwd, file });
+    console.debug("[Server Debug] /api/upscale => job started", job.id);
 
-    console.debug(
-      "[Server Debug] /api/upscale => spawning child process",
-      scriptPath,
-      filePath
-    );
-    const child = child_process.spawn(scriptPath, [filePath], {
-      cwd: scriptCwd,
-    });
-
-    child.stdout.on("data", chunk => {
-      res.write(chunk.toString());
-    });
-
-    child.stderr.on("data", chunk => {
-      res.write(chunk.toString());
-    });
-
-    child.on("error", err => {
-      console.error("[Server Debug] /api/upscale child process error =>", err);
-      if (!res.headersSent) {
-        res.write(`[error] ${err.toString()}`);
-      }
-    });
-
-    child.on("close", code => {
-      console.debug("[Server Debug] /api/upscale child process closed with code", code);
-      res.end();
-    });
-
-    // If the client disconnects, allow the upscale process to continue running.
-    // Simply log the event instead of forcefully terminating the child.
-    req.on("close", () => {
-      console.debug("[Server Debug] /api/upscale request closed before process completion");
-    });
+    res.json({ jobId: job.id });
   } catch (err) {
     console.error("Error in /api/upscale:", err);
-    if (!res.headersSent) {
-      res.status(500).json({ error: "Internal server error" });
-    }
+    res.status(500).json({ error: "Internal server error" });
   }
+});
+
+app.get("/api/jobs", (req, res) => {
+  res.json(jobManager.listJobs());
+});
+
+app.get("/api/jobs/:id/log", (req, res) => {
+  const job = jobManager.getJob(req.params.id);
+  if (!job) return res.status(404).json({ error: "Job not found" });
+  res.type("text/plain").send(job.log);
+});
+
+app.get("/api/jobs/:id/stream", (req, res) => {
+  const job = jobManager.getJob(req.params.id);
+  if (!job) return res.status(404).end();
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
+  });
+  res.flushHeaders();
+  res.write(`event: log\ndata:${JSON.stringify(job.log)}\n\n`);
+  const logListener = (chunk) => {
+    res.write(`event: log\ndata:${JSON.stringify(chunk)}\n\n`);
+  };
+  const doneListener = () => {
+    res.write(`event: done\ndata:done\n\n`);
+  };
+  jobManager.addListener(job, logListener);
+  jobManager.addDoneListener(job, doneListener);
+  req.on("close", () => {
+    jobManager.removeListener(job, logListener);
+    jobManager.removeDoneListener(job, doneListener);
+  });
 });
 
 // Generate an image using OpenAI's image API.
