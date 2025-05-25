@@ -1583,21 +1583,30 @@ app.post("/api/printify", async (req, res) => {
     const job = jobManager.createJob(scriptPath, [filePath], { cwd: scriptCwd, file });
     console.debug("[Server Debug] /api/printify => job started", job.id);
 
-    // Detect the "All steps completed" message and finish the job early.
+    // Detect the "All steps completed" message and kill the job 15s later.
     const doneRegex = /All steps completed/i;
+    let killTimer = null;
     const logListener = (chunk) => {
-      if (doneRegex.test(chunk) && job.child) {
-        try {
-          job.child.kill();
-        } catch (e) {
-          console.error('[Server Debug] Error killing printify job =>', e);
-        }
+      if (doneRegex.test(chunk) && job.child && !killTimer) {
+        // Wait 15 seconds before killing, replicating a shorter browser hold time
+        killTimer = setTimeout(() => {
+          if (job.child) {
+            try {
+              job.child.kill();
+            } catch (e) {
+              console.error('[Server Debug] Error killing printify job =>', e);
+            }
+          }
+        }, 15000);
       }
     };
     jobManager.addListener(job, logListener);
 
     jobManager.addDoneListener(job, () => {
       jobManager.removeListener(job, logListener);
+      if (killTimer) {
+        clearTimeout(killTimer);
+      }
       try {
         const url = `/uploads/${file}`;
         db.setImageStatus(url, 'Ebay Shipping Updated');
