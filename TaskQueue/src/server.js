@@ -266,6 +266,19 @@ try {
 // Serve static files
 app.use("/uploads", express.static(uploadsDir));
 
+// Allow loading images from absolute paths produced by the upscale script.
+app.use((req, res, next) => {
+  try {
+    const decoded = decodeURIComponent(req.path);
+    if (fs.existsSync(decoded) && fs.statSync(decoded).isFile()) {
+      return res.sendFile(decoded);
+    }
+  } catch (err) {
+    console.error("[Server Debug] Error serving absolute path:", err);
+  }
+  next();
+});
+
 // Multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadsDir),
