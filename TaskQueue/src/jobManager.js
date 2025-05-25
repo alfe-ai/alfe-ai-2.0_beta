@@ -98,4 +98,16 @@ export default class JobManager {
     }
     return true;
   }
+
+  /**
+   * Force mark a job as finished if for some reason the child process
+   * exits without emitting the normal close event.
+   */
+  forceFinishJob(id) {
+    const job = this.jobs.get(id);
+    if (!job || job.status !== "running") return;
+    job.status = "finished";
+    this._append(job, "\n[force finished]");
+    this._notifyDone(job);
+  }
 }
