@@ -7,7 +7,8 @@
   <style>
     .img-dropdown {
       position: relative;
-      min-width: 200px;
+      min-width: 300px;
+      width: 300px;
       cursor: pointer;
     }
     .img-dropdown .selected {
@@ -30,6 +31,7 @@
       border: 1px solid #444;
       max-height: 200px;
       overflow-y: auto;
+      width: 300px;
       z-index: 1000;
       display: none;
     }
@@ -117,9 +119,9 @@
           const item = document.createElement('div');
           item.className = 'option';
           item.dataset.value = f.name;
-          item.innerHTML = `<img src="/uploads/${encodeURIComponent(f.name)}" /> <span>${f.name}</span>`;
+          item.innerHTML = `<img src="/uploads/${encodeURIComponent(f.name)}" /> <span>${f.index}: ${f.name}</span>`;
           item.addEventListener('click', () => {
-            selectedDiv.innerHTML = `<img src="/uploads/${encodeURIComponent(f.name)}" /> <span>${f.name}</span>`;
+            selectedDiv.innerHTML = `<img src="/uploads/${encodeURIComponent(f.name)}" /> <span>${f.index}: ${f.name}</span>`;
             dropdown.dataset.value = f.name;
             optionsDiv.style.display = 'none';
             updatePreview(f.name);
