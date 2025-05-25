@@ -25,7 +25,10 @@
     </thead>
     <tbody id="jobsList"></tbody>
   </table>
-  <button id="upscaleButton">Submit to Upscale</button>
+  <div style="margin-top:0.5rem;">
+    <button id="upscaleButton">Submit to Upscale</button>
+    <button id="printifyButton">Submit to Printify</button>
+  </div>
   <pre id="upscaleTerminal" style="background:#000;color:#0f0;padding:0.5rem;margin-top:0.5rem;height:200px;overflow:auto;font-family:monospace;"></pre>
   <script>
     const params = new URLSearchParams(window.location.search);
@@ -123,6 +126,7 @@
     showOriginal();
 
     const upscaleBtn = document.getElementById('upscaleButton');
+    const printifyBtn = document.getElementById('printifyButton');
     const terminalEl = document.getElementById('upscaleTerminal');
     const jobsListEl = document.getElementById('jobsList');
     console.debug('Loaded PrintifyPipeline for file =>', file);
@@ -149,6 +153,30 @@
         } catch (err) {
           console.error('Upscale request error =>', err);
           terminalEl.textContent = 'Upscale request failed.';
+        }
+      });
+      printifyBtn.addEventListener('click', async () => {
+        console.debug('Submit to Printify clicked with file =>', file);
+        terminalEl.textContent = '';
+        try {
+          console.debug('Sending POST /api/printify');
+          const res = await fetch('/api/printify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ file })
+          });
+          console.debug('Received response =>', res.status);
+          const data = await res.json().catch(() => ({}));
+          if (res.ok && data.jobId) {
+            window.open(`jobs.html?jobId=${data.jobId}`, '_blank');
+            terminalEl.textContent = `Job started with ID ${data.jobId}. Open the Jobs List to view progress.`;
+          } else {
+            terminalEl.textContent = data.error || 'Printify request failed.';
+            console.debug('Printify failed =>', terminalEl.textContent);
+          }
+        } catch (err) {
+          console.error('Printify request error =>', err);
+          terminalEl.textContent = 'Printify request failed.';
         }
       });
       async function loadJobs(){
@@ -198,6 +226,7 @@
       setInterval(checkUpscaled, 5000);
     } else {
       upscaleBtn.disabled = true;
+      printifyBtn.disabled = true;
       console.debug('No file parameter found => Upscale disabled');
     }
   </script>
