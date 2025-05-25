@@ -14,6 +14,7 @@
   </div>
   <div id="fileContainer"></div>
   <div id="resolutionDisplay" style="margin-top:0.5rem;"></div>
+  <div id="statusControl" style="margin-top:0.5rem;"></div>
   <h3>Jobs for this Image</h3>
   <table id="jobsTable" style="width:100%;border-collapse:collapse;">
     <thead>
@@ -58,8 +59,56 @@
       stageItems.push(li);
     });
 
+    const statusOptions = [
+      'Generated',
+      'Upscaled',
+      'Background Removed',
+      'Border Added',
+      'Printify Image Uploaded',
+      'Printify 2',
+      'Printify 3',
+      'Ebay Shipping Updated',
+      'Done'
+    ];
+
+    async function loadStatus(){
+      try{
+        const res = await fetch('/api/upload/list');
+        const list = await res.json();
+        const item = list.find(f => f.name === file);
+        return item ? item.status : '';
+      }catch(err){
+        console.error('Failed to load status =>', err);
+        return '';
+      }
+    }
+
+
     const container = document.getElementById('fileContainer');
     const resEl = document.getElementById('resolutionDisplay');
+    const statusDiv = document.getElementById('statusControl');
+    const statusSelect = document.createElement('select');
+    statusDiv.textContent = 'Status: ';
+    statusDiv.appendChild(statusSelect);
+    statusSelect.disabled = !file;
+    (async () => {
+      const current = file ? await loadStatus() : '';
+      statusOptions.forEach(v => {
+        const o = document.createElement('option');
+        o.value = v;
+        o.textContent = v;
+        if(v === current) o.selected = true;
+        statusSelect.appendChild(o);
+      });
+    })();
+    statusSelect.addEventListener('change', async () => {
+      if(!file) return;
+      await fetch('/api/upload/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: file, status: statusSelect.value })
+      });
+    });
     const origImg = document.createElement('img');
     const upscaledImg = document.createElement('img');
     origImg.style.maxWidth = '100%';
