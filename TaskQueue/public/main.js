@@ -1760,6 +1760,7 @@ function sortFileData(){
     let vb=b[fileSortColumn];
     if(fileSortColumn==='name'){ va = va.toLowerCase(); vb = vb.toLowerCase(); }
     if(fileSortColumn==='mtime'){ va = new Date(va).getTime(); vb = new Date(vb).getTime(); }
+    if(fileSortColumn==='id'){ va = parseInt(va,10)||0; vb = parseInt(vb,10)||0; }
     if(va<vb) return fileSortAsc ? -1 : 1;
     if(va>vb) return fileSortAsc ? 1 : -1;
     return 0;
@@ -1774,7 +1775,7 @@ function renderFileList(){
     const tr = document.createElement("tr");
     tr.dataset.fileName = f.name;
     const tdIndex = document.createElement("td");
-    tdIndex.textContent = idx + 1;
+    tdIndex.textContent = f.id ?? "";
     const tdThumb = document.createElement("td");
     const thumbImg = document.createElement("img");
     thumbImg.src = `/uploads/${encodeURIComponent(f.name)}`;
