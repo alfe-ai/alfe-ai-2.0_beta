@@ -14,6 +14,8 @@
   </div>
   <div id="fileContainer"></div>
   <div id="resolutionDisplay" style="margin-top:0.5rem;"></div>
+  <h3>Jobs for this Image</h3>
+  <ul id="jobsList"></ul>
   <button id="upscaleButton">Submit to Upscale</button>
   <pre id="upscaleTerminal" style="background:#000;color:#0f0;padding:0.5rem;margin-top:0.5rem;height:200px;overflow:auto;font-family:monospace;"></pre>
   <script>
@@ -91,6 +93,7 @@
 
     const upscaleBtn = document.getElementById('upscaleButton');
     const terminalEl = document.getElementById('upscaleTerminal');
+    const jobsListEl = document.getElementById('jobsList');
     console.debug('Loaded PrintifyPipeline for file =>', file);
     if (file) {
       upscaleBtn.addEventListener('click', async () => {
@@ -117,6 +120,25 @@
           terminalEl.textContent = 'Upscale request failed.';
         }
       });
+      async function loadJobs(){
+        try {
+          const res = await fetch('/api/jobs');
+          const jobs = await res.json();
+          const filtered = jobs.filter(j => j.file === file && j.status === 'running');
+          jobsListEl.innerHTML = '';
+          filtered.forEach(j => {
+            const li = document.createElement('li');
+            li.textContent = `Job ${j.id} - ${j.status}`;
+            li.style.cursor = 'pointer';
+            li.addEventListener('click', () => window.open(`jobs.html?jobId=${j.id}`, '_blank'));
+            jobsListEl.appendChild(li);
+          });
+        } catch(err){
+          console.error('Failed to load jobs =>', err);
+        }
+      }
+      loadJobs();
+      setInterval(loadJobs, 5000);
     } else {
       upscaleBtn.disabled = true;
       console.debug('No file parameter found => Upscale disabled');
