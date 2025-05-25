@@ -1444,7 +1444,15 @@ app.post("/api/upscale", async (req, res) => {
     const scriptPath =
       process.env.UPSCALE_SCRIPT_PATH ||
       "/mnt/part5/dot_fayra/Whimsical/git/PrintifyPuppet-PuppetCore-Sterling/LeonardoUpscalePuppet/loop.sh";
-    console.debug("[Server Debug] /api/upscale => using scriptPath =>", scriptPath);
+    console.debug(
+      "[Server Debug] /api/upscale => using scriptPath =>",
+      scriptPath
+    );
+    const scriptCwd = path.dirname(scriptPath);
+    console.debug(
+      "[Server Debug] /api/upscale => using scriptCwd =>",
+      scriptCwd
+    );
     const filePath = path.join(uploadsDir, file);
     console.debug("[Server Debug] /api/upscale => resolved filePath =>", filePath);
 
@@ -1473,7 +1481,9 @@ app.post("/api/upscale", async (req, res) => {
       scriptPath,
       filePath
     );
-    const child = child_process.spawn(scriptPath, [filePath]);
+    const child = child_process.spawn(scriptPath, [filePath], {
+      cwd: scriptCwd,
+    });
 
     child.stdout.on("data", chunk => {
       res.write(chunk.toString());
