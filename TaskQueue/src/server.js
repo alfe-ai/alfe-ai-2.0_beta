@@ -95,6 +95,7 @@ import axios from "axios";
 import os from "os";
 import child_process from "child_process";
 import JobManager from "./jobManager.js";
+import PrintifyJobQueue from "./printifyJobQueue.js";
 
 const db = new TaskDB();
 console.debug("[Server Debug] Checking or setting default 'ai_model' in DB...");
@@ -262,6 +263,16 @@ try {
 } catch (err) {
   console.error("[Server Debug] Error creating uploads folder:", err);
 }
+
+const printifyQueue = new PrintifyJobQueue(jobManager, {
+  uploadsDir,
+  upscaleScript:
+    process.env.UPSCALE_SCRIPT_PATH ||
+    "/mnt/part5/dot_fayra/Whimsical/git/PrintifyPuppet-PuppetCore-Sterling/LeonardoUpscalePuppet/loop.sh",
+  printifyScript:
+    process.env.PRINTIFY_SCRIPT_PATH ||
+    "/mnt/part5/dot_fayra/Whimsical/git/PrintifyPuppet-PuppetCore-Sterling/PrintifyPuppet/run.sh",
+});
 
 // Serve static files
 app.use("/uploads", express.static(uploadsDir));
@@ -1676,6 +1687,22 @@ app.post("/api/jobs/:id/stop", (req, res) => {
   const ok = jobManager.stopJob(req.params.id);
   if (!ok) return res.status(404).json({ error: "Job not found" });
   res.json({ stopped: true });
+});
+
+// ---------------------------------------------------------------------------
+// Printify pipeline job queue endpoints
+// ---------------------------------------------------------------------------
+app.get("/api/pipelineQueue", (req, res) => {
+  res.json(printifyQueue.list());
+});
+
+app.post("/api/pipelineQueue", (req, res) => {
+  const { file, type } = req.body || {};
+  if (!file || !type) {
+    return res.status(400).json({ error: "Missing file or type" });
+  }
+  const job = printifyQueue.enqueue(file, type);
+  res.json({ jobId: job.id });
 });
 
 // Check if an upscaled version of a file exists.
