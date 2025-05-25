@@ -7,45 +7,6 @@
 </head>
 <body style="padding:1rem;">
   <h2>Jobs</h2>
-<<<<<<< HEAD
-  <ul id="jobList"></ul>
-  <pre id="jobOutput" style="background:#000;color:#0f0;padding:0.5rem;height:200px;overflow:auto;font-family:monospace;"></pre>
-<script>
-async function loadJobs(){
-  const res = await fetch('/api/jobs');
-  const data = await res.json();
-  const list = document.getElementById('jobList');
-  list.innerHTML='';
-  data.jobs.forEach(j=>{
-    const li=document.createElement('li');
-    const a=document.createElement('a');
-    a.href=`/jobs.html?id=${encodeURIComponent(j.id)}`;
-    a.textContent=`${j.id} - ${j.command} [${j.status}]`;
-    li.appendChild(a);
-    list.appendChild(li);
-  });
-}
-function streamJob(id){
-  const out=document.getElementById('jobOutput');
-  out.textContent='';
-  fetch(`/api/jobs/${id}/stream`).then(res=>{
-    const reader=res.body.getReader();
-    const dec=new TextDecoder();
-    function read(){
-      reader.read().then(({value,done})=>{
-        if(done) return;
-        out.textContent+=dec.decode(value);
-        out.scrollTop=out.scrollHeight;
-        read();
-      });
-    }
-    read();
-  });
-}
-const params=new URLSearchParams(window.location.search);
-const jobId=params.get('id');
-loadJobs().then(()=>{ if(jobId) streamJob(jobId); });
-=======
   <ul id="jobsList"></ul>
   <pre id="terminal" style="background:#000;color:#0f0;padding:0.5rem;margin-top:0.5rem;height:200px;overflow:auto;font-family:monospace;"></pre>
 <script>
@@ -85,7 +46,6 @@ const initialJob = params.get('jobId');
 if(initialJob){
   openJob(initialJob);
 }
->>>>>>> origin/codex/run-upscale-step-as-job,-add-jobs-list
 </script>
 </body>
 </html>
