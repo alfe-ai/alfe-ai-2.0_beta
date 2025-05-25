@@ -859,6 +859,12 @@
         handleStartTypeChange();
       });
     });
+    document.getElementById('startChatInput').addEventListener('keydown', e => {
+      if(e.key==='Enter' && !e.shiftKey){
+        e.preventDefault();
+        createStartTab();
+      }
+    });
     document.getElementById('startDialogCreateBtn').addEventListener('click', createStartTab);
     document.getElementById('viewTabChat').addEventListener('click', () => updateView('chat'));
     document.getElementById('viewTabTasks').addEventListener('click', () => updateView('tasks'));
