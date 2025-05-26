@@ -230,6 +230,8 @@
     let taskSortAsc = true;
     let showDependencies = false;
     let showArchived = false;
+    // Feature flag to enable advanced start options (Code, Design, Project)
+    const enableStartAdvanced = false;
     // Maintain a history of user-entered prompts
     const inputHistory = [];
     let inputHistoryPos = -1;
@@ -886,6 +888,19 @@
     function applyFeatureFlags(){
       const chatBtn = document.getElementById('viewTabChat');
       if(chatBtn) chatBtn.style.display = '';
+      const advanced = enableStartAdvanced;
+      ['code','design','task'].forEach(t => {
+        const btn = document.querySelector(`#startTypeButtons .start-type-btn[data-type="${t}"]`);
+        if(btn){
+          btn.classList.toggle('disabled', !advanced);
+          btn.disabled = !advanced;
+        }
+        const newBtn = document.querySelector(`#newTabTypeButtons .start-type-btn[data-type="${t}"]`);
+        if(newBtn){
+          newBtn.classList.toggle('disabled', !advanced);
+          newBtn.disabled = !advanced;
+        }
+      });
       showDependencies = localStorage.getItem('flagShowDependencies') === 'true';
       showArchived = localStorage.getItem('flagShowArchived') === 'true';
       const cbDeps = document.getElementById('flagShowDependencies');
