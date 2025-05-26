@@ -253,7 +253,7 @@
           const res = await fetch('/api/upscale', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ file })
+            body: JSON.stringify({ file, dbId: idParam || undefined })
           });
           console.debug('Received response =>', res.status);
           const data = await res.json().catch(() => ({}));
