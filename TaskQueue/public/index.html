@@ -51,6 +51,7 @@
             <summary>Options</summary>
             <ul>
               <li><button id="toggleSidebarBtn" class="tree-button">Hide sidebar</button></li>
+              <li><button id="featureFlagsBtn" class="tree-button">Feature Flags</button></li>
             </ul>
           </details>
         </li>
@@ -210,7 +211,7 @@
       <div class="chat-input-container">
         <!-- Hidden file input for image uploading -->
         <input type="file" id="imageUploadInput" accept="image/*" style="display:none" multiple />
-        <button id="chatImageBtn" class="send-btn" title="Upload Image">🖼</button>
+        <button id="chatImageBtn" class="send-btn" title="Upload Image" style="display:none;">🖼</button>
 
         <textarea id="chatInput" placeholder="Type your message..."></textarea>
         <button id="chatSendBtn" class="send-btn">
@@ -469,6 +470,18 @@
     <div class="modal-buttons">
       <button id="subroutineSaveBtn">Save</button>
       <button id="subroutineCancelBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Feature Flags modal -->
+<div id="featureFlagsModal" class="modal">
+  <div class="modal-content">
+    <h2>Feature Flags</h2>
+    <label><input type="checkbox" id="imageUploadEnabledCheck"/> Enable image upload button</label>
+    <div class="modal-buttons">
+      <button id="featureFlagsSaveBtn">Save</button>
+      <button id="featureFlagsCancelBtn">Cancel</button>
     </div>
   </div>
 </div>
