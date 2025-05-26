@@ -1496,7 +1496,7 @@ app.post("/api/chat/image", upload.single("imageFile"), async (req, res) => {
 // the script output back to the client.
 app.post("/api/upscale", async (req, res) => {
   try {
-    const { file } = req.body || {};
+    const { file, dbId: providedDbId } = req.body || {};
     console.debug("[Server Debug] /api/upscale called with file =>", file);
     if (!file) {
       console.debug("[Server Debug] /api/upscale => missing 'file' in request body");
@@ -1538,6 +1538,8 @@ app.post("/api/upscale", async (req, res) => {
         db.setUpscaledImage(originalUrl, job.resultPath);
         db.setImageStatus(originalUrl, 'Upscaled');
 
+        const dbId = providedDbId || db.getImageIdForUrl(originalUrl);
+
         // ----- Run RIBT background removal on the upscaled result -----
         const ribtScript =
           process.env.RIBT_SCRIPT_PATH ||
@@ -1554,7 +1556,8 @@ app.post("/api/upscale", async (req, res) => {
           if (fs.existsSync(ribtOutput)) {
             const ext = path.extname(job.resultPath);
             const base = path.basename(job.resultPath, ext);
-            const dest = path.join(uploadsDir, `${base}_nobg${ext}`);
+            const nobgName = `${dbId || base}_nobg${ext}`;
+            const dest = path.join(uploadsDir, nobgName);
             fs.copyFileSync(ribtOutput, dest);
             job.nobgPath = dest;
             console.debug('[Server Debug] Copied RIBT output to =>', dest);
@@ -1745,6 +1748,11 @@ app.get("/api/upscale/result", (req, res) => {
       path.join(uploadsDir, `${base}-upscaled${ext}`),
     ];
     const nobgCandidates = [
+      // DB-based naming
+      ...(function() {
+        const id = db.getImageIdForUrl(`/uploads/${file}`);
+        return id ? [path.join(uploadsDir, `${id}_nobg${ext}`)] : [];
+      })(),
       // Common naming patterns
       path.join(uploadsDir, `${base}_4096_nobg${ext}`),
       path.join(uploadsDir, `${base}-4096-nobg${ext}`),
@@ -1774,20 +1782,27 @@ app.get("/api/upscale/result", (req, res) => {
         break;
       }
     }
+    const toUrl = (p) => {
+      if (!p) return null;
+      if (p.startsWith(uploadsDir)) {
+        return "/uploads/" + path.relative(uploadsDir, p).replace(/\\/g, "/");
+      }
+      return p;
+    };
     if (found || nobgFound) {
-      return res.json({ url: found, nobgUrl: nobgFound });
+      return res.json({ url: toUrl(found), nobgUrl: toUrl(nobgFound) });
     }
 
     const fromDb = db.getUpscaledImage(`/uploads/${file}`);
     const fromDbNoBg = db.getUpscaledImage(`/uploads/${file}-nobg`);
     if ((fromDb && fs.existsSync(fromDb)) || (fromDbNoBg && fs.existsSync(fromDbNoBg))) {
-      return res.json({ url: fromDb || null, nobgUrl: fromDbNoBg || null });
+      return res.json({ url: toUrl(fromDb) || null, nobgUrl: toUrl(fromDbNoBg) || null });
     }
 
     const jobs = jobManager.listJobs();
     for (const j of jobs) {
       if (j.file === file && j.resultPath && fs.existsSync(j.resultPath)) {
-        return res.json({ url: j.resultPath, nobgUrl: j.nobgPath || null });
+        return res.json({ url: toUrl(j.resultPath), nobgUrl: toUrl(j.nobgPath) || null });
       }
     }
 
