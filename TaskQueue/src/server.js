@@ -1745,10 +1745,20 @@ app.get("/api/upscale/result", (req, res) => {
       path.join(uploadsDir, `${base}-upscaled${ext}`),
     ];
     const nobgCandidates = [
+      // Common naming patterns
       path.join(uploadsDir, `${base}_4096_nobg${ext}`),
       path.join(uploadsDir, `${base}-4096-nobg${ext}`),
       path.join(uploadsDir, `${base}_upscaled_nobg${ext}`),
       path.join(uploadsDir, `${base}-upscaled-nobg${ext}`),
+      // Alternate "no_bg"/"no-bg" variants
+      path.join(uploadsDir, `${base}_4096_no_bg${ext}`),
+      path.join(uploadsDir, `${base}-4096-no_bg${ext}`),
+      path.join(uploadsDir, `${base}_4096-no-bg${ext}`),
+      path.join(uploadsDir, `${base}-4096-no-bg${ext}`),
+      path.join(uploadsDir, `${base}_upscaled_no_bg${ext}`),
+      path.join(uploadsDir, `${base}-upscaled-no_bg${ext}`),
+      path.join(uploadsDir, `${base}_upscaled-no-bg${ext}`),
+      path.join(uploadsDir, `${base}-upscaled-no-bg${ext}`),
     ];
     let found = null;
     for (const p of candidates) {
