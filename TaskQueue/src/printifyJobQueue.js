@@ -106,6 +106,8 @@ export default class PrintifyJobQueue {
       const ext = path.extname(filePath);
       const base = path.basename(filePath, ext);
       const candidates = [
+        // DB-based naming
+        ...(job.dbId ? [path.join(this.uploadsDir, `${job.dbId}_nobg${ext}`)] : []),
         // Common naming patterns
         path.join(this.uploadsDir, `${base}_4096_nobg${ext}`),
         path.join(this.uploadsDir, `${base}-4096-nobg${ext}`),
