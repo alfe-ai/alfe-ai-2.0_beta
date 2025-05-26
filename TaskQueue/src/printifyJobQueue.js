@@ -106,10 +106,20 @@ export default class PrintifyJobQueue {
       const ext = path.extname(filePath);
       const base = path.basename(filePath, ext);
       const candidates = [
+        // Common naming patterns
         path.join(this.uploadsDir, `${base}_4096_nobg${ext}`),
         path.join(this.uploadsDir, `${base}-4096-nobg${ext}`),
         path.join(this.uploadsDir, `${base}_upscaled_nobg${ext}`),
-        path.join(this.uploadsDir, `${base}-upscaled-nobg${ext}`)
+        path.join(this.uploadsDir, `${base}-upscaled-nobg${ext}`),
+        // Alternate "no_bg"/"no-bg" variants
+        path.join(this.uploadsDir, `${base}_4096_no_bg${ext}`),
+        path.join(this.uploadsDir, `${base}-4096-no_bg${ext}`),
+        path.join(this.uploadsDir, `${base}_4096-no-bg${ext}`),
+        path.join(this.uploadsDir, `${base}-4096-no-bg${ext}`),
+        path.join(this.uploadsDir, `${base}_upscaled_no_bg${ext}`),
+        path.join(this.uploadsDir, `${base}-upscaled-no_bg${ext}`),
+        path.join(this.uploadsDir, `${base}_upscaled-no-bg${ext}`),
+        path.join(this.uploadsDir, `${base}-upscaled-no-bg${ext}`)
       ];
       for (const p of candidates) {
         if (fs.existsSync(p)) {
