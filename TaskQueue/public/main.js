@@ -38,13 +38,10 @@ let imagePaintTrayEnabled = true; // show image paint tray button
 let activityIframeMenuVisible = true; // show Activity IFrame menu item
 let nexumChatMenuVisible = true;     // show Nexum Chat menu item
 let nexumTabsMenuVisible = true;     // show Nexum Tabs menu item
-<<<<<<< HEAD
 let imageGeneratorMenuVisible = true; // show Image Generator menu item
-=======
 let fileTreeMenuVisible = true;      // show File Tree button
 let aiModelsMenuVisible = true;      // show AI Models link
 let tasksMenuVisible = true;         // show Tasks button
->>>>>>> origin/codex/add-feature-flags-to-hide-ui-elements
 let chatSubroutines = [];
 let actionHooks = [];
 let editingSubroutineId = null;
@@ -415,7 +412,6 @@ async function loadSettings(){
     toggleNexumTabsMenu(nexumTabsMenuVisible);
   }
   {
-<<<<<<< HEAD
     const r = await fetch("/api/settings/image_generator_menu_visible");
     if(r.ok){
       const { value } = await r.json();
@@ -424,7 +420,8 @@ async function loadSettings(){
       }
     }
     toggleImageGeneratorMenu(imageGeneratorMenuVisible);
-=======
+  }
+  {
     const r = await fetch("/api/settings/file_tree_menu_visible");
     if(r.ok){
       const { value } = await r.json();
@@ -453,7 +450,6 @@ async function loadSettings(){
       }
     }
     toggleTasksMenu(tasksMenuVisible);
->>>>>>> origin/codex/add-feature-flags-to-hide-ui-elements
   }
 }
 async function saveSettings(){
@@ -1887,13 +1883,11 @@ function toggleNexumTabsMenu(visible){
   if(!link) return;
   link.style.display = visible ? "" : "none";
 }
-<<<<<<< HEAD
 function toggleImageGeneratorMenu(visible){
   const link = document.getElementById("navImageGeneratorLink");
   if(!link) return;
   link.style.display = visible ? "" : "none";
 }
-=======
 function toggleFileTreeMenu(visible){
   const btn = document.getElementById("navFileTreeBtn");
   if(!btn) return;
@@ -1909,7 +1903,6 @@ function toggleTasksMenu(visible){
   if(!btn) return;
   btn.style.display = visible ? "" : "none";
 }
->>>>>>> origin/codex/add-feature-flags-to-hide-ui-elements
 function runImageLoop(){
   if(!imageLoopEnabled) return;
   if(chatInputEl) chatInputEl.value = imageLoopMessage;
@@ -3344,31 +3337,31 @@ document.getElementById("featureFlagsBtn").addEventListener("click", async () =>
     }
   } catch {}
   try {
-<<<<<<< HEAD
     const r4 = await fetch("/api/settings/image_generator_menu_visible");
     if(r4.ok){
       const { value } = await r4.json();
       imageGeneratorMenuVisible = value !== false;
-=======
-    const r4 = await fetch("/api/settings/file_tree_menu_visible");
-    if(r4.ok){
-      const { value } = await r4.json();
+    }
+  } catch {}
+  try {
+    const r5 = await fetch("/api/settings/file_tree_menu_visible");
+    if(r5.ok){
+      const { value } = await r5.json();
       fileTreeMenuVisible = value !== false;
     }
   } catch {}
   try {
-    const r5 = await fetch("/api/settings/ai_models_menu_visible");
-    if(r5.ok){
-      const { value } = await r5.json();
+    const r6 = await fetch("/api/settings/ai_models_menu_visible");
+    if(r6.ok){
+      const { value } = await r6.json();
       aiModelsMenuVisible = value !== false;
     }
   } catch {}
   try {
-    const r6 = await fetch("/api/settings/tasks_menu_visible");
-    if(r6.ok){
-      const { value } = await r6.json();
+    const r7 = await fetch("/api/settings/tasks_menu_visible");
+    if(r7.ok){
+      const { value } = await r7.json();
       tasksMenuVisible = value !== false;
->>>>>>> origin/codex/add-feature-flags-to-hide-ui-elements
     }
   } catch {}
   document.getElementById("imageUploadEnabledCheck").checked = imageUploadEnabled;
@@ -3376,13 +3369,10 @@ document.getElementById("featureFlagsBtn").addEventListener("click", async () =>
   document.getElementById("activityIframeMenuCheck").checked = activityIframeMenuVisible;
   document.getElementById("nexumChatMenuCheck").checked = nexumChatMenuVisible;
   document.getElementById("nexumTabsMenuCheck").checked = nexumTabsMenuVisible;
-<<<<<<< HEAD
-  document.getElementById("imageGeneratorMenuCheck").checked = imageGeneratorMenuVisible;
-=======
   document.getElementById("fileTreeMenuCheck").checked = fileTreeMenuVisible;
   document.getElementById("aiModelsMenuCheck").checked = aiModelsMenuVisible;
   document.getElementById("tasksMenuCheck").checked = tasksMenuVisible;
->>>>>>> origin/codex/add-feature-flags-to-hide-ui-elements
+  document.getElementById("imageGeneratorMenuCheck").checked = imageGeneratorMenuVisible;
   showModal(document.getElementById("featureFlagsModal"));
 });
 document.getElementById("featureFlagsSaveBtn").addEventListener("click", async () => {
@@ -3395,33 +3385,24 @@ document.getElementById("featureFlagsSaveBtn").addEventListener("click", async (
   activityIframeMenuVisible = document.getElementById("activityIframeMenuCheck").checked;
   nexumChatMenuVisible = document.getElementById("nexumChatMenuCheck").checked;
   nexumTabsMenuVisible = document.getElementById("nexumTabsMenuCheck").checked;
-<<<<<<< HEAD
-  imageGeneratorMenuVisible = document.getElementById("imageGeneratorMenuCheck").checked;
-  await setSetting("activity_iframe_menu_visible", activityIframeMenuVisible);
-  await setSetting("nexum_chat_menu_visible", nexumChatMenuVisible);
-  await setSetting("nexum_tabs_menu_visible", nexumTabsMenuVisible);
-  await setSetting("image_generator_menu_visible", imageGeneratorMenuVisible);
-  toggleActivityIframeMenu(activityIframeMenuVisible);
-  toggleNexumChatMenu(nexumChatMenuVisible);
-  toggleNexumTabsMenu(nexumTabsMenuVisible);
-  toggleImageGeneratorMenu(imageGeneratorMenuVisible);
-=======
   fileTreeMenuVisible = document.getElementById("fileTreeMenuCheck").checked;
   aiModelsMenuVisible = document.getElementById("aiModelsMenuCheck").checked;
   tasksMenuVisible = document.getElementById("tasksMenuCheck").checked;
+  imageGeneratorMenuVisible = document.getElementById("imageGeneratorMenuCheck").checked;
   await setSetting("activity_iframe_menu_visible", activityIframeMenuVisible);
   await setSetting("nexum_chat_menu_visible", nexumChatMenuVisible);
   await setSetting("nexum_tabs_menu_visible", nexumTabsMenuVisible);
   await setSetting("file_tree_menu_visible", fileTreeMenuVisible);
   await setSetting("ai_models_menu_visible", aiModelsMenuVisible);
   await setSetting("tasks_menu_visible", tasksMenuVisible);
+  await setSetting("image_generator_menu_visible", imageGeneratorMenuVisible);
   toggleActivityIframeMenu(activityIframeMenuVisible);
   toggleNexumChatMenu(nexumChatMenuVisible);
   toggleNexumTabsMenu(nexumTabsMenuVisible);
   toggleFileTreeMenu(fileTreeMenuVisible);
   toggleAiModelsMenu(aiModelsMenuVisible);
   toggleTasksMenu(tasksMenuVisible);
->>>>>>> origin/codex/add-feature-flags-to-hide-ui-elements
+  toggleImageGeneratorMenu(imageGeneratorMenuVisible);
   hideModal(document.getElementById("featureFlagsModal"));
 });
 document.getElementById("featureFlagsCancelBtn").addEventListener("click", () => {
