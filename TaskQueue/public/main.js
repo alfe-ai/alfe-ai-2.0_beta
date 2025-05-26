@@ -33,13 +33,10 @@ let imageLoopEnabled = false; // automatic image generation loop mode
 let imageLoopMessage = "Next image";
 let imageGenService = 'openai';
 let imageUploadEnabled = false; // show image upload button
-<<<<<<< HEAD
 let imagePaintTrayEnabled = true; // show image paint tray button
-=======
 let activityIframeMenuVisible = true; // show Activity IFrame menu item
 let nexumChatMenuVisible = true;     // show Nexum Chat menu item
 let nexumTabsMenuVisible = true;     // show Nexum Tabs menu item
->>>>>>> origin/codex/add-feature-flags-to-menu-items
 let chatSubroutines = [];
 let actionHooks = [];
 let editingSubroutineId = null;
@@ -360,7 +357,6 @@ async function loadSettings(){
     toggleImageUploadButton(imageUploadEnabled);
   }
   {
-<<<<<<< HEAD
     const r = await fetch("/api/settings/image_paint_tray_enabled");
     if(r.ok){
       const { value } = await r.json();
@@ -369,7 +365,8 @@ async function loadSettings(){
       }
     }
     toggleImagePaintTrayButton(imagePaintTrayEnabled);
-=======
+  }
+  {
     const r = await fetch("/api/settings/activity_iframe_menu_visible");
     if(r.ok){
       const { value } = await r.json();
@@ -398,7 +395,6 @@ async function loadSettings(){
       }
     }
     toggleNexumTabsMenu(nexumTabsMenuVisible);
->>>>>>> origin/codex/add-feature-flags-to-menu-items
   }
 }
 async function saveSettings(){
@@ -1794,19 +1790,18 @@ function toggleImageUploadButton(visible){
   btn.style.display = visible ? "" : "none";
 }
 
-<<<<<<< HEAD
 function toggleImagePaintTrayButton(visible){
   const btn = document.getElementById("chatGenImageBtn");
-=======
-function toggleActivityIframeMenu(visible){
-  const btn = document.getElementById("navActivityIframeBtn");
->>>>>>> origin/codex/add-feature-flags-to-menu-items
   if(!btn) return;
   btn.style.display = visible ? "" : "none";
 }
 
-<<<<<<< HEAD
-=======
+function toggleActivityIframeMenu(visible){
+  const btn = document.getElementById("navActivityIframeBtn");
+  if(!btn) return;
+  btn.style.display = visible ? "" : "none";
+}
+
 function toggleNexumChatMenu(visible){
   const link = document.getElementById("navNexumChatLink");
   if(!link) return;
@@ -1818,8 +1813,6 @@ function toggleNexumTabsMenu(visible){
   if(!link) return;
   link.style.display = visible ? "" : "none";
 }
-
->>>>>>> origin/codex/add-feature-flags-to-menu-items
 function runImageLoop(){
   if(!imageLoopEnabled) return;
   if(chatInputEl) chatInputEl.value = imageLoopMessage;
@@ -3254,24 +3247,19 @@ document.getElementById("featureFlagsBtn").addEventListener("click", async () =>
     }
   } catch {}
   document.getElementById("imageUploadEnabledCheck").checked = imageUploadEnabled;
-<<<<<<< HEAD
   document.getElementById("imagePaintTrayEnabledCheck").checked = imagePaintTrayEnabled;
-=======
   document.getElementById("activityIframeMenuCheck").checked = activityIframeMenuVisible;
   document.getElementById("nexumChatMenuCheck").checked = nexumChatMenuVisible;
   document.getElementById("nexumTabsMenuCheck").checked = nexumTabsMenuVisible;
->>>>>>> origin/codex/add-feature-flags-to-menu-items
   showModal(document.getElementById("featureFlagsModal"));
 });
 document.getElementById("featureFlagsSaveBtn").addEventListener("click", async () => {
   imageUploadEnabled = document.getElementById("imageUploadEnabledCheck").checked;
   await setSetting("image_upload_enabled", imageUploadEnabled);
   toggleImageUploadButton(imageUploadEnabled);
-<<<<<<< HEAD
   imagePaintTrayEnabled = document.getElementById("imagePaintTrayEnabledCheck").checked;
   await setSetting("image_paint_tray_enabled", imagePaintTrayEnabled);
   toggleImagePaintTrayButton(imagePaintTrayEnabled);
-=======
   activityIframeMenuVisible = document.getElementById("activityIframeMenuCheck").checked;
   nexumChatMenuVisible = document.getElementById("nexumChatMenuCheck").checked;
   nexumTabsMenuVisible = document.getElementById("nexumTabsMenuCheck").checked;
@@ -3281,7 +3269,6 @@ document.getElementById("featureFlagsSaveBtn").addEventListener("click", async (
   toggleActivityIframeMenu(activityIframeMenuVisible);
   toggleNexumChatMenu(nexumChatMenuVisible);
   toggleNexumTabsMenu(nexumTabsMenuVisible);
->>>>>>> origin/codex/add-feature-flags-to-menu-items
   hideModal(document.getElementById("featureFlagsModal"));
 });
 document.getElementById("featureFlagsCancelBtn").addEventListener("click", () => {
