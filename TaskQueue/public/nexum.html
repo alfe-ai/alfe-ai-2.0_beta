@@ -891,9 +891,21 @@
       const advanced = enableStartAdvanced;
       ['code','design','task'].forEach(t => {
         const btn = document.querySelector(`#startTypeButtons .start-type-btn[data-type="${t}"]`);
+<<<<<<< HEAD
         if(btn) btn.style.display = advanced ? '' : 'none';
         const newBtn = document.querySelector(`#newTabTypeButtons .start-type-btn[data-type="${t}"]`);
         if(newBtn) newBtn.style.display = advanced ? '' : 'none';
+=======
+        if(btn){
+          btn.classList.toggle('disabled', !advanced);
+          btn.disabled = !advanced;
+        }
+        const newBtn = document.querySelector(`#newTabTypeButtons .start-type-btn[data-type="${t}"]`);
+        if(newBtn){
+          newBtn.classList.toggle('disabled', !advanced);
+          newBtn.disabled = !advanced;
+        }
+>>>>>>> origin/merml3-codex/disable--code-,--design-,-and--project--buttons-with-feature
       });
       showDependencies = localStorage.getItem('flagShowDependencies') === 'true';
       showArchived = localStorage.getItem('flagShowArchived') === 'true';
