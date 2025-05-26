@@ -1562,6 +1562,19 @@ app.post("/api/upscale", async (req, res) => {
             job.nobgPath = dest;
             console.debug('[Server Debug] Copied RIBT output to =>', dest);
             db.setUpscaledImage(`${originalUrl}-nobg`, dest);
+
+            // ----- Copy RIBT output for final upscale -----
+            const upscaleName = `${dbId || base}_upscale${ext}`;
+            const upscaleDest = path.join(uploadsDir, upscaleName);
+            const ribtCopySrc = '/home/syl/git/LogisticaRIBT/output.png';
+            if (fs.existsSync(ribtCopySrc)) {
+              fs.copyFileSync(ribtCopySrc, upscaleDest);
+              job.resultPath = upscaleDest;
+              console.debug('[Server Debug] Copied final upscale to =>', upscaleDest);
+              db.setUpscaledImage(originalUrl, upscaleDest);
+            } else {
+              console.debug('[Server Debug] Expected upscale output not found at', ribtCopySrc);
+            }
           } else {
             console.debug('[Server Debug] RIBT output not found at', ribtOutput);
           }
@@ -1742,6 +1755,11 @@ app.get("/api/upscale/result", (req, res) => {
     const ext = path.extname(file);
     const base = path.basename(file, ext);
     const candidates = [
+      // DB-based naming for final upscale
+      ...(function() {
+        const id = db.getImageIdForUrl(`/uploads/${file}`);
+        return id ? [path.join(uploadsDir, `${id}_upscale${ext}`)] : [];
+      })(),
       path.join(uploadsDir, `${base}_4096${ext}`),
       path.join(uploadsDir, `${base}-4096${ext}`),
       path.join(uploadsDir, `${base}_upscaled${ext}`),
