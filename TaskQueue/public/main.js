@@ -31,7 +31,11 @@ let showDependenciesColumn = false;
 let tabGenerateImages = true; // per-tab auto image toggle
 let imageLoopEnabled = false; // automatic image generation loop mode
 let imageLoopMessage = "Next image";
+<<<<<<< HEAD
 let imageGenService = 'openai';
+=======
+let imageUploadEnabled = false; // show image upload button
+>>>>>>> Aurora/Aurelix/dev/nexum2
 let chatSubroutines = [];
 let actionHooks = [];
 let editingSubroutineId = null;
@@ -335,11 +339,22 @@ async function loadSettings(){
     }
   }
   {
+<<<<<<< HEAD
     const r = await fetch("/api/settings/image_gen_service");
     if(r.ok){
       const { value } = await r.json();
       if(value) imageGenService = value;
     }
+=======
+    const r = await fetch("/api/settings/image_upload_enabled");
+    if(r.ok){
+      const { value } = await r.json();
+      if(typeof value !== 'undefined'){
+        imageUploadEnabled = !!value;
+      }
+    }
+    toggleImageUploadButton(imageUploadEnabled);
+>>>>>>> Aurora/Aurelix/dev/nexum2
   }
 }
 async function saveSettings(){
@@ -934,6 +949,7 @@ async function selectTab(tabId){
   renderHeader();
   renderBody();
   setLoopUi(imageLoopEnabled);
+  toggleImageUploadButton(imageUploadEnabled);
   if(imageLoopEnabled){
     setTimeout(runImageLoop, 0);
   }
@@ -1725,6 +1741,12 @@ function toggleTopChatTabsVisibility(visible) {
 function setLoopUi(active){
   if(chatInputEl) chatInputEl.disabled = active;
   if(chatSendBtnEl) chatSendBtnEl.style.display = active ? 'none' : '';
+}
+
+function toggleImageUploadButton(visible){
+  const btn = document.getElementById("chatImageBtn");
+  if(!btn) return;
+  btn.style.display = visible ? "" : "none";
 }
 
 function runImageLoop(){
@@ -3124,6 +3146,30 @@ document.getElementById("taskListConfigCloseBtn").addEventListener("click", () =
 });
 
 // ----------------------------------------------------------------------
+// Feature Flags modal
+// ----------------------------------------------------------------------
+document.getElementById("featureFlagsBtn").addEventListener("click", async () => {
+  try {
+    const r = await fetch("/api/settings/image_upload_enabled");
+    if(r.ok){
+      const { value } = await r.json();
+      imageUploadEnabled = !!value;
+    }
+  } catch {}
+  document.getElementById("imageUploadEnabledCheck").checked = imageUploadEnabled;
+  showModal(document.getElementById("featureFlagsModal"));
+});
+document.getElementById("featureFlagsSaveBtn").addEventListener("click", async () => {
+  imageUploadEnabled = document.getElementById("imageUploadEnabledCheck").checked;
+  await setSetting("image_upload_enabled", imageUploadEnabled);
+  toggleImageUploadButton(imageUploadEnabled);
+  hideModal(document.getElementById("featureFlagsModal"));
+});
+document.getElementById("featureFlagsCancelBtn").addEventListener("click", () => {
+  hideModal(document.getElementById("featureFlagsModal"));
+});
+
+// ----------------------------------------------------------------------
 // Handling the global markdown save button
 // ----------------------------------------------------------------------
 document.getElementById("saveMdBtn").addEventListener("click", async () => {
@@ -3149,6 +3195,7 @@ document.getElementById("saveMdBtn").addEventListener("click", async () => {
   Image button now simply populates a buffer and displays a preview.
 */
 document.getElementById("chatImageBtn").addEventListener("click", () => {
+  if(!imageUploadEnabled) return;
   document.getElementById("imageUploadInput").click();
 });
 
