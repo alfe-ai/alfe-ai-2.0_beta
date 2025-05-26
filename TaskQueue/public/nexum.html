@@ -18,13 +18,14 @@
     <a id="aboutLink" style="position:absolute; top:18px; left:130px; font-size:0.8rem; color:var(--text-color); cursor:pointer;">About</a>
     <aside id="sidebar">
       <div id="tabsList" style="position:relative; top: 40px;"></div>
+      <div id="archiveList" style="position:relative; top: 40px; display:none;"></div>
       <button id="newTabBtn" style="position:relative; top: 40px;">New Tab</button>
     </aside>
     <main>
       <div id="viewTabsBar" style="display:flex;gap:0.5rem;margin-bottom:0.5rem;align-items:center;">
         <button id="viewTabChat" class="view-tab active" style="position:relative; left: 40px;">💬 Chat</button>
         <button id="viewTabTasks" class="view-tab" style="position:relative; left: 40px;">☑️ Tasks</button>
-        <button id="viewTabArchive" class="view-tab" style="position:relative; left: 40px;" hidden>Archive</button>
+        <button id="viewTabArchive" class="view-tab" style="position:relative; left: 40px;">Archive</button>
         <button id="settingsBtn" title="Settings" style="margin-left:auto;background:none;border:none;color:#ddd;font-size:1.2rem;cursor:pointer;">&#9881;</button>
         <button id="feedbackBtn" title="Send Feedback" style="background:none;border:none;color:#ddd;font-size:1.2rem;cursor:pointer;margin-left:0.5rem;">📝</button>
       </div>
@@ -227,6 +228,7 @@
   </div>
   <script>
     let tabs = [];
+    let archivedTabs = [];
     let currentTabId = 1;
     let currentView = 'chat';
     let currentTasks = [];
@@ -430,6 +432,35 @@
     if(chatPanel) chatPanel.style.display = noTabs ? 'none' : '';
     const taskPanel = document.getElementById('taskListPanel');
     if(taskPanel) taskPanel.style.display = noTabs ? 'none' : (currentView === 'tasks' ? '' : 'none');
+  }
+
+  async function loadArchivedTabs(){
+    try{
+      const res = await fetch('/api/chat/tabs?nexum=1&showArchived=1');
+      if(res.ok){
+        archivedTabs = (await res.json()).filter(t => t.archived);
+      }else{
+        archivedTabs = [];
+      }
+    }catch(e){ archivedTabs = []; console.error(e); }
+  }
+
+  function renderArchivedTabs(){
+    const container = document.getElementById('archiveList');
+    container.innerHTML = '';
+    archivedTabs.forEach(t => {
+      const item = document.createElement('div');
+      item.className = 'tab-item';
+      const label = document.createElement('span');
+      label.textContent = t.name;
+      const unarch = document.createElement('button');
+      unarch.textContent = 'Unarchive';
+      unarch.className = 'config-btn';
+      unarch.addEventListener('click', () => toggleArchiveTab(t.id, false));
+      item.appendChild(label);
+      item.appendChild(unarch);
+      container.appendChild(item);
+    });
   }
 
     function isoDate(d){
@@ -679,6 +710,10 @@
         if(r.ok){
           await loadTabs();
           renderTabs();
+          if(currentView === 'archive') {
+            await loadArchivedTabs();
+            renderArchivedTabs();
+          }
           if(currentView === 'chat') loadHistory();
           if(currentView === 'tasks') loadTasksForCurrentProject();
         }
@@ -725,16 +760,22 @@
 
       const taskPanel = document.getElementById('taskListPanel');
       if(taskPanel) taskPanel.style.display = v === 'tasks' ? '' : 'none';
+      const archiveList = document.getElementById('archiveList');
+      if(archiveList) archiveList.style.display = v === 'archive' ? '' : 'none';
+      const tabsListEl = document.getElementById('tabsList');
+      if(tabsListEl) tabsListEl.style.display = v === 'archive' ? 'none' : '';
+      const newTabBtnEl = document.getElementById('newTabBtn');
+      if(newTabBtnEl) newTabBtnEl.style.display = v === 'archive' ? 'none' : '';
 
       const chatEl = document.getElementById('chat');
-      if(chatEl) chatEl.style.display = v === 'tasks' ? 'none' : '';
+      if(chatEl) chatEl.style.display = v === 'tasks' || v === 'archive' ? 'none' : '';
       const suggestionsEl = document.getElementById('suggestions');
-      if(suggestionsEl) suggestionsEl.style.display = v === 'tasks' ? 'none' : '';
+      if(suggestionsEl) suggestionsEl.style.display = v === 'tasks' || v === 'archive' ? 'none' : '';
 
       const chatPanel = document.getElementById('chatPanel');
       if(chatPanel){
         chatPanel.classList.toggle('tasks-view', v === 'tasks');
-        chatPanel.style.display = '';
+        chatPanel.style.display = v === 'archive' ? 'none' : '';
       }
 
       if(v === 'chat') {
@@ -743,6 +784,9 @@
       if(v === 'tasks') {
         renderTaskHeader();
         loadTasksForCurrentProject();
+      }
+      if(v === 'archive') {
+        loadArchivedTabs().then(renderArchivedTabs);
       }
     }
 
@@ -1026,6 +1070,7 @@
         await loadTheme();
         applyFeatureFlags();
         await loadTabs();
+        await loadArchivedTabs();
         if(tabs.length>0){
           if(!Number.isNaN(startTab) && tabs.some(t=>t.id===startTab)){
             currentTabId = startTab;
