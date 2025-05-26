@@ -280,7 +280,9 @@
       span.className = 'splash-word';
       span.textContent = splashPhrases[splashIdx % splashPhrases.length];
       splashIdx++;
-      span.style.top = (60 + Math.random()*30) + 'vh';
+      // Ensure scrolling text appears below the "Your" label
+      // "Your" is positioned at 70% vertically, so start a bit lower
+      span.style.top = (75 + Math.random()*20) + 'vh';
       container.appendChild(span);
       span.addEventListener('animationend', () => span.remove());
       splashTimer = setTimeout(spawnSplashWord, 700);
