@@ -43,7 +43,7 @@ export default class PrintifyJobQueue {
     }
   }
 
-  enqueue(file, type, dbId = null) {
+  enqueue(file, type, dbId = null, variant = null) {
     const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
     const job = {
       id,
@@ -52,7 +52,8 @@ export default class PrintifyJobQueue {
       status: 'queued',
       jobId: null,
       resultPath: null,
-      dbId
+      dbId,
+      variant
     };
     this.jobs.push(job);
     this._saveJobs();
@@ -68,7 +69,8 @@ export default class PrintifyJobQueue {
       status: j.status,
       jobId: j.jobId,
       resultPath: j.resultPath || null,
-      dbId: j.dbId || null
+      dbId: j.dbId || null,
+      variant: j.variant || null
     }));
   }
 
@@ -102,18 +104,21 @@ export default class PrintifyJobQueue {
       script = this.upscaleScript;
     } else if (job.type === 'printify') {
       script = this.printifyScript;
-      // Prefer 4096 background-removed variant if available
       const ext = path.extname(filePath);
       const base = path.basename(filePath, ext);
-      const candidates = [
-        // DB-based naming
+      const normalCandidates = [
+        ...(job.dbId ? [path.join(this.uploadsDir, `${job.dbId}_upscale${ext}`)] : []),
+        path.join(this.uploadsDir, `${base}_4096${ext}`),
+        path.join(this.uploadsDir, `${base}-4096${ext}`),
+        path.join(this.uploadsDir, `${base}_upscaled${ext}`),
+        path.join(this.uploadsDir, `${base}-upscaled${ext}`)
+      ];
+      const nobgCandidates = [
         ...(job.dbId ? [path.join(this.uploadsDir, `${job.dbId}_nobg${ext}`)] : []),
-        // Common naming patterns
         path.join(this.uploadsDir, `${base}_4096_nobg${ext}`),
         path.join(this.uploadsDir, `${base}-4096-nobg${ext}`),
         path.join(this.uploadsDir, `${base}_upscaled_nobg${ext}`),
         path.join(this.uploadsDir, `${base}-upscaled-nobg${ext}`),
-        // Alternate "no_bg"/"no-bg" variants
         path.join(this.uploadsDir, `${base}_4096_no_bg${ext}`),
         path.join(this.uploadsDir, `${base}-4096-no_bg${ext}`),
         path.join(this.uploadsDir, `${base}_4096-no-bg${ext}`),
@@ -123,21 +128,34 @@ export default class PrintifyJobQueue {
         path.join(this.uploadsDir, `${base}_upscaled-no-bg${ext}`),
         path.join(this.uploadsDir, `${base}-upscaled-no-bg${ext}`)
       ];
-      let found = null;
-      for (const p of candidates) {
-        if (fs.existsSync(p)) {
-          found = p;
-          break;
+
+      const findFirst = (cands) => {
+        for (const p of cands) {
+          if (fs.existsSync(p)) return p;
         }
+        return null;
+      };
+
+      let normalFound = findFirst(normalCandidates);
+      if (!normalFound && this.db) {
+        const fromDb = this.db.getUpscaledImage(`/uploads/${job.file}`);
+        if (fromDb && fs.existsSync(fromDb)) normalFound = fromDb;
       }
-      if (!found && this.db) {
+
+      let nobgFound = findFirst(nobgCandidates);
+      if (!nobgFound && this.db) {
         const fromDb = this.db.getUpscaledImage(`/uploads/${job.file}-nobg`);
-        if (fromDb && fs.existsSync(fromDb)) {
-          found = fromDb;
-        }
+        if (fromDb && fs.existsSync(fromDb)) nobgFound = fromDb;
       }
-      if (found) {
-        filePath = found;
+
+      if (job.variant === 'nobg') {
+        if (nobgFound) filePath = nobgFound;
+        else if (normalFound) filePath = normalFound;
+      } else if (job.variant === 'normal') {
+        if (normalFound) filePath = normalFound;
+      } else {
+        if (nobgFound) filePath = nobgFound;
+        else if (normalFound) filePath = normalFound;
       }
     } else {
       job.status = 'error';

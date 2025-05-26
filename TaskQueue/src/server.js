@@ -1732,11 +1732,11 @@ app.get("/api/pipelineQueue", (req, res) => {
 });
 
 app.post("/api/pipelineQueue", (req, res) => {
-  const { file, type, dbId } = req.body || {};
+  const { file, type, dbId, variant } = req.body || {};
   if (!file || !type) {
     return res.status(400).json({ error: "Missing file or type" });
   }
-  const job = printifyQueue.enqueue(file, type, dbId || null);
+  const job = printifyQueue.enqueue(file, type, dbId || null, variant || null);
   res.json({ jobId: job.id });
 });
 

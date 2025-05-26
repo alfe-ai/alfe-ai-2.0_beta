@@ -29,6 +29,18 @@
     </thead>
     <tbody id="jobsList"></tbody>
   </table>
+  <div id="printifyChoice" style="margin-top:0.5rem; display:none;">
+    <label style="display:block;margin-bottom:0.25rem;">
+      <input type="radio" id="choiceNormal" name="printifyVariant" value="normal" />
+      Use 4096 image:
+      <span id="normalPath"></span>
+    </label>
+    <label style="display:block;">
+      <input type="radio" id="choiceNobg" name="printifyVariant" value="nobg" />
+      Use 4096 no background:
+      <span id="nobgPath"></span>
+    </label>
+  </div>
   <div style="margin-top:0.5rem;">
     <button id="upscaleButton">Submit to Upscale</button>
     <button id="printifyButton">Submit to Printify</button>
@@ -187,7 +199,44 @@
     }
 
     let upscaledFile = null;
+    let upscaledPath = null;
     let nobgFile = null;
+    let nobgPath = null;
+
+    function updateChoiceUI(){
+      const choiceDiv = document.getElementById('printifyChoice');
+      const normalRadio = document.getElementById('choiceNormal');
+      const nobgRadio = document.getElementById('choiceNobg');
+      const normalPathSpan = document.getElementById('normalPath');
+      const nobgPathSpan = document.getElementById('nobgPath');
+
+      if(upscaledPath){
+        normalPathSpan.textContent = upscaledPath;
+        normalRadio.disabled = false;
+      } else {
+        normalPathSpan.textContent = '(not found)';
+        normalRadio.disabled = true;
+      }
+
+      if(nobgPath){
+        nobgPathSpan.textContent = nobgPath;
+        nobgRadio.disabled = false;
+      } else {
+        nobgPathSpan.textContent = '(not found)';
+        nobgRadio.disabled = true;
+      }
+
+      if(upscaledPath || nobgPath){
+        choiceDiv.style.display = '';
+        if(nobgPath){
+          nobgRadio.checked = true;
+        } else if(upscaledPath){
+          normalRadio.checked = true;
+        }
+      } else {
+        choiceDiv.style.display = 'none';
+      }
+    }
     async function checkUpscaled(){
       if(!file) return;
       try {
@@ -201,6 +250,7 @@
             }, { once: true });
           }
           upscaledFile = data.url.split(/[/\\]/).pop();
+          upscaledPath = data.url;
           document.getElementById('tabUpscaled').style.display = '';
           if(stageItems[2]) stageItems[2].classList.add('completed');
           showUpscaled();
@@ -211,9 +261,11 @@
             nobgImg.src = `${nobgCandidate}?t=${Date.now()}`;
           }
           nobgFile = nobgCandidate.split(/[/\\]/).pop();
+          nobgPath = nobgCandidate;
           document.getElementById('tabNoBg').style.display = '';
           showNoBg();
         }
+        updateChoiceUI();
       } catch(err){
         console.error('Failed to check upscaled image =>', err);
       }
@@ -271,7 +323,9 @@
         }
       });
       printifyBtn.addEventListener('click', async () => {
-        const targetFile = nobgFile || upscaledFile;
+        const choice = document.querySelector('input[name="printifyVariant"]:checked');
+        const variant = choice ? choice.value : (nobgFile ? 'nobg' : 'normal');
+        const targetFile = variant === 'nobg' ? nobgFile : upscaledFile;
         console.debug('Submit to Printify clicked with file =>', targetFile);
         terminalEl.textContent = '';
         if(!targetFile){
