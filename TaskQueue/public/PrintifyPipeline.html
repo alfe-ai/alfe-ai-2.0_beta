@@ -205,11 +205,12 @@
           if(stageItems[2]) stageItems[2].classList.add('completed');
           showUpscaled();
         }
-        if(data.nobgUrl){
-          if(nobgImg.src !== data.nobgUrl){
-            nobgImg.src = `${data.nobgUrl}?t=${Date.now()}`;
+        const nobgCandidate = data.nobgUrl || (data.url && /(?:[_-](?:no)?[-_]?bg)/i.test(data.url) ? data.url : null);
+        if(nobgCandidate){
+          if(nobgImg.src !== nobgCandidate){
+            nobgImg.src = `${nobgCandidate}?t=${Date.now()}`;
           }
-          nobgFile = data.nobgUrl.split(/[/\\]/).pop();
+          nobgFile = nobgCandidate.split(/[/\\]/).pop();
           document.getElementById('tabNoBg').style.display = '';
           showNoBg();
         }
