@@ -33,6 +33,7 @@ let imageLoopEnabled = false; // automatic image generation loop mode
 let imageLoopMessage = "Next image";
 let imageGenService = 'openai';
 let imageUploadEnabled = false; // show image upload button
+let imagePaintTrayEnabled = true; // show image paint tray button
 let chatSubroutines = [];
 let actionHooks = [];
 let editingSubroutineId = null;
@@ -351,6 +352,16 @@ async function loadSettings(){
       }
     }
     toggleImageUploadButton(imageUploadEnabled);
+  }
+  {
+    const r = await fetch("/api/settings/image_paint_tray_enabled");
+    if(r.ok){
+      const { value } = await r.json();
+      if(typeof value !== 'undefined'){
+        imagePaintTrayEnabled = value !== false;
+      }
+    }
+    toggleImagePaintTrayButton(imagePaintTrayEnabled);
   }
 }
 async function saveSettings(){
@@ -1741,6 +1752,12 @@ function setLoopUi(active){
 
 function toggleImageUploadButton(visible){
   const btn = document.getElementById("chatImageBtn");
+  if(!btn) return;
+  btn.style.display = visible ? "" : "none";
+}
+
+function toggleImagePaintTrayButton(visible){
+  const btn = document.getElementById("chatGenImageBtn");
   if(!btn) return;
   btn.style.display = visible ? "" : "none";
 }
@@ -3151,14 +3168,23 @@ document.getElementById("featureFlagsBtn").addEventListener("click", async () =>
       const { value } = await r.json();
       imageUploadEnabled = !!value;
     }
+    const r2 = await fetch("/api/settings/image_paint_tray_enabled");
+    if(r2.ok){
+      const { value } = await r2.json();
+      imagePaintTrayEnabled = value !== false;
+    }
   } catch {}
   document.getElementById("imageUploadEnabledCheck").checked = imageUploadEnabled;
+  document.getElementById("imagePaintTrayEnabledCheck").checked = imagePaintTrayEnabled;
   showModal(document.getElementById("featureFlagsModal"));
 });
 document.getElementById("featureFlagsSaveBtn").addEventListener("click", async () => {
   imageUploadEnabled = document.getElementById("imageUploadEnabledCheck").checked;
   await setSetting("image_upload_enabled", imageUploadEnabled);
   toggleImageUploadButton(imageUploadEnabled);
+  imagePaintTrayEnabled = document.getElementById("imagePaintTrayEnabledCheck").checked;
+  await setSetting("image_paint_tray_enabled", imagePaintTrayEnabled);
+  toggleImagePaintTrayButton(imagePaintTrayEnabled);
   hideModal(document.getElementById("featureFlagsModal"));
 });
 document.getElementById("featureFlagsCancelBtn").addEventListener("click", () => {
