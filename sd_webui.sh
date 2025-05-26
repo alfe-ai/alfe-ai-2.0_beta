@@ -1,23 +1,32 @@
 #!/bin/bash
-# Script to set up and run AUTOMATIC1111's Stable Diffusion web UI with API enabled
-# at http://127.0.0.1:7860. Creates repo if missing and starts web UI.
+# sd_webui.sh - Setup and launch AUTOMATIC1111's Stable Diffusion Web UI
+# This script clones the web UI repo (if missing) and starts it with the
+# API enabled on port 7860. A Python 3.10 interpreter is required.
 
-set -e
+set -euo pipefail
 
-# Where to clone the web UI repository
 SD_DIR="stable-diffusion-webui"
+PYTHON_BIN="python3.10"
 
+# Verify Python 3.10 exists
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+  echo "[ERROR] Python 3.10 is required but not found. Please install it and rerun." >&2
+  exit 1
+fi
+
+# Clone repository if necessary
 if [ ! -d "$SD_DIR" ]; then
-  echo "Cloning Stable Diffusion web UI repository..."
+  echo "[+] Cloning Stable Diffusion Web UI repository..."
   git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git "$SD_DIR"
 fi
 
 cd "$SD_DIR"
 
+# Ensure model directory exists
 mkdir -p models/Stable-diffusion
 if [ ! -f models/Stable-diffusion/model.ckpt ]; then
-  echo "\nPlace your Stable Diffusion checkpoint in 'models/Stable-diffusion/'." >&2
+  echo "[INFO] Place your Stable Diffusion checkpoint in 'models/Stable-diffusion/'." >&2
 fi
 
-# Launch the web UI with API enabled on port 7860
-exec ./webui.sh --api --port 7860
+# Launch Web UI using specified Python interpreter
+exec ./webui.sh --api --port 7860 --python "$PYTHON_BIN"
