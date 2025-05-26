@@ -31,11 +31,8 @@ let showDependenciesColumn = false;
 let tabGenerateImages = true; // per-tab auto image toggle
 let imageLoopEnabled = false; // automatic image generation loop mode
 let imageLoopMessage = "Next image";
-<<<<<<< HEAD
 let imageGenService = 'openai';
-=======
 let imageUploadEnabled = false; // show image upload button
->>>>>>> Aurora/Aurelix/dev/nexum2
 let chatSubroutines = [];
 let actionHooks = [];
 let editingSubroutineId = null;
@@ -339,13 +336,13 @@ async function loadSettings(){
     }
   }
   {
-<<<<<<< HEAD
     const r = await fetch("/api/settings/image_gen_service");
     if(r.ok){
       const { value } = await r.json();
       if(value) imageGenService = value;
     }
-=======
+  }
+  {
     const r = await fetch("/api/settings/image_upload_enabled");
     if(r.ok){
       const { value } = await r.json();
@@ -354,7 +351,6 @@ async function loadSettings(){
       }
     }
     toggleImageUploadButton(imageUploadEnabled);
->>>>>>> Aurora/Aurelix/dev/nexum2
   }
 }
 async function saveSettings(){
