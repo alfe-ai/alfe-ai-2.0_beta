@@ -41,8 +41,8 @@
             <ul>
               <li><button id="navChatTabsBtn" class="tree-button">Chat Tabs</button></li>
               <li><button id="navActivityIframeBtn" class="tree-button">Activity IFrame</button></li>
-              <li><a href="/nexum.html" class="tree-button" style="text-decoration:none; color:inherit;">Nexum Chat</a></li>
-              <li><a href="/nexum_tabs.html" class="tree-button" style="text-decoration:none; color:inherit;">Nexum Tabs</a></li>
+              <li><a id="navNexumChatLink" href="/nexum.html" class="tree-button" style="text-decoration:none; color:inherit;">Nexum Chat</a></li>
+              <li><a id="navNexumTabsLink" href="/nexum_tabs.html" class="tree-button" style="text-decoration:none; color:inherit;">Nexum Tabs</a></li>
             </ul>
           </details>
         </li>
@@ -486,7 +486,10 @@
 <div id="featureFlagsModal" class="modal">
   <div class="modal-content">
     <h2>Feature Flags</h2>
-    <label><input type="checkbox" id="imageUploadEnabledCheck"/> Enable image upload button</label>
+    <label><input type="checkbox" id="imageUploadEnabledCheck"/> Enable image upload button</label><br/>
+    <label><input type="checkbox" id="activityIframeMenuCheck"/> Show Activity IFrame menu</label><br/>
+    <label><input type="checkbox" id="nexumChatMenuCheck"/> Show Nexum Chat menu</label><br/>
+    <label><input type="checkbox" id="nexumTabsMenuCheck"/> Show Nexum Tabs menu</label>
     <div class="modal-buttons">
       <button id="featureFlagsSaveBtn">Save</button>
       <button id="featureFlagsCancelBtn">Cancel</button>

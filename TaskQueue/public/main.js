@@ -33,6 +33,9 @@ let imageLoopEnabled = false; // automatic image generation loop mode
 let imageLoopMessage = "Next image";
 let imageGenService = 'openai';
 let imageUploadEnabled = false; // show image upload button
+let activityIframeMenuVisible = true; // show Activity IFrame menu item
+let nexumChatMenuVisible = true;     // show Nexum Chat menu item
+let nexumTabsMenuVisible = true;     // show Nexum Tabs menu item
 let chatSubroutines = [];
 let actionHooks = [];
 let editingSubroutineId = null;
@@ -351,6 +354,36 @@ async function loadSettings(){
       }
     }
     toggleImageUploadButton(imageUploadEnabled);
+  }
+  {
+    const r = await fetch("/api/settings/activity_iframe_menu_visible");
+    if(r.ok){
+      const { value } = await r.json();
+      if(typeof value !== 'undefined'){
+        activityIframeMenuVisible = value !== false;
+      }
+    }
+    toggleActivityIframeMenu(activityIframeMenuVisible);
+  }
+  {
+    const r = await fetch("/api/settings/nexum_chat_menu_visible");
+    if(r.ok){
+      const { value } = await r.json();
+      if(typeof value !== 'undefined'){
+        nexumChatMenuVisible = value !== false;
+      }
+    }
+    toggleNexumChatMenu(nexumChatMenuVisible);
+  }
+  {
+    const r = await fetch("/api/settings/nexum_tabs_menu_visible");
+    if(r.ok){
+      const { value } = await r.json();
+      if(typeof value !== 'undefined'){
+        nexumTabsMenuVisible = value !== false;
+      }
+    }
+    toggleNexumTabsMenu(nexumTabsMenuVisible);
   }
 }
 async function saveSettings(){
@@ -1743,6 +1776,24 @@ function toggleImageUploadButton(visible){
   const btn = document.getElementById("chatImageBtn");
   if(!btn) return;
   btn.style.display = visible ? "" : "none";
+}
+
+function toggleActivityIframeMenu(visible){
+  const btn = document.getElementById("navActivityIframeBtn");
+  if(!btn) return;
+  btn.style.display = visible ? "" : "none";
+}
+
+function toggleNexumChatMenu(visible){
+  const link = document.getElementById("navNexumChatLink");
+  if(!link) return;
+  link.style.display = visible ? "" : "none";
+}
+
+function toggleNexumTabsMenu(visible){
+  const link = document.getElementById("navNexumTabsLink");
+  if(!link) return;
+  link.style.display = visible ? "" : "none";
 }
 
 function runImageLoop(){
@@ -3152,13 +3203,46 @@ document.getElementById("featureFlagsBtn").addEventListener("click", async () =>
       imageUploadEnabled = !!value;
     }
   } catch {}
+  try {
+    const r1 = await fetch("/api/settings/activity_iframe_menu_visible");
+    if(r1.ok){
+      const { value } = await r1.json();
+      activityIframeMenuVisible = value !== false;
+    }
+  } catch {}
+  try {
+    const r2 = await fetch("/api/settings/nexum_chat_menu_visible");
+    if(r2.ok){
+      const { value } = await r2.json();
+      nexumChatMenuVisible = value !== false;
+    }
+  } catch {}
+  try {
+    const r3 = await fetch("/api/settings/nexum_tabs_menu_visible");
+    if(r3.ok){
+      const { value } = await r3.json();
+      nexumTabsMenuVisible = value !== false;
+    }
+  } catch {}
   document.getElementById("imageUploadEnabledCheck").checked = imageUploadEnabled;
+  document.getElementById("activityIframeMenuCheck").checked = activityIframeMenuVisible;
+  document.getElementById("nexumChatMenuCheck").checked = nexumChatMenuVisible;
+  document.getElementById("nexumTabsMenuCheck").checked = nexumTabsMenuVisible;
   showModal(document.getElementById("featureFlagsModal"));
 });
 document.getElementById("featureFlagsSaveBtn").addEventListener("click", async () => {
   imageUploadEnabled = document.getElementById("imageUploadEnabledCheck").checked;
   await setSetting("image_upload_enabled", imageUploadEnabled);
   toggleImageUploadButton(imageUploadEnabled);
+  activityIframeMenuVisible = document.getElementById("activityIframeMenuCheck").checked;
+  nexumChatMenuVisible = document.getElementById("nexumChatMenuCheck").checked;
+  nexumTabsMenuVisible = document.getElementById("nexumTabsMenuCheck").checked;
+  await setSetting("activity_iframe_menu_visible", activityIframeMenuVisible);
+  await setSetting("nexum_chat_menu_visible", nexumChatMenuVisible);
+  await setSetting("nexum_tabs_menu_visible", nexumTabsMenuVisible);
+  toggleActivityIframeMenu(activityIframeMenuVisible);
+  toggleNexumChatMenu(nexumChatMenuVisible);
+  toggleNexumTabsMenu(nexumTabsMenuVisible);
   hideModal(document.getElementById("featureFlagsModal"));
 });
 document.getElementById("featureFlagsCancelBtn").addEventListener("click", () => {
