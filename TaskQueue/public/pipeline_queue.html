@@ -71,6 +71,18 @@
       </div>
     </label>
     <img id="imagePreview" style="display:none;max-height:80px;border:1px solid #444;" />
+    <div id="variantChoice" style="display:none;flex-direction:column;margin-left:0.5rem;">
+      <label style="display:block;margin-bottom:0.25rem;">
+        <input type="radio" id="choiceQueueNormal" name="queueVariant" value="normal" />
+        Use 4096 image:
+        <span id="queueNormalPath"></span>
+      </label>
+      <label style="display:block;">
+        <input type="radio" id="choiceQueueNobg" name="queueVariant" value="nobg" />
+        Use 4096 no background:
+        <span id="queueNobgPath"></span>
+      </label>
+    </div>
     <button id="enqueueBtn">Add to Queue</button>
   </div>
   <table id="queueTable" style="width:100%;border-collapse:collapse;">
@@ -80,6 +92,7 @@
         <th>File</th>
         <th>DB ID</th>
         <th>Type</th>
+        <th>Variant</th>
         <th>Status</th>
         <th>Job ID</th>
         <th>Result Path</th>
@@ -106,6 +119,7 @@
             <td>${job.file}</td>
             <td>${dbLink}</td>
             <td>${job.type}</td>
+            <td>${job.variant || ''}</td>
             <td>${job.status}</td>
             <td>${jobLink}</td>
             <td>${job.resultPath || ''}</td>
@@ -147,6 +161,9 @@
             dropdown.dataset.id = f.id ?? '';
             optionsDiv.style.display = 'none';
             updatePreview(f.name);
+            if(document.getElementById('jobType').value === 'printify'){
+              updateVariantUI(f.name);
+            }
           });
           optionsDiv.appendChild(item);
         });
@@ -173,16 +190,75 @@
       }
     }
 
+    document.getElementById('jobType').addEventListener('change', () => {
+      const type = document.getElementById('jobType').value;
+      if(type === 'printify'){
+        updateVariantUI(document.getElementById('imageSelect').dataset.value);
+      } else {
+        document.getElementById('variantChoice').style.display = 'none';
+      }
+    });
+
+async function updateVariantUI(file){
+  const choiceDiv = document.getElementById('variantChoice');
+  const normalRadio = document.getElementById('choiceQueueNormal');
+  const nobgRadio = document.getElementById('choiceQueueNobg');
+  const normalPath = document.getElementById('queueNormalPath');
+  const nobgPath = document.getElementById('queueNobgPath');
+
+  if(!file){
+    choiceDiv.style.display = 'none';
+    normalRadio.disabled = nobgRadio.disabled = true;
+    normalPath.textContent = nobgPath.textContent = '';
+    return;
+  }
+  try{
+    const res = await fetch(`/api/upscale/result?file=${encodeURIComponent(file)}`);
+    const data = await res.json();
+    const upPath = data.url || null;
+    const nbPath = data.nobgUrl || (data.url && /(?:[_-](?:no)?[-_]?bg)/i.test(data.url) ? data.url : null);
+    if(upPath){
+      normalPath.textContent = upPath;
+      normalRadio.disabled = false;
+    }else{
+      normalPath.textContent = '(not found)';
+      normalRadio.disabled = true;
+    }
+    if(nbPath){
+      nobgPath.textContent = nbPath;
+      nobgRadio.disabled = false;
+    }else{
+      nobgPath.textContent = '(not found)';
+      nobgRadio.disabled = true;
+    }
+    if(upPath || nbPath){
+      choiceDiv.style.display = '';
+      if(nbPath){
+        nobgRadio.checked = true;
+      } else if(upPath){
+        normalRadio.checked = true;
+      }
+    }else{
+      choiceDiv.style.display = 'none';
+    }
+  }catch(e){
+    console.error('Failed to check variant paths', e);
+    choiceDiv.style.display = 'none';
+  }
+}
+
     document.getElementById('enqueueBtn').addEventListener('click', async () => {
       const file = document.getElementById('imageSelect').dataset.value;
       const dbId = document.getElementById('imageSelect').dataset.id;
       const type = document.getElementById('jobType').value;
+      const variantChoice = document.querySelector('input[name="queueVariant"]:checked');
+      const variant = variantChoice ? variantChoice.value : null;
       if(!file) return;
       try{
         await fetch('/api/pipelineQueue', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ file, type, dbId })
+          body: JSON.stringify({ file, type, dbId, variant })
         });
         await loadQueue();
       }catch(e){
@@ -201,6 +277,7 @@
 
     loadQueue();
     loadImages();
+    document.getElementById('jobType').dispatchEvent(new Event('change'));
     setInterval(loadQueue, 5000);
   </script>
 </body>
