@@ -105,28 +105,37 @@ export default class PrintifyJobQueue {
       // Prefer 4096 background-removed variant if available
       const ext = path.extname(filePath);
       const base = path.basename(filePath, ext);
-      // TODO: UPDATE TO PROPERLY GET THE 4096 NO BG PATH FOR THE IMAGE, PLEASE REFERENCE HOW WE GET IT FOR THE 4096 NOBG TAB DISPLAY
-      // const candidates = [
-      //   // Common naming patterns
-      //   path.join(this.uploadsDir, `${base}_4096_nobg${ext}`),
-      //   path.join(this.uploadsDir, `${base}-4096-nobg${ext}`),
-      //   path.join(this.uploadsDir, `${base}_upscaled_nobg${ext}`),
-      //   path.join(this.uploadsDir, `${base}-upscaled-nobg${ext}`),
-      //   // Alternate "no_bg"/"no-bg" variants
-      //   path.join(this.uploadsDir, `${base}_4096_no_bg${ext}`),
-      //   path.join(this.uploadsDir, `${base}-4096-no_bg${ext}`),
-      //   path.join(this.uploadsDir, `${base}_4096-no-bg${ext}`),
-      //   path.join(this.uploadsDir, `${base}-4096-no-bg${ext}`),
-      //   path.join(this.uploadsDir, `${base}_upscaled_no_bg${ext}`),
-      //   path.join(this.uploadsDir, `${base}-upscaled-no_bg${ext}`),
-      //   path.join(this.uploadsDir, `${base}_upscaled-no-bg${ext}`),
-      //   path.join(this.uploadsDir, `${base}-upscaled-no-bg${ext}`)
-      // ];
+      const candidates = [
+        // Common naming patterns
+        path.join(this.uploadsDir, `${base}_4096_nobg${ext}`),
+        path.join(this.uploadsDir, `${base}-4096-nobg${ext}`),
+        path.join(this.uploadsDir, `${base}_upscaled_nobg${ext}`),
+        path.join(this.uploadsDir, `${base}-upscaled-nobg${ext}`),
+        // Alternate "no_bg"/"no-bg" variants
+        path.join(this.uploadsDir, `${base}_4096_no_bg${ext}`),
+        path.join(this.uploadsDir, `${base}-4096-no_bg${ext}`),
+        path.join(this.uploadsDir, `${base}_4096-no-bg${ext}`),
+        path.join(this.uploadsDir, `${base}-4096-no-bg${ext}`),
+        path.join(this.uploadsDir, `${base}_upscaled_no_bg${ext}`),
+        path.join(this.uploadsDir, `${base}-upscaled-no_bg${ext}`),
+        path.join(this.uploadsDir, `${base}_upscaled-no-bg${ext}`),
+        path.join(this.uploadsDir, `${base}-upscaled-no-bg${ext}`)
+      ];
+      let found = null;
       for (const p of candidates) {
         if (fs.existsSync(p)) {
-          filePath = p;
+          found = p;
           break;
         }
+      }
+      if (!found && this.db) {
+        const fromDb = this.db.getUpscaledImage(`/uploads/${job.file}-nobg`);
+        if (fromDb && fs.existsSync(fromDb)) {
+          found = fromDb;
+        }
+      }
+      if (found) {
+        filePath = found;
       }
     } else {
       job.status = 'error';
