@@ -1537,6 +1537,7 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
   $("#showNavMenuCheck").checked = navMenuVisible;
   $("#showTopChatTabsCheck").checked = topChatTabsBarVisible;
   $("#showArchivedTabsCheck").checked = showArchivedTabs;
+  $("#tabGenerateImagesCheck").checked = tabGenerateImages;
   $("#imageLoopCheck").checked = imageLoopEnabled;
   $("#imageLoopMessageInput").value = imageLoopMessage;
 
