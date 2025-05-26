@@ -60,8 +60,9 @@
       <div>
         <h4>Nexum Feature Flags</h4>
         <!-- Chat and task tabs are now always visible -->
-        <label><input type="checkbox" id="flagShowDependencies"> Show "Depends On" Column</label>
-        <label style="margin-left:0.5rem;"><input type="checkbox" id="flagShowArchived"> Show Archived Chats</label>
+        <label style="display:block;"><input type="checkbox" id="flagShowDependencies"> Show "Depends On" Column</label>
+        <label style="display:block;margin-top:0.25rem;"><input type="checkbox" id="flagShowArchived"> Show Archived Chats</label>
+        <label style="display:block;margin-top:0.25rem;"><input type="checkbox" id="flagShowFeedback"> Show Feedback Button</label>
       </div>
       <div style="margin-top:0.5rem;">
         <label>Color:
@@ -230,6 +231,7 @@
     let taskSortAsc = true;
     let showDependencies = false;
     let showArchived = false;
+    let showFeedbackButton = true;
     // Feature flag to enable advanced start options (Code, Design, Project)
     const enableStartAdvanced = false;
     // Maintain a history of user-entered prompts
@@ -905,10 +907,15 @@
       });
       showDependencies = localStorage.getItem('flagShowDependencies') === 'true';
       showArchived = localStorage.getItem('flagShowArchived') === 'true';
+      showFeedbackButton = localStorage.getItem('flagShowFeedback') !== 'false';
       const cbDeps = document.getElementById('flagShowDependencies');
       if(cbDeps) cbDeps.checked = showDependencies;
       const cbArch = document.getElementById('flagShowArchived');
       if(cbArch) cbArch.checked = showArchived;
+      const cbFeedback = document.getElementById('flagShowFeedback');
+      if(cbFeedback) cbFeedback.checked = showFeedbackButton;
+      const feedbackBtn = document.getElementById('feedbackBtn');
+      if(feedbackBtn) feedbackBtn.style.display = showFeedbackButton ? '' : 'none';
       if(currentView === 'tasks'){
         renderTaskHeader();
         renderTasks(currentTasks);
@@ -924,6 +931,11 @@
       localStorage.setItem('flagShowArchived', e.target.checked);
       applyFeatureFlags();
       loadTabs().then(renderTabs);
+    });
+
+    document.getElementById('flagShowFeedback').addEventListener('change', e => {
+      localStorage.setItem('flagShowFeedback', e.target.checked);
+      applyFeatureFlags();
     });
 
     document.getElementById('themeColorSelect').addEventListener('change', async e => {
