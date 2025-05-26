@@ -27,6 +27,7 @@ let enterSubmitsMessage = true; // new toggle for Enter key submit
 let navMenuVisible = false; // visibility of the top navigation menu
 let showArchivedTabs = false;
 let topChatTabsBarVisible = true; // visibility of the top chat tabs bar
+let viewTabsBarVisible = true; // visibility of the top Chat/Tasks bar
 let showDependenciesColumn = false;
 let tabGenerateImages = true; // per-tab auto image toggle
 let imageLoopEnabled = false; // automatic image generation loop mode
@@ -321,6 +322,16 @@ async function loadSettings(){
       }
     }
     toggleNavMenuVisibility(navMenuVisible);
+  }
+  {
+    const r = await fetch("/api/settings/view_tabs_bar_visible");
+    if(r.ok){
+      const { value } = await r.json();
+      if(typeof value !== 'undefined'){
+        viewTabsBarVisible = value !== false;
+      }
+    }
+    toggleViewTabsBarVisibility(viewTabsBarVisible);
   }
   {
     const r = await fetch("/api/settings/show_archived_tabs");
@@ -1566,7 +1577,12 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
     const { value } = await rTopTabs.json();
     topChatTabsBarVisible = value !== false;
   }
-
+  const rViewTabs = await fetch("/api/settings/view_tabs_bar_visible");
+  if(rViewTabs.ok){
+    const { value } = await rViewTabs.json();
+    viewTabsBarVisible = value !== false;
+  }
+  
   const rDepsFlag = await fetch("/api/settings/show_dependencies_column");
   if(rDepsFlag.ok){
     const { value } = await rDepsFlag.json();
@@ -1591,6 +1607,7 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
   $("#enterSubmitCheck").checked = enterSubmitsMessage;
   $("#showNavMenuCheck").checked = navMenuVisible;
   $("#showTopChatTabsCheck").checked = topChatTabsBarVisible;
+  $("#showViewTabsBarCheck").checked = viewTabsBarVisible;
   $("#showArchivedTabsCheck").checked = showArchivedTabs;
   $("#tabGenerateImagesCheck").checked = tabGenerateImages;
   $("#imageLoopCheck").checked = imageLoopEnabled;
@@ -1706,6 +1723,7 @@ async function chatSettingsSaveFlow() {
   enterSubmitsMessage = $("#enterSubmitCheck").checked;
   navMenuVisible = $("#showNavMenuCheck").checked;
   topChatTabsBarVisible = $("#showTopChatTabsCheck").checked;
+  viewTabsBarVisible = $("#showViewTabsBarCheck").checked;
   showArchivedTabs = $("#showArchivedTabsCheck").checked;
   imageLoopEnabled = $("#imageLoopCheck").checked;
   imageLoopMessage = $("#imageLoopMessageInput").value.trim() || imageLoopMessage;
@@ -1720,6 +1738,7 @@ async function chatSettingsSaveFlow() {
   await setSetting("enter_submits_message", enterSubmitsMessage);
   await setSetting("nav_menu_visible", navMenuVisible);
   await setSetting("top_chat_tabs_bar_visible", topChatTabsBarVisible);
+  await setSetting("view_tabs_bar_visible", viewTabsBarVisible);
   await setSetting("show_archived_tabs", showArchivedTabs);
   await setSetting("show_dependencies_column", showDependenciesColumn);
 
@@ -1750,6 +1769,7 @@ async function chatSettingsSaveFlow() {
   toggleSterlingUrlVisibility(sterlingChatUrlVisible);
   toggleNavMenuVisibility(navMenuVisible);
   toggleTopChatTabsVisibility(topChatTabsBarVisible);
+  toggleViewTabsBarVisibility(viewTabsBarVisible);
   const pnl = document.getElementById("taskListPanel");
   if(pnl) pnl.style.display = markdownPanelVisible ? "" : "none";
   const subPanel = document.getElementById("chatSubroutinesPanel");
@@ -1788,6 +1808,12 @@ function toggleTopChatTabsVisibility(visible) {
   if(!topTabs) return;
   topTabs.style.display = visible ? "" : "none";
   if(btn) btn.textContent = visible ? "Hide chat tabs bar" : "Show chat tabs bar";
+}
+
+function toggleViewTabsBarVisibility(visible) {
+  const bar = document.getElementById("viewTabsBar");
+  if(!bar) return;
+  bar.style.display = visible ? "" : "none";
 }
 
 function setLoopUi(active){
