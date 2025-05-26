@@ -96,12 +96,27 @@ export default class PrintifyJobQueue {
     job.status = 'running';
     this._saveJobs();
 
-    const filePath = path.join(this.uploadsDir, job.file);
+    let filePath = path.join(this.uploadsDir, job.file);
     let script = '';
     if (job.type === 'upscale') {
       script = this.upscaleScript;
     } else if (job.type === 'printify') {
       script = this.printifyScript;
+      // Prefer 4096 background-removed variant if available
+      const ext = path.extname(filePath);
+      const base = path.basename(filePath, ext);
+      const candidates = [
+        path.join(this.uploadsDir, `${base}_4096_nobg${ext}`),
+        path.join(this.uploadsDir, `${base}-4096-nobg${ext}`),
+        path.join(this.uploadsDir, `${base}_upscaled_nobg${ext}`),
+        path.join(this.uploadsDir, `${base}-upscaled-nobg${ext}`)
+      ];
+      for (const p of candidates) {
+        if (fs.existsSync(p)) {
+          filePath = p;
+          break;
+        }
+      }
     } else {
       job.status = 'error';
       this.current = null;
