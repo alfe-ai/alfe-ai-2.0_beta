@@ -37,6 +37,7 @@ let imagePaintTrayEnabled = true; // show image paint tray button
 let activityIframeMenuVisible = true; // show Activity IFrame menu item
 let nexumChatMenuVisible = true;     // show Nexum Chat menu item
 let nexumTabsMenuVisible = true;     // show Nexum Tabs menu item
+let imageGeneratorMenuVisible = true; // show Image Generator menu item
 let chatSubroutines = [];
 let actionHooks = [];
 let editingSubroutineId = null;
@@ -395,6 +396,16 @@ async function loadSettings(){
       }
     }
     toggleNexumTabsMenu(nexumTabsMenuVisible);
+  }
+  {
+    const r = await fetch("/api/settings/image_generator_menu_visible");
+    if(r.ok){
+      const { value } = await r.json();
+      if(typeof value !== 'undefined'){
+        imageGeneratorMenuVisible = value !== false;
+      }
+    }
+    toggleImageGeneratorMenu(imageGeneratorMenuVisible);
   }
 }
 async function saveSettings(){
@@ -1810,6 +1821,11 @@ function toggleNexumChatMenu(visible){
 
 function toggleNexumTabsMenu(visible){
   const link = document.getElementById("navNexumTabsLink");
+  if(!link) return;
+  link.style.display = visible ? "" : "none";
+}
+function toggleImageGeneratorMenu(visible){
+  const link = document.getElementById("navImageGeneratorLink");
   if(!link) return;
   link.style.display = visible ? "" : "none";
 }
@@ -3246,11 +3262,19 @@ document.getElementById("featureFlagsBtn").addEventListener("click", async () =>
       nexumTabsMenuVisible = value !== false;
     }
   } catch {}
+  try {
+    const r4 = await fetch("/api/settings/image_generator_menu_visible");
+    if(r4.ok){
+      const { value } = await r4.json();
+      imageGeneratorMenuVisible = value !== false;
+    }
+  } catch {}
   document.getElementById("imageUploadEnabledCheck").checked = imageUploadEnabled;
   document.getElementById("imagePaintTrayEnabledCheck").checked = imagePaintTrayEnabled;
   document.getElementById("activityIframeMenuCheck").checked = activityIframeMenuVisible;
   document.getElementById("nexumChatMenuCheck").checked = nexumChatMenuVisible;
   document.getElementById("nexumTabsMenuCheck").checked = nexumTabsMenuVisible;
+  document.getElementById("imageGeneratorMenuCheck").checked = imageGeneratorMenuVisible;
   showModal(document.getElementById("featureFlagsModal"));
 });
 document.getElementById("featureFlagsSaveBtn").addEventListener("click", async () => {
@@ -3263,12 +3287,15 @@ document.getElementById("featureFlagsSaveBtn").addEventListener("click", async (
   activityIframeMenuVisible = document.getElementById("activityIframeMenuCheck").checked;
   nexumChatMenuVisible = document.getElementById("nexumChatMenuCheck").checked;
   nexumTabsMenuVisible = document.getElementById("nexumTabsMenuCheck").checked;
+  imageGeneratorMenuVisible = document.getElementById("imageGeneratorMenuCheck").checked;
   await setSetting("activity_iframe_menu_visible", activityIframeMenuVisible);
   await setSetting("nexum_chat_menu_visible", nexumChatMenuVisible);
   await setSetting("nexum_tabs_menu_visible", nexumTabsMenuVisible);
+  await setSetting("image_generator_menu_visible", imageGeneratorMenuVisible);
   toggleActivityIframeMenu(activityIframeMenuVisible);
   toggleNexumChatMenu(nexumChatMenuVisible);
   toggleNexumTabsMenu(nexumTabsMenuVisible);
+  toggleImageGeneratorMenu(imageGeneratorMenuVisible);
   hideModal(document.getElementById("featureFlagsModal"));
 });
 document.getElementById("featureFlagsCancelBtn").addEventListener("click", () => {
