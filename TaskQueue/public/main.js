@@ -31,6 +31,7 @@ let showDependenciesColumn = false;
 let tabGenerateImages = true; // per-tab auto image toggle
 let imageLoopEnabled = false; // automatic image generation loop mode
 let imageLoopMessage = "Next image";
+let imageGenService = 'openai';
 let chatSubroutines = [];
 let actionHooks = [];
 let editingSubroutineId = null;
@@ -331,6 +332,13 @@ async function loadSettings(){
       if(typeof value !== 'undefined'){
         showDependenciesColumn = !!value;
       }
+    }
+  }
+  {
+    const r = await fetch("/api/settings/image_gen_service");
+    if(r.ok){
+      const { value } = await r.json();
+      if(value) imageGenService = value;
     }
   }
 }
@@ -1497,6 +1505,14 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
     const { value } = await rDepsFlag.json();
     showDependenciesColumn = !!value;
   }
+  const rImgSvc = await fetch("/api/settings/image_gen_service");
+  if(rImgSvc.ok){
+    const { value } = await rImgSvc.json();
+    if(value) imageGenService = value;
+  }
+
+  const imgSvcSel = document.getElementById("imageServiceSelect");
+  if(imgSvcSel) imgSvcSel.value = imageGenService;
 
   $("#hideMetadataCheck").checked = chatHideMetadata;
   $("#autoNamingCheck").checked = chatTabAutoNaming;
@@ -1638,6 +1654,9 @@ async function chatSettingsSaveFlow() {
   await setSetting("top_chat_tabs_bar_visible", topChatTabsBarVisible);
   await setSetting("show_archived_tabs", showArchivedTabs);
   await setSetting("show_dependencies_column", showDependenciesColumn);
+
+  imageGenService = $("#imageServiceSelect").value;
+  await setSetting("image_gen_service", imageGenService);
 
   const serviceSel = $("#aiServiceSelect").value;
   const modelSel = $("#aiModelSelect").value;
@@ -2345,6 +2364,8 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
   $("#showSubroutinePanelCheck").checked = subroutinePanelVisible;
   $("#enterSubmitCheck").checked = enterSubmitsMessage;
   $("#showNavMenuCheck").checked = navMenuVisible;
+  const imgSvcInitSel = document.getElementById("imageServiceSelect");
+  if(imgSvcInitSel) imgSvcInitSel.value = imageGenService;
 
   await chatSettingsSaveFlow();
   await updateProjectInfo();
@@ -3233,7 +3254,7 @@ registerActionHook("generateImage", async ({response}) => {
     const r = await fetch('/api/image/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, tabId: currentTabId })
+      body: JSON.stringify({ prompt, tabId: currentTabId, provider: imageGenService })
     });
     if(genIndicator) genIndicator.style.display = "none";
     const data = await r.json();

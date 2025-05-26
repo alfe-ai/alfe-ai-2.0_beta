@@ -124,6 +124,11 @@ if (!themeMode) {
 }
 console.debug("[Server Debug] theme_color =>", themeColor, "mode =>", themeMode);
 
+console.debug("[Server Debug] Checking or setting default 'image_gen_service' in DB...");
+if (!db.getSetting("image_gen_service")) {
+  db.setSetting("image_gen_service", "openai");
+}
+
 const app = express();
 const jobManager = new JobManager();
 
@@ -1834,9 +1839,46 @@ app.get("/api/upscale/result", (req, res) => {
 // Generate an image using OpenAI's image API.
 app.post("/api/image/generate", async (req, res) => {
   try {
-    const { prompt, n, size, model, tabId } = req.body || {};
+    const { prompt, n, size, model, provider, tabId } = req.body || {};
     if (!prompt) {
       return res.status(400).json({ error: "Missing prompt" });
+    }
+
+    const service = (provider || db.getSetting("image_gen_service") || "openai").toLowerCase();
+
+    const allowedSizes = ["1024x1024", "1024x1792", "1792x1024"];
+    const imgSize = allowedSizes.includes(size) ? size : "1024x1024";
+
+    let countParsed = parseInt(n, 10);
+    if (isNaN(countParsed) || countParsed < 1) countParsed = 1;
+
+    if (service === "stable-diffusion") {
+      const sdBase = process.env.STABLE_DIFFUSION_URL;
+      if (!sdBase) {
+        return res.status(500).json({ error: "STABLE_DIFFUSION_URL not configured" });
+      }
+      const [w, h] = imgSize.split("x").map(v => parseInt(v, 10));
+      const sdEndpoint = sdBase.replace(/\/$/, "") + "/sdapi/v1/txt2img";
+      const payload = { prompt, width: w, height: h, steps: 20, batch_size: countParsed };
+      if (model) payload.model = model;
+      const resp = await axios.post(sdEndpoint, payload);
+      const b64 = resp.data?.images?.[0];
+      if (!b64) {
+        return res.status(502).json({ error: "Received empty response from Stable Diffusion" });
+      }
+      const buffer = Buffer.from(b64, "base64");
+      const filename = `sd-${Date.now()}-${Math.round(Math.random() * 1e9)}.png`;
+      const filePath = path.join(uploadsDir, filename);
+      fs.writeFileSync(filePath, buffer);
+      const localUrl = `/uploads/${filename}`;
+      db.logActivity(
+        "Image generate",
+        JSON.stringify({ prompt, url: localUrl, model: model || "", n: countParsed, provider: service })
+      );
+      const tab = parseInt(tabId, 10) || 1;
+      const imageTitle = await deriveImageTitle(prompt);
+      db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated');
+      return res.json({ success: true, url: localUrl, title: imageTitle });
     }
 
     const openAiKey = process.env.OPENAI_API_KEY;
@@ -1855,16 +1897,11 @@ app.post("/api/image/generate", async (req, res) => {
       return res.status(400).json({ error: "Invalid model" });
     }
 
-    let countParsed = parseInt(n, 10);
-    if (isNaN(countParsed) || countParsed < 1) countParsed = 1;
     if (modelName === "dall-e-3") {
       countParsed = 1; // API restriction
     } else {
       countParsed = Math.min(countParsed, 4); // limit for dall-e-2
     }
-
-    const allowedSizes = ["1024x1024", "1024x1792", "1792x1024"];
-    const imgSize = allowedSizes.includes(size) ? size : "1024x1024";
 
     let result;
     try {
@@ -1919,7 +1956,7 @@ app.post("/api/image/generate", async (req, res) => {
 
     db.logActivity(
       "Image generate",
-      JSON.stringify({ prompt, url: localUrl, model: modelName, n: countParsed })
+      JSON.stringify({ prompt, url: localUrl, model: modelName, n: countParsed, provider: service })
     );
 
     const tab = parseInt(tabId, 10) || 1;
