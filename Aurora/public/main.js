@@ -46,6 +46,7 @@ let imageGeneratorMenuVisible = true; // show Image Generator menu item
 let fileTreeMenuVisible = true;      // show File Tree button
 let aiModelsMenuVisible = true;      // show AI Models link
 let tasksMenuVisible = true;         // show Tasks button
+let upArrowHistoryEnabled = true;    // use Arrow Up/Down for input history
 let chatSubroutines = [];
 let actionHooks = [];
 let editingSubroutineId = null;
@@ -480,6 +481,15 @@ async function loadSettings(){
       }
     }
     toggleTasksMenu(tasksMenuVisible);
+  }
+  {
+    const r = await fetch("/api/settings/up_arrow_history_enabled");
+    if(r.ok){
+      const { value } = await r.json();
+      if(typeof value !== 'undefined'){
+        upArrowHistoryEnabled = value !== false;
+      }
+    }
   }
 }
 async function saveSettings(){
@@ -1359,7 +1369,7 @@ scrollDownBtnEl.addEventListener("click", ()=>{
 });
 
 chatInputEl.addEventListener("keydown", (e) => {
-  if (e.key === "ArrowUp") {
+  if (upArrowHistoryEnabled && e.key === "ArrowUp") {
     if (inputHistory.length > 0) {
       if (inputHistoryPos === -1) inputHistoryPos = inputHistory.length - 1;
       else if (inputHistoryPos > 0) inputHistoryPos--;
@@ -1369,7 +1379,7 @@ chatInputEl.addEventListener("keydown", (e) => {
       }, 0);
     }
     e.preventDefault();
-  } else if (e.key === "ArrowDown") {
+  } else if (upArrowHistoryEnabled && e.key === "ArrowDown") {
     if (inputHistory.length > 0) {
       if (inputHistoryPos >= 0 && inputHistoryPos < inputHistory.length - 1) {
         inputHistoryPos++;
@@ -3546,6 +3556,13 @@ document.getElementById("featureFlagsBtn").addEventListener("click", async () =>
       viewTabsBarVisible = value !== false;
     }
   } catch {}
+  try {
+    const r9 = await fetch("/api/settings/up_arrow_history_enabled");
+    if(r9.ok){
+      const { value } = await r9.json();
+      upArrowHistoryEnabled = value !== false;
+    }
+  } catch {}
   document.getElementById("imageUploadEnabledCheck").checked = imageUploadEnabled;
   document.getElementById("imagePaintTrayEnabledCheck").checked = imagePaintTrayEnabled;
   document.getElementById("activityIframeMenuCheck").checked = activityIframeMenuVisible;
@@ -3556,6 +3573,7 @@ document.getElementById("featureFlagsBtn").addEventListener("click", async () =>
   document.getElementById("tasksMenuCheck").checked = tasksMenuVisible;
   document.getElementById("viewTabsBarFlagCheck").checked = viewTabsBarVisible;
   document.getElementById("imageGeneratorMenuCheck").checked = imageGeneratorMenuVisible;
+  document.getElementById("upArrowHistoryCheck").checked = upArrowHistoryEnabled;
   showModal(document.getElementById("featureFlagsModal"));
 });
 document.getElementById("featureFlagsSaveBtn").addEventListener("click", async () => {
@@ -3572,6 +3590,7 @@ document.getElementById("featureFlagsSaveBtn").addEventListener("click", async (
   aiModelsMenuVisible = document.getElementById("aiModelsMenuCheck").checked;
   tasksMenuVisible = document.getElementById("tasksMenuCheck").checked;
   viewTabsBarVisible = document.getElementById("viewTabsBarFlagCheck").checked;
+  upArrowHistoryEnabled = document.getElementById("upArrowHistoryCheck").checked;
   imageGeneratorMenuVisible = document.getElementById("imageGeneratorMenuCheck").checked;
   await setSetting("activity_iframe_menu_visible", activityIframeMenuVisible);
   await setSetting("nexum_chat_menu_visible", nexumChatMenuVisible);
@@ -3580,6 +3599,7 @@ document.getElementById("featureFlagsSaveBtn").addEventListener("click", async (
   await setSetting("ai_models_menu_visible", aiModelsMenuVisible);
   await setSetting("tasks_menu_visible", tasksMenuVisible);
   await setSetting("view_tabs_bar_visible", viewTabsBarVisible);
+  await setSetting("up_arrow_history_enabled", upArrowHistoryEnabled);
   await setSetting("image_generator_menu_visible", imageGeneratorMenuVisible);
   toggleActivityIframeMenu(activityIframeMenuVisible);
   toggleNexumChatMenu(nexumChatMenuVisible);
