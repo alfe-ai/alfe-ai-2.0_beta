@@ -1,3 +1,11 @@
+// Generate or retrieve a unique session ID stored in sessionStorage
+const sessionId = sessionStorage.getItem('sessionId') || crypto.randomUUID();
+sessionStorage.setItem('sessionId', sessionId);
+document.addEventListener('DOMContentLoaded', () => {
+  const sessEl = document.getElementById('sessionIdText');
+  if (sessEl) sessEl.textContent = sessionId;
+});
+
 let columnsOrder = [
   { key: "drag",         label: "⠿"          },
   { key: "priority",     label: "Prio"       },
