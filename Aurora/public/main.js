@@ -2308,7 +2308,7 @@ function setupFileSorting(){
 
 async function loadFileList() {
   try {
-    fileListData = await fetch("/api/upload/list").then(r => r.json());
+    fileListData = await fetch(`/api/upload/list?sessionId=${encodeURIComponent(sessionId)}`).then(r => r.json());
     sortFileData();
     renderFileList();
   } catch(e) {

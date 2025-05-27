@@ -103,6 +103,8 @@
     <tbody></tbody>
   </table>
   <script>
+    const sessionId = sessionStorage.getItem('sessionId') || crypto.randomUUID();
+    sessionStorage.setItem('sessionId', sessionId);
     async function loadQueue(){
       try{
         const res = await fetch('/api/pipelineQueue');
@@ -141,7 +143,7 @@
 
     async function loadImages(){
       try{
-        const res = await fetch('/api/upload/list');
+        const res = await fetch('/api/upload/list?sessionId=' + encodeURIComponent(sessionId));
         const files = await res.json();
         optionsDiv.innerHTML = '';
         dropdown.dataset.value = '';
