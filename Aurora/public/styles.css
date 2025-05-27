@@ -213,24 +213,30 @@ body {
   position: relative;
 }
 
+.delete-chat-btn {
+  background: transparent;
+  border: none;
+  color: #f55;
+  font-weight: bold;
+  font-size: 1.2rem;
+  text-shadow: 0 0 2px #000;
+  cursor: pointer;
+}
+
+.delete-chat-btn:hover {
+  color: #ff7777;
+}
+
 .pair-delete-btn {
   position: absolute;
   top: 4px;
   right: 4px;
-  background: transparent;
-  border: none;
-  color: #888;
-  cursor: pointer;
 }
 
 .bubble-delete-btn {
   position: absolute;
   top: 4px;
   right: 4px;
-  background: transparent;
-  border: none;
-  color: #888;
-  cursor: pointer;
 }
 
 .model-delete-btn {
