@@ -42,8 +42,10 @@
       </div>
     </div>
   </div>
-  <script>
+<script>
 let tabs = [];
+
+let newTabProjectNameEnabled = true;
 
 let currentColor = 'purple';
 let currentMode = 'dark';
@@ -134,13 +136,15 @@ let newTabSelectedType = 'chat';
 function openNewTabModal(){
   newTabSelectedType = 'chat';
   document.getElementById('newTabProjectInput').value = '';
+  const lbl = document.querySelector('#newTabProjectInput').closest('label');
+  if(lbl) lbl.style.display = newTabProjectNameEnabled ? '' : 'none';
   document.querySelectorAll('#newTabTypeButtons .start-type-btn').forEach(b => b.classList.remove('selected'));
   const first = document.querySelector('#newTabTypeButtons .start-type-btn[data-type="chat"]');
   if(first) first.classList.add('selected');
   document.getElementById('newTabModal').style.display = 'flex';
 }
 async function createNewTab(){
-  const project = document.getElementById('newTabProjectInput').value.trim();
+  const project = newTabProjectNameEnabled ? document.getElementById('newTabProjectInput').value.trim() : '';
   const type = newTabSelectedType;
   try{
     const r = await fetch('/api/chat/tabs/new',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'New Tab', nexum:1, type, project})});
@@ -194,6 +198,17 @@ document.querySelectorAll('#newTabTypeButtons .start-type-btn').forEach(btn => {
 
 (async function(){
   await loadTheme();
+  try{
+    const r = await fetch('/api/settings/new_tab_project_enabled');
+    if(r.ok){
+      const { value } = await r.json();
+      newTabProjectNameEnabled = value !== false;
+    }
+  }catch(e){ console.error(e); }
+  if(!newTabProjectNameEnabled){
+    const lbl = document.querySelector('#newTabProjectInput').closest('label');
+    if(lbl) lbl.style.display = 'none';
+  }
   await loadTabs();
   renderTabs();
 })();
