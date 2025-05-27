@@ -46,6 +46,7 @@ let imageGeneratorMenuVisible = true; // show Image Generator menu item
 let fileTreeMenuVisible = true;      // show File Tree button
 let aiModelsMenuVisible = true;      // show AI Models link
 let tasksMenuVisible = true;         // show Tasks button
+let showProjectNameInTabs = false;   // show project name in chat tab labels
 let upArrowHistoryEnabled = true;    // use Arrow Up/Down for input history
 let chatSubroutines = [];
 let actionHooks = [];
@@ -496,6 +497,15 @@ async function loadSettings(){
       const { value } = await r.json();
       if(typeof value !== 'undefined'){
         upArrowHistoryEnabled = value !== false;
+      }
+    }
+  }
+  {
+    const r = await fetch("/api/settings/show_project_name_in_tabs");
+    if(r.ok){
+      const { value } = await r.json();
+      if(typeof value !== 'undefined'){
+        showProjectNameInTabs = value !== false;
       }
     }
   }
@@ -1127,7 +1137,11 @@ function renderTabs(){
 
     tabBtn.style.padding="4px 6px";
     const nameSpan = document.createElement("span");
-    nameSpan.textContent = tab.name;
+    let tabLabel = tab.name;
+    if(showProjectNameInTabs && tab.project_name){
+      tabLabel += ` [${tab.project_name}]`;
+    }
+    nameSpan.textContent = tabLabel;
     nameSpan.style.flexGrow = "1";
     nameSpan.addEventListener("click", ()=>selectTab(tab.id));
     tabBtn.appendChild(nameSpan);
@@ -1168,7 +1182,11 @@ function renderSidebarTabs(){
     info.style.flexGrow = "1";
 
     const b = document.createElement("button");
-    b.textContent = tab.name;
+    let sideLabel = tab.name;
+    if(showProjectNameInTabs && tab.project_name){
+      sideLabel += ` [${tab.project_name}]`;
+    }
+    b.textContent = sideLabel;
     if (tab.id === currentTabId) {
       b.classList.add("active");
     }
@@ -1215,7 +1233,11 @@ function renderArchivedSidebarTabs(){
     wrapper.style.width = "100%";
 
     const label = document.createElement("span");
-    label.textContent = tab.name;
+    let archLabel = tab.name;
+    if(showProjectNameInTabs && tab.project_name){
+      archLabel += ` [${tab.project_name}]`;
+    }
+    label.textContent = archLabel;
     label.style.flexGrow = "1";
 
     const unarchBtn = document.createElement("button");
@@ -3587,6 +3609,13 @@ document.getElementById("featureFlagsBtn").addEventListener("click", async () =>
       upArrowHistoryEnabled = value !== false;
     }
   } catch {}
+  try {
+    const r10 = await fetch("/api/settings/show_project_name_in_tabs");
+    if(r10.ok){
+      const { value } = await r10.json();
+      showProjectNameInTabs = value !== false;
+    }
+  } catch {}
   document.getElementById("imageUploadEnabledCheck").checked = imageUploadEnabled;
   document.getElementById("imagePaintTrayEnabledCheck").checked = imagePaintTrayEnabled;
   document.getElementById("activityIframeMenuCheck").checked = activityIframeMenuVisible;
@@ -3598,6 +3627,7 @@ document.getElementById("featureFlagsBtn").addEventListener("click", async () =>
   document.getElementById("viewTabsBarFlagCheck").checked = viewTabsBarVisible;
   document.getElementById("imageGeneratorMenuCheck").checked = imageGeneratorMenuVisible;
   document.getElementById("upArrowHistoryCheck").checked = upArrowHistoryEnabled;
+  document.getElementById("showProjectNameTabsCheck").checked = showProjectNameInTabs;
   showModal(document.getElementById("featureFlagsModal"));
 });
 document.getElementById("featureFlagsSaveBtn").addEventListener("click", async () => {
@@ -3615,6 +3645,7 @@ document.getElementById("featureFlagsSaveBtn").addEventListener("click", async (
   tasksMenuVisible = document.getElementById("tasksMenuCheck").checked;
   viewTabsBarVisible = document.getElementById("viewTabsBarFlagCheck").checked;
   upArrowHistoryEnabled = document.getElementById("upArrowHistoryCheck").checked;
+  showProjectNameInTabs = document.getElementById("showProjectNameTabsCheck").checked;
   imageGeneratorMenuVisible = document.getElementById("imageGeneratorMenuCheck").checked;
   await setSetting("activity_iframe_menu_visible", activityIframeMenuVisible);
   await setSetting("nexum_chat_menu_visible", nexumChatMenuVisible);
@@ -3624,6 +3655,7 @@ document.getElementById("featureFlagsSaveBtn").addEventListener("click", async (
   await setSetting("tasks_menu_visible", tasksMenuVisible);
   await setSetting("view_tabs_bar_visible", viewTabsBarVisible);
   await setSetting("up_arrow_history_enabled", upArrowHistoryEnabled);
+  await setSetting("show_project_name_in_tabs", showProjectNameInTabs);
   await setSetting("image_generator_menu_visible", imageGeneratorMenuVisible);
   toggleActivityIframeMenu(activityIframeMenuVisible);
   toggleNexumChatMenu(nexumChatMenuVisible);
@@ -3633,6 +3665,9 @@ document.getElementById("featureFlagsSaveBtn").addEventListener("click", async (
   toggleTasksMenu(tasksMenuVisible);
   toggleViewTabsBarVisibility(viewTabsBarVisible);
   toggleImageGeneratorMenu(imageGeneratorMenuVisible);
+  renderTabs();
+  renderSidebarTabs();
+  renderArchivedSidebarTabs();
   hideModal(document.getElementById("featureFlagsModal"));
 });
 document.getElementById("featureFlagsCancelBtn").addEventListener("click", () => {
