@@ -233,10 +233,15 @@
         <p>Nexum is the experimental interface for the Alfe AI project. It combines chat, code generation and task management features to assist developers.</p>
         <p><strong>Our Story</strong></p>
         <p>We started in 2022 with a task management prototype called Aurora. The idea matured into Nexum, and by May 2025 we're focusing on integrating AI tools to streamline developer workflows.</p>
+        <p id="sessionIdDisplay" style="margin-top:0.5rem;">Session ID: <span id="sessionIdText"></span></p>
       </div>
     </div>
   </div>
   <script>
+    // Generate or retrieve a unique session ID stored in sessionStorage
+    const sessionId = sessionStorage.getItem('sessionId') || crypto.randomUUID();
+    sessionStorage.setItem('sessionId', sessionId);
+
     let tabs = [];
     let archivedTabs = [];
     let currentTabId = 1;
@@ -888,6 +893,10 @@
       }
     }
     document.addEventListener('DOMContentLoaded', () => {
+      // Display the generated session ID in the About overlay
+      const sessEl = document.getElementById('sessionIdText');
+      if(sessEl) sessEl.textContent = sessionId;
+
       document.getElementById('sendBtn').addEventListener('click',send);
       document.getElementById('askBtn').addEventListener('click',send);
       document.getElementById('codeBtn').addEventListener('click',createTask);
