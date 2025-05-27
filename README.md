@@ -1,16 +1,14 @@
-# Alfe AI: Aurora / Aurelix: Version 2
+# Alfe AI / 2.30 Beta  
 
-This repository contains various utilities used by the Alfe project. A new helper script is provided to run a local instance of AUTOMATIC1111's Stable Diffusion Web UI.
+### Alfe AI: Software Development and Image Design Platform  
 
-## Running Stable Diffusion Web UI
+The first version of the Alfe AI Cloud Platform https://alfe.sh has been released (beta-2.30).  
+This initial cloud release includes the image design component of the Alfe AI Platform.  
+The software development component is coming soon, and is available now as a Pre-release on GitHub.  
 
-Run `sd_webui.sh` to clone the Web UI repository (if missing) and start the server on port 7860 with API access enabled:
+![image](https://github.com/user-attachments/assets/b7d308f8-e2a6-4098-b707-8f8704a74049)  
 
-```bash
-./sd_webui.sh
-```
+Alfe AI beta-2.30 (Image Design): https://github.com/alfe-ai/alfe-ai-2.0_beta  
+Alfe AI beta-0.4x+ (Software Development): https://github.com/alfe-ai/Sterling  
 
-Place your checkpoint in `stable-diffusion-webui/models/Stable-diffusion/` before launching if it's not already present.
-
-## Social Links
-TODO
+#### 2.0 Beta (Aurora/Aurelix)  
