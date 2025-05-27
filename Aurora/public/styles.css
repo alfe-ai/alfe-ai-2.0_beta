@@ -504,6 +504,17 @@ body {
   z-index: 1000;
 }
 
+/* Display session ID next to the sidebar icon */
+#sessionIdText.session-id {
+  position: absolute;
+  top: 16px;
+  left: 60px;
+  font-size: 0.8rem;
+  color: #aaa;
+  z-index: 1000;
+  user-select: text;
+}
+
 /* Token count indicator in bottom-right corner of subbubble */
 .token-indicator {
   position: absolute;
