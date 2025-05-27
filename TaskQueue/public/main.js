@@ -44,6 +44,7 @@ let imageGeneratorMenuVisible = true; // show Image Generator menu item
 let fileTreeMenuVisible = true;      // show File Tree button
 let aiModelsMenuVisible = true;      // show AI Models link
 let tasksMenuVisible = true;         // show Tasks button
+let chatSettingsBetaConfirmed = false;
 let chatSubroutines = [];
 let actionHooks = [];
 let editingSubroutineId = null;
@@ -65,6 +66,8 @@ const $$ = (sel, ctx=document) => [...ctx.querySelectorAll(sel)];
 /* Introduce an image buffer and preview, plus an array to hold their descriptions. */
 let pendingImages = [];
 let pendingImageDescs = [];
+
+chatSettingsBetaConfirmed = localStorage.getItem('chatSettingsBetaConfirmed') === 'true';
 
 // Data and state for the secure files list
 let fileListData = [];
@@ -1582,7 +1585,7 @@ chatSendBtnEl.addEventListener("click", async () => {
   chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
 });
 
-$("#chatSettingsBtn").addEventListener("click", async () => {
+async function openChatSettings(){
   const r = await fetch("/api/settings/chat_hide_metadata");
   if(r.ok){
     const { value } = await r.json();
@@ -1760,6 +1763,14 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
   }
 
   showModal($("#chatSettingsModal"));
+}
+
+$("#chatSettingsBtn").addEventListener("click", async () => {
+  if(!chatSettingsBetaConfirmed){
+    showModal($("#chatBetaModal"));
+    return;
+  }
+  await openChatSettings();
 });
 
 // React when AI service changes
@@ -1886,6 +1897,17 @@ $("#chatSettingsSaveBtn").addEventListener("click", chatSettingsSaveFlow);
 
 $("#chatSettingsCancelBtn").addEventListener("click", () => {
   hideModal($("#chatSettingsModal"));
+});
+
+$("#chatBetaConfirmCheck").addEventListener("change", e => {
+  $("#chatBetaConfirmBtn").disabled = !e.target.checked;
+});
+
+$("#chatBetaConfirmBtn").addEventListener("click", async () => {
+  chatSettingsBetaConfirmed = true;
+  localStorage.setItem('chatSettingsBetaConfirmed', 'true');
+  hideModal($("#chatBetaModal"));
+  await openChatSettings();
 });
 
 function toggleSterlingUrlVisibility(visible) {
