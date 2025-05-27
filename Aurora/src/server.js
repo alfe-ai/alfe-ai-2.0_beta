@@ -1908,6 +1908,13 @@ app.post("/api/image/generate", async (req, res) => {
     let countParsed = parseInt(n, 10);
     if (isNaN(countParsed) || countParsed < 1) countParsed = 1;
 
+    if (sessionId) {
+      const current = db.countImagesForSession(sessionId);
+      if (current >= 10) {
+        return res.status(400).json({ error: 'Image generation limit reached for this session' });
+      }
+    }
+
     if (service === "stable-diffusion") {
       const sdBase = process.env.STABLE_DIFFUSION_URL;
       if (!sdBase) {
