@@ -4,3 +4,11 @@ TaskQueue/.env
 *.env
 printifyQueue.json
  
+backups
+chrome-profile
+node_modules
+uploads
+.idea
+issues.sqlite
+markdown_global.txt
+
