@@ -4007,12 +4007,15 @@ registerActionHook("generateImage", async ({response}) => {
     });
     if(genIndicator) genIndicator.style.display = "none";
     const data = await r.json();
-    if(r.ok && data.url){
-      addImageChatBubble(data.url, prompt, data.title || "");
-      updateImageLimitInfo();
-      if(imageLoopEnabled){
-        setTimeout(runImageLoop, 0);
-      }
+      if(r.ok && data.url){
+        addImageChatBubble(data.url, prompt, data.title || "");
+        updateImageLimitInfo();
+        if(sidebarViewUploader && sidebarViewUploader.style.display !== "none"){
+          await loadFileList();
+        }
+        if(imageLoopEnabled){
+          setTimeout(runImageLoop, 0);
+        }
     } else {
       console.error('[Hook generateImage] API error:', data.error);
     }
