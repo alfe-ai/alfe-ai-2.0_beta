@@ -1108,8 +1108,21 @@
         if(sb.style.display === 'none') sb.style.display = '';
         else sb.style.display = 'none';
       });
+
+      const banner = document.getElementById('cookieBanner');
+      if(banner){
+        if(!localStorage.getItem('cookieAccepted')) banner.style.display = 'block';
+        document.getElementById('cookieAcceptBtn').addEventListener('click', () => {
+          localStorage.setItem('cookieAccepted', 'yes');
+          banner.style.display = 'none';
+        });
+      }
     });
 
   </script>
+  <div id="cookieBanner">
+    This site uses cookies to enhance your experience.
+    <button id="cookieAcceptBtn">Accept</button>
+  </div>
 </body>
 </html>
