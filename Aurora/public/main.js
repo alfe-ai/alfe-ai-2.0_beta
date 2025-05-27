@@ -2022,25 +2022,25 @@ function toggleActivityIframeMenu(visible){
 }
 
 function toggleNexumChatMenu(visible){
-  const link = document.getElementById("navNexumChatLink");
-  if(!link) return;
-  link.style.display = visible ? "" : "none";
-  const li = link.closest('li');
+  const btn = document.getElementById("navNexumChatBtn");
+  if(!btn) return;
+  btn.style.display = visible ? "" : "none";
+  const li = btn.closest('li');
   if(li) li.style.display = visible ? "" : "none";
 }
 
 function toggleNexumTabsMenu(visible){
-  const link = document.getElementById("navNexumTabsLink");
-  if(!link) return;
-  link.style.display = visible ? "" : "none";
-  const li = link.closest('li');
+  const btn = document.getElementById("navNexumTabsBtn");
+  if(!btn) return;
+  btn.style.display = visible ? "" : "none";
+  const li = btn.closest('li');
   if(li) li.style.display = visible ? "" : "none";
 }
 function toggleImageGeneratorMenu(visible){
-  const link = document.getElementById("navImageGeneratorLink");
-  if(!link) return;
-  link.style.display = visible ? "" : "none";
-  const li = link.closest('li');
+  const btn = document.getElementById("navImageGeneratorBtn");
+  if(!btn) return;
+  btn.style.display = visible ? "" : "none";
+  const li = btn.closest('li');
   if(li) li.style.display = visible ? "" : "none";
 }
 function toggleFileTreeMenu(visible){
@@ -2051,10 +2051,10 @@ function toggleFileTreeMenu(visible){
   if(li) li.style.display = visible ? "" : "none";
 }
 function toggleAiModelsMenu(visible){
-  const link = document.getElementById("navAiModelsLink");
-  if(!link) return;
-  link.style.display = visible ? "" : "none";
-  const li = link.closest('li');
+  const btn = document.getElementById("navAiModelsBtn");
+  if(!btn) return;
+  btn.style.display = visible ? "" : "none";
+  const li = btn.closest('li');
   if(li) li.style.display = visible ? "" : "none";
 }
 function toggleTasksMenu(visible){
@@ -2600,6 +2600,12 @@ const btnUploader = document.getElementById("navUploaderBtn");
 const btnChatTabs = document.getElementById("navChatTabsBtn");
 const btnArchiveTabs = document.getElementById("navArchiveTabsBtn");
 const btnActivityIframe = document.getElementById("navActivityIframeBtn");
+const btnAiModels = document.getElementById("navAiModelsBtn");
+const btnImageGenerator = document.getElementById("navImageGeneratorBtn");
+const btnJobs = document.getElementById("navJobsBtn");
+const btnPipelineQueue = document.getElementById("navPipelineQueueBtn");
+const btnNexumChat = document.getElementById("navNexumChatBtn");
+const btnNexumTabs = document.getElementById("navNexumTabsBtn");
 
 btnTasks.addEventListener("click", showTasksPanel);
 btnUploader.addEventListener("click", showUploaderPanel);
@@ -2607,6 +2613,12 @@ navFileTreeBtn.addEventListener("click", showFileTreePanel);
 btnChatTabs.addEventListener("click", showChatTabsPanel);
 btnArchiveTabs.addEventListener("click", showArchiveTabsPanel);
 btnActivityIframe.addEventListener("click", showActivityIframePanel);
+btnAiModels?.addEventListener("click", () => { window.location.href = btnAiModels.dataset.url; });
+btnImageGenerator?.addEventListener("click", () => { window.location.href = btnImageGenerator.dataset.url; });
+btnJobs?.addEventListener("click", () => { window.location.href = btnJobs.dataset.url; });
+btnPipelineQueue?.addEventListener("click", () => { window.location.href = btnPipelineQueue.dataset.url; });
+btnNexumChat?.addEventListener("click", () => { window.location.href = btnNexumChat.dataset.url; });
+btnNexumTabs?.addEventListener("click", () => { window.location.href = btnNexumTabs.dataset.url; });
 
 (async function init(){
   await loadSettings();
