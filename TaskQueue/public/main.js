@@ -22,6 +22,7 @@ let chatHideMetadata = false;
 let chatTabAutoNaming = false;
 let showSubbubbleToken = false;
 let sterlingChatUrlVisible = true;
+let projectInfoBarVisible = true; // visibility of the project/Sterling bar
 let chatStreaming = true; // new toggle for streaming
 let enterSubmitsMessage = true; // new toggle for Enter key submit
 let navMenuVisible = false; // visibility of the top navigation menu
@@ -315,6 +316,16 @@ async function loadSettings(){
       }
     }
     toggleTopChatTabsVisibility(topChatTabsBarVisible);
+  }
+  {
+    const r = await fetch("/api/settings/project_info_bar_visible");
+    if(r.ok){
+      const { value } = await r.json();
+      if(typeof value !== 'undefined'){
+        projectInfoBarVisible = value !== false;
+      }
+    }
+    toggleProjectInfoBarVisibility(projectInfoBarVisible);
   }
   {
     const r = await fetch("/api/settings/nav_menu_visible");
@@ -1566,6 +1577,12 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
     await setSetting("sterling_chat_url_visible", sterlingChatUrlVisible);
   }
 
+  const rInfo = await fetch("/api/settings/project_info_bar_visible");
+  if(rInfo.ok){
+    const { value } = await rInfo.json();
+    projectInfoBarVisible = value !== false;
+  }
+
   try {
     const r5 = await fetch("/api/settings/chat_streaming");
     if(r5.ok){
@@ -1634,6 +1651,7 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
   $("#autoNamingCheck").checked = chatTabAutoNaming;
   $("#subbubbleTokenCheck").checked = showSubbubbleToken;
   $("#sterlingUrlCheck").checked = sterlingChatUrlVisible;
+  $("#showProjectInfoCheck").checked = projectInfoBarVisible;
   $("#showMarkdownTasksCheck").checked = markdownPanelVisible;
   $("#showDependenciesColumnCheck").checked = showDependenciesColumn;
   $("#showSubroutinePanelCheck").checked = subroutinePanelVisible;
@@ -1749,6 +1767,7 @@ async function chatSettingsSaveFlow() {
   chatTabAutoNaming = $("#autoNamingCheck").checked;
   showSubbubbleToken = $("#subbubbleTokenCheck").checked;
   sterlingChatUrlVisible = $("#sterlingUrlCheck").checked;
+  projectInfoBarVisible = $("#showProjectInfoCheck").checked;
   chatStreaming = $("#chatStreamingCheck").checked;
   markdownPanelVisible = $("#showMarkdownTasksCheck").checked;
   showDependenciesColumn = $("#showDependenciesColumnCheck").checked;
@@ -1765,6 +1784,7 @@ async function chatSettingsSaveFlow() {
   await setSetting("chat_tab_auto_naming", chatTabAutoNaming);
   await setSetting("show_subbubble_token_count", showSubbubbleToken);
   await setSetting("sterling_chat_url_visible", sterlingChatUrlVisible);
+  await setSetting("project_info_bar_visible", projectInfoBarVisible);
   await setSetting("chat_streaming", chatStreaming);
   await setSetting("markdown_panel_visible", markdownPanelVisible);
   await setSetting("subroutine_panel_visible", subroutinePanelVisible);
@@ -1800,6 +1820,7 @@ async function chatSettingsSaveFlow() {
   hideModal($("#chatSettingsModal"));
   await loadChatHistory(currentTabId, true);
   toggleSterlingUrlVisibility(sterlingChatUrlVisible);
+  toggleProjectInfoBarVisibility(projectInfoBarVisible);
   toggleNavMenuVisibility(navMenuVisible);
   toggleTopChatTabsVisibility(topChatTabsBarVisible);
   toggleViewTabsBarVisibility(viewTabsBarVisible);
@@ -1827,6 +1848,16 @@ function toggleSterlingUrlVisibility(visible) {
   const el = document.getElementById("sterlingUrlLabel");
   if(!el) return;
   el.style.display = visible ? "inline" : "none";
+}
+
+function toggleProjectInfoBarVisibility(visible){
+  const ids = ["projectInfo", "setProjectBtn", "createSterlingChatBtn", "changeSterlingBranchBtn"];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.style.display = visible ? "" : "none";
+  });
+  const urlEl = document.getElementById("sterlingUrlLabel");
+  if(urlEl) urlEl.style.display = visible && sterlingChatUrlVisible ? "inline" : "none";
 }
 
 function toggleNavMenuVisibility(visible) {
@@ -2559,6 +2590,7 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     console.error("Error fetching sterling_chat_url:", e);
   }
   toggleSterlingUrlVisibility(sterlingChatUrlVisible);
+  toggleProjectInfoBarVisibility(projectInfoBarVisible);
 
   let lastView = await getSetting("last_sidebar_view");
   if(!lastView) lastView = "chatTabs";
