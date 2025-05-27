@@ -34,6 +34,8 @@
         const grid = document.getElementById('grid');
         grid.innerHTML = '';
         data.filter(f => f.source === 'Generated').forEach(f => {
+          const wrapper = document.createElement('div');
+          wrapper.style.position = 'relative';
           const link = document.createElement('a');
           link.href = '/uploads/' + encodeURIComponent(f.name);
           link.target = '_blank';
@@ -41,7 +43,25 @@
           img.src = '/uploads/' + encodeURIComponent(f.name);
           img.alt = f.title || f.name;
           link.appendChild(img);
-          grid.appendChild(link);
+          wrapper.appendChild(link);
+
+          if(f.id){
+            const del = document.createElement('button');
+            del.className = 'delete-chat-btn pair-delete-btn';
+            del.textContent = 'x';
+            del.title = 'Delete this chat pair';
+            del.addEventListener('click', async () => {
+              if(!confirm('Delete this image pair?')) return;
+              const r = await fetch(`/api/chat/pair/${f.id}`, { method: 'DELETE' });
+              if(r.ok) wrapper.remove();
+              else alert('Failed to delete pair');
+            });
+            del.style.top = '4px';
+            del.style.right = '4px';
+            wrapper.appendChild(del);
+          }
+
+          grid.appendChild(wrapper);
         });
       } catch(err){
         console.error('Failed to load images', err);

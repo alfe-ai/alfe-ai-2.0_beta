@@ -213,24 +213,30 @@ body {
   position: relative;
 }
 
+.delete-chat-btn {
+  background: transparent;
+  border: none;
+  color: #f55;
+  font-weight: bold;
+  font-size: 1.2rem;
+  text-shadow: 0 0 2px #000;
+  cursor: pointer;
+}
+
+.delete-chat-btn:hover {
+  color: #ff7777;
+}
+
 .pair-delete-btn {
   position: absolute;
   top: 4px;
   right: 4px;
-  background: transparent;
-  border: none;
-  color: #888;
-  cursor: pointer;
 }
 
 .bubble-delete-btn {
   position: absolute;
   top: 4px;
   right: 4px;
-  background: transparent;
-  border: none;
-  color: #888;
-  cursor: pointer;
 }
 
 .model-delete-btn {
@@ -439,6 +445,35 @@ body {
   font-weight: bold;
   cursor: pointer;
   font-size: 14px;
+}
+
+/* Buttons container in the top-right corner */
+.top-right-buttons {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 0.5rem;
+  z-index: 1000;
+}
+
+.top-right-buttons .top-btn {
+  background: #474747;
+  border: 1px solid #666;
+  color: #ddd;
+  padding: 4px 6px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 0.8rem;
+}
+.top-right-buttons .top-btn:hover {
+  background: #555;
+}
+
+.subscribe-teaser {
+  color: #ff0;
+  align-self: center;
+  font-size: 0.8rem;
 }
 
 /* Toggle icon in top-left corner */
