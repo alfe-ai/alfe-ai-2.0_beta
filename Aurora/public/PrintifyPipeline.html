@@ -46,9 +46,8 @@
     <button id="printifyButton" hidden>Submit to Printify</button>
   </div>
   <pre id="upscaleTerminal" style="background:#000;color:#0f0;padding:0.5rem;margin-top:0.5rem;height:200px;overflow:auto;font-family:monospace;"></pre>
+  <script src="session.js"></script>
   <script>
-    const sessionId = sessionStorage.getItem('sessionId') || crypto.randomUUID();
-    sessionStorage.setItem('sessionId', sessionId);
 
     const params = new URLSearchParams(window.location.search);
     let file = params.get('file');

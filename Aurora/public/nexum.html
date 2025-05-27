@@ -230,10 +230,8 @@
       </div>
     </div>
   </div>
+  <script src="session.js"></script>
   <script>
-    // Generate or retrieve a unique session ID stored in sessionStorage
-    const sessionId = sessionStorage.getItem('sessionId') || crypto.randomUUID();
-    sessionStorage.setItem('sessionId', sessionId);
 
     let tabs = [];
     let archivedTabs = [];
