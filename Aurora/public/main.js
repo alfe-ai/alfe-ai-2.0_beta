@@ -2619,7 +2619,10 @@ btnJobs?.addEventListener("click", () => {
   const url = btnJobs.dataset.url;
   window.open(url, "_blank");
 });
-btnPipelineQueue?.addEventListener("click", () => { window.location.href = btnPipelineQueue.dataset.url; });
+btnPipelineQueue?.addEventListener("click", () => {
+  const url = btnPipelineQueue.dataset.url;
+  window.open(url, "_blank");
+});
 btnNexumChat?.addEventListener("click", () => { window.location.href = btnNexumChat.dataset.url; });
 btnNexumTabs?.addEventListener("click", () => { window.location.href = btnNexumTabs.dataset.url; });
 
