@@ -48,12 +48,12 @@
 
     <!-- Tasks view panel -->
     <div id="sidebarViewTasks">
-      <h2 style="font-size:1.2rem; margin-top:0;">Tasks</h2>
-      <p><a href="/activity" target="_blank">Activity timeline</a></p>
-      <p><a href="/test_projects" target="_blank">API test page</a></p>
+      <h2 style="font-size:1.2rem; margin-top:0;" hidden>Tasks</h2>
+      <p><a href="/activity" target="_blank" hidden>Activity timeline</a></p>
+      <p><a href="/test_projects" target="_blank" hidden>API test page</a></p>
 
-      <details id="toolbarCollapsible" open>
-        <summary>Toolbar & Filters</summary>
+      <details id="toolbarCollapsible" open hidden>
+        <summary hidden>Toolbar & Filters</summary>
         <div id="controls">
           <label><input type="checkbox" id="showHidden" /> Show hidden tasks</label>
           <label style="margin-left:1rem;">Project:
@@ -73,9 +73,9 @@
         </div>
       </details>
 
-      <table id="tasks">
-        <thead><tr id="headerRow"></tr></thead>
-        <tbody></tbody>
+      <table id="tasks" hidden>
+        <thead hidden><tr id="headerRow" hidden></tr></thead>
+        <tbody hidden></tbody>
       </table>
     </div>
 
