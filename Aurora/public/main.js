@@ -2245,7 +2245,7 @@ function renderFileList(){
     const openBtn = document.createElement("button");
     openBtn.textContent = "Open";
     openBtn.addEventListener("click", () => {
-      window.open(`PrintifyPipeline.html?file=${encodeURIComponent(f.name)}`,
+      window.open(`ImagePipeline.html?file=${encodeURIComponent(f.name)}`,
                   "_blank");
     });
     tdAction.appendChild(openBtn);
