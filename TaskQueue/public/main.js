@@ -17,6 +17,7 @@ let markdownPanelVisible = false;
 let subroutinePanelVisible = false;
 let sidebarVisible = true;
 let chatTabs = [];
+let archivedTabs = [];
 let currentTabId = 1;
 let chatHideMetadata = false;
 let chatTabAutoNaming = false;
@@ -865,8 +866,9 @@ $("#createTaskBtn").addEventListener("click", async ()=>{
 $("#cancelTaskBtn").addEventListener("click",()=>hideModal($("#newTaskModal")));
 
 async function loadTabs(){
-  const res = await fetch("/api/chat/tabs?nexum=0");
+  const res = await fetch("/api/chat/tabs?nexum=0&showArchived=1");
   chatTabs = await res.json();
+  archivedTabs = chatTabs.filter(t => t.archived);
 }
 
 async function loadSubroutines(){
@@ -1012,6 +1014,7 @@ async function renameTab(tabId){
     await loadTabs();
     renderTabs();
     renderSidebarTabs();
+    renderArchivedSidebarTabs();
   }
 }
 async function deleteTab(tabId){
@@ -1020,12 +1023,14 @@ async function deleteTab(tabId){
   if(r.ok){
     await loadTabs();
     if(chatTabs.length>0){
-      currentTabId = chatTabs[0].id;
+      const firstActive = chatTabs.find(t => !t.archived);
+      currentTabId = firstActive ? firstActive.id : chatTabs[0].id;
     } else {
       currentTabId=1;
     }
     renderTabs();
     renderSidebarTabs();
+    renderArchivedSidebarTabs();
     await loadChatHistory(currentTabId, true);
   }
 }
@@ -1040,6 +1045,7 @@ async function toggleArchiveTab(tabId, archived){
     await loadTabs();
     renderTabs();
     renderSidebarTabs();
+    renderArchivedSidebarTabs();
   }
 }
 async function selectTab(tabId){
@@ -1052,6 +1058,7 @@ async function selectTab(tabId){
   if(chk) chk.checked = tabGenerateImages;
   renderTabs();
   renderSidebarTabs();
+  renderArchivedSidebarTabs();
   renderHeader();
   renderBody();
   setLoopUi(imageLoopEnabled);
@@ -1153,6 +1160,35 @@ function renderSidebarTabs(){
 
     wrapper.appendChild(info);
     wrapper.appendChild(archBtn);
+    container.appendChild(wrapper);
+  });
+}
+
+function renderArchivedSidebarTabs(){
+  const container = document.getElementById("archivedTabsContainer");
+  if(!container) return;
+  container.innerHTML = "";
+  archivedTabs.forEach(tab => {
+    const wrapper = document.createElement("div");
+    wrapper.style.display = "flex";
+    wrapper.style.alignItems = "center";
+    wrapper.style.gap = "4px";
+    wrapper.style.width = "100%";
+
+    const label = document.createElement("span");
+    label.textContent = tab.name;
+    label.style.flexGrow = "1";
+
+    const unarchBtn = document.createElement("button");
+    unarchBtn.textContent = "Unarchive";
+    unarchBtn.addEventListener("click", async () => {
+      await toggleArchiveTab(tab.id, false);
+      await loadTabs();
+      renderArchivedSidebarTabs();
+    });
+
+    wrapper.appendChild(label);
+    wrapper.appendChild(unarchBtn);
     container.appendChild(wrapper);
   });
 }
@@ -1830,6 +1866,7 @@ async function chatSettingsSaveFlow() {
   if(subPanel) subPanel.style.display = subroutinePanelVisible ? "" : "none";
   renderTabs();
   renderSidebarTabs();
+  renderArchivedSidebarTabs();
   renderHeader();
   renderBody();
   setLoopUi(imageLoopEnabled);
@@ -2270,6 +2307,7 @@ const sidebarViewTasks = document.getElementById("sidebarViewTasks");
 const sidebarViewUploader = document.getElementById("sidebarViewUploader");
 const sidebarViewChatTabs = document.getElementById("sidebarViewChatTabs");
 const sidebarViewActivityIframe = document.getElementById("sidebarViewActivityIframe");
+const sidebarViewArchiveTabs = document.getElementById("sidebarViewArchiveTabs");
 const fileTreeContainer = document.getElementById("fileTreeContainer");
 
 function showTasksPanel(){
@@ -2277,11 +2315,13 @@ function showTasksPanel(){
   sidebarViewUploader.style.display = "none";
   sidebarViewFileTree.style.display = "none";
   sidebarViewChatTabs.style.display = "none";
+  sidebarViewArchiveTabs.style.display = "none";
   sidebarViewActivityIframe.style.display = "none";
   $("#navTasksBtn").classList.add("active");
   $("#navUploaderBtn").classList.remove("active");
   $("#navFileTreeBtn").classList.remove("active");
   $("#navChatTabsBtn").classList.remove("active");
+  $("#navArchiveTabsBtn").classList.remove("active");
   $("#navActivityIframeBtn").classList.remove("active");
   setSetting("last_sidebar_view", "tasks");
 }
@@ -2291,11 +2331,13 @@ function showUploaderPanel(){
   sidebarViewUploader.style.display = "";
   sidebarViewFileTree.style.display = "none";
   sidebarViewChatTabs.style.display = "none";
+  sidebarViewArchiveTabs.style.display = "none";
   sidebarViewActivityIframe.style.display = "none";
   $("#navTasksBtn").classList.remove("active");
   $("#navUploaderBtn").classList.add("active");
   $("#navFileTreeBtn").classList.remove("active");
   $("#navChatTabsBtn").classList.remove("active");
+  $("#navArchiveTabsBtn").classList.remove("active");
   $("#navActivityIframeBtn").classList.remove("active");
   setSetting("last_sidebar_view", "uploader");
 }
@@ -2305,11 +2347,13 @@ function showFileTreePanel(){
   sidebarViewUploader.style.display = "none";
   sidebarViewFileTree.style.display = "";
   sidebarViewChatTabs.style.display = "none";
+  sidebarViewArchiveTabs.style.display = "none";
   sidebarViewActivityIframe.style.display = "none";
   $("#navTasksBtn").classList.remove("active");
   $("#navUploaderBtn").classList.remove("active");
   $("#navFileTreeBtn").classList.add("active");
   $("#navChatTabsBtn").classList.remove("active");
+  $("#navArchiveTabsBtn").classList.remove("active");
   $("#navActivityIframeBtn").classList.remove("active");
   setSetting("last_sidebar_view", "fileTree");
   loadFileTree();
@@ -2321,13 +2365,32 @@ function showChatTabsPanel(){
   sidebarViewFileTree.style.display = "none";
   sidebarViewChatTabs.style.display = "";
   sidebarViewActivityIframe.style.display = "none";
+  sidebarViewArchiveTabs.style.display = "none";
   $("#navTasksBtn").classList.remove("active");
   $("#navUploaderBtn").classList.remove("active");
   $("#navFileTreeBtn").classList.remove("active");
   $("#navChatTabsBtn").classList.add("active");
+  $("#navArchiveTabsBtn").classList.remove("active");
   $("#navActivityIframeBtn").classList.remove("active");
   setSetting("last_sidebar_view", "chatTabs");
   renderSidebarTabs();
+}
+
+function showArchiveTabsPanel(){
+  sidebarViewTasks.style.display = "none";
+  sidebarViewUploader.style.display = "none";
+  sidebarViewFileTree.style.display = "none";
+  sidebarViewChatTabs.style.display = "none";
+  sidebarViewActivityIframe.style.display = "none";
+  sidebarViewArchiveTabs.style.display = "";
+  $("#navTasksBtn").classList.remove("active");
+  $("#navUploaderBtn").classList.remove("active");
+  $("#navFileTreeBtn").classList.remove("active");
+  $("#navChatTabsBtn").classList.remove("active");
+  $("#navArchiveTabsBtn").classList.add("active");
+  $("#navActivityIframeBtn").classList.remove("active");
+  setSetting("last_sidebar_view", "archiveTabs");
+  loadTabs().then(renderArchivedSidebarTabs);
 }
 
 function showActivityIframePanel(){
@@ -2335,11 +2398,13 @@ function showActivityIframePanel(){
   sidebarViewUploader.style.display = "none";
   sidebarViewFileTree.style.display = "none";
   sidebarViewChatTabs.style.display = "none";
+  sidebarViewArchiveTabs.style.display = "none";
   sidebarViewActivityIframe.style.display = "";
   $("#navTasksBtn").classList.remove("active");
   $("#navUploaderBtn").classList.remove("active");
   $("#navFileTreeBtn").classList.remove("active");
   $("#navChatTabsBtn").classList.remove("active");
+  $("#navArchiveTabsBtn").classList.remove("active");
   $("#navActivityIframeBtn").classList.add("active");
   setSetting("last_sidebar_view", "activity");
 }
@@ -2454,12 +2519,14 @@ async function loadFileTree(){
 const btnTasks = document.getElementById("navTasksBtn");
 const btnUploader = document.getElementById("navUploaderBtn");
 const btnChatTabs = document.getElementById("navChatTabsBtn");
+const btnArchiveTabs = document.getElementById("navArchiveTabsBtn");
 const btnActivityIframe = document.getElementById("navActivityIframeBtn");
 
 btnTasks.addEventListener("click", showTasksPanel);
 btnUploader.addEventListener("click", showUploaderPanel);
 navFileTreeBtn.addEventListener("click", showFileTreePanel);
 btnChatTabs.addEventListener("click", showChatTabsPanel);
+btnArchiveTabs.addEventListener("click", showArchiveTabsPanel);
 btnActivityIframe.addEventListener("click", showActivityIframePanel);
 
 (async function init(){
@@ -2491,10 +2558,14 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
   if(lastChatTab) {
     const foundTab = chatTabs.find(t => t.id===parseInt(lastChatTab,10));
     if(foundTab) currentTabId = foundTab.id;
-    else if(chatTabs.length>0) currentTabId=chatTabs[0].id;
+    else if(chatTabs.length>0){
+      const firstActive = chatTabs.find(t => !t.archived);
+      currentTabId = firstActive ? firstActive.id : chatTabs[0].id;
+    }
   } else {
     if(chatTabs.length>0){
-      currentTabId = chatTabs[0].id;
+      const firstActive = chatTabs.find(t => !t.archived);
+      currentTabId = firstActive ? firstActive.id : chatTabs[0].id;
     } else {
       await fetch("/api/chat/tabs/new", {
         method: "POST",
@@ -2502,7 +2573,8 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
         body: JSON.stringify({ name: "Main", nexum: 0 })
       });
       await loadTabs();
-      currentTabId = chatTabs[0].id;
+      const firstActive = chatTabs.find(t => !t.archived);
+      currentTabId = firstActive ? firstActive.id : chatTabs[0].id;
     }
   }
   {
@@ -2513,6 +2585,7 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
   }
   renderTabs();
   renderSidebarTabs();
+  renderArchivedSidebarTabs();
   await loadChatHistory(currentTabId, true);
 
   try {
@@ -2612,6 +2685,7 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     case "uploader": showUploaderPanel(); break;
     case "fileTree": showFileTreePanel(); break;
     case "chatTabs": showChatTabsPanel(); break;
+    case "archiveTabs": showArchiveTabsPanel(); break;
     case "activity": showActivityIframePanel(); break;
     default: showChatTabsPanel(); break;
   }
