@@ -627,7 +627,7 @@
       const type = newTabSelectedType;
       const message = document.getElementById('newTabChatInput').value.trim();
       const repo = document.getElementById('newTabRepoInput').value.trim();
-      const body = { name:'New Tab', nexum:1, type, project:'', repo };
+      const body = { name:'New Tab', nexum:1, type, project:'', repo, sessionId };
       const r = await fetch('/api/chat/tabs/new',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
       if(r.ok){
         const data = await r.json();
@@ -651,7 +651,7 @@
     async function createStartTab(type){
       const repoEl = document.getElementById('startRepoInput');
       const repo = repoEl ? repoEl.value.trim() : '';
-      const body = { name:'New Tab', nexum: startInAurora ? 0 : 1, type, project:'', repo };
+      const body = { name:'New Tab', nexum: startInAurora ? 0 : 1, type, project:'', repo, sessionId };
       const r = await fetch('/api/chat/tabs/new',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
       if(r.ok){
         const data = await r.json();
@@ -814,7 +814,7 @@
       document.getElementById('chat').appendChild(aiEl);
       document.getElementById('chat').scrollTop=document.getElementById('chat').scrollHeight;
       try{
-        const resp=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,tabId:currentTabId})});
+        const resp=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,tabId:currentTabId,sessionId})});
         if(!resp.ok||!resp.body){aiEl.textContent='[error]';return;}
         const reader=resp.body.getReader();
         const dec=new TextDecoder();
@@ -855,7 +855,7 @@
       document.getElementById('chat').appendChild(aiEl);
       document.getElementById('chat').scrollTop=document.getElementById('chat').scrollHeight;
       try{
-        const resp=await fetch('/api/image/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:text, tabId:currentTabId})});
+        const resp=await fetch('/api/image/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:text, tabId:currentTabId, sessionId})});
         const data=await resp.json();
         if(resp.ok && data.url){
           aiEl.textContent='';

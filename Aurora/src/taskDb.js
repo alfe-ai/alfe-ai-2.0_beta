@@ -88,7 +88,8 @@ export default class TaskDB {
                                              nexum INTEGER DEFAULT 0,
                                              project_name TEXT DEFAULT '',
                                              repo_ssh_url TEXT DEFAULT '',
-                                             tab_type TEXT DEFAULT 'chat'
+                                             tab_type TEXT DEFAULT 'chat',
+                                             session_id TEXT DEFAULT ''
       );
     `);
     try {
@@ -127,6 +128,12 @@ export default class TaskDB {
     } catch(e) {
       //console.debug("[TaskDB Debug] chat_tabs.tab_type column exists, skipping.", e.message);
     }
+    try {
+      this.db.exec("ALTER TABLE chat_tabs ADD COLUMN session_id TEXT DEFAULT '';" );
+      console.debug("[TaskDB Debug] Added chat_tabs.session_id column");
+    } catch(e) {
+      //console.debug("[TaskDB Debug] chat_tabs.session_id column exists, skipping.", e.message);
+    }
 
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS chat_pairs (
@@ -142,7 +149,8 @@ export default class TaskDB {
                                               image_url TEXT,
                                               image_alt TEXT DEFAULT '',
                                               image_title TEXT DEFAULT '',
-                                              image_status TEXT DEFAULT ''
+                                              image_status TEXT DEFAULT '',
+                                              session_id TEXT DEFAULT ''
       );
     `);
 
@@ -199,6 +207,12 @@ export default class TaskDB {
       console.debug("[TaskDB Debug] Added chat_pairs.image_status column");
     } catch(e) {
       //console.debug("[TaskDB Debug] image_status column exists, skipping.", e.message);
+    }
+    try {
+      this.db.exec(`ALTER TABLE chat_pairs ADD COLUMN session_id TEXT DEFAULT '';`);
+      console.debug("[TaskDB Debug] Added chat_pairs.session_id column");
+    } catch(e) {
+      //console.debug("[TaskDB Debug] chat_pairs.session_id column exists, skipping.", e.message);
     }
 
     this.db.exec(`
@@ -552,24 +566,25 @@ export default class TaskDB {
         .run(message, type, new Date().toISOString());
   }
 
-  createChatPair(userText, chatTabId = 1, systemContext = "") {
+  createChatPair(userText, chatTabId = 1, systemContext = "", sessionId = "") {
     const timestamp = new Date().toISOString();
     const { lastInsertRowid } = this.db.prepare(`
       INSERT INTO chat_pairs (
         user_text, ai_text, model, timestamp, ai_timestamp,
         chat_tab_id, system_context, token_info,
-        image_url, image_alt, image_title
+        image_url, image_alt, image_title, session_id
       )
       VALUES (
         @user_text, '', '', @timestamp, NULL,
         @chat_tab_id, @system_context, NULL,
-        NULL, '', ''
+        NULL, '', '', @session_id
       )
     `).run({
       user_text: userText,
       timestamp,
       chat_tab_id: chatTabId,
-      system_context: systemContext
+      system_context: systemContext,
+      session_id: sessionId
     });
     return lastInsertRowid;
   }
@@ -591,15 +606,15 @@ export default class TaskDB {
     });
   }
 
-  createImagePair(url, altText = '', chatTabId = 1, title = '', status = 'Generated') {
+  createImagePair(url, altText = '', chatTabId = 1, title = '', status = 'Generated', sessionId = '') {
     const ts = new Date().toISOString();
     const { lastInsertRowid } = this.db.prepare(`
       INSERT INTO chat_pairs (
         user_text, ai_text, model, timestamp, ai_timestamp,
         chat_tab_id, system_context, token_info,
-        image_url, image_alt, image_title, image_status
-      ) VALUES ('', '', '', @ts, @ts, @chat_tab_id, '', NULL, @url, @alt, @title, @status)
-    `).run({ ts, chat_tab_id: chatTabId, url, alt: altText, title, status });
+        image_url, image_alt, image_title, image_status, session_id
+      ) VALUES ('', '', '', @ts, @ts, @chat_tab_id, '', NULL, @url, @alt, @title, @status, @session_id)
+    `).run({ ts, chat_tab_id: chatTabId, url, alt: altText, title, status, session_id: sessionId });
     return lastInsertRowid;
   }
 
@@ -625,12 +640,12 @@ export default class TaskDB {
         .get(id);
   }
 
-  createChatTab(name, nexum = 0, project = '', repo = '', type = 'chat') {
+  createChatTab(name, nexum = 0, project = '', repo = '', type = 'chat', sessionId = '') {
     const ts = new Date().toISOString();
     const genImages = type === 'design' ? 1 : 0;
     const { lastInsertRowid } = this.db.prepare(`
-      INSERT INTO chat_tabs (name, created_at, generate_images, nexum, project_name, repo_ssh_url, tab_type)
-      VALUES (@name, @created_at, @generate_images, @nexum, @project_name, @repo_ssh_url, @tab_type)
+      INSERT INTO chat_tabs (name, created_at, generate_images, nexum, project_name, repo_ssh_url, tab_type, session_id)
+      VALUES (@name, @created_at, @generate_images, @nexum, @project_name, @repo_ssh_url, @tab_type, @session_id)
     `).run({
       name,
       created_at: ts,
@@ -638,7 +653,8 @@ export default class TaskDB {
       nexum: nexum ? 1 : 0,
       project_name: project,
       repo_ssh_url: repo,
-      tab_type: type
+      tab_type: type,
+      session_id: sessionId
     });
     return lastInsertRowid;
   }
