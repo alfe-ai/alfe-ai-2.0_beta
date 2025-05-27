@@ -759,4 +759,10 @@ body {
   opacity: 1;
 }
 
+/* Disabled buttons appear greyed out and inactive */
+button:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 
