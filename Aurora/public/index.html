@@ -375,7 +375,7 @@
     <br/>
     <label><input type="checkbox" id="tabGenerateImagesCheck" checked /> Generate images for replies</label>
     <br/>
-    <label><input type="checkbox" id="imageLoopCheck"/> Image loop mode</label>
+    <label><input type="checkbox" id="imageLoopCheck" hidden/> Image loop mode</label>
     <br/>
     <label>Loop message:
       <input type="text" id="imageLoopMessageInput" style="width:100%;" />
@@ -407,7 +407,7 @@
         </select>
       </label>
     </div>
-    <div style="margin-top:8px;">
+    <div style="margin-top:8px;" hidden>
       <label>AI Model:
         <select id="aiModelSelect">
           <!-- populated dynamically -->
