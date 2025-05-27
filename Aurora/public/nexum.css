@@ -344,7 +344,8 @@ button:hover {
 #feedbackModal .modal-content,
 #tabConfigModal .modal-content,
 #newTabModal .modal-content,
-#startDialog .modal-content {
+#startDialog .modal-content,
+#cookieInfoModal .modal-content {
   background: var(--bg-alt);
   border: 1px solid var(--border);
   padding: 1rem;
