@@ -690,6 +690,37 @@ body {
   to { background-color: #4a4a4a; }
 }
 
+/* Sidebar tree navigation */
+.tree-menu ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tree-button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: #333;
+  border: 1px solid #444;
+  color: #ddd;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.tree-button:hover {
+  background: #444;
+}
+
+.tree-button.active {
+  background: #555;
+  border-color: #888;
+  color: #fff;
+}
+
 /* Version info in sidebar */
 .version-info {
   font-size: 0.75rem;
