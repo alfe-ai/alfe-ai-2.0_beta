@@ -241,6 +241,45 @@ async function deriveImageTitle(prompt, client = null) {
   return title;
 }
 
+async function deriveTabTitle(message, client = null) {
+  if (!message) return '';
+
+  const openAiKey = process.env.OPENAI_API_KEY || '';
+  if (!client && openAiKey) {
+    client = new OpenAI({ apiKey: openAiKey });
+  }
+
+  if (client) {
+    try {
+      const completion = await client.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [
+          { role: 'system', content: 'Create a short 3-6 word title summarizing the user message.' },
+          { role: 'user', content: message }
+        ],
+        max_tokens: 16,
+        temperature: 0.5
+      });
+      const title = completion.choices?.[0]?.message?.content?.trim();
+      if (title) return title.replace(/^"|"$/g, '');
+    } catch (e) {
+      console.debug('[Server Debug] AI tab title generation failed, falling back =>', e.message);
+    }
+  }
+
+  let str = message.trim();
+  const sentEnd = str.search(/[.!?]/);
+  if (sentEnd !== -1) {
+    str = str.slice(0, sentEnd);
+  }
+  const words = str.split(/\s+/).slice(0, 6);
+  let title = words.join(' ');
+  if (title) {
+    title = title.charAt(0).toUpperCase() + title.slice(1);
+  }
+  return title;
+}
+
 // Explicit CORS configuration
 app.use(cors({
   origin: "*",
@@ -1016,6 +1055,7 @@ app.post("/api/chat", async (req, res) => {
     }
 
     const priorPairsAll = db.getAllChatPairs(chatTabId);
+    const isFirstMessage = priorPairsAll.length === 0;
     let model = db.getSetting("ai_model");
     const savedInstructions = db.getSetting("agent_instructions") || "";
 
@@ -1034,6 +1074,17 @@ app.post("/api/chat", async (req, res) => {
     const chatPairId = db.createChatPair(userMessage, chatTabId, systemContext);
     conversation.push({ role: "user", content: userMessage });
     db.logActivity("User chat", JSON.stringify({ tabId: chatTabId, message: userMessage, userTime }));
+
+    if (isFirstMessage) {
+      try {
+        const newTitle = await deriveTabTitle(userMessage);
+        if (newTitle) {
+          db.renameChatTab(chatTabId, newTitle);
+        }
+      } catch (e) {
+        console.debug('[Server Debug] deriveTabTitle failed =>', e.message);
+      }
+    }
 
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.setHeader("Transfer-Encoding", "chunked");
