@@ -132,6 +132,21 @@ if (!db.getSetting("image_gen_service")) {
 const app = express();
 const jobManager = new JobManager();
 
+// Image generation rate limiting
+const IMAGE_COUNT_LIMIT = 10;
+const IMAGE_WINDOW_MS = 60 * 60 * 1000; // 1 hour window
+const imageGenBySession = new Map(); // sessionId -> [timestamps]
+const imageGenByIp = new Map();      // ip -> [timestamps]
+
+function cleanOld(map) {
+  const now = Date.now();
+  for (const [key, arr] of map) {
+    const fresh = arr.filter(ts => now - ts < IMAGE_WINDOW_MS);
+    if (fresh.length > 0) map.set(key, fresh);
+    else map.delete(key);
+  }
+}
+
 /**
  * Returns a configured OpenAI client, depending on "ai_service" setting.
  * Added checks to help diagnose missing or invalid API keys.
@@ -1893,12 +1908,30 @@ app.post("/api/image/generate", async (req, res) => {
       return res.status(400).json({ error: "Missing prompt" });
     }
 
+<<<<<<< HEAD
     if (tabId) {
       const tab = db.getChatTab(parseInt(tabId, 10));
       if (tab && tab.tab_type !== 'design') {
         return res.status(400).json({ error: 'Image generation only allowed for design tabs' });
       }
     }
+=======
+    // ----- rate limiting -----
+    const sessionKey = String(tabId || 'default');
+    const ip = req.ip;
+    cleanOld(imageGenBySession);
+    cleanOld(imageGenByIp);
+    const sessionArr = imageGenBySession.get(sessionKey) || [];
+    const ipArr = imageGenByIp.get(ip) || [];
+    if (sessionArr.length >= IMAGE_COUNT_LIMIT || ipArr.length >= IMAGE_COUNT_LIMIT) {
+      return res.status(429).json({ error: "Image generation limit reached" });
+    }
+    const nowTs = Date.now();
+    sessionArr.push(nowTs);
+    ipArr.push(nowTs);
+    imageGenBySession.set(sessionKey, sessionArr);
+    imageGenByIp.set(ip, ipArr);
+>>>>>>> origin/Aurora/Aurelix/dev/MVP
 
     const service = (provider || db.getSetting("image_gen_service") || "openai").toLowerCase();
 
@@ -2031,6 +2064,14 @@ app.post("/api/image/generate", async (req, res) => {
     res.json({ success: true, url: localUrl, title: imageTitle });
   } catch (err) {
     console.error("[Server Debug] /api/image/generate error:", err);
+    // rollback the count if generation failed
+    const sessionArr = imageGenBySession.get(String(tabId || 'default')) || [];
+    const ipArr = imageGenByIp.get(req.ip) || [];
+    sessionArr.pop();
+    ipArr.pop();
+    if (sessionArr.length > 0) imageGenBySession.set(String(tabId || 'default'), sessionArr); else imageGenBySession.delete(String(tabId || 'default'));
+    if (ipArr.length > 0) imageGenByIp.set(req.ip, ipArr); else imageGenByIp.delete(req.ip);
+
     const status = err?.status || err?.response?.status || 500;
     let message = err?.response?.data?.error?.message ?? err?.message;
     if (!message) {

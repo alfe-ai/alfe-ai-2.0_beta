@@ -68,6 +68,12 @@ let editingSubroutineId = null;
 let currentView = 'chat';
 window.agentName = "Alfe";
 
+// Image generation quota tracking (10 images per minute)
+const IMAGE_LIMIT = 10;
+const IMAGE_WINDOW_MS = 60 * 1000;
+let imageGenTimestamps = [];
+let imageLimitTimer = null;
+
 // For per-tab model arrays
 let modelTabs = [];
 let currentModelTabId = null;
@@ -81,6 +87,41 @@ const tabTypeIcons = { chat: "💬", design: "🎨" };
 
 const $  = (sel, ctx=document) => ctx.querySelector(sel);
 const $$ = (sel, ctx=document) => [...ctx.querySelectorAll(sel)];
+
+function canGenerateImage(){
+  const now = Date.now();
+  imageGenTimestamps = imageGenTimestamps.filter(ts => now - ts < IMAGE_WINDOW_MS);
+  if(imageGenTimestamps.length < IMAGE_LIMIT){
+    return {allowed: true};
+  }
+  const waitMs = IMAGE_WINDOW_MS - (now - imageGenTimestamps[0]);
+  return {allowed: false, waitMs};
+}
+
+function updateImageLimitUI(waitMs){
+  const el = document.getElementById('imageLimitCounter');
+  if(!el) return;
+  if(!waitMs || waitMs <= 0){
+    el.textContent = '';
+    el.style.display = 'none';
+  }else{
+    el.style.display = '';
+    el.textContent = `Image limit reached. Next slot in ${Math.ceil(waitMs/1000)}s`;
+  }
+}
+
+function startImageLimitCountdown(waitMs){
+  clearInterval(imageLimitTimer);
+  updateImageLimitUI(waitMs);
+  imageLimitTimer = setInterval(()=>{
+    waitMs -= 1000;
+    updateImageLimitUI(waitMs);
+    if(waitMs <= 0){
+      clearInterval(imageLimitTimer);
+      imageLimitTimer = null;
+    }
+  },1000);
+}
 
 /* Introduce an image buffer and preview, plus an array to hold their descriptions. */
 let pendingImages = [];
@@ -2148,6 +2189,16 @@ function toggleImagePaintTrayButton(visible){
   btn.style.display = visible ? "" : "none";
 }
 
+function updateGenerateImageButton(){
+  const btn = document.getElementById("chatGenImageBtn");
+  if(!btn) return;
+  const check = canGenerateImage();
+  btn.disabled = !check.allowed;
+  if(!check.allowed){
+    startImageLimitCountdown(check.waitMs);
+  }
+}
+
 function toggleActivityIframeMenu(visible){
   const btn = document.getElementById("navActivityIframeBtn");
   if(!btn) return;
@@ -3939,12 +3990,19 @@ document.getElementById("chatImageBtn").addEventListener("click", () => {
 
 // Use user's text prompt to generate an image via the existing hook
 document.getElementById("chatGenImageBtn").addEventListener("click", () => {
+  const check = canGenerateImage();
+  if(!check.allowed){
+    startImageLimitCountdown(check.waitMs);
+    return;
+  }
   const prompt = chatInputEl.value.trim();
   if(!prompt) return;
   const hook = actionHooks.find(h => h.name === "generateImage");
   if(hook && typeof hook.fn === "function") {
+    imageGenTimestamps.push(Date.now());
     hook.fn({ response: prompt });
   }
+  updateGenerateImageButton();
 });
 
 document.getElementById("imageUploadInput").addEventListener("change", async (ev) => {
@@ -4044,6 +4102,7 @@ registerActionHook("generateImage", async ({response}) => {
     });
     if(genIndicator) genIndicator.style.display = "none";
     const data = await r.json();
+<<<<<<< HEAD
       if(r.ok && data.url){
         addImageChatBubble(data.url, prompt, data.title || "");
         updateImageLimitInfo();
@@ -4053,6 +4112,14 @@ registerActionHook("generateImage", async ({response}) => {
         if(imageLoopEnabled){
           setTimeout(runImageLoop, 0);
         }
+=======
+    if(r.ok && data.url){
+      addImageChatBubble(data.url, prompt, data.title || "");
+      if(imageLoopEnabled){
+        setTimeout(runImageLoop, 0);
+      }
+      updateGenerateImageButton();
+>>>>>>> origin/Aurora/Aurelix/dev/MVP
     } else {
       console.error('[Hook generateImage] API error:', data.error);
     }
@@ -4068,3 +4135,4 @@ setTimeout(() => {
   navMenuLoading = false;
   toggleNavMenuVisibility(navMenuVisible);
 }, 2000);
+updateGenerateImageButton();

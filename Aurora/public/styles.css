@@ -198,6 +198,12 @@ body {
   height: 1.2em;
   margin-bottom: 0.5rem;
 }
+#imageLimitCounter {
+  font-size: 0.9rem;
+  color: #faa;
+  height: 1.2em;
+  margin-bottom: 0.5rem;
+}
 
 /* Chat message bubble grouping */
 .chat-sequence {
