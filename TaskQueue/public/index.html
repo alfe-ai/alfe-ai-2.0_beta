@@ -40,6 +40,7 @@
             <summary>Collaboration</summary>
             <ul>
               <li><button id="navChatTabsBtn" class="tree-button">Chat Tabs</button></li>
+              <li><button id="navArchiveTabsBtn" class="tree-button">Archived Tabs</button></li>
               <li><button id="navActivityIframeBtn" class="tree-button">Activity IFrame</button></li>
               <li><a id="navNexumChatLink" href="/nexum.html" class="tree-button" style="text-decoration:none; color:inherit;">Nexum Chat</a></li>
               <li><a id="navNexumTabsLink" href="/nexum_tabs.html" class="tree-button" style="text-decoration:none; color:inherit;">Nexum Tabs</a></li>
@@ -129,6 +130,12 @@
       <div id="verticalTabsContainer" style="display:flex;flex-direction:column;gap:4px;"></div>
       <button id="newSideTabBtn">➕ Tab</button>
       <button id="toggleTopChatTabsBtn">Show chat tabs bar</button>
+    </div>
+
+    <!-- Archived Tabs view panel -->
+    <div id="sidebarViewArchiveTabs" style="display:none;">
+      <h2>Archived Tabs</h2>
+      <div id="archivedTabsContainer" style="display:flex;flex-direction:column;gap:4px;"></div>
     </div>
 
     <!-- New Activity IFrame panel -->
