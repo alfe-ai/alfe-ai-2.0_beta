@@ -1071,6 +1071,10 @@ async function deleteTab(tabId){
     renderSidebarTabs();
     renderArchivedSidebarTabs();
     await loadChatHistory(currentTabId, true);
+    await loadTabs();
+    renderTabs();
+    renderSidebarTabs();
+    renderArchivedSidebarTabs();
   }
 }
 
