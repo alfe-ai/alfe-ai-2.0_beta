@@ -1518,6 +1518,21 @@ app.post("/api/upload/status", (req, res) => {
   }
 });
 
+app.get("/api/image/session", (req, res) => {
+  try {
+    const sessionId = req.query.sessionId || "";
+    if(!sessionId) return res.status(400).json({ error: "Missing sessionId" });
+    db.ensureImageSession(sessionId);
+    const start = db.getImageSessionStart(sessionId);
+    const count = db.countImagesForSession(sessionId);
+    const limit = db.imageLimitForSession(sessionId, 10);
+    res.json({ start, count, limit });
+  } catch(err){
+    console.error("[Server Debug] /api/image/session error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // Upload images, run script to get description, return it as JSON.
 app.post("/api/chat/image", upload.single("imageFile"), async (req, res) => {
   try {

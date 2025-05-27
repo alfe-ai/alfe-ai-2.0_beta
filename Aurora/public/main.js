@@ -136,17 +136,58 @@ async function updateImageLimitInfo(files){
     }
     const count = data.filter(f => f.source === 'Generated').length;
     const el = document.getElementById('imageLimitInfo');
+    const cdEl = document.getElementById('imageLimitCountdown');
     if(el) {
       el.textContent = `Images: ${count}/10`;
       if(count >= 10) {
         el.classList.add('limit-reached');
+        startLimitCountdown(cdEl);
       } else {
         el.classList.remove('limit-reached');
+        stopLimitCountdown(cdEl);
       }
     }
   } catch(e){
     console.error('Failed to update image limit info:', e);
   }
+}
+
+let imageLimitTimer = null;
+
+async function startLimitCountdown(cdEl){
+  if(!cdEl) return;
+  stopLimitCountdown(cdEl);
+  try {
+    const resp = await fetch(`/api/image/session?sessionId=${encodeURIComponent(sessionId)}`);
+    if(!resp.ok) return;
+    const info = await resp.json();
+    const startMs = Date.parse(info.start);
+    if(Number.isNaN(startMs)) return;
+    function update(){
+      const now = Date.now();
+      const hours = Math.floor((now - startMs) / 3600000);
+      const next = startMs + (hours + 1) * 3600000;
+      let diff = next - now;
+      if(diff < 0) diff = 0;
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      const prefix = h > 0 ? `${String(h).padStart(2,'0')}:` : '';
+      cdEl.textContent = `Next slot in ${prefix}${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }
+    update();
+    imageLimitTimer = setInterval(update, 1000);
+  } catch(err){
+    console.error('Failed to start limit countdown:', err);
+  }
+}
+
+function stopLimitCountdown(cdEl){
+  if(imageLimitTimer){
+    clearInterval(imageLimitTimer);
+    imageLimitTimer = null;
+  }
+  if(cdEl) cdEl.textContent = '';
 }
 
 function registerActionHook(name, fn){
