@@ -177,7 +177,7 @@
       <h3>Get Started</h3>
       <div>
         <div id="startTypeButtons">
-          <button data-type="chat" class="start-type-btn selected">
+          <button data-type="chat" class="start-type-btn">
             <div class="icon">💬</div>
             <div>Chat</div>
           </button>
@@ -194,9 +194,6 @@
             <div>Project</div>
           </button>
         </div>
-        <label style="margin-top:8px;">Message:<br/>
-          <textarea id="startChatInput" rows="3" style="width:100%;" placeholder="Start chatting..."></textarea>
-        </label>
         <div id="startRepoSection" style="margin-top:8px; display:none;">
           <label>Git Repo SSH URL:<br/>
             <input type="text" id="startRepoInput" style="width:100%;" />
@@ -205,9 +202,6 @@
             note: We will update to do setup with GitHub connector/other external connectors/self host git/ AND THE URL SPECIFICATION FOR MANUAL REMOTE WILL ALSO BE AN OPTION AT THIS STEP, BUT AT THIS POINT, IT IS THE ONLY OPTION
           </div>
         </div>
-      </div>
-      <div style="margin-top:1rem;text-align:right;">
-        <button id="startDialogCreateBtn">Create</button>
       </div>
       <div id="startSocialLinks" style="margin-top:0.5rem; text-align:center;">
         <a href="https://github.com/alfe-ai/alfe-ai-2.0_beta">GitHub</a> |
@@ -435,7 +429,6 @@
     const noTabs = tabs.length === 0;
     dlg.style.display = noTabs ? 'flex' : 'none';
     if(noTabs){
-      handleStartTypeChange();
       startSplash();
       // start suggestions disabled
     } else {
@@ -655,12 +648,9 @@
       if(section) section.style.display = newTabSelectedType === 'code' ? '' : 'none';
     }
 
-    let startSelectedType = 'chat';
-
-    async function createStartTab(){
-      const type = startSelectedType;
-      const message = document.getElementById('startChatInput').value.trim();
-      const repo = document.getElementById('startRepoInput').value.trim();
+    async function createStartTab(type){
+      const repoEl = document.getElementById('startRepoInput');
+      const repo = repoEl ? repoEl.value.trim() : '';
       const body = { name:'New Tab', nexum: startInAurora ? 0 : 1, type, project:'', repo };
       const r = await fetch('/api/chat/tabs/new',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
       if(r.ok){
@@ -675,17 +665,8 @@
         await loadTabs();
         currentTabId = data.id;
         renderTabs();
-        if(message){
-          document.getElementById('prompt').value = message;
-          await send();
-        }
         applyTabView();
       }
-    }
-
-    function handleStartTypeChange(){
-      const section = document.getElementById('startRepoSection');
-      if(section) section.style.display = startSelectedType === 'code' ? '' : 'none';
     }
     async function renameTab(tabId){
       const t = tabs.find(tt => tt.id === tabId);
@@ -944,19 +925,10 @@
     });
     document.querySelectorAll('#startTypeButtons .start-type-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        startSelectedType = btn.dataset.type;
-        document.querySelectorAll('#startTypeButtons .start-type-btn').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        handleStartTypeChange();
+        if(btn.disabled) return;
+        createStartTab(btn.dataset.type);
       });
     });
-    document.getElementById('startChatInput').addEventListener('keydown', e => {
-      if(e.key==='Enter' && !e.shiftKey){
-        e.preventDefault();
-        createStartTab();
-      }
-    });
-    document.getElementById('startDialogCreateBtn').addEventListener('click', createStartTab);
     document.getElementById('viewTabChat').addEventListener('click', () => updateView('chat'));
     document.getElementById('viewTabTasks').addEventListener('click', () => updateView('tasks'));
     document.getElementById('viewTabArchive').addEventListener('click', () => updateView('archive'));
@@ -965,16 +937,18 @@
       const chatBtn = document.getElementById('viewTabChat');
       if(chatBtn) chatBtn.style.display = '';
       const advanced = enableStartAdvanced;
+      const disableTypes = advanced ? [] : ['code','task'];
       ['code','design','task'].forEach(t => {
+        const disabled = disableTypes.includes(t);
         const btn = document.querySelector(`#startTypeButtons .start-type-btn[data-type="${t}"]`);
         if(btn){
-          btn.classList.toggle('disabled', !advanced);
-          btn.disabled = !advanced;
+          btn.classList.toggle('disabled', disabled);
+          btn.disabled = disabled;
         }
         const newBtn = document.querySelector(`#newTabTypeButtons .start-type-btn[data-type="${t}"]`);
         if(newBtn){
-          newBtn.classList.toggle('disabled', !advanced);
-          newBtn.disabled = !advanced;
+          newBtn.classList.toggle('disabled', disabled);
+          newBtn.disabled = disabled;
         }
       });
       showDependencies = localStorage.getItem('flagShowDependencies') === 'true';
