@@ -3740,3 +3740,11 @@ setTimeout(() => {
   navMenuLoading = false;
   toggleNavMenuVisibility(navMenuVisible);
 }, 3000);
+
+// Subscribe button placeholder
+const subBtn = document.getElementById('subscribeBtn');
+if (subBtn) {
+  subBtn.addEventListener('click', () => {
+    alert('Thank you for your interest! Subscription options coming soon.');
+  });
+}

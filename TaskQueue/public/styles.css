@@ -636,4 +636,34 @@ body {
   border-width: 3px;
 }
 
+/* Top-right Subscribe and GitHub buttons */
+.top-right-bar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  z-index: 1000;
+}
+.top-right-bar .teaser {
+  font-size: 0.85rem;
+  color: #fff;
+}
+.top-right-bar button,
+.top-right-bar a {
+  background: #444;
+  color: #ddd;
+  border: 1px solid #777;
+  padding: 4px 8px;
+  border-radius: 4px;
+  text-decoration: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.top-right-bar a:hover,
+.top-right-bar button:hover {
+  background: #666;
+}
+
 
