@@ -1,3 +1,5 @@
+*.sqlite-journal
+*.swp
 .idea/*
 .patchfiles_ignore/*
 TaskQueue/.env
