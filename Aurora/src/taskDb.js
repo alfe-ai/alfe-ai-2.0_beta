@@ -877,6 +877,14 @@ export default class TaskDB {
     return Math.max(0, baseLimit - hours);
   }
 
+  nextImageLimitReductionTime(sessionId) {
+    const start = this.getImageSessionStart(sessionId);
+    if (!start) return null;
+    const hours = this.hoursSinceImageSessionStart(sessionId);
+    const nextMs = new Date(start).getTime() + (hours + 1) * 3600 * 1000;
+    return new Date(nextMs).toISOString();
+  }
+
   countImagesForSession(sessionId) {
     if (!sessionId) return 0;
     const row = this.db
