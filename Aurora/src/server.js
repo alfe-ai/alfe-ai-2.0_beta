@@ -1895,6 +1895,13 @@ app.post("/api/image/generate", async (req, res) => {
       return res.status(400).json({ error: "Missing prompt" });
     }
 
+    if (tabId) {
+      const tab = db.getChatTab(parseInt(tabId, 10));
+      if (tab && tab.tab_type !== 'design') {
+        return res.status(400).json({ error: 'Image generation only allowed for design tabs' });
+      }
+    }
+
     const service = (provider || db.getSetting("image_gen_service") || "openai").toLowerCase();
 
     const allowedSizes = ["1024x1024", "1024x1792", "1792x1024"];
