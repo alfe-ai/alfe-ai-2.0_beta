@@ -1048,6 +1048,7 @@ app.post("/api/chat", async (req, res) => {
   try {
     const userMessage = req.body.message || "";
     const chatTabId = req.body.tabId || 1;
+    const sessionId = req.body.sessionId || "";
     const userTime = req.body.userTime || new Date().toISOString();
 
     if (!userMessage) {
@@ -1071,7 +1072,7 @@ app.post("/api/chat", async (req, res) => {
       }
     }
 
-    const chatPairId = db.createChatPair(userMessage, chatTabId, systemContext);
+    const chatPairId = db.createChatPair(userMessage, chatTabId, systemContext, sessionId);
     conversation.push({ role: "user", content: userMessage });
     db.logActivity("User chat", JSON.stringify({ tabId: chatTabId, message: userMessage, userTime }));
 
@@ -1278,6 +1279,7 @@ app.post("/api/chat/tabs/new", (req, res) => {
     const project = req.body.project || '';
     const repo = req.body.repo || '';
     const type = req.body.type || 'chat';
+    const sessionId = req.body.sessionId || '';
 
     const autoNaming = db.getSetting("chat_tab_auto_naming");
     const projectName = db.getSetting("sterling_project") || "";
@@ -1285,7 +1287,7 @@ app.post("/api/chat/tabs/new", (req, res) => {
       name = `${projectName}: ${name}`;
     }
 
-    const tabId = db.createChatTab(name, nexum, project, repo, type);
+    const tabId = db.createChatTab(name, nexum, project, repo, type, sessionId);
     res.json({ success: true, id: tabId });
   } catch (err) {
     console.error("[TaskQueue] POST /api/chat/tabs/new error:", err);
@@ -1890,7 +1892,7 @@ app.get("/api/upscale/result", (req, res) => {
 // Generate an image using OpenAI's image API.
 app.post("/api/image/generate", async (req, res) => {
   try {
-    const { prompt, n, size, model, provider, tabId } = req.body || {};
+    const { prompt, n, size, model, provider, tabId, sessionId } = req.body || {};
     if (!prompt) {
       return res.status(400).json({ error: "Missing prompt" });
     }
@@ -1935,7 +1937,7 @@ app.post("/api/image/generate", async (req, res) => {
       );
       const tab = parseInt(tabId, 10) || 1;
       const imageTitle = await deriveImageTitle(prompt);
-      db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated');
+      db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated', sessionId);
       return res.json({ success: true, url: localUrl, title: imageTitle });
     }
 
@@ -2019,7 +2021,7 @@ app.post("/api/image/generate", async (req, res) => {
 
     const tab = parseInt(tabId, 10) || 1;
     const imageTitle = await deriveImageTitle(prompt, openaiClient);
-    db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated');
+    db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated', sessionId);
 
     res.json({ success: true, url: localUrl, title: imageTitle });
   } catch (err) {

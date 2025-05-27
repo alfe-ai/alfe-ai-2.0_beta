@@ -1081,7 +1081,7 @@ async function addNewTab(){
   const r = await fetch("/api/chat/tabs/new", {
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ name, nexum: 0, project: projectInput, type: tabType })
+    body: JSON.stringify({ name, nexum: 0, project: projectInput, type: tabType, sessionId })
   });
   if(r.ok){
     hideModal($("#newTabModal"));
@@ -1657,7 +1657,7 @@ chatSendBtnEl.addEventListener("click", async () => {
     const resp = await fetch("/api/chat",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({message:combinedUserText, tabId: currentTabId, userTime})
+      body:JSON.stringify({message:combinedUserText, tabId: currentTabId, userTime, sessionId})
     });
     clearInterval(waitInterval);
     waitingElem.textContent = "";
@@ -2779,7 +2779,7 @@ btnNexumTabs?.addEventListener("click", () => { window.location.href = btnNexumT
       await fetch("/api/chat/tabs/new", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "Main", nexum: 0 })
+        body: JSON.stringify({ name: "Main", nexum: 0, sessionId })
       });
       await loadTabs();
       const firstActive = chatTabs.find(t => !t.archived);
@@ -3986,7 +3986,7 @@ registerActionHook("generateImage", async ({response}) => {
     const r = await fetch('/api/image/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, tabId: currentTabId, provider: imageGenService })
+      body: JSON.stringify({ prompt, tabId: currentTabId, provider: imageGenService, sessionId })
     });
     if(genIndicator) genIndicator.style.display = "none";
     const data = await r.json();
