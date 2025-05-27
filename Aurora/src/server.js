@@ -1897,6 +1897,12 @@ app.post("/api/image/generate", async (req, res) => {
       return res.status(400).json({ error: "Missing prompt" });
     }
 
+    if (sessionId && db.countImagesForSession(sessionId) >= 10) {
+      return res
+        .status(429)
+        .json({ error: "Image generation limit reached for this session" });
+    }
+
     if (tabId) {
       const tab = db.getChatTab(parseInt(tabId, 10));
       if (tab && tab.tab_type !== 'design') {
