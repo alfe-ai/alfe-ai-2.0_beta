@@ -2615,7 +2615,10 @@ btnArchiveTabs.addEventListener("click", showArchiveTabsPanel);
 btnActivityIframe.addEventListener("click", showActivityIframePanel);
 btnAiModels?.addEventListener("click", () => { window.location.href = btnAiModels.dataset.url; });
 btnImageGenerator?.addEventListener("click", () => { window.location.href = btnImageGenerator.dataset.url; });
-btnJobs?.addEventListener("click", () => { window.location.href = btnJobs.dataset.url; });
+btnJobs?.addEventListener("click", () => {
+  const url = btnJobs.dataset.url;
+  window.open(url, "_blank");
+});
 btnPipelineQueue?.addEventListener("click", () => { window.location.href = btnPipelineQueue.dataset.url; });
 btnNexumChat?.addEventListener("click", () => { window.location.href = btnNexumChat.dataset.url; });
 btnNexumTabs?.addEventListener("click", () => { window.location.href = btnNexumTabs.dataset.url; });
