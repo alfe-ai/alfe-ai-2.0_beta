@@ -3507,6 +3507,13 @@ document.getElementById("featureFlagsBtn").addEventListener("click", async () =>
       tasksMenuVisible = value !== false;
     }
   } catch {}
+  try {
+    const r8 = await fetch("/api/settings/view_tabs_bar_visible");
+    if(r8.ok){
+      const { value } = await r8.json();
+      viewTabsBarVisible = value !== false;
+    }
+  } catch {}
   document.getElementById("imageUploadEnabledCheck").checked = imageUploadEnabled;
   document.getElementById("imagePaintTrayEnabledCheck").checked = imagePaintTrayEnabled;
   document.getElementById("activityIframeMenuCheck").checked = activityIframeMenuVisible;
@@ -3515,6 +3522,7 @@ document.getElementById("featureFlagsBtn").addEventListener("click", async () =>
   document.getElementById("fileTreeMenuCheck").checked = fileTreeMenuVisible;
   document.getElementById("aiModelsMenuCheck").checked = aiModelsMenuVisible;
   document.getElementById("tasksMenuCheck").checked = tasksMenuVisible;
+  document.getElementById("viewTabsBarFlagCheck").checked = viewTabsBarVisible;
   document.getElementById("imageGeneratorMenuCheck").checked = imageGeneratorMenuVisible;
   showModal(document.getElementById("featureFlagsModal"));
 });
@@ -3531,6 +3539,7 @@ document.getElementById("featureFlagsSaveBtn").addEventListener("click", async (
   fileTreeMenuVisible = document.getElementById("fileTreeMenuCheck").checked;
   aiModelsMenuVisible = document.getElementById("aiModelsMenuCheck").checked;
   tasksMenuVisible = document.getElementById("tasksMenuCheck").checked;
+  viewTabsBarVisible = document.getElementById("viewTabsBarFlagCheck").checked;
   imageGeneratorMenuVisible = document.getElementById("imageGeneratorMenuCheck").checked;
   await setSetting("activity_iframe_menu_visible", activityIframeMenuVisible);
   await setSetting("nexum_chat_menu_visible", nexumChatMenuVisible);
@@ -3538,6 +3547,7 @@ document.getElementById("featureFlagsSaveBtn").addEventListener("click", async (
   await setSetting("file_tree_menu_visible", fileTreeMenuVisible);
   await setSetting("ai_models_menu_visible", aiModelsMenuVisible);
   await setSetting("tasks_menu_visible", tasksMenuVisible);
+  await setSetting("view_tabs_bar_visible", viewTabsBarVisible);
   await setSetting("image_generator_menu_visible", imageGeneratorMenuVisible);
   toggleActivityIframeMenu(activityIframeMenuVisible);
   toggleNexumChatMenu(nexumChatMenuVisible);
@@ -3545,6 +3555,7 @@ document.getElementById("featureFlagsSaveBtn").addEventListener("click", async (
   toggleFileTreeMenu(fileTreeMenuVisible);
   toggleAiModelsMenu(aiModelsMenuVisible);
   toggleTasksMenu(tasksMenuVisible);
+  toggleViewTabsBarVisibility(viewTabsBarVisible);
   toggleImageGeneratorMenu(imageGeneratorMenuVisible);
   hideModal(document.getElementById("featureFlagsModal"));
 });
