@@ -4,6 +4,7 @@ sessionStorage.setItem('sessionId', sessionId);
 document.addEventListener('DOMContentLoaded', () => {
   const sessEl = document.getElementById('sessionIdText');
   if (sessEl) sessEl.textContent = sessionId;
+  updateImageLimitInfo();
 });
 
 let columnsOrder = [
@@ -122,6 +123,21 @@ function showToast(msg, duration=1500){
   el.textContent = msg;
   el.classList.add("show");
   setTimeout(() => el.classList.remove("show"), duration);
+}
+
+async function updateImageLimitInfo(files){
+  try {
+    let data = files;
+    if(!data){
+      const resp = await fetch(`/api/upload/list?sessionId=${encodeURIComponent(sessionId)}`);
+      data = await resp.json();
+    }
+    const count = data.filter(f => f.source === 'Generated').length;
+    const el = document.getElementById('imageLimitInfo');
+    if(el) el.textContent = `Images: ${count}/10`;
+  } catch(e){
+    console.error('Failed to update image limit info:', e);
+  }
 }
 
 function registerActionHook(name, fn){
@@ -2311,6 +2327,7 @@ async function loadFileList() {
     fileListData = await fetch(`/api/upload/list?sessionId=${encodeURIComponent(sessionId)}`).then(r => r.json());
     sortFileData();
     renderFileList();
+    updateImageLimitInfo(fileListData);
   } catch(e) {
     console.error("Error fetching file list:", e);
   }
@@ -3992,6 +4009,7 @@ registerActionHook("generateImage", async ({response}) => {
     const data = await r.json();
     if(r.ok && data.url){
       addImageChatBubble(data.url, prompt, data.title || "");
+      updateImageLimitInfo();
       if(imageLoopEnabled){
         setTimeout(runImageLoop, 0);
       }
