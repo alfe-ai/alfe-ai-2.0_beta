@@ -992,39 +992,42 @@ function renderSubroutines(){
 async function addNewSubroutine(){
   openSubroutineModal();
 }
-async function addNewTab() {
-  const projectInput = prompt("Enter project name (or leave blank):", "");
+function openNewTabModal(){
+  $("#newTabProjectInput").value = "";
+  $("#newTabNameInput").value = "New Tab";
+  showModal($("#newTabModal"));
+}
+async function addNewTab(){
+  const projectInput = $("#newTabProjectInput").value.trim();
   if(projectInput){
     await fetch("/api/settings", {
       method:"POST",
-      headers: { "Content-Type":"application/json" },
-      body: JSON.stringify({ key: "sterling_project", value: projectInput })
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ key:"sterling_project", value: projectInput })
     });
   }
-
   let autoNaming = false;
-  try {
+  try{
     const r = await fetch("/api/settings/chat_tab_auto_naming");
     if(r.ok){
       const obj = await r.json();
       autoNaming = !!obj.value;
     }
-  } catch(e) {
+  }catch(e){
     console.error("Error checking chat_tab_auto_naming:", e);
   }
-
   let name = "";
   if(!(projectInput && autoNaming)){
-    name = prompt("Enter tab name:", "New Tab");
+    name = $("#newTabNameInput").value.trim();
     if(!name) return;
   }
-
   const r = await fetch("/api/chat/tabs/new", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
     body: JSON.stringify({ name, nexum: 0 })
   });
   if(r.ok){
+    hideModal($("#newTabModal"));
     await loadTabs();
     renderTabs();
   }
@@ -1221,9 +1224,11 @@ function renderArchivedSidebarTabs(){
   });
 }
 
-document.getElementById("newSideTabBtn").addEventListener("click", addNewTab);
+document.getElementById("newSideTabBtn").addEventListener("click", openNewTabModal);
 const newTabBtnEl = document.getElementById("newTabBtn");
-if (newTabBtnEl) newTabBtnEl.addEventListener("click", addNewTab);
+if (newTabBtnEl) newTabBtnEl.addEventListener("click", openNewTabModal);
+document.getElementById("newTabCreateBtn").addEventListener("click", addNewTab);
+document.getElementById("newTabCancelBtn").addEventListener("click", () => hideModal($("#newTabModal")));
 document.getElementById("newSubroutineBtn").addEventListener("click", addNewSubroutine);
 document.getElementById("viewActionHooksBtn").addEventListener("click", () => {
   renderActionHooks();
