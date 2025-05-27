@@ -3184,11 +3184,17 @@ function renderModelTabs(){
   container.innerHTML = "";
   modelTabs.forEach(tab => {
     const b = document.createElement("div");
-    b.style.padding="4px 6px";
-    b.style.cursor="pointer";
-    b.style.border= (tab.id===currentModelTabId) ? "2px solid #aaa" : "1px solid #444";
-    b.style.backgroundColor= (tab.id===currentModelTabId) ? "#555" : "#333";
-    b.style.color= (tab.id===currentModelTabId) ? "#fff" : "#ddd";
+    b.style.padding = "4px 6px";
+    b.style.cursor = "pointer";
+    if(tab.id === currentModelTabId){
+      b.style.border = "2px solid #ffcf40";
+      b.style.backgroundColor = "#ffa500";
+      b.style.color = "#000";
+    } else {
+      b.style.border = "1px solid #444";
+      b.style.backgroundColor = "#333";
+      b.style.color = "#ddd";
+    }
     b.style.display = "inline-flex";
     b.style.alignItems = "center";
     b.style.gap = "6px";
@@ -3212,6 +3218,13 @@ function renderModelTabs(){
       await saveModelTabs();
     });
     b.appendChild(serviceSelect);
+
+    const delBtn = document.createElement("button");
+    delBtn.textContent = "x";
+    delBtn.className = "model-delete-btn";
+    delBtn.title = "Delete";
+    delBtn.addEventListener("click", e => { e.stopPropagation(); deleteModelTab(tab.id); });
+    b.appendChild(delBtn);
 
     // Click => select this tab
     b.addEventListener("click", (ev)=>{

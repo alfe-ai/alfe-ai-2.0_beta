@@ -233,6 +233,13 @@ body {
   cursor: pointer;
 }
 
+.model-delete-btn {
+  background: transparent;
+  border: none;
+  color: #888;
+  cursor: pointer;
+}
+
 .bubble-copy-btn {
   position: absolute;
   top: 4px;
