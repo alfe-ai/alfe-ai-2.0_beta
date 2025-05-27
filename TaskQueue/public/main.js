@@ -1901,38 +1901,52 @@ function toggleActivityIframeMenu(visible){
   const btn = document.getElementById("navActivityIframeBtn");
   if(!btn) return;
   btn.style.display = visible ? "" : "none";
+  const li = btn.closest('li');
+  if(li) li.style.display = visible ? "" : "none";
 }
 
 function toggleNexumChatMenu(visible){
   const link = document.getElementById("navNexumChatLink");
   if(!link) return;
   link.style.display = visible ? "" : "none";
+  const li = link.closest('li');
+  if(li) li.style.display = visible ? "" : "none";
 }
 
 function toggleNexumTabsMenu(visible){
   const link = document.getElementById("navNexumTabsLink");
   if(!link) return;
   link.style.display = visible ? "" : "none";
+  const li = link.closest('li');
+  if(li) li.style.display = visible ? "" : "none";
 }
 function toggleImageGeneratorMenu(visible){
   const link = document.getElementById("navImageGeneratorLink");
   if(!link) return;
   link.style.display = visible ? "" : "none";
+  const li = link.closest('li');
+  if(li) li.style.display = visible ? "" : "none";
 }
 function toggleFileTreeMenu(visible){
   const btn = document.getElementById("navFileTreeBtn");
   if(!btn) return;
   btn.style.display = visible ? "" : "none";
+  const li = btn.closest('li');
+  if(li) li.style.display = visible ? "" : "none";
 }
 function toggleAiModelsMenu(visible){
   const link = document.getElementById("navAiModelsLink");
   if(!link) return;
   link.style.display = visible ? "" : "none";
+  const li = link.closest('li');
+  if(li) li.style.display = visible ? "" : "none";
 }
 function toggleTasksMenu(visible){
   const btn = document.getElementById("navTasksBtn");
   if(!btn) return;
   btn.style.display = visible ? "" : "none";
+  const li = btn.closest('li');
+  if(li) li.style.display = visible ? "" : "none";
 }
 function runImageLoop(){
   if(!imageLoopEnabled) return;
