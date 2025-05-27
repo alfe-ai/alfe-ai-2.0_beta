@@ -57,6 +57,7 @@ let imageGeneratorMenuVisible = true; // show Image Generator menu item
 let fileTreeMenuVisible = true;      // show File Tree button
 let aiModelsMenuVisible = true;      // show AI Models link
 let tasksMenuVisible = true;         // show Tasks button
+let jobsMenuVisible = false;         // show Jobs button
 let chatTabsMenuVisible = false;     // show Chats button
 let upArrowHistoryEnabled = true;    // use Arrow Up/Down for input history
 let newTabProjectNameEnabled = true; // show Project name field in New Tab dialog
@@ -529,6 +530,16 @@ async function loadSettings(){
       }
     }
     toggleTasksMenu(tasksMenuVisible);
+  }
+  {
+    const r = await fetch("/api/settings/jobs_menu_visible");
+    if(r.ok){
+      const { value } = await r.json();
+      if(typeof value !== 'undefined'){
+        jobsMenuVisible = value !== false;
+      }
+    }
+    toggleJobsMenu(jobsMenuVisible);
   }
   {
     const r = await fetch("/api/settings/chat_tabs_menu_visible");
@@ -2187,6 +2198,13 @@ function toggleTasksMenu(visible){
   const li = btn.closest('li');
   if(li) li.style.display = visible ? "" : "none";
 }
+function toggleJobsMenu(visible){
+  const btn = document.getElementById("navJobsBtn");
+  if(!btn) return;
+  btn.hidden = !visible;
+  const li = btn.closest('li');
+  if(li) li.style.display = visible ? "" : "none";
+}
 function toggleNewTabProjectField(visible){
   const lbl = document.getElementById("newTabProjectLabel");
   if(!lbl) return;
@@ -3770,6 +3788,13 @@ document.getElementById("featureFlagsBtn").addEventListener("click", async () =>
     }
   } catch {}
   try {
+    const rJobs = await fetch("/api/settings/jobs_menu_visible");
+    if(rJobs.ok){
+      const { value } = await rJobs.json();
+      jobsMenuVisible = value !== false;
+    }
+  } catch {}
+  try {
     const r8 = await fetch("/api/settings/view_tabs_bar_visible");
     if(r8.ok){
       const { value } = await r8.json();
@@ -3812,6 +3837,7 @@ document.getElementById("featureFlagsBtn").addEventListener("click", async () =>
   document.getElementById("fileTreeMenuCheck").checked = fileTreeMenuVisible;
   document.getElementById("aiModelsMenuCheck").checked = aiModelsMenuVisible;
   document.getElementById("tasksMenuCheck").checked = tasksMenuVisible;
+  document.getElementById("jobsMenuCheck").checked = jobsMenuVisible;
   document.getElementById("chatTabsMenuCheck").checked = chatTabsMenuVisible;
   document.getElementById("viewTabsBarFlagCheck").checked = viewTabsBarVisible;
   document.getElementById("showProjectNameTabsCheck").checked = showProjectNameInTabs;
@@ -3833,6 +3859,7 @@ document.getElementById("featureFlagsSaveBtn").addEventListener("click", async (
   fileTreeMenuVisible = document.getElementById("fileTreeMenuCheck").checked;
   aiModelsMenuVisible = document.getElementById("aiModelsMenuCheck").checked;
   tasksMenuVisible = document.getElementById("tasksMenuCheck").checked;
+  jobsMenuVisible = document.getElementById("jobsMenuCheck").checked;
   chatTabsMenuVisible = document.getElementById("chatTabsMenuCheck").checked;
   viewTabsBarVisible = document.getElementById("viewTabsBarFlagCheck").checked;
   showProjectNameInTabs = document.getElementById("showProjectNameTabsCheck").checked;
@@ -3845,6 +3872,7 @@ document.getElementById("featureFlagsSaveBtn").addEventListener("click", async (
   await setSetting("file_tree_menu_visible", fileTreeMenuVisible);
   await setSetting("ai_models_menu_visible", aiModelsMenuVisible);
   await setSetting("tasks_menu_visible", tasksMenuVisible);
+  await setSetting("jobs_menu_visible", jobsMenuVisible);
   await setSetting("chat_tabs_menu_visible", chatTabsMenuVisible);
   await setSetting("view_tabs_bar_visible", viewTabsBarVisible);
   await setSetting("show_project_name_in_tabs", showProjectNameInTabs);
@@ -3857,6 +3885,7 @@ document.getElementById("featureFlagsSaveBtn").addEventListener("click", async (
   toggleFileTreeMenu(fileTreeMenuVisible);
   toggleAiModelsMenu(aiModelsMenuVisible);
   toggleTasksMenu(tasksMenuVisible);
+  toggleJobsMenu(jobsMenuVisible);
   toggleChatTabsMenu(chatTabsMenuVisible);
   toggleViewTabsBarVisibility(viewTabsBarVisible);
   toggleImageGeneratorMenu(imageGeneratorMenuVisible);
