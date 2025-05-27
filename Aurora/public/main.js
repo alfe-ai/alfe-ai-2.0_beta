@@ -1237,6 +1237,17 @@ const newTabBtnEl = document.getElementById("newTabBtn");
 if (newTabBtnEl) newTabBtnEl.addEventListener("click", openNewTabModal);
 document.getElementById("newTabCreateBtn").addEventListener("click", addNewTab);
 document.getElementById("newTabCancelBtn").addEventListener("click", () => hideModal($("#newTabModal")));
+document.getElementById("addModelModalAddBtn").addEventListener("click", async () => {
+  const sel = document.getElementById("favoriteModelSelect");
+  const modelId = sel ? sel.value : "";
+  if(modelId){
+    await addModelTab(modelId);
+  }
+  hideModal(document.getElementById("addModelModal"));
+});
+document.getElementById("addModelModalCancelBtn").addEventListener("click", () => {
+  hideModal(document.getElementById("addModelModal"));
+});
 document.getElementById("newSubroutineBtn").addEventListener("click", addNewSubroutine);
 document.getElementById("viewActionHooksBtn").addEventListener("click", () => {
   renderActionHooks();
@@ -3227,7 +3238,7 @@ async function initModelTabs() {
   }
   const newModelTabBtn = document.getElementById("newModelTabBtn");
   if(newModelTabBtn){
-    newModelTabBtn.addEventListener("click", addModelTab);
+    newModelTabBtn.addEventListener("click", openAddModelModal);
   }
 }
 
@@ -3297,9 +3308,37 @@ function renderModelTabs(){
   });
 }
 
-// Add a new model tab
-async function addModelTab(){
-  let name = prompt("Enter Model Tab Name (e.g., GPT-4 or deepseek-latest):", "");
+async function openAddModelModal(){
+  const selectEl = document.getElementById("favoriteModelSelect");
+  if(selectEl){
+    selectEl.innerHTML = "<option>Loading...</option>";
+    try{
+      const r = await fetch("/api/ai/models");
+      if(r.ok){
+        const data = await r.json();
+        const favs = (data.models||[]).filter(m=>m.favorite);
+        selectEl.innerHTML = "";
+        if(favs.length===0){
+          selectEl.appendChild(new Option("(no favorites)",""));
+        } else {
+          favs.forEach(m=>{
+            selectEl.appendChild(new Option(m.id,m.id));
+          });
+        }
+      } else {
+        selectEl.innerHTML = "<option>Error</option>";
+      }
+    }catch(e){
+      console.error("Error loading models:",e);
+      selectEl.innerHTML = "<option>Error</option>";
+    }
+  }
+  showModal(document.getElementById("addModelModal"));
+}
+
+// Add a new model tab using given model id
+async function addModelTab(modelId){
+  const name = modelId;
   if(!name) return;
   let newId = 1;
   if(modelTabs.length>0){
@@ -3310,7 +3349,7 @@ async function addModelTab(){
     id: newId,
     name,
     modelId: name,
-    service: "openai"
+    service: parseProviderModel(name).provider || "openai"
   };
   modelTabs.push(newObj);
   currentModelTabId = newId;
