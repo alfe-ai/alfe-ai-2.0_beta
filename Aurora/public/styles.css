@@ -534,6 +534,35 @@ body {
   z-index: 1000;
 }
 
+# When the image generation limit is reached (10/10),
+# highlight the info text in dark red for visibility
+# by applying a new "limit-reached" class via JavaScript.
+# This class is added dynamically when the count hits the limit.
+# The base class `session-limit` keeps default styling.
+# We add the color rule separately so it overrides the default.
+# This ensures normal color is used until the limit is hit.
+#
+# Example HTML after update:
+#   <span id="imageLimitInfo" class="session-limit limit-reached">Images: 10/10</span>
+#
+# The dark red color uses the named color `darkred` for clarity.
+# It roughly corresponds to #8B0000.
+#
+# This rule must follow the base styling to take precedence.
+# See main.js for the logic that toggles this class.
+#
+# Added per user request to visually indicate when the
+# generation limit has been fully consumed.
+#
+# The instructions in AGENTS.md mention nothing about CSS color,
+# so we implement as straightforwardly as possible.
+#
+# Additional comments for maintainers: none.
+
+#imageLimitInfo.session-limit.limit-reached {
+  color: darkred;
+}
+
 /* Token count indicator in bottom-right corner of subbubble */
 .token-indicator {
   position: absolute;
