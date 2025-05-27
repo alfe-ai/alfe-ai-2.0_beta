@@ -624,4 +624,16 @@ body {
   to { transform: rotate(360deg); }
 }
 
+#navSpinner {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+#navSpinner .loading-spinner {
+  margin-left: 0;
+  width: 24px;
+  height: 24px;
+  border-width: 3px;
+}
+
 

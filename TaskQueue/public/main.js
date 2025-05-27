@@ -28,6 +28,7 @@ let auroraProjectBarVisible = true; // new flag to show/hide Aurora project cont
 let chatStreaming = true; // new toggle for streaming
 let enterSubmitsMessage = true; // new toggle for Enter key submit
 let navMenuVisible = false; // visibility of the top navigation menu
+let navMenuLoading = true;  // hide nav menu while showing spinner on load
 let showArchivedTabs = false;
 let topChatTabsBarVisible = true; // visibility of the top chat tabs bar
 let viewTabsBarVisible = true; // visibility of the top Chat/Tasks bar
@@ -1922,7 +1923,14 @@ function toggleProjectInfoBarVisibility(visible){
 
 function toggleNavMenuVisibility(visible) {
   const navEl = document.querySelector("nav.tree-menu");
+  const spinner = document.getElementById("navSpinner");
   if(!navEl) return;
+  if(navMenuLoading){
+    navEl.style.display = "none";
+    if(spinner) spinner.style.display = "";
+    return;
+  }
+  if(spinner) spinner.style.display = "none";
   navEl.style.display = visible ? "" : "none";
 }
 
@@ -3728,3 +3736,7 @@ registerActionHook("generateImage", async ({response}) => {
 });
 
 console.log("[Server Debug] main.js fully loaded. End of script.");
+setTimeout(() => {
+  navMenuLoading = false;
+  toggleNavMenuVisibility(navMenuVisible);
+}, 3000);
