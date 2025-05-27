@@ -197,7 +197,6 @@
         <label style="margin-top:8px;">Message:<br/>
           <textarea id="startChatInput" rows="3" style="width:100%;" placeholder="Start chatting..."></textarea>
         </label>
-        <div id="startSuggestions"></div>
         <div id="startRepoSection" style="margin-top:8px; display:none;">
           <label>Git Repo SSH URL:<br/>
             <input type="text" id="startRepoInput" style="width:100%;" />
@@ -252,7 +251,7 @@
     let showDependencies = false;
     let showArchived = false;
     let showFeedbackButton = true;
-    let startInAurora = false;
+    let startInAurora = true;
     // Feature flag to enable advanced start options (Code, Design, Project)
     const enableStartAdvanced = false;
     // Maintain a history of user-entered prompts
@@ -438,10 +437,10 @@
     if(noTabs){
       handleStartTypeChange();
       startSplash();
-      renderSuggestions(true, 'startSuggestions', 'startChatInput');
+      // start suggestions disabled
     } else {
       stopSplash();
-      renderSuggestions(false, 'startSuggestions', 'startChatInput');
+      // start suggestions disabled
     }
     const chatPanel = document.getElementById('chatPanel');
     if(chatPanel) chatPanel.style.display = noTabs ? 'none' : '';
@@ -981,7 +980,7 @@
       showDependencies = localStorage.getItem('flagShowDependencies') === 'true';
       showArchived = localStorage.getItem('flagShowArchived') === 'true';
       showFeedbackButton = localStorage.getItem('flagShowFeedback') !== 'false';
-      startInAurora = localStorage.getItem('flagAuroraStart') === 'true';
+      startInAurora = localStorage.getItem('flagAuroraStart') !== 'false';
       const cbDeps = document.getElementById('flagShowDependencies');
       if(cbDeps) cbDeps.checked = showDependencies;
       const cbArch = document.getElementById('flagShowArchived');
