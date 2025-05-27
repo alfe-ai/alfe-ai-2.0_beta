@@ -1926,7 +1926,7 @@ function toggleNavMenuVisibility(visible) {
   const spinner = document.getElementById("navSpinner");
   if(!navEl) return;
   if(navMenuLoading){
-    navEl.style.display = "none";
+    navEl.style.display = visible ? "" : "none";
     if(spinner) spinner.style.display = "";
     return;
   }
