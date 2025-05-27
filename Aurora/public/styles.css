@@ -524,6 +524,16 @@ body {
   user-select: text;
 }
 
+/* Display current session image count under the ID */
+#imageLimitInfo.session-limit {
+  position: absolute;
+  top: 32px;
+  left: 60px;
+  font-size: 0.75rem;
+  color: #aaa;
+  z-index: 1000;
+}
+
 /* Token count indicator in bottom-right corner of subbubble */
 .token-indicator {
   position: absolute;
