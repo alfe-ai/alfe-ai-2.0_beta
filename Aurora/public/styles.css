@@ -435,6 +435,15 @@ body {
   margin-bottom: 0;
 }
 
+/* Icon displayed before chat tab names */
+#tabsContainer .tab-icon,
+#verticalTabsContainer .tab-icon {
+  margin-right: 4px;
+  width: 1.2rem;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
 /* Circle icon for exclamation */
 .exclamation-icon {
   position: absolute;

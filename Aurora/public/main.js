@@ -73,6 +73,8 @@ const defaultFavicon = "alfe_favicon_clean_64x64.ico";
 const rotatingFavicon = "alfe_favicon_clean_64x64.ico";
 let favElement = null;
 
+const tabTypeIcons = { chat: "💬", design: "🎨" };
+
 const $  = (sel, ctx=document) => ctx.querySelector(sel);
 const $$ = (sel, ctx=document) => [...ctx.querySelectorAll(sel)];
 
@@ -1043,6 +1045,8 @@ async function addNewSubroutine(){
 function openNewTabModal(){
   $("#newTabProjectInput").value = "";
   $("#newTabNameInput").value = "New Tab";
+  const typeSel = document.getElementById("newTabTypeSelect");
+  if(typeSel) typeSel.value = "chat";
   toggleNewTabProjectField(newTabProjectNameEnabled);
   showModal($("#newTabModal"));
 }
@@ -1070,10 +1074,12 @@ async function addNewTab(){
     name = $("#newTabNameInput").value.trim();
     if(!name) return;
   }
+  const typeSel = document.getElementById("newTabTypeSelect");
+  const tabType = typeSel ? typeSel.value : "chat";
   const r = await fetch("/api/chat/tabs/new", {
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ name, nexum: 0, project: projectInput })
+    body: JSON.stringify({ name, nexum: 0, project: projectInput, type: tabType })
   });
   if(r.ok){
     hideModal($("#newTabModal"));
@@ -1171,6 +1177,10 @@ function renderTabs(){
     }
 
     tabBtn.style.padding="4px 6px";
+    const iconSpan = document.createElement("span");
+    iconSpan.className = "tab-icon";
+    iconSpan.textContent = tabTypeIcons[tab.tab_type] || tabTypeIcons.chat;
+    tabBtn.appendChild(iconSpan);
     const nameSpan = document.createElement("span");
     nameSpan.textContent = tab.name + (showProjectNameInTabs && tab.project_name ? ` (${tab.project_name})` : "");
     nameSpan.style.flexGrow = "1";
@@ -1213,7 +1223,11 @@ function renderSidebarTabs(){
     info.style.flexGrow = "1";
 
     const b = document.createElement("button");
-    b.textContent = tab.name + (showProjectNameInTabs && tab.project_name ? ` (${tab.project_name})` : "");
+    const icon = document.createElement("span");
+    icon.className = "tab-icon";
+    icon.textContent = tabTypeIcons[tab.tab_type] || tabTypeIcons.chat;
+    b.appendChild(icon);
+    b.appendChild(document.createTextNode(tab.name + (showProjectNameInTabs && tab.project_name ? ` (${tab.project_name})` : "")));
     if (tab.id === currentTabId) {
       b.classList.add("active");
     }
@@ -1259,6 +1273,10 @@ function renderArchivedSidebarTabs(){
     wrapper.style.gap = "4px";
     wrapper.style.width = "100%";
 
+    const icon = document.createElement("span");
+    icon.className = "tab-icon";
+    icon.textContent = tabTypeIcons[tab.tab_type] || tabTypeIcons.chat;
+
     const label = document.createElement("span");
     label.textContent = tab.name + (showProjectNameInTabs && tab.project_name ? ` (${tab.project_name})` : "");
     label.style.flexGrow = "1";
@@ -1271,6 +1289,7 @@ function renderArchivedSidebarTabs(){
       renderArchivedSidebarTabs();
     });
 
+    wrapper.appendChild(icon);
     wrapper.appendChild(label);
     wrapper.appendChild(unarchBtn);
     container.appendChild(wrapper);
