@@ -135,7 +135,14 @@ async function updateImageLimitInfo(files){
     }
     const count = data.filter(f => f.source === 'Generated').length;
     const el = document.getElementById('imageLimitInfo');
-    if(el) el.textContent = `Images: ${count}/10`;
+    if(el) {
+      el.textContent = `Images: ${count}/10`;
+      if(count >= 10) {
+        el.classList.add('limit-reached');
+      } else {
+        el.classList.remove('limit-reached');
+      }
+    }
   } catch(e){
     console.error('Failed to update image limit info:', e);
   }
