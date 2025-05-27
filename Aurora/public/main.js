@@ -102,6 +102,14 @@ function showModal(m){ m.style.display = "flex"; }
 function hideModal(m){ m.style.display = "none"; }
 $$(".modal").forEach(m => m.addEventListener("click", e => { if(e.target===m) hideModal(m); }));
 
+function showToast(msg, duration=1500){
+  const el = document.getElementById("toast");
+  if(!el) return;
+  el.textContent = msg;
+  el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), duration);
+}
+
 function registerActionHook(name, fn){
   actionHooks.push({ name, fn });
 }
@@ -2845,6 +2853,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
         uCopy.title = "Copy message";
         uCopy.addEventListener("click", () => {
           navigator.clipboard.writeText(p.user_text || "");
+          showToast("Copied to clipboard");
         });
         userHead.appendChild(uCopy);
         userHead.appendChild(uDel);
@@ -2900,6 +2909,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
         aCopy.title = "Copy message";
         aCopy.addEventListener("click", () => {
           navigator.clipboard.writeText(p.ai_text || "");
+          showToast("Copied to clipboard");
         });
         botHead.appendChild(aCopy);
         botHead.appendChild(aDel);
@@ -2993,6 +3003,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
   userCopyBtn.title = "Copy message";
   userCopyBtn.addEventListener("click", () => {
     navigator.clipboard.writeText(userText || "");
+    showToast("Copied to clipboard");
   });
   userHead.appendChild(userCopyBtn);
   userHead.appendChild(userDelBtn);
@@ -3048,6 +3059,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
   aiCopyBtn.title = "Copy message";
   aiCopyBtn.addEventListener("click", () => {
     navigator.clipboard.writeText(aiText || "");
+    showToast("Copied to clipboard");
   });
   botHead.appendChild(aiCopyBtn);
   botHead.appendChild(aiDelBtn);
@@ -3727,6 +3739,7 @@ function addImageChatBubble(url, altText="", title=""){
   imgCopyBtn.title = "Copy alt text";
   imgCopyBtn.addEventListener("click", () => {
     navigator.clipboard.writeText(altText || "");
+    showToast("Copied to clipboard");
   });
   botHead.appendChild(imgCopyBtn);
   botDiv.appendChild(botHead);
