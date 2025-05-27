@@ -156,7 +156,10 @@ async function toggleSidebar(){
   const dividerEl = $("#divider");
   sidebarEl.style.display = sidebarVisible ? "" : "none";
   dividerEl.style.display = sidebarVisible ? "" : "none";
-  $("#toggleSidebarBtn").textContent = sidebarVisible ? "Hide sidebar" : "Show sidebar";
+  const toggleSidebarBtnEl = $("#toggleSidebarBtn");
+  if(toggleSidebarBtnEl){
+    toggleSidebarBtnEl.textContent = sidebarVisible ? "Hide sidebar" : "Show sidebar";
+  }
 
   const expandBtn = document.getElementById("expandSidebarBtn");
   expandBtn.style.display = sidebarVisible ? "none" : "block";
@@ -273,7 +276,10 @@ async function loadSettings(){
     }
     $(".sidebar").style.display = sidebarVisible ? "" : "none";
     $("#divider").style.display = sidebarVisible ? "" : "none";
-    $("#toggleSidebarBtn").textContent = sidebarVisible ? "Hide sidebar" : "Show sidebar";
+    const toggleSidebarBtn = $("#toggleSidebarBtn");
+    if(toggleSidebarBtn){
+      toggleSidebarBtn.textContent = sidebarVisible ? "Hide sidebar" : "Show sidebar";
+    }
     document.getElementById("expandSidebarBtn").style.display = sidebarVisible ? "none" : "block";
   }
   {
