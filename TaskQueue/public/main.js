@@ -3322,7 +3322,7 @@ document.getElementById("toggleModelTabsBtn").addEventListener("click", async ()
   } else {
     if(cont) cont.style.display = "";
     if(newBtn) newBtn.style.display = "";
-    toggleBtn.textContent = "Hide model tabs bar";
+    toggleBtn.textContent = "Minimize model tabs bar";
     modelTabsBarVisible = true;
     await setSetting("model_tabs_bar_visible", true);
   }
