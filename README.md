@@ -13,4 +13,4 @@ Run `sd_webui.sh` to clone the Web UI repository (if missing) and start the serv
 Place your checkpoint in `stable-diffusion-webui/models/Stable-diffusion/` before launching if it's not already present.
 
 ## Social Links
-Follow us on [Mastodon](https://mastodon.social/@alfeai) for updates.
+TODO
