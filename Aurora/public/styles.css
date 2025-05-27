@@ -252,8 +252,13 @@ body {
   right: 24px;
   background: transparent;
   border: none;
-  color: #888;
+  color: #4da3ff;
+  font-weight: bold;
   cursor: pointer;
+}
+
+.bubble-copy-btn:hover {
+  color: #6cb8ff;
 }
 
 /* Avatars replaced with name ovals */
@@ -683,6 +688,15 @@ body {
 @keyframes nav-skeleton-loading {
   from { background-color: #3a3a3a; }
   to { background-color: #4a4a4a; }
+}
+
+/* Version info in sidebar */
+.version-info {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  font-size: 0.75rem;
+  color: #aaa;
 }
 
 

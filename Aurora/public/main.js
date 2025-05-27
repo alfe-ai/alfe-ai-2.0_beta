@@ -30,7 +30,7 @@ let enterSubmitsMessage = true; // new toggle for Enter key submit
 let navMenuVisible = false; // visibility of the top navigation menu
 let navMenuLoading = true;  // hide nav menu while showing spinner on load
 let showArchivedTabs = false;
-let topChatTabsBarVisible = true; // visibility of the top chat tabs bar
+let topChatTabsBarVisible = false; // visibility of the top chat tabs bar
 let viewTabsBarVisible = true; // visibility of the top Chat/Tasks bar
 let showDependenciesColumn = false;
 let tabGenerateImages = true; // per-tab auto image toggle
@@ -1225,6 +1225,13 @@ document.getElementById("subroutineCancelBtn").addEventListener("click", () => {
   editingSubroutineId = null;
   hideModal(document.getElementById("subroutineModal"));
 });
+
+// Subscribe button opens subscription plans modal
+document.getElementById("subscribeBtn").addEventListener("click", e => {
+  e.preventDefault();
+  showModal(document.getElementById("subscribeModal"));
+});
+document.getElementById("subscribeCloseBtn").addEventListener("click", () => hideModal(document.getElementById("subscribeModal")));
 
 document.getElementById("viewTabChat").addEventListener("click", () => updateView('chat'));
 document.getElementById("viewTabTasks").addEventListener("click", () => updateView('tasks'));
