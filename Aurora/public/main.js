@@ -31,7 +31,7 @@ let navMenuVisible = false; // visibility of the top navigation menu
 let navMenuLoading = true;  // hide nav menu while showing spinner on load
 let showArchivedTabs = false;
 let topChatTabsBarVisible = false; // visibility of the top chat tabs bar
-let viewTabsBarVisible = true; // visibility of the top Chat/Tasks bar
+let viewTabsBarVisible = false; // visibility of the top Chat/Tasks bar
 let showDependenciesColumn = false;
 let tabGenerateImages = true; // per-tab auto image toggle
 let imageLoopEnabled = false; // automatic image generation loop mode
@@ -370,7 +370,7 @@ async function loadSettings(){
     if(r.ok){
       const { value } = await r.json();
       if(typeof value !== 'undefined'){
-        viewTabsBarVisible = value !== false;
+        viewTabsBarVisible = !!value;
       }
     }
     toggleViewTabsBarVisibility(viewTabsBarVisible);
@@ -1071,6 +1071,10 @@ async function deleteTab(tabId){
     renderSidebarTabs();
     renderArchivedSidebarTabs();
     await loadChatHistory(currentTabId, true);
+    await loadTabs();
+    renderTabs();
+    renderSidebarTabs();
+    renderArchivedSidebarTabs();
   }
 }
 
@@ -1716,7 +1720,7 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
   const rViewTabs = await fetch("/api/settings/view_tabs_bar_visible");
   if(rViewTabs.ok){
     const { value } = await rViewTabs.json();
-    viewTabsBarVisible = value !== false;
+    viewTabsBarVisible = !!value;
   }
   
   const rDepsFlag = await fetch("/api/settings/show_dependencies_column");
@@ -3577,7 +3581,7 @@ document.getElementById("featureFlagsBtn").addEventListener("click", async () =>
     const r8 = await fetch("/api/settings/view_tabs_bar_visible");
     if(r8.ok){
       const { value } = await r8.json();
-      viewTabsBarVisible = value !== false;
+      viewTabsBarVisible = !!value;
     }
   } catch {}
   try {
