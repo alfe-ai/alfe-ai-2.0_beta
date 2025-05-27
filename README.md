@@ -2,7 +2,7 @@
 
 ### Alfe AI: Software Development and Image Design Platform  
 
-The first version of the Alfe AI Cloud Platform https://alfe.sh has been released (beta-2.30).  
+The first version of the Alfe AI Cloud Platform https://alfe.sh <!-- has been released --> (beta-2.30).  
 This initial cloud release includes the image design component of the Alfe AI Platform.  
 The software development component is coming soon, and is available now as a Pre-release on GitHub.  
 
