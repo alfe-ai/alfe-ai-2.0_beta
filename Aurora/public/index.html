@@ -31,7 +31,7 @@
     <!-- Tree-style menu with sections -->
     <nav class="tree-menu" style="display:none;">
       <ul>
-        <li><button id="navChatTabsBtn" class="tree-button">Chats</button></li>
+        <li><button id="navChatTabsBtn" class="tree-button" hidden>Chats</button></li>
         <li><button id="navArchiveTabsBtn" class="tree-button">Archived</button></li>
         <li><button id="navTasksBtn" class="tree-button active">Tasks</button></li>
         <li><button id="navUploaderBtn" class="tree-button">Images</button></li>
@@ -307,9 +307,9 @@
 <div id="newTabModal" class="modal">
   <div class="modal-content">
     <h2>New Tab</h2>
-<!--    <label>Project name (optional):<br/>-->
-<!--      <input type="text" id="newTabProjectInput" style="width:100%;" />-->
-<!--    </label>-->
+    <label hidden>Project name (optional):<br/>
+      <input type="text" id="newTabProjectInput" style="width:100%;" />
+    </label>
     <label style="margin-top:8px;">Tab name:<br/>
       <input type="text" id="newTabNameInput" style="width:100%;" />
     </label>
