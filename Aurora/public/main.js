@@ -3738,13 +3738,10 @@ document.getElementById("featureFlagsSaveBtn").addEventListener("click", async (
   toggleTasksMenu(tasksMenuVisible);
   toggleViewTabsBarVisibility(viewTabsBarVisible);
   toggleImageGeneratorMenu(imageGeneratorMenuVisible);
-<<<<<<< HEAD
   renderTabs();
   renderSidebarTabs();
   renderArchivedSidebarTabs();
-=======
   toggleNewTabProjectField(newTabProjectNameEnabled);
->>>>>>> Aurora/Aurelix/dev/MVP
   hideModal(document.getElementById("featureFlagsModal"));
 });
 document.getElementById("featureFlagsCancelBtn").addEventListener("click", () => {
