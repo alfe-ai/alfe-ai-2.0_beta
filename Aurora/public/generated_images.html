@@ -27,9 +27,11 @@
   <h1>Generated Images</h1>
   <div id="grid" class="grid"></div>
   <script>
+    const sessionId = sessionStorage.getItem('sessionId') || crypto.randomUUID();
+    sessionStorage.setItem('sessionId', sessionId);
     async function loadImages(){
       try {
-        const resp = await fetch('/api/upload/list');
+        const resp = await fetch('/api/upload/list?sessionId=' + encodeURIComponent(sessionId));
         const data = await resp.json();
         const grid = document.getElementById('grid');
         grid.innerHTML = '';

@@ -47,6 +47,9 @@
   </div>
   <pre id="upscaleTerminal" style="background:#000;color:#0f0;padding:0.5rem;margin-top:0.5rem;height:200px;overflow:auto;font-family:monospace;"></pre>
   <script>
+    const sessionId = sessionStorage.getItem('sessionId') || crypto.randomUUID();
+    sessionStorage.setItem('sessionId', sessionId);
+
     const params = new URLSearchParams(window.location.search);
     let file = params.get('file');
     const idParam = params.get('id');
@@ -86,7 +89,7 @@
 
     async function loadStatus(){
       try{
-        const res = await fetch('/api/upload/list');
+        const res = await fetch('/api/upload/list?sessionId=' + encodeURIComponent(sessionId));
         const list = await res.json();
         const item = list.find(f => f.name === file);
         return item ? item.status : '';

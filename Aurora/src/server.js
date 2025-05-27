@@ -1467,25 +1467,21 @@ app.post("/api/upload", upload.single("myfile"), (req, res) => {
 });
 
 app.get("/api/upload/list", (req, res) => {
-  console.debug("[Server Debug] GET /api/upload/list => listing files.");
+  console.debug("[Server Debug] GET /api/upload/list => listing files.", req.query);
   try {
+    const sessionId = req.query.sessionId || "";
     const fileNames = fs.readdirSync(uploadsDir);
-    const files = fileNames.map((name, idx) => {
+    const files = [];
+    for (const name of fileNames) {
+      const imgSession = db.getImageSessionForUrl(`/uploads/${name}`);
+      if (sessionId && imgSession !== sessionId) continue;
       const { size, mtime } = fs.statSync(path.join(uploadsDir, name));
       const title = db.getImageTitleForUrl(`/uploads/${name}`);
       const id = db.getImageIdForUrl(`/uploads/${name}`);
       const source = db.isGeneratedImage(`/uploads/${name}`) ? 'Generated' : 'Uploaded';
       const status = db.getImageStatusForUrl(`/uploads/${name}`) || (source === 'Generated' ? 'Generated' : 'Uploaded');
-      return {
-        id,
-        name,
-        size,
-        mtime,
-        title,
-        source,
-        status
-      };
-    });
+      files.push({ id, name, size, mtime, title, source, status });
+    }
     res.json(files);
   } catch (err) {
     console.error("[Server Debug] /api/upload/list error:", err);
