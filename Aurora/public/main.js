@@ -2916,6 +2916,10 @@ async function loadChatHistory(tabId = 1, reset=false) {
           const r = await fetch(`/api/chat/pair/${p.id}`, { method:"DELETE" });
           if(r.ok) seqDiv.remove();
         });
+        if(p.image_url){
+          pairDel.style.top = "auto";
+          pairDel.style.bottom = "4px";
+        }
         seqDiv.appendChild(pairDel);
         fragment.appendChild(seqDiv);
       }
@@ -3157,6 +3161,10 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
       alert("Failed to delete chat pair.");
     }
   });
+  if(imageUrl){
+    pairDelBtn.style.top = "auto";
+    pairDelBtn.style.bottom = "4px";
+  }
   seqDiv.appendChild(pairDelBtn);
 
   const chatMessagesEl = document.getElementById("chatMessages");
