@@ -1670,7 +1670,7 @@ chatSendBtnEl.addEventListener("click", async () => {
   chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
 });
 
-$("#chatSettingsBtn").addEventListener("click", async () => {
+async function openChatSettings(){
   const r = await fetch("/api/settings/chat_hide_metadata");
   if(r.ok){
     const { value } = await r.json();
@@ -1849,7 +1849,40 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
   }
 
   showModal($("#chatSettingsModal"));
+}
+
+$("#chatSettingsBtn").addEventListener("click", async () => {
+  if(!localStorage.getItem("chatSettingsBetaAck")){
+    showModal($("#chatSettingsBetaModal"));
+    return;
+  }
+  await openChatSettings();
 });
+
+const betaCheck = document.getElementById("ackChatSettingsBetaCheck");
+const betaContinue = document.getElementById("chatSettingsBetaContinueBtn");
+const betaCancel = document.getElementById("chatSettingsBetaCancelBtn");
+
+if(betaCheck && betaContinue){
+  betaCheck.addEventListener("change", e => {
+    betaContinue.disabled = !e.target.checked;
+  });
+}
+
+if(betaCancel){
+  betaCancel.addEventListener("click", () => {
+    hideModal($("#chatSettingsBetaModal"));
+  });
+}
+
+if(betaContinue){
+  betaContinue.addEventListener("click", async () => {
+    if(!betaCheck.checked) return;
+    localStorage.setItem("chatSettingsBetaAck", "true");
+    hideModal($("#chatSettingsBetaModal"));
+    await openChatSettings();
+  });
+}
 
 // React when AI service changes
 $("#aiServiceSelect").addEventListener("change", async ()=>{
