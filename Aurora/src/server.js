@@ -1489,6 +1489,21 @@ app.get("/api/upload/list", (req, res) => {
   }
 });
 
+app.get("/api/image/counts", (req, res) => {
+  try {
+    const sessionId = req.query.sessionId || "";
+    const ipAddress = (req.headers["x-forwarded-for"] || req.ip || "").split(",")[0].trim();
+    const sessionCount = sessionId ? db.countImagesForSession(sessionId) : 0;
+    const ipCount = ipAddress ? db.countImagesForIp(ipAddress) : 0;
+    const sessionLimit = sessionId ? db.imageLimitForSession(sessionId, 10) : 10;
+    const ipLimit = 10;
+    res.json({ sessionCount, sessionLimit, ipCount, ipLimit });
+  } catch (err) {
+    console.error("[Server Debug] /api/image/counts error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.get("/api/upload/byId", (req, res) => {
   try {
     const id = parseInt(req.query.id, 10);
@@ -1889,6 +1904,7 @@ app.get("/api/upscale/result", (req, res) => {
 app.post("/api/image/generate", async (req, res) => {
   try {
     const { prompt, n, size, model, provider, tabId, sessionId } = req.body || {};
+    const ipAddress = (req.headers["x-forwarded-for"] || req.ip || "").split(",")[0].trim();
     if (!prompt) {
       return res.status(400).json({ error: "Missing prompt" });
     }
@@ -1917,6 +1933,13 @@ app.post("/api/image/generate", async (req, res) => {
       }
     }
 
+    if (ipAddress) {
+      const ipCount = db.countImagesForIp(ipAddress);
+      if (ipCount >= 10) {
+        return res.status(400).json({ error: 'Image generation limit reached for this IP' });
+      }
+    }
+
     if (service === "stable-diffusion") {
       const sdBase = process.env.STABLE_DIFFUSION_URL;
       if (!sdBase) {
@@ -1942,7 +1965,7 @@ app.post("/api/image/generate", async (req, res) => {
       );
       const tab = parseInt(tabId, 10) || 1;
       const imageTitle = await deriveImageTitle(prompt);
-      db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated', sessionId);
+      db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated', sessionId, ipAddress);
       return res.json({ success: true, url: localUrl, title: imageTitle });
     }
 
@@ -2026,7 +2049,7 @@ app.post("/api/image/generate", async (req, res) => {
 
     const tab = parseInt(tabId, 10) || 1;
     const imageTitle = await deriveImageTitle(prompt, openaiClient);
-    db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated', sessionId);
+    db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated', sessionId, ipAddress);
 
     res.json({ success: true, url: localUrl, title: imageTitle });
   } catch (err) {
