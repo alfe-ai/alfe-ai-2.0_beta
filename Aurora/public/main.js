@@ -27,6 +27,7 @@ let sidebarVisible = true;
 let chatTabs = [];
 let archivedTabs = [];
 let currentTabId = 1;
+let currentTabType = 'chat';
 let chatHideMetadata = false;
 let chatTabAutoNaming = false;
 let showSubbubbleToken = false;
@@ -42,7 +43,7 @@ let topChatTabsBarVisible = false; // visibility of the top chat tabs bar
 let viewTabsBarVisible = false; // visibility of the top Chat/Tasks bar
 let showProjectNameInTabs = false; // append project name to chat tab titles
 let showDependenciesColumn = false;
-let tabGenerateImages = true; // per-tab auto image toggle
+let tabGenerateImages = false; // per-tab auto image toggle (design tabs only)
 let imageLoopEnabled = false; // automatic image generation loop mode
 let imageLoopMessage = "Next image";
 let imageGenService = 'openai';
@@ -210,6 +211,8 @@ async function toggleNavMenu(){
 document.getElementById("navMenuToggle")?.addEventListener("click", toggleNavMenu);
 
   async function toggleTabGenerateImages(){
+    const t = chatTabs.find(t => t.id===currentTabId);
+    if(!t || t.tab_type !== 'design') return;
     tabGenerateImages = !tabGenerateImages;
     const chk = document.getElementById("tabGenerateImagesCheck");
     if(chk) chk.checked = tabGenerateImages;
@@ -219,7 +222,6 @@ document.getElementById("navMenuToggle")?.addEventListener("click", toggleNavMen
       body: JSON.stringify({ tabId: currentTabId, enabled: tabGenerateImages })
     });
     if(r.ok){
-      const t = chatTabs.find(t => t.id===currentTabId);
       if(t) t.generate_images = tabGenerateImages ? 1 : 0;
     }
   }
@@ -1143,9 +1145,13 @@ async function selectTab(tabId){
   await setSetting("last_chat_tab", tabId);
   loadChatHistory(tabId, true);
   const t = chatTabs.find(t => t.id === tabId);
-  tabGenerateImages = !t || t.generate_images !== 0;
+  currentTabType = t ? t.tab_type || 'chat' : 'chat';
+  tabGenerateImages = currentTabType === 'design';
   const chk = document.getElementById("tabGenerateImagesCheck");
-  if(chk) chk.checked = tabGenerateImages;
+  if(chk){
+    chk.checked = tabGenerateImages;
+    chk.disabled = currentTabType !== 'design';
+  }
   renderTabs();
   renderSidebarTabs();
   renderArchivedSidebarTabs();
@@ -1823,6 +1829,7 @@ async function openChatSettings(){
   $("#showViewTabsBarCheck").checked = viewTabsBarVisible;
   $("#showArchivedTabsCheck").checked = showArchivedTabs;
   $("#tabGenerateImagesCheck").checked = tabGenerateImages;
+  $("#tabGenerateImagesCheck").disabled = currentTabType !== 'design';
   $("#imageLoopCheck").checked = imageLoopEnabled;
   $("#imageLoopMessageInput").value = imageLoopMessage;
 
@@ -2781,9 +2788,13 @@ btnNexumTabs?.addEventListener("click", () => { window.location.href = btnNexumT
   }
   {
     const firstTab = chatTabs.find(t => t.id === currentTabId);
-    tabGenerateImages = !firstTab || firstTab.generate_images !== 0;
+    currentTabType = firstTab ? firstTab.tab_type || 'chat' : 'chat';
+    tabGenerateImages = currentTabType === 'design';
     const chk = document.getElementById("tabGenerateImagesCheck");
-    if(chk) chk.checked = tabGenerateImages;
+    if(chk){
+      chk.checked = tabGenerateImages;
+      chk.disabled = currentTabType !== 'design';
+    }
   }
   renderTabs();
   renderSidebarTabs();
@@ -3967,7 +3978,7 @@ registerActionHook("afterSendLog", ({message, response}) => {
 // Automatically generate an image from the AI response
 registerActionHook("generateImage", async ({response}) => {
   try {
-    if(!tabGenerateImages) return;
+    if(currentTabType !== 'design' || !tabGenerateImages) return;
     const prompt = (response || "").trim();
     if(!prompt) return;
     const genIndicator = document.getElementById("imageGenerationIndicator");
