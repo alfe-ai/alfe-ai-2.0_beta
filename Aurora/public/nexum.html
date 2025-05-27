@@ -1090,15 +1090,9 @@
           banner.style.display = 'none';
         });
         document.getElementById('cookieMoreInfoBtn').addEventListener('click', () => {
-          document.getElementById('cookieInfoModal').style.display = 'flex';
+          window.open('cookies.html', '_blank');
         });
       }
-      document.getElementById('cookieInfoCloseBtn').addEventListener('click', () => {
-        document.getElementById('cookieInfoModal').style.display = 'none';
-      });
-      document.getElementById('cookieInfoModal').addEventListener('click', e => {
-        if(e.target === e.currentTarget) e.currentTarget.style.display = 'none';
-      });
     });
 
   </script>
@@ -1106,17 +1100,6 @@
     This site uses session cookies for the functionality of this application such as chat history, preferences, and files.
     <button id="cookieAcceptBtn">Accept</button>
     <button id="cookieMoreInfoBtn">More Info</button>
-  </div>
-  <div id="cookieInfoModal" class="modal" style="display:none;">
-    <div class="modal-content">
-      <h3>Cookie & Session Usage</h3>
-      <p>We store a unique session ID in <code>sessionStorage</code> so your chat history and preferences stay associated with your current visit.</p>
-      <p>Your theme settings and feature flags are saved to <code>localStorage</code> along with whether you've accepted this notice.</p>
-      <p>These cookies are never used for advertising or tracking outside of this application.</p>
-      <div class="modal-buttons">
-        <button id="cookieInfoCloseBtn">Close</button>
-      </div>
-    </div>
   </div>
 </body>
 </html>
