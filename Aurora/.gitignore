@@ -1,0 +1,6 @@
+.idea/*
+.patchfiles_ignore/*
+TaskQueue/.env
+*.env
+printifyQueue.json
+ 
