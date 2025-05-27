@@ -534,6 +534,15 @@ body {
   z-index: 1000;
 }
 
+#imageLimitCountdown.session-limit {
+  position: absolute;
+  top: 44px;
+  left: 60px;
+  font-size: 0.7rem;
+  color: #aaa;
+  z-index: 1000;
+}
+
 /* When the image generation limit is reached (10/10),
    highlight the info text in dark red for visibility
    by applying a new "limit-reached" class via JavaScript.
