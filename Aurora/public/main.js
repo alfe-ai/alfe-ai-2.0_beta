@@ -1924,13 +1924,16 @@ function toggleProjectInfoBarVisibility(visible){
 function toggleNavMenuVisibility(visible) {
   const navEl = document.querySelector("nav.tree-menu");
   const spinner = document.getElementById("navSpinner");
+  const skeleton = document.getElementById("navSkeletonList");
   if(!navEl) return;
   if(navMenuLoading){
-    navEl.style.display = visible ? "" : "none";
+    navEl.style.display = "none";
     if(spinner) spinner.style.display = "";
+    if(skeleton) skeleton.style.display = visible ? "" : "none";
     return;
   }
   if(spinner) spinner.style.display = "none";
+  if(skeleton) skeleton.style.display = "none";
   navEl.style.display = visible ? "" : "none";
 }
 
@@ -3739,4 +3742,4 @@ console.log("[Server Debug] main.js fully loaded. End of script.");
 setTimeout(() => {
   navMenuLoading = false;
   toggleNavMenuVisibility(navMenuVisible);
-}, 3000);
+}, 2000);
