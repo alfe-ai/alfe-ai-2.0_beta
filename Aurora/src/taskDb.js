@@ -830,6 +830,16 @@ export default class TaskDB {
     return row ? row.session_id : "";
   }
 
+  countImagesForSession(sessionId) {
+    if (!sessionId) return 0;
+    const row = this.db
+        .prepare(
+            "SELECT COUNT(*) AS count FROM chat_pairs WHERE session_id=? AND image_url IS NOT NULL"
+        )
+        .get(sessionId);
+    return row ? row.count : 0;
+  }
+
   setImageStatus(url, status) {
     const stmt = this.db.prepare("UPDATE chat_pairs SET image_status=? WHERE image_url=?");
     const info = stmt.run(status, url);
