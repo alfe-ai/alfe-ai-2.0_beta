@@ -1909,8 +1909,10 @@ app.post("/api/image/generate", async (req, res) => {
     if (isNaN(countParsed) || countParsed < 1) countParsed = 1;
 
     if (sessionId) {
+      db.ensureImageSession(sessionId);
       const current = db.countImagesForSession(sessionId);
-      if (current >= 10) {
+      const limit = db.imageLimitForSession(sessionId, 10);
+      if (current >= limit) {
         return res.status(400).json({ error: 'Image generation limit reached for this session' });
       }
     }

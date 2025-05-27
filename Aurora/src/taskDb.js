@@ -216,6 +216,13 @@ export default class TaskDB {
     }
 
     this.db.exec(`
+      CREATE TABLE IF NOT EXISTS image_sessions (
+        session_id TEXT PRIMARY KEY,
+        start_time TEXT NOT NULL
+      );
+    `);
+
+    this.db.exec(`
       CREATE TABLE IF NOT EXISTS upscaled_images (
         original TEXT PRIMARY KEY,
         upscaled TEXT NOT NULL
@@ -828,6 +835,40 @@ export default class TaskDB {
         .prepare("SELECT session_id FROM chat_pairs WHERE image_url=? ORDER BY id DESC LIMIT 1")
         .get(url);
     return row ? row.session_id : "";
+  }
+
+  ensureImageSession(sessionId) {
+    if (!sessionId) return;
+    const exists = this.db
+        .prepare("SELECT 1 FROM image_sessions WHERE session_id=?")
+        .get(sessionId);
+    if (!exists) {
+      this.db
+          .prepare(
+              "INSERT INTO image_sessions (session_id, start_time) VALUES (?, ?)"
+          )
+          .run(sessionId, new Date().toISOString());
+    }
+  }
+
+  getImageSessionStart(sessionId) {
+    if (!sessionId) return null;
+    const row = this.db
+        .prepare("SELECT start_time FROM image_sessions WHERE session_id=?")
+        .get(sessionId);
+    return row ? row.start_time : null;
+  }
+
+  hoursSinceImageSessionStart(sessionId) {
+    const start = this.getImageSessionStart(sessionId);
+    if (!start) return 0;
+    const diffMs = Date.now() - new Date(start).getTime();
+    return Math.floor(diffMs / (3600 * 1000));
+  }
+
+  imageLimitForSession(sessionId, baseLimit = 10) {
+    const hours = this.hoursSinceImageSessionStart(sessionId);
+    return Math.max(0, baseLimit - hours);
   }
 
   countImagesForSession(sessionId) {
