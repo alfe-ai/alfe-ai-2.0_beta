@@ -692,11 +692,8 @@ body {
 
 /* Version info in sidebar */
 .version-info {
-  position: absolute;
-  bottom: 8px;
-  left: 8px;
   font-size: 0.75rem;
-  color: #aaa;
+  color: #bfbbbb;
 }
 
 /* Simple toast notification */
