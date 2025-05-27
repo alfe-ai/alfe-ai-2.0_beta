@@ -1201,6 +1201,8 @@ function renderArchivedSidebarTabs(){
 }
 
 document.getElementById("newSideTabBtn").addEventListener("click", addNewTab);
+const newTabBtnEl = document.getElementById("newTabBtn");
+if (newTabBtnEl) newTabBtnEl.addEventListener("click", addNewTab);
 document.getElementById("newSubroutineBtn").addEventListener("click", addNewSubroutine);
 document.getElementById("viewActionHooksBtn").addEventListener("click", () => {
   renderActionHooks();
