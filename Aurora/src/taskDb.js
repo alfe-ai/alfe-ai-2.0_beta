@@ -627,12 +627,14 @@ export default class TaskDB {
 
   createChatTab(name, nexum = 0, project = '', repo = '', type = 'chat') {
     const ts = new Date().toISOString();
+    const genImages = type === 'design' ? 1 : 0;
     const { lastInsertRowid } = this.db.prepare(`
       INSERT INTO chat_tabs (name, created_at, generate_images, nexum, project_name, repo_ssh_url, tab_type)
-      VALUES (@name, @created_at, 1, @nexum, @project_name, @repo_ssh_url, @tab_type)
+      VALUES (@name, @created_at, @generate_images, @nexum, @project_name, @repo_ssh_url, @tab_type)
     `).run({
       name,
       created_at: ts,
+      generate_images: genImages,
       nexum: nexum ? 1 : 0,
       project_name: project,
       repo_ssh_url: repo,
@@ -683,9 +685,10 @@ export default class TaskDB {
   }
 
   setChatTabConfig(tabId, project = '', repo = '', type = 'chat') {
+    const genImages = type === 'design' ? 1 : 0;
     this.db.prepare(
-        "UPDATE chat_tabs SET project_name=?, repo_ssh_url=?, tab_type=? WHERE id=?"
-    ).run(project, repo, type, tabId);
+        "UPDATE chat_tabs SET project_name=?, repo_ssh_url=?, tab_type=?, generate_images=? WHERE id=?"
+    ).run(project, repo, type, genImages, tabId);
   }
 
   getChatTab(tabId) {
