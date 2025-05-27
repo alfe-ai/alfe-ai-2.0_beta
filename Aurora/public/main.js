@@ -47,6 +47,7 @@ let fileTreeMenuVisible = true;      // show File Tree button
 let aiModelsMenuVisible = true;      // show AI Models link
 let tasksMenuVisible = true;         // show Tasks button
 let upArrowHistoryEnabled = true;    // use Arrow Up/Down for input history
+let newTabProjectNameEnabled = true; // show Project name field in New Tab dialog
 let chatSubroutines = [];
 let actionHooks = [];
 let editingSubroutineId = null;
@@ -498,6 +499,16 @@ async function loadSettings(){
         upArrowHistoryEnabled = value !== false;
       }
     }
+  }
+  {
+    const r = await fetch("/api/settings/new_tab_project_enabled");
+    if(r.ok){
+      const { value } = await r.json();
+      if(typeof value !== 'undefined'){
+        newTabProjectNameEnabled = value !== false;
+      }
+    }
+    toggleNewTabProjectField(newTabProjectNameEnabled);
   }
 }
 async function saveSettings(){
@@ -1003,11 +1014,12 @@ async function addNewSubroutine(){
 function openNewTabModal(){
   $("#newTabProjectInput").value = "";
   $("#newTabNameInput").value = "New Tab";
+  toggleNewTabProjectField(newTabProjectNameEnabled);
   showModal($("#newTabModal"));
 }
 async function addNewTab(){
-  const projectInput = $("#newTabProjectInput").value.trim();
-  if(projectInput){
+  const projectInput = newTabProjectNameEnabled ? $("#newTabProjectInput").value.trim() : "";
+  if(newTabProjectNameEnabled && projectInput){
     await fetch("/api/settings", {
       method:"POST",
       headers:{"Content-Type":"application/json"},
@@ -1032,7 +1044,7 @@ async function addNewTab(){
   const r = await fetch("/api/chat/tabs/new", {
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ name, nexum: 0 })
+    body: JSON.stringify({ name, nexum: 0, project: projectInput })
   });
   if(r.ok){
     hideModal($("#newTabModal"));
@@ -2063,6 +2075,11 @@ function toggleTasksMenu(visible){
   btn.style.display = visible ? "" : "none";
   const li = btn.closest('li');
   if(li) li.style.display = visible ? "" : "none";
+}
+function toggleNewTabProjectField(visible){
+  const lbl = document.getElementById("newTabProjectLabel");
+  if(!lbl) return;
+  lbl.style.display = visible ? "" : "none";
 }
 function runImageLoop(){
   if(!imageLoopEnabled) return;
@@ -3630,6 +3647,13 @@ document.getElementById("featureFlagsBtn").addEventListener("click", async () =>
       upArrowHistoryEnabled = value !== false;
     }
   } catch {}
+  try {
+    const r10 = await fetch("/api/settings/new_tab_project_enabled");
+    if(r10.ok){
+      const { value } = await r10.json();
+      newTabProjectNameEnabled = value !== false;
+    }
+  } catch {}
   document.getElementById("imageUploadEnabledCheck").checked = imageUploadEnabled;
   document.getElementById("imagePaintTrayEnabledCheck").checked = imagePaintTrayEnabled;
   document.getElementById("activityIframeMenuCheck").checked = activityIframeMenuVisible;
@@ -3641,6 +3665,7 @@ document.getElementById("featureFlagsBtn").addEventListener("click", async () =>
   document.getElementById("viewTabsBarFlagCheck").checked = viewTabsBarVisible;
   document.getElementById("imageGeneratorMenuCheck").checked = imageGeneratorMenuVisible;
   document.getElementById("upArrowHistoryCheck").checked = upArrowHistoryEnabled;
+  document.getElementById("newTabProjectFlagCheck").checked = newTabProjectNameEnabled;
   showModal(document.getElementById("featureFlagsModal"));
 });
 document.getElementById("featureFlagsSaveBtn").addEventListener("click", async () => {
@@ -3658,6 +3683,7 @@ document.getElementById("featureFlagsSaveBtn").addEventListener("click", async (
   tasksMenuVisible = document.getElementById("tasksMenuCheck").checked;
   viewTabsBarVisible = document.getElementById("viewTabsBarFlagCheck").checked;
   upArrowHistoryEnabled = document.getElementById("upArrowHistoryCheck").checked;
+  newTabProjectNameEnabled = document.getElementById("newTabProjectFlagCheck").checked;
   imageGeneratorMenuVisible = document.getElementById("imageGeneratorMenuCheck").checked;
   await setSetting("activity_iframe_menu_visible", activityIframeMenuVisible);
   await setSetting("nexum_chat_menu_visible", nexumChatMenuVisible);
@@ -3667,6 +3693,7 @@ document.getElementById("featureFlagsSaveBtn").addEventListener("click", async (
   await setSetting("tasks_menu_visible", tasksMenuVisible);
   await setSetting("view_tabs_bar_visible", viewTabsBarVisible);
   await setSetting("up_arrow_history_enabled", upArrowHistoryEnabled);
+  await setSetting("new_tab_project_enabled", newTabProjectNameEnabled);
   await setSetting("image_generator_menu_visible", imageGeneratorMenuVisible);
   toggleActivityIframeMenu(activityIframeMenuVisible);
   toggleNexumChatMenu(nexumChatMenuVisible);
@@ -3676,6 +3703,7 @@ document.getElementById("featureFlagsSaveBtn").addEventListener("click", async (
   toggleTasksMenu(tasksMenuVisible);
   toggleViewTabsBarVisibility(viewTabsBarVisible);
   toggleImageGeneratorMenu(imageGeneratorMenuVisible);
+  toggleNewTabProjectField(newTabProjectNameEnabled);
   hideModal(document.getElementById("featureFlagsModal"));
 });
 document.getElementById("featureFlagsCancelBtn").addEventListener("click", () => {
