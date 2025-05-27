@@ -24,6 +24,7 @@ let chatTabAutoNaming = false;
 let showSubbubbleToken = false;
 let sterlingChatUrlVisible = true;
 let projectInfoBarVisible = true; // visibility of the project/Sterling bar
+let auroraProjectBarVisible = true; // new flag to show/hide Aurora project controls
 let chatStreaming = true; // new toggle for streaming
 let enterSubmitsMessage = true; // new toggle for Enter key submit
 let navMenuVisible = false; // visibility of the top navigation menu
@@ -333,7 +334,16 @@ async function loadSettings(){
         projectInfoBarVisible = value !== false;
       }
     }
-    toggleProjectInfoBarVisibility(projectInfoBarVisible);
+  }
+  {
+    const r = await fetch("/api/settings/aurora_project_bar_visible");
+    if(r.ok){
+      const { value } = await r.json();
+      if(typeof value !== 'undefined'){
+        auroraProjectBarVisible = value !== false;
+      }
+    }
+    toggleProjectInfoBarVisibility(projectInfoBarVisible && auroraProjectBarVisible);
   }
   {
     const r = await fetch("/api/settings/nav_menu_visible");
@@ -1697,6 +1707,7 @@ $("#chatSettingsBtn").addEventListener("click", async () => {
   $("#subbubbleTokenCheck").checked = showSubbubbleToken;
   $("#sterlingUrlCheck").checked = sterlingChatUrlVisible;
   $("#showProjectInfoCheck").checked = projectInfoBarVisible;
+  $("#showAuroraProjectBarCheck").checked = auroraProjectBarVisible;
   $("#showMarkdownTasksCheck").checked = markdownPanelVisible;
   $("#showDependenciesColumnCheck").checked = showDependenciesColumn;
   $("#showSubroutinePanelCheck").checked = subroutinePanelVisible;
@@ -1813,6 +1824,7 @@ async function chatSettingsSaveFlow() {
   showSubbubbleToken = $("#subbubbleTokenCheck").checked;
   sterlingChatUrlVisible = $("#sterlingUrlCheck").checked;
   projectInfoBarVisible = $("#showProjectInfoCheck").checked;
+  auroraProjectBarVisible = $("#showAuroraProjectBarCheck").checked;
   chatStreaming = $("#chatStreamingCheck").checked;
   markdownPanelVisible = $("#showMarkdownTasksCheck").checked;
   showDependenciesColumn = $("#showDependenciesColumnCheck").checked;
@@ -1830,6 +1842,7 @@ async function chatSettingsSaveFlow() {
   await setSetting("show_subbubble_token_count", showSubbubbleToken);
   await setSetting("sterling_chat_url_visible", sterlingChatUrlVisible);
   await setSetting("project_info_bar_visible", projectInfoBarVisible);
+  await setSetting("aurora_project_bar_visible", auroraProjectBarVisible);
   await setSetting("chat_streaming", chatStreaming);
   await setSetting("markdown_panel_visible", markdownPanelVisible);
   await setSetting("subroutine_panel_visible", subroutinePanelVisible);
@@ -1865,7 +1878,7 @@ async function chatSettingsSaveFlow() {
   hideModal($("#chatSettingsModal"));
   await loadChatHistory(currentTabId, true);
   toggleSterlingUrlVisibility(sterlingChatUrlVisible);
-  toggleProjectInfoBarVisibility(projectInfoBarVisible);
+  toggleProjectInfoBarVisibility(projectInfoBarVisible && auroraProjectBarVisible);
   toggleNavMenuVisibility(navMenuVisible);
   toggleTopChatTabsVisibility(topChatTabsBarVisible);
   toggleViewTabsBarVisibility(viewTabsBarVisible);
@@ -1897,6 +1910,7 @@ function toggleSterlingUrlVisibility(visible) {
 }
 
 function toggleProjectInfoBarVisibility(visible){
+  visible = visible && auroraProjectBarVisible;
   const ids = ["projectInfo", "setProjectBtn", "createSterlingChatBtn", "changeSterlingBranchBtn"];
   ids.forEach(id => {
     const el = document.getElementById(id);
@@ -2686,7 +2700,7 @@ btnActivityIframe.addEventListener("click", showActivityIframePanel);
     console.error("Error fetching sterling_chat_url:", e);
   }
   toggleSterlingUrlVisibility(sterlingChatUrlVisible);
-  toggleProjectInfoBarVisibility(projectInfoBarVisible);
+  toggleProjectInfoBarVisibility(projectInfoBarVisible && auroraProjectBarVisible);
 
   let lastView = await getSetting("last_sidebar_view");
   if(!lastView) lastView = "chatTabs";
