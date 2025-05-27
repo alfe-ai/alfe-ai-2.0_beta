@@ -1226,6 +1226,13 @@ document.getElementById("subroutineCancelBtn").addEventListener("click", () => {
   hideModal(document.getElementById("subroutineModal"));
 });
 
+// Subscribe button opens subscription plans modal
+document.getElementById("subscribeBtn").addEventListener("click", e => {
+  e.preventDefault();
+  showModal(document.getElementById("subscribeModal"));
+});
+document.getElementById("subscribeCloseBtn").addEventListener("click", () => hideModal(document.getElementById("subscribeModal")));
+
 document.getElementById("viewTabChat").addEventListener("click", () => updateView('chat'));
 document.getElementById("viewTabTasks").addEventListener("click", () => updateView('tasks'));
 document.getElementById("viewTabArchive").addEventListener("click", () => updateView('archive'));
