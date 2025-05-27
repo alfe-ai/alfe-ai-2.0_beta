@@ -32,6 +32,7 @@ let navMenuLoading = true;  // hide nav menu while showing spinner on load
 let showArchivedTabs = false;
 let topChatTabsBarVisible = false; // visibility of the top chat tabs bar
 let viewTabsBarVisible = false; // visibility of the top Chat/Tasks bar
+let showProjectNameInTabs = false; // append project name to chat tab titles
 let showDependenciesColumn = false;
 let tabGenerateImages = true; // per-tab auto image toggle
 let imageLoopEnabled = false; // automatic image generation loop mode
@@ -374,6 +375,15 @@ async function loadSettings(){
       }
     }
     toggleViewTabsBarVisibility(viewTabsBarVisible);
+  }
+  {
+    const r = await fetch("/api/settings/show_project_name_in_tabs");
+    if(r.ok){
+      const { value } = await r.json();
+      if(typeof value !== 'undefined'){
+        showProjectNameInTabs = value !== false;
+      }
+    }
   }
   {
     const r = await fetch("/api/settings/show_archived_tabs");
@@ -1131,7 +1141,7 @@ function renderTabs(){
 
     tabBtn.style.padding="4px 6px";
     const nameSpan = document.createElement("span");
-    nameSpan.textContent = tab.name;
+    nameSpan.textContent = tab.name + (showProjectNameInTabs && tab.project_name ? ` (${tab.project_name})` : "");
     nameSpan.style.flexGrow = "1";
     nameSpan.addEventListener("click", ()=>selectTab(tab.id));
     tabBtn.appendChild(nameSpan);
@@ -1172,7 +1182,7 @@ function renderSidebarTabs(){
     info.style.flexGrow = "1";
 
     const b = document.createElement("button");
-    b.textContent = tab.name;
+    b.textContent = tab.name + (showProjectNameInTabs && tab.project_name ? ` (${tab.project_name})` : "");
     if (tab.id === currentTabId) {
       b.classList.add("active");
     }
@@ -1219,7 +1229,7 @@ function renderArchivedSidebarTabs(){
     wrapper.style.width = "100%";
 
     const label = document.createElement("span");
-    label.textContent = tab.name;
+    label.textContent = tab.name + (showProjectNameInTabs && tab.project_name ? ` (${tab.project_name})` : "");
     label.style.flexGrow = "1";
 
     const unarchBtn = document.createElement("button");
@@ -3639,6 +3649,13 @@ document.getElementById("featureFlagsBtn").addEventListener("click", async () =>
     }
   } catch {}
   try {
+    const r10 = await fetch("/api/settings/show_project_name_in_tabs");
+    if(r10.ok){
+      const { value } = await r10.json();
+      showProjectNameInTabs = value !== false;
+    }
+  } catch {}
+  try {
     const r9 = await fetch("/api/settings/up_arrow_history_enabled");
     if(r9.ok){
       const { value } = await r9.json();
@@ -3654,6 +3671,7 @@ document.getElementById("featureFlagsBtn").addEventListener("click", async () =>
   document.getElementById("aiModelsMenuCheck").checked = aiModelsMenuVisible;
   document.getElementById("tasksMenuCheck").checked = tasksMenuVisible;
   document.getElementById("viewTabsBarFlagCheck").checked = viewTabsBarVisible;
+  document.getElementById("showProjectNameTabsCheck").checked = showProjectNameInTabs;
   document.getElementById("imageGeneratorMenuCheck").checked = imageGeneratorMenuVisible;
   document.getElementById("upArrowHistoryCheck").checked = upArrowHistoryEnabled;
   showModal(document.getElementById("featureFlagsModal"));
@@ -3672,6 +3690,7 @@ document.getElementById("featureFlagsSaveBtn").addEventListener("click", async (
   aiModelsMenuVisible = document.getElementById("aiModelsMenuCheck").checked;
   tasksMenuVisible = document.getElementById("tasksMenuCheck").checked;
   viewTabsBarVisible = document.getElementById("viewTabsBarFlagCheck").checked;
+  showProjectNameInTabs = document.getElementById("showProjectNameTabsCheck").checked;
   upArrowHistoryEnabled = document.getElementById("upArrowHistoryCheck").checked;
   imageGeneratorMenuVisible = document.getElementById("imageGeneratorMenuCheck").checked;
   await setSetting("activity_iframe_menu_visible", activityIframeMenuVisible);
@@ -3681,6 +3700,7 @@ document.getElementById("featureFlagsSaveBtn").addEventListener("click", async (
   await setSetting("ai_models_menu_visible", aiModelsMenuVisible);
   await setSetting("tasks_menu_visible", tasksMenuVisible);
   await setSetting("view_tabs_bar_visible", viewTabsBarVisible);
+  await setSetting("show_project_name_in_tabs", showProjectNameInTabs);
   await setSetting("up_arrow_history_enabled", upArrowHistoryEnabled);
   await setSetting("image_generator_menu_visible", imageGeneratorMenuVisible);
   toggleActivityIframeMenu(activityIframeMenuVisible);
@@ -3691,6 +3711,9 @@ document.getElementById("featureFlagsSaveBtn").addEventListener("click", async (
   toggleTasksMenu(tasksMenuVisible);
   toggleViewTabsBarVisibility(viewTabsBarVisible);
   toggleImageGeneratorMenu(imageGeneratorMenuVisible);
+  renderTabs();
+  renderSidebarTabs();
+  renderArchivedSidebarTabs();
   hideModal(document.getElementById("featureFlagsModal"));
 });
 document.getElementById("featureFlagsCancelBtn").addEventListener("click", () => {
