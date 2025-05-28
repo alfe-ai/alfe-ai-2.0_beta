@@ -1549,6 +1549,7 @@ let inputHistoryPos = -1;
 scrollDownBtnEl.addEventListener("click", ()=>{
   const chatMessagesEl = document.getElementById("chatMessages");
   chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+  setTimeout(scrollChatToBottom, 0);
 });
 
 chatInputEl.addEventListener("keydown", (e) => {
@@ -1724,6 +1725,7 @@ chatSendBtnEl.addEventListener("click", async () => {
   seqDiv.appendChild(botDiv);
   chatMessagesEl.appendChild(seqDiv);
   chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+  setTimeout(scrollChatToBottom, 0);
 
   let combinedUserText = "";
   if(descsForThisSend.length>0){
@@ -1792,6 +1794,7 @@ chatSendBtnEl.addEventListener("click", async () => {
   if (favElement) favElement.href = defaultFavicon;
 
   chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+  setTimeout(scrollChatToBottom, 0);
 });
 
 async function openChatSettings(){
