@@ -125,17 +125,53 @@ function showToast(msg, duration=1500){
   setTimeout(() => el.classList.remove("show"), duration);
 }
 
+let limitCountdownTimer = null;
+
+function startLimitCountdown(targetTime){
+  const el = document.getElementById('imageLimitCountdown');
+  if(!el) return;
+  function update(){
+    const diff = targetTime - Date.now();
+    if(diff <= 0){
+      clearInterval(limitCountdownTimer);
+      limitCountdownTimer = null;
+      el.textContent = '';
+      updateImageLimitInfo();
+    } else {
+      const m = String(Math.floor(diff/60000)).padStart(2,'0');
+      const s = String(Math.floor((diff%60000)/1000)).padStart(2,'0');
+      el.textContent = `Next slot in ${m}:${s}`;
+    }
+  }
+  if(limitCountdownTimer) clearInterval(limitCountdownTimer);
+  update();
+  limitCountdownTimer = setInterval(update, 1000);
+}
+
+function stopLimitCountdown(){
+  const el = document.getElementById('imageLimitCountdown');
+  if(el) el.textContent = '';
+  if(limitCountdownTimer){
+    clearInterval(limitCountdownTimer);
+    limitCountdownTimer = null;
+  }
+}
+
 async function updateImageLimitInfo(){
   try {
     const resp = await fetch(`/api/image/counts?sessionId=${encodeURIComponent(sessionId)}`);
     const data = await resp.json();
     const el = document.getElementById('imageLimitInfo');
     if(el){
-      el.textContent = `Images: ${data.sessionCount}/10 (IP ${data.ipCount}/10)`;
-      if(data.sessionCount >= 10 || data.ipCount >= 10){
+      el.textContent = `Images: ${data.sessionCount}/${data.sessionLimit} (IP ${data.ipCount}/${data.ipLimit})`;
+      if(data.sessionCount >= data.sessionLimit || data.ipCount >= data.ipLimit){
         el.classList.add('limit-reached');
+        if(data.nextReduction){
+          startLimitCountdown(new Date(data.nextReduction).getTime());
+        }
       } else {
         el.classList.remove('limit-reached');
+        stopLimitCountdown();
       }
     }
   } catch(e){

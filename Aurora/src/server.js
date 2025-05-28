@@ -1497,7 +1497,8 @@ app.get("/api/image/counts", (req, res) => {
     const ipCount = ipAddress ? db.countImagesForIp(ipAddress) : 0;
     const sessionLimit = sessionId ? db.imageLimitForSession(sessionId, 10) : 10;
     const ipLimit = 10;
-    res.json({ sessionCount, sessionLimit, ipCount, ipLimit });
+    const nextReduction = sessionId ? db.nextImageLimitReductionTime(sessionId) : null;
+    res.json({ sessionCount, sessionLimit, ipCount, ipLimit, nextReduction });
   } catch (err) {
     console.error("[Server Debug] /api/image/counts error:", err);
     res.status(500).json({ error: "Internal server error" });
