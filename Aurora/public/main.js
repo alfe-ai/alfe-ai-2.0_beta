@@ -1,7 +1,5 @@
-// Generate or retrieve a unique session ID stored in cookie/sessionStorage
-const sessionId = typeof getSessionId === 'function'
-  ? getSessionId()
-  : (sessionStorage.getItem('sessionId') || crypto.randomUUID());
+// sessionId is defined in session.js and available globally
+// sessionId is provided globally by session.js
 document.addEventListener('DOMContentLoaded', () => {
   const sessEl = document.getElementById('sessionIdText');
   if (sessEl) sessEl.textContent = sessionId;
