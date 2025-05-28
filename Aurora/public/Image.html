@@ -6,7 +6,6 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body style="padding:1rem;">
-<!--  <h2>PrintifyPipeline</h2>-->
   <h2>Image Design Pipeline</h2>
   <div id="errorMessage" style="color:red;margin-bottom:0.5rem;"></div>
   <ul id="stageList"></ul>
@@ -298,7 +297,7 @@
           errorEl.textContent = `Error fetching file for ID ${idParam}`;
         }
       }
-      console.debug('Loaded PrintifyPipeline for file =>', file);
+      console.debug('Loaded Image page for file =>', file);
       if (file) {
       upscaleBtn.addEventListener('click', async () => {
         console.debug('Submit to Upscale clicked with file =>', file);
