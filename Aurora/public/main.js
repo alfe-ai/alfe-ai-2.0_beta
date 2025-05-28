@@ -159,7 +159,18 @@ async function updateImageLimitInfo(files){
     const data = await resp.json();
     const el = document.getElementById('imageLimitInfo');
     if(el){
-      el.textContent = `Images: ${data.sessionCount}/${data.sessionLimit} (IP ${data.ipCount}/${data.ipLimit})`;
+
+      let maxSessCount = data.sessionCount;
+      if (data.ipCount > maxSessCount) {
+        maxSessCount = data.ipCount;
+      }
+
+      let maxLimit = data.sessionLimit;
+      if (data.ipLimit > maxLimit) {
+        maxSessCount = data.ipLimit;
+      }
+
+      el.textContent = `Images: ${maxSessCount}/${maxLimit}`;
       if(data.sessionCount >= data.sessionLimit || data.ipCount >= data.ipLimit){
         el.classList.add('limit-reached');
         if(data.nextReduction){
