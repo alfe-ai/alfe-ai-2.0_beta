@@ -127,6 +127,13 @@ function showToast(msg, duration=1500){
   setTimeout(() => el.classList.remove("show"), duration);
 }
 
+function scrollChatToBottom(){
+  const el = document.getElementById("chatMessages");
+  if(el){
+    el.scrollTop = el.scrollHeight;
+  }
+}
+
 async function updateImageLimitInfo(files){
   try {
     let data = files;
@@ -1550,13 +1557,14 @@ chatSendBtnEl.addEventListener("click", async () => {
   //    collect info for showing thumbnails in the chat history.
   let descsForThisSend = [];
   let imageInfosForThisSend = [];
-  if(pendingImages.length>0){
-    // Show the loading indicator for image processing
-    const loaderEl = document.getElementById("imageProcessingIndicator");
-    if(loaderEl) loaderEl.style.display = "";
-    // Disable chat input and send button while images upload
-    chatInputEl.disabled = true;
-    chatSendBtnEl.disabled = true;
+    if(pendingImages.length>0){
+      // Show the loading indicator for image processing
+      const loaderEl = document.getElementById("imageProcessingIndicator");
+      if(loaderEl) loaderEl.style.display = "";
+      scrollChatToBottom();
+      // Disable chat input and send button while images upload
+      chatInputEl.disabled = true;
+      chatSendBtnEl.disabled = true;
 
     try {
       for(const f of pendingImages){
@@ -1584,13 +1592,14 @@ chatSendBtnEl.addEventListener("click", async () => {
           console.error("Error uploading image:", e);
         }
       }
-    } finally {
-      // Hide the loading indicator
-      if(loaderEl) loaderEl.style.display = "none";
-      // Re-enable chat input and send button
-      chatInputEl.disabled = false;
-      chatSendBtnEl.disabled = false;
-    }
+      } finally {
+        // Hide the loading indicator
+        if(loaderEl) loaderEl.style.display = "none";
+        scrollChatToBottom();
+        // Re-enable chat input and send button
+        chatInputEl.disabled = false;
+        chatSendBtnEl.disabled = false;
+      }
 
     // Clear the buffer for images
     pendingImages = [];
@@ -4035,14 +4044,16 @@ registerActionHook("generateImage", async ({response}) => {
     if(currentTabType !== 'design' || !tabGenerateImages) return;
     const prompt = (response || "").trim();
     if(!prompt) return;
-    const genIndicator = document.getElementById("imageGenerationIndicator");
-    if(genIndicator) genIndicator.style.display = "";
+      const genIndicator = document.getElementById("imageGenerationIndicator");
+      if(genIndicator) genIndicator.style.display = "";
+      scrollChatToBottom();
     const r = await fetch('/api/image/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt, tabId: currentTabId, provider: imageGenService, sessionId })
     });
-    if(genIndicator) genIndicator.style.display = "none";
+      if(genIndicator) genIndicator.style.display = "none";
+      scrollChatToBottom();
     const data = await r.json();
       if(r.ok && data.url){
         addImageChatBubble(data.url, prompt, data.title || "");
@@ -4057,8 +4068,9 @@ registerActionHook("generateImage", async ({response}) => {
       console.error('[Hook generateImage] API error:', data.error);
     }
   } catch(err){
-    const genIndicator = document.getElementById("imageGenerationIndicator");
-    if(genIndicator) genIndicator.style.display = "none";
+      const genIndicator = document.getElementById("imageGenerationIndicator");
+      if(genIndicator) genIndicator.style.display = "none";
+      scrollChatToBottom();
     console.error('[Hook generateImage] failed:', err);
   }
 });
