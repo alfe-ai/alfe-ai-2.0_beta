@@ -3065,6 +3065,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
             p.image_url, p.image_alt, p.image_title
         );
       }
+      scrollChatToBottom();
     } else {
       const scrollPos = chatMessagesEl.scrollHeight;
       const fragment = document.createDocumentFragment();
@@ -4070,6 +4071,7 @@ function addImageChatBubble(url, altText="", title=""){
   img.alt = altText;
   if(title) img.title = title;
   img.style.maxWidth = "100%";
+  img.addEventListener('load', scrollChatToBottom);
   botDiv.appendChild(img);
 
   seqDiv.appendChild(botDiv);
