@@ -127,6 +127,11 @@ function showToast(msg, duration=1500){
   setTimeout(() => el.classList.remove("show"), duration);
 }
 
+function scrollChatToBottom(){
+  const el = document.getElementById("chatMessages");
+  if(el) el.scrollTop = el.scrollHeight;
+}
+
 async function updateImageLimitInfo(files){
   try {
     let data = files;
@@ -1553,7 +1558,10 @@ chatSendBtnEl.addEventListener("click", async () => {
   if(pendingImages.length>0){
     // Show the loading indicator for image processing
     const loaderEl = document.getElementById("imageProcessingIndicator");
-    if(loaderEl) loaderEl.style.display = "";
+    if(loaderEl) {
+      loaderEl.style.display = "";
+      scrollChatToBottom();
+    }
     // Disable chat input and send button while images upload
     chatInputEl.disabled = true;
     chatSendBtnEl.disabled = true;
@@ -1586,7 +1594,10 @@ chatSendBtnEl.addEventListener("click", async () => {
       }
     } finally {
       // Hide the loading indicator
-      if(loaderEl) loaderEl.style.display = "none";
+      if(loaderEl) {
+        loaderEl.style.display = "none";
+        scrollChatToBottom();
+      }
       // Re-enable chat input and send button
       chatInputEl.disabled = false;
       chatSendBtnEl.disabled = false;
@@ -4036,13 +4047,19 @@ registerActionHook("generateImage", async ({response}) => {
     const prompt = (response || "").trim();
     if(!prompt) return;
     const genIndicator = document.getElementById("imageGenerationIndicator");
-    if(genIndicator) genIndicator.style.display = "";
+    if(genIndicator) {
+      genIndicator.style.display = "";
+      scrollChatToBottom();
+    }
     const r = await fetch('/api/image/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt, tabId: currentTabId, provider: imageGenService, sessionId })
     });
-    if(genIndicator) genIndicator.style.display = "none";
+    if(genIndicator) {
+      genIndicator.style.display = "none";
+      scrollChatToBottom();
+    }
     const data = await r.json();
       if(r.ok && data.url){
         addImageChatBubble(data.url, prompt, data.title || "");
@@ -4058,7 +4075,10 @@ registerActionHook("generateImage", async ({response}) => {
     }
   } catch(err){
     const genIndicator = document.getElementById("imageGenerationIndicator");
-    if(genIndicator) genIndicator.style.display = "none";
+    if(genIndicator) {
+      genIndicator.style.display = "none";
+      scrollChatToBottom();
+    }
     console.error('[Hook generateImage] failed:', err);
   }
 });
