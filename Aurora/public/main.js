@@ -1,12 +1,5 @@
 // sessionId is defined in session.js and available globally
-// If that file is not loaded for some reason, fall back to a basic generator
-// without redefining the variable when it already exists
-if (typeof window.sessionId === 'undefined') {
-  window.sessionId = typeof getSessionId === 'function'
-    ? getSessionId()
-    : (sessionStorage.getItem('sessionId') || crypto.randomUUID());
-}
-const sessionId = window.sessionId;
+// sessionId is provided globally by session.js
 document.addEventListener('DOMContentLoaded', () => {
   const sessEl = document.getElementById('sessionIdText');
   if (sessEl) sessEl.textContent = sessionId;
