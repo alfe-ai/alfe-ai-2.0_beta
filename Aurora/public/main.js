@@ -125,18 +125,14 @@ function showToast(msg, duration=1500){
   setTimeout(() => el.classList.remove("show"), duration);
 }
 
-async function updateImageLimitInfo(files){
+async function updateImageLimitInfo(){
   try {
-    let data = files;
-    if(!data){
-      const resp = await fetch(`/api/upload/list?sessionId=${encodeURIComponent(sessionId)}`);
-      data = await resp.json();
-    }
-    const count = data.filter(f => f.source === 'Generated').length;
+    const resp = await fetch(`/api/image/counts?sessionId=${encodeURIComponent(sessionId)}`);
+    const data = await resp.json();
     const el = document.getElementById('imageLimitInfo');
-    if(el) {
-      el.textContent = `Images: ${count}/10`;
-      if(count >= 10) {
+    if(el){
+      el.textContent = `Images: ${data.sessionCount}/10 (IP ${data.ipCount}/10)`;
+      if(data.sessionCount >= 10 || data.ipCount >= 10){
         el.classList.add('limit-reached');
       } else {
         el.classList.remove('limit-reached');
@@ -2351,7 +2347,7 @@ async function loadFileList() {
     fileListData = await fetch(`/api/upload/list?sessionId=${encodeURIComponent(sessionId)}`).then(r => r.json());
     sortFileData();
     renderFileList();
-    updateImageLimitInfo(fileListData);
+    updateImageLimitInfo();
   } catch(e) {
     console.error("Error fetching file list:", e);
   }

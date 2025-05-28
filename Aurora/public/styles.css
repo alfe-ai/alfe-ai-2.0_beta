@@ -543,7 +543,7 @@ body {
    This ensures normal color is used until the limit is hit.
 
    Example HTML after update:
-     <span id="imageLimitInfo" class="session-limit limit-reached">Images: 10/10</span>
+     <span id="imageLimitInfo" class="session-limit limit-reached">Images: 10/10 (IP 10/10)</span>
 
    The dark red color uses the named color `darkred` for clarity.
    It roughly corresponds to #8B0000.

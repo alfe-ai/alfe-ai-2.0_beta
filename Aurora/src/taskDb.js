@@ -214,6 +214,12 @@ export default class TaskDB {
     } catch(e) {
       //console.debug("[TaskDB Debug] chat_pairs.session_id column exists, skipping.", e.message);
     }
+    try {
+      this.db.exec(`ALTER TABLE chat_pairs ADD COLUMN ip_address TEXT DEFAULT '';`);
+      console.debug("[TaskDB Debug] Added chat_pairs.ip_address column");
+    } catch(e) {
+      //console.debug("[TaskDB Debug] chat_pairs.ip_address column exists, skipping.", e.message);
+    }
 
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS image_sessions (
@@ -613,15 +619,15 @@ export default class TaskDB {
     });
   }
 
-  createImagePair(url, altText = '', chatTabId = 1, title = '', status = 'Generated', sessionId = '') {
+  createImagePair(url, altText = '', chatTabId = 1, title = '', status = 'Generated', sessionId = '', ipAddress = '') {
     const ts = new Date().toISOString();
     const { lastInsertRowid } = this.db.prepare(`
       INSERT INTO chat_pairs (
         user_text, ai_text, model, timestamp, ai_timestamp,
         chat_tab_id, system_context, token_info,
-        image_url, image_alt, image_title, image_status, session_id
-      ) VALUES ('', '', '', @ts, @ts, @chat_tab_id, '', NULL, @url, @alt, @title, @status, @session_id)
-    `).run({ ts, chat_tab_id: chatTabId, url, alt: altText, title, status, session_id: sessionId });
+        image_url, image_alt, image_title, image_status, session_id, ip_address
+      ) VALUES ('', '', '', @ts, @ts, @chat_tab_id, '', NULL, @url, @alt, @title, @status, @session_id, @ip_address)
+    `).run({ ts, chat_tab_id: chatTabId, url, alt: altText, title, status, session_id: sessionId, ip_address: ipAddress });
     return lastInsertRowid;
   }
 
@@ -881,11 +887,21 @@ export default class TaskDB {
     return row ? row.count : 0;
   }
 
+  countImagesForIp(ipAddress) {
+    if (!ipAddress) return 0;
+    const row = this.db
+        .prepare(
+            "SELECT COUNT(*) AS count FROM chat_pairs WHERE ip_address=? AND image_url IS NOT NULL"
+        )
+        .get(ipAddress);
+    return row ? row.count : 0;
+  }
+
   setImageStatus(url, status) {
     const stmt = this.db.prepare("UPDATE chat_pairs SET image_status=? WHERE image_url=?");
     const info = stmt.run(status, url);
     if(info.changes === 0){
-      this.createImagePair(url, '', 1, '', status);
+      this.createImagePair(url, '', 1, '', status, '', '');
     }
   }
 
