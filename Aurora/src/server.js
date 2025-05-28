@@ -2044,10 +2044,10 @@ app.post("/api/image/generate", async (req, res) => {
   }
 });
 
-// Verbose logging for PrintifyPipeline page
-app.get("/PrintifyPipeline.html", (req, res) => {
-  console.debug("[Server Debug] GET /PrintifyPipeline.html =>", JSON.stringify(req.query));
-  res.sendFile(path.join(__dirname, "../public/PrintifyPipeline.html"));
+// Verbose logging for Image page
+app.get("/Image.html", (req, res) => {
+  console.debug("[Server Debug] GET /Image.html =>", JSON.stringify(req.query));
+  res.sendFile(path.join(__dirname, "../public/Image.html"));
 });
 
 app.use(express.static(path.join(__dirname, "../public")));
