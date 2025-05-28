@@ -125,7 +125,6 @@ function showToast(msg, duration=1500){
   setTimeout(() => el.classList.remove("show"), duration);
 }
 
-<<<<<<< HEAD
 let limitCountdownTimer = null;
 
 function startLimitCountdown(targetTime){
@@ -142,19 +141,6 @@ function startLimitCountdown(targetTime){
       const m = String(Math.floor(diff/60000)).padStart(2,'0');
       const s = String(Math.floor((diff%60000)/1000)).padStart(2,'0');
       el.textContent = `Next slot in ${m}:${s}`;
-=======
-function scrollChatToBottom(){
-  const el = document.getElementById("chatMessages");
-  if(el) el.scrollTop = el.scrollHeight;
-}
-
-async function updateImageLimitInfo(files){
-  try {
-    let data = files;
-    if(!data){
-      const resp = await fetch(`/api/upload/list?sessionId=${encodeURIComponent(sessionId)}`);
-      data = await resp.json();
->>>>>>> origin/codex/fix-image-generation-causing-chat-scroll
     }
   }
   if(limitCountdownTimer) clearInterval(limitCountdownTimer);
@@ -162,16 +148,12 @@ async function updateImageLimitInfo(files){
   limitCountdownTimer = setInterval(update, 1000);
 }
 
-function stopLimitCountdown(){
-  const el = document.getElementById('imageLimitCountdown');
-  if(el) el.textContent = '';
-  if(limitCountdownTimer){
-    clearInterval(limitCountdownTimer);
-    limitCountdownTimer = null;
-  }
+function scrollChatToBottom(){
+  const el = document.getElementById("chatMessages");
+  if(el) el.scrollTop = el.scrollHeight;
 }
 
-async function updateImageLimitInfo(){
+async function updateImageLimitInfo(files){
   try {
     const resp = await fetch(`/api/image/counts?sessionId=${encodeURIComponent(sessionId)}`);
     const data = await resp.json();
@@ -192,6 +174,16 @@ async function updateImageLimitInfo(){
     console.error('Failed to update image limit info:', e);
   }
 }
+
+function stopLimitCountdown(){
+  const el = document.getElementById('imageLimitCountdown');
+  if(el) el.textContent = '';
+  if(limitCountdownTimer){
+    clearInterval(limitCountdownTimer);
+    limitCountdownTimer = null;
+  }
+}
+
 
 function registerActionHook(name, fn){
   actionHooks.push({ name, fn });
@@ -2403,7 +2395,7 @@ async function loadFileList() {
     fileListData = await fetch(`/api/upload/list?sessionId=${encodeURIComponent(sessionId)}`).then(r => r.json());
     sortFileData();
     renderFileList();
-    updateImageLimitInfo();
+    updateImageLimitInfo(fileListData);
   } catch(e) {
     console.error("Error fetching file list:", e);
   }
