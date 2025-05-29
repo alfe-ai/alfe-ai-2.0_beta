@@ -1412,12 +1412,20 @@ document.getElementById("subroutineCancelBtn").addEventListener("click", () => {
   hideModal(document.getElementById("subroutineModal"));
 });
 
-// Subscribe button opens subscription plans modal
-document.getElementById("subscribeBtn").addEventListener("click", e => {
-  e.preventDefault();
-  showModal(document.getElementById("subscribeModal"));
-});
-document.getElementById("subscribeCloseBtn").addEventListener("click", () => hideModal(document.getElementById("subscribeModal")));
+// Subscribe button opens subscription plans modal (if present)
+const subscribeBtn = document.getElementById("subscribeBtn");
+if (subscribeBtn) {
+  subscribeBtn.addEventListener("click", e => {
+    e.preventDefault();
+    showModal(document.getElementById("subscribeModal"));
+  });
+}
+const subscribeCloseBtn = document.getElementById("subscribeCloseBtn");
+if (subscribeCloseBtn) {
+  subscribeCloseBtn.addEventListener("click", () =>
+    hideModal(document.getElementById("subscribeModal"))
+  );
+}
 
 document.getElementById("viewTabChat").addEventListener("click", () => updateView('chat'));
 document.getElementById("viewTabTasks").addEventListener("click", () => updateView('tasks'));
