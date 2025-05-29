@@ -2074,6 +2074,12 @@ app.get("/Image.html", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/Image.html"));
 });
 
+// Default landing page
+app.get("/", (req, res) => {
+  console.debug("[Server Debug] GET / => Serving aurora.html");
+  res.sendFile(path.join(__dirname, "../public/aurora.html"));
+});
+
 app.use(express.static(path.join(__dirname, "../public")));
 
 app.get("/test_projects", (req, res) => {
