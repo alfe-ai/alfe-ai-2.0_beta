@@ -54,29 +54,29 @@ async function main() {
     //const issues = client.fetchOpenIssues(label?.trim() || undefined);
     const issues = null;
 
-    issues.then(async (resolvedIssues) => {
-      // Build full repository slug once
-      const repositorySlug = `${client.owner}/${client.repo}`;
+    const resolvedIssues = Array.isArray(issues) ? issues : [];
+
+    // Build full repository slug once
+    const repositorySlug = `${client.owner}/${client.repo}`;
 
       // ------------------------------------------------------------------
       // 1. Synchronise local DB
       // ------------------------------------------------------------------
-      resolvedIssues.forEach((iss) => db.upsertIssue(iss, repositorySlug));
+    resolvedIssues.forEach((iss) => db.upsertIssue(iss, repositorySlug));
 
       // Closed issue detection
-      const openIds = resolvedIssues.map((i) => i.id);
-      db.markClosedExcept(openIds);
+    const openIds = resolvedIssues.map((i) => i.id);
+    db.markClosedExcept(openIds);
 
       // ------------------------------------------------------------------
       // 2. Populate in-memory queue (only open issues)
-      resolvedIssues.forEach((issue) => queue.enqueue(issue));
+    resolvedIssues.forEach((issue) => queue.enqueue(issue));
 
-      console.log(`[TaskQueue] ${queue.size()} task(s) in queue.`);
-      // Intentionally omit printing the full issue list to keep logs concise
+    console.log(`[TaskQueue] ${queue.size()} task(s) in queue.`);
+    // Intentionally omit printing the full issue list to keep logs concise
 
-      // Debug: show DB snapshot (can be removed)
-      // console.debug("[TaskQueue] Current DB state:", db.dump());
-    });
+    // Debug: show DB snapshot (can be removed)
+    // console.debug("[TaskQueue] Current DB state:", db.dump());
   } catch (err) {
     console.error("Fatal:", err.message);
     process.exit(1);

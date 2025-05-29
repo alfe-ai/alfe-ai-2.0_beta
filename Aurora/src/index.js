@@ -54,21 +54,23 @@ async function main() {
     //const issues = await client.fetchOpenIssues(label?.trim() || undefined);
     const issues = null;
 
+    const resolvedIssues = Array.isArray(issues) ? issues : [];
+
     // Build full repository slug once
     const repositorySlug = `${client.owner}/${client.repo}`;
 
     // ------------------------------------------------------------------
     // 1. Synchronise local DB
     // ------------------------------------------------------------------
-    issues.forEach((iss) => db.upsertIssue(iss, repositorySlug));
+    resolvedIssues.forEach((iss) => db.upsertIssue(iss, repositorySlug));
 
     // Closed issue detection
-    const openIds = issues.map((i) => i.id);
+    const openIds = resolvedIssues.map((i) => i.id);
     db.markClosedExcept(openIds);
 
     // ------------------------------------------------------------------
     // 2. Populate in-memory queue (only open issues)
-    issues.forEach((issue) => queue.enqueue(issue));
+    resolvedIssues.forEach((issue) => queue.enqueue(issue));
 
     console.log(`[TaskQueue] ${queue.size()} task(s) in queue.`);
     // Intentionally omit printing the full issue list to keep logs concise
