@@ -51,7 +51,8 @@ async function main() {
         } …`
     );
 
-    const issues = client.fetchOpenIssues(label?.trim() || undefined);
+    //const issues = client.fetchOpenIssues(label?.trim() || undefined);
+    const issues = null;
 
     issues.then(async (resolvedIssues) => {
       // Build full repository slug once

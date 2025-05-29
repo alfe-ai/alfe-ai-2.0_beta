@@ -51,7 +51,8 @@ async function main() {
         } …`
     );
 
-    const issues = await client.fetchOpenIssues(label?.trim() || undefined);
+    //const issues = await client.fetchOpenIssues(label?.trim() || undefined);
+    const issues = null;
 
     // Build full repository slug once
     const repositorySlug = `${client.owner}/${client.repo}`;
