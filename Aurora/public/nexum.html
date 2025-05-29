@@ -657,7 +657,7 @@
         stopSplash();
         if(startInAurora){
           await fetch('/api/settings', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key:'last_chat_tab', value:data.id})});
-          location.href = '/index.html';
+          location.href = '/aurora.html';
           return;
         }
         await loadTabs();
