@@ -167,7 +167,7 @@ async function updateImageLimitInfo(files){
 
       let maxLimit = data.sessionLimit;
       if (data.ipLimit > maxLimit) {
-        maxSessCount = data.ipLimit;
+        maxLimit = data.ipLimit;
       }
 
       el.textContent = `Images: ${maxSessCount}/${maxLimit}`;
