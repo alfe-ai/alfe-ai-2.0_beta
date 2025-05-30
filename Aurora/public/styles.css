@@ -1,4 +1,12 @@
 /* Dark theme for the Task Queue page */
+:root {
+  --bg-main: #2c2c2c;
+  --bg-alt: #1e1e1e;
+  --accent: #555;
+  --accent-light: #888;
+  --text-color: #ddd;
+  --border: #444;
+}
 body {
   margin: 0;
   padding: 0;
@@ -820,6 +828,36 @@ body {
 button:disabled {
   opacity: 0.5;
   pointer-events: none;
+}
+
+/* New Tab dialog type buttons */
+#newTabTypeButtons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+#newTabTypeButtons .start-type-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 80px;
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: background 0.3s, color 0.3s;
+}
+#newTabTypeButtons .start-type-btn .icon {
+  font-size: 1.5rem;
+  margin-bottom: 4px;
+}
+#newTabTypeButtons .start-type-btn.selected {
+  background: var(--accent);
+  border-color: var(--accent-light);
+  color: #fff;
 }
 
 

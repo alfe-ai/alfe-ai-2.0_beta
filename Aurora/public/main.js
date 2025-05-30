@@ -76,6 +76,7 @@ const rotatingFavicon = "alfe_favicon_clean_64x64.ico";
 let favElement = null;
 
 const tabTypeIcons = { chat: "💬", design: "🎨" };
+let newTabSelectedType = 'chat';
 
 const $  = (sel, ctx=document) => ctx.querySelector(sel);
 const $$ = (sel, ctx=document) => [...ctx.querySelectorAll(sel)];
@@ -1129,8 +1130,10 @@ async function addNewSubroutine(){
 function openNewTabModal(){
   $("#newTabProjectInput").value = "";
   $("#newTabNameInput").value = "New Tab";
-  const typeSel = document.getElementById("newTabTypeSelect");
-  if(typeSel) typeSel.value = "chat";
+  newTabSelectedType = 'chat';
+  document.querySelectorAll('#newTabTypeButtons .start-type-btn').forEach(b => b.classList.remove('selected'));
+  const first = document.querySelector('#newTabTypeButtons .start-type-btn[data-type="chat"]');
+  if(first) first.classList.add('selected');
   toggleNewTabProjectField(newTabProjectNameEnabled);
   showModal($("#newTabModal"));
 }
@@ -1158,8 +1161,7 @@ async function addNewTab(){
     name = $("#newTabNameInput").value.trim();
     if(!name) return;
   }
-  const typeSel = document.getElementById("newTabTypeSelect");
-  const tabType = typeSel ? typeSel.value : "chat";
+  const tabType = newTabSelectedType;
   const r = await fetch("/api/chat/tabs/new", {
     method:"POST",
     headers:{"Content-Type":"application/json"},
@@ -1389,6 +1391,13 @@ const newTabBtnEl = document.getElementById("newTabBtn");
 if (newTabBtnEl) newTabBtnEl.addEventListener("click", openNewTabModal);
 document.getElementById("newTabCreateBtn").addEventListener("click", addNewTab);
 document.getElementById("newTabCancelBtn").addEventListener("click", () => hideModal($("#newTabModal")));
+$$('#newTabTypeButtons .start-type-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    newTabSelectedType = btn.dataset.type;
+    $$('#newTabTypeButtons .start-type-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+  });
+});
 document.getElementById("addModelModalAddBtn").addEventListener("click", async () => {
   const sel = document.getElementById("favoriteModelSelect");
   const modelId = sel ? sel.value : "";
