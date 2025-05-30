@@ -141,7 +141,7 @@ function startLimitCountdown(targetTime){
     } else {
       const m = String(Math.floor(diff/60000)).padStart(2,'0');
       const s = String(Math.floor((diff%60000)/1000)).padStart(2,'0');
-      el.textContent = `Next slot in ${m}:${s}`;
+      el.textContent = ``; // Next slot in ${m}:${s}
     }
   }
   if(limitCountdownTimer) clearInterval(limitCountdownTimer);
