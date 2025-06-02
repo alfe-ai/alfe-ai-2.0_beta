@@ -12,3 +12,5 @@ Alfe AI beta-2.30+ (Image Design): https://github.com/alfe-ai/alfe-ai-2.0_beta
 Alfe AI beta-0.4x+ (Software Development): https://github.com/alfe-ai/Sterling  
 
 #### 2.0 Beta (Aurora/Aurelix)  
+
+![image](https://github.com/user-attachments/assets/ec47be87-5577-45b2-a3af-17475860df46)
