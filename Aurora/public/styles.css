@@ -868,5 +868,10 @@ button:disabled {
 #newTabModal button {
   color: #fff;
 }
+#newTabModal input,
+#newTabModal textarea {
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+}
 
 

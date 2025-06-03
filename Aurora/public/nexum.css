@@ -444,6 +444,11 @@ button:hover {
 #newTabModal button {
   color: #fff;
 }
+#newTabModal input,
+#newTabModal textarea {
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+}
 
 /* Table styles used on nexum_tabs.html */
 table {
