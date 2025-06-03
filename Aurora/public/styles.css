@@ -237,7 +237,7 @@ body {
 
 .pair-delete-btn {
   position: absolute;
-  top: 4px;
+  bottom: 4px; /* place at bottom to avoid overlap with bubble delete */
   right: 4px;
   padding: 4px;
 }
