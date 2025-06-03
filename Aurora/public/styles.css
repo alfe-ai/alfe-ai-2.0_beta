@@ -860,4 +860,13 @@ button:disabled {
   color: #fff;
 }
 
+/* Ensure text in the New Tab modal is always white */
+#newTabModal .modal-content,
+#newTabModal label,
+#newTabModal input,
+#newTabModal textarea,
+#newTabModal button {
+  color: #fff;
+}
+
 

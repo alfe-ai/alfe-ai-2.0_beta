@@ -436,6 +436,15 @@ button:hover {
   color: #fff;
 }
 
+/* Ensure text in the New Tab modal is always white */
+#newTabModal .modal-content,
+#newTabModal label,
+#newTabModal input,
+#newTabModal textarea,
+#newTabModal button {
+  color: #fff;
+}
+
 /* Table styles used on nexum_tabs.html */
 table {
   width: 100%;
