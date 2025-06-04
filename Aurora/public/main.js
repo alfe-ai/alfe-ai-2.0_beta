@@ -366,6 +366,20 @@ collapsedLogoEl?.addEventListener("click", () => {
   }
 });
 
+// On mobile viewports, collapse the sidebar when clicking
+// anywhere outside of it. This makes dismissing the sidebar
+// easier on touch devices without needing to tap the toggle
+// button again.
+document.addEventListener("click", ev => {
+  if(!isMobileViewport() || !sidebarVisible) return;
+  const sidebarEl = document.querySelector(".sidebar");
+  const dividerEl = document.getElementById("divider");
+  if(!sidebarEl) return;
+  if(!sidebarEl.contains(ev.target) && ev.target !== dividerEl && !dividerEl.contains(ev.target)){
+    toggleSidebar();
+  }
+});
+
 async function toggleNavMenu(){
   navMenuVisible = !navMenuVisible;
   toggleNavMenuVisibility(navMenuVisible);
