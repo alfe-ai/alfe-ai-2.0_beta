@@ -481,7 +481,9 @@ async function loadSettings(){
   }
 
   if(typeof map.sidebar_width !== "undefined"){
-    $(".sidebar").style.width = map.sidebar_width + "px";
+    const maxW = window.innerWidth;
+    const width = Math.min(map.sidebar_width, maxW);
+    $(".sidebar").style.width = width + "px";
   }
 
   if(typeof map.model_tabs_bar_visible !== "undefined"){
@@ -2303,9 +2305,11 @@ function runImageLoop(){
     const dx = e.clientX - startX;
     const newWidth = startWidth + dx;
     const minWidth = 150;
+    const maxWidth = window.innerWidth;
     if(newWidth >= minWidth) {
-      $(".sidebar").style.width = newWidth + "px";
-      finalWidth = newWidth;
+      const clamped = Math.min(newWidth, maxWidth);
+      $(".sidebar").style.width = clamped + "px";
+      finalWidth = clamped;
     }
   });
 
