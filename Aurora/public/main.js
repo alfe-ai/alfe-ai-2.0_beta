@@ -436,7 +436,8 @@ async function loadSettings(){
 
   if(typeof map.sidebar_visible !== "undefined"){
     sidebarVisible = !!map.sidebar_visible;
-  } else if(isMobileViewport()){
+  }
+  if(isMobileViewport()){
     sidebarVisible = false;
   }
   $(".sidebar").style.display = sidebarVisible ? "" : "none";
