@@ -1,9 +1,11 @@
 // sessionId is defined in session.js and available globally
 // sessionId is provided globally by session.js
+const defaultTitle = "Alfe AI - AI Image Design and Software Development Platform";
 document.addEventListener('DOMContentLoaded', () => {
   const sessEl = document.getElementById('sessionIdText');
   if (sessEl) sessEl.textContent = sessionId;
   updateImageLimitInfo();
+  document.title = defaultTitle;
 });
 
 let columnsOrder = [
@@ -85,6 +87,15 @@ const $$ = (sel, ctx=document) => [...ctx.querySelectorAll(sel)];
 /* Introduce an image buffer and preview, plus an array to hold their descriptions. */
 let pendingImages = [];
 let pendingImageDescs = [];
+
+function updatePageTitle(){
+  const active = chatTabs.find(t => t.id === currentTabId);
+  if(active && active.name){
+    document.title = `Alfe AI - ${active.name}`;
+  } else {
+    document.title = defaultTitle;
+  }
+}
 
 // Data and state for the secure files list
 let fileListData = [];
@@ -1070,6 +1081,7 @@ async function addNewTab(){
     renderTabs();
     renderSidebarTabs();
     renderArchivedSidebarTabs();
+    updatePageTitle();
     // TODO: THIS WAS A TEMP FIX,
     // Reload the entire page so the new tab state is fully reflected
     // but only if this was the very first tab being created from the modal
@@ -1092,6 +1104,7 @@ async function renameTab(tabId){
     renderTabs();
     renderSidebarTabs();
     renderArchivedSidebarTabs();
+    updatePageTitle();
   }
 }
 async function deleteTab(tabId){
@@ -1113,6 +1126,7 @@ async function deleteTab(tabId){
     renderTabs();
     renderSidebarTabs();
     renderArchivedSidebarTabs();
+    updatePageTitle();
   }
 }
 
@@ -1127,6 +1141,7 @@ async function toggleArchiveTab(tabId, archived){
     renderTabs();
     renderSidebarTabs();
     renderArchivedSidebarTabs();
+    updatePageTitle();
   }
 }
 async function selectTab(tabId){
@@ -1151,6 +1166,7 @@ async function selectTab(tabId){
   if(imageLoopEnabled){
     setTimeout(runImageLoop, 0);
   }
+  updatePageTitle();
 }
 function renderTabs(){
   const tc = $("#tabsContainer");
@@ -2930,6 +2946,7 @@ btnNexumTabs?.addEventListener("click", () => { window.location.href = btnNexumT
 
   // Initialize model tabs
   initModelTabs();
+  updatePageTitle();
 
   // -----------------------------------------------------------------------
   // Load the global markdown content on startup
