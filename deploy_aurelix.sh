@@ -1,7 +1,7 @@
 #!/bin/bash
 
 sudo apt update
-sudo apt install git nodejs npm
+sudo apt install git nodejs npm -y
 rm -rf alfe-ai-Aurelix
 git clone https://github.com/alfe-ai/alfe-ai-Aurelix.git
 cd alfe-ai-Aurelix
