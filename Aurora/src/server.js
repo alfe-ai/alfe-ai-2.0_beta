@@ -2139,6 +2139,11 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/aurora.html"));
 });
 
+app.get("/beta", (req, res) => {
+  console.debug("[Server Debug] GET /beta => Redirecting to home page");
+  res.redirect("/");
+});
+
 app.use(express.static(path.join(__dirname, "../public")));
 
 app.get("/", (req, res) => {

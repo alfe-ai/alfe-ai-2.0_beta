@@ -288,6 +288,11 @@ async function toggleSidebar(){
   const expandBtn = document.getElementById("expandSidebarBtn");
   expandBtn.style.display = sidebarVisible ? "none" : "block";
 
+  const collapsedLogo = document.getElementById("collapsedSidebarLogo");
+  if(collapsedLogo){
+    collapsedLogo.style.display = sidebarVisible ? "none" : "block";
+  }
+
   await setSetting("sidebar_visible", sidebarVisible);
 }
 const toggleSidebarBtn = $("#toggleSidebarBtn");
@@ -297,6 +302,13 @@ document.getElementById("hideSidebarBtn")?.addEventListener("click", toggleSideb
 
 document.getElementById("expandSidebarBtn").addEventListener("click", () => {
   if(!sidebarVisible) {
+    toggleSidebar();
+  }
+});
+
+const collapsedLogoEl = document.getElementById("collapsedSidebarLogo");
+collapsedLogoEl?.addEventListener("click", () => {
+  if(!sidebarVisible){
     toggleSidebar();
   }
 });
@@ -394,6 +406,10 @@ async function loadSettings(){
     toggleSidebarBtn.textContent = sidebarVisible ? "Hide sidebar" : "Show sidebar";
   }
   document.getElementById("expandSidebarBtn").style.display = sidebarVisible ? "none" : "block";
+  const collapsedLogoInit = document.getElementById("collapsedSidebarLogo");
+  if(collapsedLogoInit){
+    collapsedLogoInit.style.display = sidebarVisible ? "none" : "block";
+  }
 
   if(typeof map.enter_submits_message !== "undefined"){
     enterSubmitsMessage = map.enter_submits_message !== false;
@@ -2776,6 +2792,11 @@ btnNexumTabs?.addEventListener("click", () => { window.location.href = btnNexumT
   await loadSubroutines();
   renderSubroutines();
 
+  if(chatTabs.length === 0){
+    openNewTabModal();
+    return;
+  }
+
   const lastChatTab = await getSetting("last_chat_tab");
   if(lastChatTab) {
     const foundTab = chatTabs.find(t => t.id===parseInt(lastChatTab,10));
@@ -2784,20 +2805,9 @@ btnNexumTabs?.addEventListener("click", () => { window.location.href = btnNexumT
       const firstActive = chatTabs.find(t => !t.archived);
       currentTabId = firstActive ? firstActive.id : chatTabs[0].id;
     }
-  } else {
-    if(chatTabs.length>0){
-      const firstActive = chatTabs.find(t => !t.archived);
-      currentTabId = firstActive ? firstActive.id : chatTabs[0].id;
-    } else {
-      await fetch("/api/chat/tabs/new", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "Main", nexum: 0, sessionId })
-      });
-      await loadTabs();
-      const firstActive = chatTabs.find(t => !t.archived);
-      currentTabId = firstActive ? firstActive.id : chatTabs[0].id;
-    }
+  } else if(chatTabs.length>0){
+    const firstActive = chatTabs.find(t => !t.archived);
+    currentTabId = firstActive ? firstActive.id : chatTabs[0].id;
   }
   {
     const firstTab = chatTabs.find(t => t.id === currentTabId);
