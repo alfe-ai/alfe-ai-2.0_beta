@@ -2905,14 +2905,14 @@ btnNexumTabs?.addEventListener("click", () => { window.location.href = btnNexumT
   toggleProjectInfoBarVisibility(projectInfoBarVisible && auroraProjectBarVisible);
 
   let lastView = await getSetting("last_sidebar_view");
-  if(!lastView) lastView = "chatTabs";
+  if(!lastView) lastView = "uploader";
   switch(lastView){
     case "uploader": showUploaderPanel(); break;
     case "fileTree": showFileTreePanel(); break;
     case "chatTabs": showChatTabsPanel(); break;
     case "archiveTabs": showArchiveTabsPanel(); break;
     case "activity": showActivityIframePanel(); break;
-    default: showChatTabsPanel(); break;
+    default: showUploaderPanel(); break;
   }
 
   updateView('chat');
