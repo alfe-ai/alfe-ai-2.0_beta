@@ -954,7 +954,7 @@ $("#createTaskBtn").addEventListener("click", async ()=>{
 $("#cancelTaskBtn").addEventListener("click",()=>hideModal($("#newTaskModal")));
 
 async function loadTabs(){
-  const res = await fetch("/api/chat/tabs?nexum=0&showArchived=1");
+  const res = await fetch(`/api/chat/tabs?nexum=0&showArchived=1&sessionId=${encodeURIComponent(sessionId)}`);
   chatTabs = await res.json();
   archivedTabs = chatTabs.filter(t => t.archived);
 }

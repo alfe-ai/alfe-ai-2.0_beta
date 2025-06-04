@@ -672,25 +672,28 @@ export default class TaskDB {
     return lastInsertRowid;
   }
 
-  listChatTabs(nexum = null, includeArchived = true) {
-    if (nexum === null) {
-      if (includeArchived) {
-        return this.db.prepare("SELECT * FROM chat_tabs ORDER BY id ASC").all();
-      }
-      return this.db
-          .prepare("SELECT * FROM chat_tabs WHERE archived=0 ORDER BY id ASC")
-          .all();
+  listChatTabs(nexum = null, includeArchived = true, sessionId = '') {
+    const conditions = [];
+    const params = [];
+    if (sessionId) {
+      conditions.push('(session_id="" OR session_id=?)');
+      params.push(sessionId);
     }
-    if (includeArchived) {
-      return this.db
-          .prepare("SELECT * FROM chat_tabs WHERE nexum=? ORDER BY id ASC")
-          .all(nexum ? 1 : 0);
+    if (nexum !== null) {
+      conditions.push('nexum=?');
+      params.push(nexum ? 1 : 0);
     }
-    return this.db
-        .prepare(
-            "SELECT * FROM chat_tabs WHERE nexum=? AND archived=0 ORDER BY id ASC"
-        )
-        .all(nexum ? 1 : 0);
+    if (!includeArchived) {
+      conditions.push('archived=0');
+    }
+
+    let query = 'SELECT * FROM chat_tabs';
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+    query += ' ORDER BY id ASC';
+
+    return this.db.prepare(query).all(...params);
   }
 
   renameChatTab(tabId, newName) {
