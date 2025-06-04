@@ -71,8 +71,8 @@ let modelTabs = [];
 let currentModelTabId = null;
 let modelTabsBarVisible = false;
 
-const defaultFavicon = "alfe_favicon_clean_64x64.ico";
-const rotatingFavicon = "alfe_favicon_clean_64x64.ico";
+const defaultFavicon = "favicon.svg";
+const rotatingFavicon = "favicon.svg";
 let favElement = null;
 
 const tabTypeIcons = { chat: "💬", design: "🎨" };
