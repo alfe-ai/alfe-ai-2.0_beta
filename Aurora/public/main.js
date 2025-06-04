@@ -70,6 +70,7 @@ let aiModelsMenuVisible = false;      // show AI Models link
 let tasksMenuVisible = false;         // show Tasks button
 let jobsMenuVisible = false;         // show Jobs button
 let chatTabsMenuVisible = true;     // show Chats button
+let showSessionId = false;          // display session ID hash
 let upArrowHistoryEnabled = true;    // use Arrow Up/Down for input history
 let newTabProjectNameEnabled = true; // show Project name field in New Tab dialog
 let chatSubroutines = [];
@@ -400,6 +401,7 @@ async function loadSettings(){
     "image_generator_menu_visible","file_tree_menu_visible",
     "ai_models_menu_visible","tasks_menu_visible","jobs_menu_visible",
     "chat_tabs_menu_visible","up_arrow_history_enabled",
+    "show_session_id",
     "new_tab_project_enabled"
   ];
   const map = await getSettings(keys);
@@ -566,6 +568,11 @@ async function loadSettings(){
     chatTabsMenuVisible = map.chat_tabs_menu_visible !== false;
   }
   toggleChatTabsMenu(chatTabsMenuVisible);
+
+  if(typeof map.show_session_id !== "undefined"){
+    showSessionId = map.show_session_id !== false;
+  }
+  toggleSessionIdVisibility(showSessionId);
 
   if(typeof map.up_arrow_history_enabled !== "undefined"){
     upArrowHistoryEnabled = map.up_arrow_history_enabled !== false;
@@ -2154,6 +2161,12 @@ function toggleViewTabsBarVisibility(visible) {
   const bar = document.getElementById("viewTabsBar");
   if(!bar) return;
   bar.style.display = visible ? "" : "none";
+}
+
+function toggleSessionIdVisibility(visible) {
+  const el = document.getElementById("sessionIdText");
+  if(!el) return;
+  el.style.display = visible ? "inline" : "none";
 }
 
 function setLoopUi(active){
@@ -3771,7 +3784,8 @@ async function loadFeatureFlags(){
     "nexum_chat_menu_visible","nexum_tabs_menu_visible","image_generator_menu_visible",
     "file_tree_menu_visible","ai_models_menu_visible","tasks_menu_visible",
     "jobs_menu_visible","view_tabs_bar_visible","chat_tabs_menu_visible",
-    "show_project_name_in_tabs","up_arrow_history_enabled","new_tab_project_enabled"
+    "show_project_name_in_tabs","up_arrow_history_enabled","new_tab_project_enabled",
+    "show_session_id"
   ];
   const map = await getSettings(keys);
   if(typeof map.image_upload_enabled !== "undefined") imageUploadEnabled = !!map.image_upload_enabled;
@@ -3789,6 +3803,7 @@ async function loadFeatureFlags(){
   if(typeof map.show_project_name_in_tabs !== "undefined") showProjectNameInTabs = map.show_project_name_in_tabs !== false;
   if(typeof map.up_arrow_history_enabled !== "undefined") upArrowHistoryEnabled = map.up_arrow_history_enabled !== false;
   if(typeof map.new_tab_project_enabled !== "undefined") newTabProjectNameEnabled = map.new_tab_project_enabled !== false;
+  if(typeof map.show_session_id !== "undefined") showSessionId = map.show_session_id !== false;
 }
 
 document.getElementById("featureFlagsBtn").addEventListener("click", async () => {
@@ -3805,6 +3820,7 @@ document.getElementById("featureFlagsBtn").addEventListener("click", async () =>
   document.getElementById("chatTabsMenuCheck").checked = chatTabsMenuVisible;
   document.getElementById("viewTabsBarFlagCheck").checked = viewTabsBarVisible;
   document.getElementById("showProjectNameTabsCheck").checked = showProjectNameInTabs;
+  document.getElementById("showSessionIdCheck").checked = showSessionId;
   document.getElementById("imageGeneratorMenuCheck").checked = imageGeneratorMenuVisible;
   document.getElementById("upArrowHistoryCheck").checked = upArrowHistoryEnabled;
   document.getElementById("newTabProjectFlagCheck").checked = newTabProjectNameEnabled;
@@ -3827,6 +3843,7 @@ document.getElementById("featureFlagsSaveBtn").addEventListener("click", async (
   chatTabsMenuVisible = document.getElementById("chatTabsMenuCheck").checked;
   viewTabsBarVisible = document.getElementById("viewTabsBarFlagCheck").checked;
   showProjectNameInTabs = document.getElementById("showProjectNameTabsCheck").checked;
+  showSessionId = document.getElementById("showSessionIdCheck").checked;
   upArrowHistoryEnabled = document.getElementById("upArrowHistoryCheck").checked;
   newTabProjectNameEnabled = document.getElementById("newTabProjectFlagCheck").checked;
   imageGeneratorMenuVisible = document.getElementById("imageGeneratorMenuCheck").checked;
@@ -3840,6 +3857,7 @@ document.getElementById("featureFlagsSaveBtn").addEventListener("click", async (
   await setSetting("chat_tabs_menu_visible", chatTabsMenuVisible);
   await setSetting("view_tabs_bar_visible", viewTabsBarVisible);
   await setSetting("show_project_name_in_tabs", showProjectNameInTabs);
+  await setSetting("show_session_id", showSessionId);
   await setSetting("up_arrow_history_enabled", upArrowHistoryEnabled);
   await setSetting("new_tab_project_enabled", newTabProjectNameEnabled);
   await setSetting("image_generator_menu_visible", imageGeneratorMenuVisible);
@@ -3851,6 +3869,7 @@ document.getElementById("featureFlagsSaveBtn").addEventListener("click", async (
   toggleTasksMenu(tasksMenuVisible);
   toggleJobsMenu(jobsMenuVisible);
   toggleChatTabsMenu(chatTabsMenuVisible);
+  toggleSessionIdVisibility(showSessionId);
   toggleViewTabsBarVisibility(viewTabsBarVisible);
   toggleImageGeneratorMenu(imageGeneratorMenuVisible);
   renderTabs();

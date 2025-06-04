@@ -226,7 +226,7 @@
         <p>Nexum is the experimental interface for the Alfe AI project. It combines chat, code generation and task management features to assist developers.</p>
         <p><strong>Our Story</strong></p>
         <p>We started in 2022 with a task management prototype called Aurora. The idea matured into Nexum, and by May 2025 we're focusing on integrating AI tools to streamline developer workflows.</p>
-        <p id="sessionIdDisplay" style="margin-top:0.5rem;">Session ID: <span id="sessionIdText"></span></p>
+        <p id="sessionIdDisplay" style="margin-top:0.5rem; display:none;">Session ID: <span id="sessionIdText"></span></p>
       </div>
     </div>
   </div>
@@ -880,6 +880,14 @@
       // Display the generated session ID in the About overlay
       const sessEl = document.getElementById('sessionIdText');
       if(sessEl) sessEl.textContent = sessionId;
+      fetch('/api/settings/show_session_id')
+        .then(r => r.ok ? r.json() : { value: false })
+        .then(d => {
+          const show = d.value !== false;
+          const displayEl = document.getElementById('sessionIdDisplay');
+          if(displayEl) displayEl.style.display = show ? 'block' : 'none';
+        })
+        .catch(() => {});
 
       document.getElementById('sendBtn').addEventListener('click',send);
       document.getElementById('askBtn').addEventListener('click',send);

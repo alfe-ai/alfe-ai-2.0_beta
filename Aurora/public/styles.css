@@ -531,6 +531,7 @@ body {
 
 /* Display session ID next to the sidebar icon */
 #sessionIdText.session-id {
+  display: none;
   position: absolute;
   top: 16px;
   left: 60px;
