@@ -11,6 +11,12 @@ The software development component is coming soon, and is available now as a Pre
 Alfe AI beta-2.30+ (Image Design): https://github.com/alfe-ai/alfe-ai-2.0_beta  
 Alfe AI beta-0.4x+ (Software Development): https://github.com/alfe-ai/Sterling  
 
+## Deploying
+
+```
+wget https://raw.githubusercontent.com/alfe-ai/alfe-ai-Aurelix/refs/heads/Aurora/Aurelix/dev/main-rel2/deploy_aurelix.sh && chmod +x deploy_aurelix.sh && ./deploy_aurelix.sh
+```
+
 #### 2.0 Beta (Aurora/Aurelix)  
 
 ![image](https://github.com/user-attachments/assets/ec47be87-5577-45b2-a3af-17475860df46)
