@@ -298,6 +298,47 @@ async function deriveTabTitle(message, client = null) {
   return title;
 }
 
+async function generateInitialGreeting(type, client = null) {
+  const openAiKey = process.env.OPENAI_API_KEY || '';
+  if (!client && openAiKey) {
+    client = new OpenAI({ apiKey: openAiKey });
+  }
+
+  let prompt = 'Write a brief friendly greeting as an AI assistant named Alfe. ';
+  if (type === 'design') {
+    prompt += 'Invite the user to share what they would like to create.';
+  } else {
+    prompt += 'Invite the user to share what they would like to discuss.';
+  }
+
+  if (client) {
+    try {
+      const completion = await client.chat.completions.create({
+        model: 'gpt-4.1-mini',
+        messages: [
+          { role: 'user', content: prompt }
+        ],
+        max_tokens: 60,
+        temperature: 0.7
+      });
+      const text = completion.choices?.[0]?.message?.content?.trim();
+      if (text) return text;
+    } catch (e) {
+      console.debug('[Server Debug] Initial greeting generation failed =>', e.message);
+    }
+  }
+
+  return type === 'design'
+      ? 'Hello! I am Alfe, your AI assistant. What would you like to design today?'
+      : 'Hello! I am Alfe, your AI assistant. What would you like to talk about?';
+}
+
+async function createInitialTabMessage(tabId, type, sessionId = '') {
+  const greeting = await generateInitialGreeting(type);
+  const pairId = db.createChatPair('', tabId, '', sessionId);
+  db.finalizeChatPair(pairId, greeting, 'gpt-4.1-mini', new Date().toISOString(), null);
+}
+
 // Explicit CORS configuration
 app.use(cors({
   origin: "*",
@@ -1377,6 +1418,8 @@ app.post("/api/chat/tabs/new", (req, res) => {
 
     const tabId = db.createChatTab(name, nexum, project, repo, type, sessionId);
     res.json({ success: true, id: tabId });
+    createInitialTabMessage(tabId, type, sessionId).catch(e =>
+      console.error('[Server Debug] Initial message error:', e.message));
   } catch (err) {
     console.error("[TaskQueue] POST /api/chat/tabs/new error:", err);
     res.status(500).json({ error: "Internal server error" });
