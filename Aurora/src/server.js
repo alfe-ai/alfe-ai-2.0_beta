@@ -2451,6 +2451,10 @@ const PORT = process.env.PORT || 3000;
 const keyPath = process.env.HTTPS_KEY_PATH;
 const certPath = process.env.HTTPS_CERT_PATH;
 
+// print keyPath certpath
+console.log('keyPath: ', keyPath);
+console.log('certPath: ', certPath);
+
 if (keyPath && certPath && fs.existsSync(keyPath) && fs.existsSync(certPath)) {
   const options = {
     key: fs.readFileSync(keyPath),
