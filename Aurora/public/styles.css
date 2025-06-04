@@ -571,6 +571,12 @@ body {
   font-size: 0.75rem;
   cursor: pointer;
   z-index: 1000;
+  display: none !important;
+}
+
+/* Hide the expand sidebar button for now */
+#expandSidebarBtn {
+  display: none !important;
 }
 
 /* When the image generation limit is reached (10/10),
@@ -894,6 +900,11 @@ button:disabled {
 #newTabModal textarea {
   background: var(--bg-main);
   border: 1px solid var(--border);
+}
+
+/* Temporarily hide the chat image generation button */
+#chatGenImageBtn {
+  display: none !important;
 }
 
 
