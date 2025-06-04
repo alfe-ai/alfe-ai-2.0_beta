@@ -2215,10 +2215,11 @@ function toggleImageUploadButton(visible){
   btn.style.display = visible ? "" : "none";
 }
 
-function toggleImagePaintTrayButton(visible){
+function toggleImagePaintTrayButton(_visible){
   const btn = document.getElementById("chatGenImageBtn");
   if(!btn) return;
-  btn.style.display = visible ? "" : "none";
+  // Always hide the button. It remains in the DOM but never visible.
+  btn.style.display = "none";
 }
 
 function toggleActivityIframeMenu(visible){
