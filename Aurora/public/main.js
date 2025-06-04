@@ -6,6 +6,15 @@ document.addEventListener('DOMContentLoaded', () => {
   if (sessEl) sessEl.textContent = sessionId;
   updateImageLimitInfo();
   document.title = defaultTitle;
+  fetch('/api/version')
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (data && data.version) {
+        const vSpan = document.getElementById('versionSpan');
+        if (vSpan) vSpan.textContent = data.version;
+      }
+    })
+    .catch(err => console.error('Failed to fetch version', err));
 });
 
 let columnsOrder = [

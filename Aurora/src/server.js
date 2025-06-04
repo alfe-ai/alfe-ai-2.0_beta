@@ -2473,6 +2473,21 @@ function commitAndPushMarkdown(repoDir) {
   }
 }
 
+app.get("/api/version", (req, res) => {
+  try {
+    const latestTag = child_process
+      .execSync("git tag --sort=-creatordate | head -n 1", {
+        cwd: path.join(__dirname, ".."),
+      })
+      .toString()
+      .trim();
+    res.json({ version: latestTag });
+  } catch (err) {
+    console.error("[Server Debug] GET /api/version =>", err);
+    res.status(500).json({ error: "Unable to determine version" });
+  }
+});
+
 app.get("/api/tasklist/repo-path", (req, res) => {
   try {
     const gitUrl = db.getSetting("taskList_git_ssh_url");
