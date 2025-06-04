@@ -229,18 +229,27 @@ async function setSettings(map){
   });
 }
 
+const settingsCache = {};
+
 async function getSettings(keys){
-  const q = encodeURIComponent(keys.join(','));
-  const r = await fetch(`/api/settings?keys=${q}`);
-  if(!r.ok) return {};
-  const { settings } = await r.json();
-  return Object.fromEntries(settings.map(s=>[s.key,s.value]));
+  const uncached = keys.filter(k => !(k in settingsCache));
+  if(uncached.length > 0){
+    const q = encodeURIComponent(uncached.join(','));
+    const r = await fetch(`/api/settings?keys=${q}`);
+    if(r.ok){
+      const { settings } = await r.json();
+      settings.forEach(({key, value}) => { settingsCache[key] = value; });
+    }
+  }
+  return Object.fromEntries(keys.map(k => [k, settingsCache[k]]));
 }
 
 async function getSetting(key){
+  if(key in settingsCache) return settingsCache[key];
   const r = await fetch(`/api/settings/${key}`);
   if(!r.ok) return undefined;
   const { value } = await r.json();
+  settingsCache[key] = value;
   return value;
 }
 
@@ -2738,6 +2747,11 @@ btnNexumTabs?.addEventListener("click", () => { window.location.href = btnNexumT
 
 (async function init(){
   await loadSettings();
+  await getSettings([
+    "ai_model","last_chat_tab","last_sidebar_view",
+    "model_tabs","last_model_tab",
+    "sterling_project","sterling_chat_url"
+  ]);
   await populateFilters();
   await loadTasks();
   try {
