@@ -2056,7 +2056,7 @@ function toggleSterlingUrlVisibility(visible) {
 
 function toggleProjectInfoBarVisibility(visible){
   visible = visible && auroraProjectBarVisible;
-  const ids = ["projectInfo", "setProjectBtn", "createSterlingChatBtn", "changeSterlingBranchBtn"];
+  const ids = ["projectInfo", "setProjectBtn", "createSterlingChatBtn"];
   ids.forEach(id => {
     const el = document.getElementById(id);
     if(el) el.style.display = visible ? "" : "none";
