@@ -2447,7 +2447,10 @@ app.post("/api/markdown", (req, res) => {
 });
 
 
-const PORT = process.env.PORT || 3000;
+const PORT =
+  process.env.AURORA_PORT ||
+  process.env.PORT ||
+  3000;
 const keyPath = process.env.HTTPS_KEY_PATH;
 const certPath = process.env.HTTPS_CERT_PATH;
 
