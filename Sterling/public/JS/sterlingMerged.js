@@ -93,9 +93,14 @@ async function toggleSidebar(){
     body: JSON.stringify({ key: "sidebar_visible", value: sidebarVisible })
   });
 }
-$("#toggleSidebarBtn").addEventListener("click", toggleSidebar);
 
-document.getElementById("expandSidebarBtn").addEventListener("click", () => {
+$("#toggleSidebarBtn").addEventListener("click", ev => {
+  ev.stopPropagation();
+  toggleSidebar();
+});
+
+document.getElementById("expandSidebarBtn").addEventListener("click", ev => {
+  ev.stopPropagation();
   if(!sidebarVisible) {
     toggleSidebar();
   }
