@@ -896,4 +896,9 @@ button:disabled {
   border: 1px solid var(--border);
 }
 
+/* Temporarily hide the chat image generation button */
+#chatGenImageBtn {
+  display: none !important;
+}
+
 
