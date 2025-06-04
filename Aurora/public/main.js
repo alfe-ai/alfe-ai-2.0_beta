@@ -47,6 +47,7 @@ let tabGenerateImages = false; // per-tab auto image toggle (design tabs only)
 let imageLoopEnabled = false; // automatic image generation loop mode
 let imageLoopMessage = "Next image";
 let imageGenService = 'openai';
+let isImageGenerating = false; // true while an image is being generated
 let imageUploadEnabled = false; // show image upload button
 let imagePaintTrayEnabled = true; // show image paint tray button
 let activityIframeMenuVisible = false; // show Activity IFrame menu item
@@ -1068,7 +1069,8 @@ async function addNewTab(){
     renderTabs();
     renderSidebarTabs();
     renderArchivedSidebarTabs();
-    // TODO: IMPLEMENT RELOADING THE ENTIRE PAGE HERE.
+    // Reload the entire page so the new tab state is fully reflected
+    window.location.reload();
   }
 }
 async function renameTab(tabId){
@@ -3932,6 +3934,9 @@ registerActionHook("generateImage", async ({response}) => {
     if(currentTabType !== 'design' || !tabGenerateImages) return;
     const prompt = (response || "").trim();
     if(!prompt) return;
+    isImageGenerating = true;
+    if(chatInputEl) chatInputEl.disabled = true;
+    if(chatSendBtnEl) chatSendBtnEl.disabled = true;
     const genIndicator = document.getElementById("imageGenerationIndicator");
     if(genIndicator) {
       genIndicator.style.display = "";
@@ -3946,6 +3951,9 @@ registerActionHook("generateImage", async ({response}) => {
       genIndicator.style.display = "none";
       scrollChatToBottom();
     }
+    isImageGenerating = false;
+    if(chatInputEl) chatInputEl.disabled = false;
+    if(chatSendBtnEl) chatSendBtnEl.disabled = false;
     const data = await r.json();
       if(r.ok && data.url){
         addImageChatBubble(data.url, prompt, data.title || "");
@@ -3965,6 +3973,9 @@ registerActionHook("generateImage", async ({response}) => {
       genIndicator.style.display = "none";
       scrollChatToBottom();
     }
+    isImageGenerating = false;
+    if(chatInputEl) chatInputEl.disabled = false;
+    if(chatSendBtnEl) chatSendBtnEl.disabled = false;
     console.error('[Hook generateImage] failed:', err);
   }
 });
