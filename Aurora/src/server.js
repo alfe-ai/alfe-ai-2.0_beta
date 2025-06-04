@@ -2488,6 +2488,21 @@ app.get("/api/version", (req, res) => {
   }
 });
 
+app.get("/api/gitsha", (req, res) => {
+  try {
+    const sha = child_process
+      .execSync("git rev-parse HEAD", {
+        cwd: path.join(__dirname, ".."),
+      })
+      .toString()
+      .trim();
+    res.json({ sha });
+  } catch (err) {
+    console.error("[Server Debug] GET /api/gitsha =>", err);
+    res.status(500).json({ error: "Unable to determine git sha" });
+  }
+});
+
 app.get("/api/tasklist/repo-path", (req, res) => {
   try {
     const gitUrl = db.getSetting("taskList_git_ssh_url");

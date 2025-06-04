@@ -13,5 +13,22 @@
   confused.art
   <h3>Our Story</h3>
   <p>Alfe's roots are .. in 2022 with a task management prototype called Aurora [and an algorithmic trading proto called Alfheimr. The idea matured into Nexum, and by May 2025 we're focusing on integrating AI tools to streamline developer workflows.</p>
+  <p id="versionInfo" class="version-info" style="margin-top:2rem;"></p>
+  <script>
+    async function showVersion() {
+      try {
+        const vRes = await fetch('/api/version');
+        const vData = await vRes.json();
+        const shaRes = await fetch('/api/gitsha');
+        const shaData = await shaRes.json();
+        const info = `Aurora ${vData.version} (${shaData.sha.substring(0,7)})`;
+        const el = document.getElementById('versionInfo');
+        if (el) el.textContent = info;
+      } catch (err) {
+        console.error('Failed to load version info', err);
+      }
+    }
+    showVersion();
+  </script>
 </body>
 </html>
