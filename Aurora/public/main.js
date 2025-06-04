@@ -1128,44 +1128,15 @@ async function addNewSubroutine(){
   openSubroutineModal();
 }
 function openNewTabModal(){
-  $("#newTabProjectInput").value = "";
-  $("#newTabNameInput").value = "New Tab";
   newTabSelectedType = 'chat';
-  document.querySelectorAll('#newTabTypeButtons .start-type-btn').forEach(b => b.classList.remove('selected'));
-  const first = document.querySelector('#newTabTypeButtons .start-type-btn[data-type="chat"]');
-  if(first) first.classList.add('selected');
-  toggleNewTabProjectField(newTabProjectNameEnabled);
   showModal($("#newTabModal"));
 }
 async function addNewTab(){
-  const projectInput = newTabProjectNameEnabled ? $("#newTabProjectInput").value.trim() : "";
-  if(newTabProjectNameEnabled && projectInput){
-    await fetch("/api/settings", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ key:"sterling_project", value: projectInput })
-    });
-  }
-  let autoNaming = false;
-  try{
-    const r = await fetch("/api/settings/chat_tab_auto_naming");
-    if(r.ok){
-      const obj = await r.json();
-      autoNaming = !!obj.value;
-    }
-  }catch(e){
-    console.error("Error checking chat_tab_auto_naming:", e);
-  }
-  let name = "";
-  if(!(projectInput && autoNaming)){
-    name = $("#newTabNameInput").value.trim();
-    if(!name) return;
-  }
   const tabType = newTabSelectedType;
   const r = await fetch("/api/chat/tabs/new", {
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body: JSON.stringify({ name, nexum: 0, project: projectInput, type: tabType, sessionId })
+    body: JSON.stringify({ name:"", nexum: 0, project:"", type: tabType, sessionId })
   });
   if(r.ok){
     hideModal($("#newTabModal"));
@@ -1389,13 +1360,10 @@ function renderArchivedSidebarTabs(){
 document.getElementById("newSideTabBtn").addEventListener("click", openNewTabModal);
 const newTabBtnEl = document.getElementById("newTabBtn");
 if (newTabBtnEl) newTabBtnEl.addEventListener("click", openNewTabModal);
-document.getElementById("newTabCreateBtn").addEventListener("click", addNewTab);
-document.getElementById("newTabCancelBtn").addEventListener("click", () => hideModal($("#newTabModal")));
 $$('#newTabTypeButtons .start-type-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
     newTabSelectedType = btn.dataset.type;
-    $$('#newTabTypeButtons .start-type-btn').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
+    await addNewTab();
   });
 });
 document.getElementById("addModelModalAddBtn").addEventListener("click", async () => {
