@@ -133,10 +133,7 @@ let fileSortAsc = false;
 function formatTimestamp(isoStr){
   if(!isoStr) return "(no time)";
   const d = new Date(isoStr);
-  return d.toLocaleString([], {
-    year: '2-digit',
-    month: '2-digit',
-    day: '2-digit',
+  return d.toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
@@ -3061,6 +3058,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
     chatMessagesEl.innerHTML="";
     chatHistoryOffset = 0;
     chatHasMore = true;
+    chatMessagesEl.dataset.lastDate = "";
   }
   try {
     const resp = await fetch(`/api/chat/history?tabId=${tabId}&limit=10&offset=${chatHistoryOffset}&sessionId=${encodeURIComponent(sessionId)}`);
@@ -3088,11 +3086,26 @@ async function loadChatHistory(tabId = 1, reset=false) {
     } else {
       const scrollPos = chatMessagesEl.scrollHeight;
       const fragment = document.createDocumentFragment();
+      let prevDate = "";
+      const firstChild = chatMessagesEl.firstElementChild;
+      if(firstChild){
+        prevDate = firstChild.dataset.date || "";
+      }
       for (let i = pairs.length-1; i>=0; i--){
         const p = pairs[i];
+        const pairDate = isoDate(p.timestamp || p.ai_timestamp);
+        if(pairDate !== prevDate){
+          const header = document.createElement("div");
+          header.className = "date-header";
+          header.dataset.date = pairDate;
+          header.textContent = pairDate;
+          fragment.appendChild(header);
+          prevDate = pairDate;
+        }
         const seqDiv = document.createElement("div");
         seqDiv.className = "chat-sequence";
         seqDiv.dataset.pairId = p.id;
+        seqDiv.dataset.date = pairDate;
 
         if(p.user_text && p.user_text.trim()){
           const userDiv = document.createElement("div");
@@ -3241,6 +3254,21 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
   const seqDiv = document.createElement("div");
   seqDiv.className = "chat-sequence";
   seqDiv.dataset.pairId = pairId;
+  const msgDate = isoDate(userTs || aiTs);
+  seqDiv.dataset.date = msgDate;
+
+  const chatMessagesEl = document.getElementById("chatMessages");
+  if(chatMessagesEl){
+    const lastDate = chatMessagesEl.dataset.lastDate || "";
+    if(msgDate !== lastDate){
+      const header = document.createElement("div");
+      header.className = "date-header";
+      header.dataset.date = msgDate;
+      header.textContent = msgDate;
+      chatMessagesEl.appendChild(header);
+      chatMessagesEl.dataset.lastDate = msgDate;
+    }
+  }
 
   if(userText && userText.trim()){
     const userDiv = document.createElement("div");
@@ -3475,9 +3503,10 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
   }
   seqDiv.appendChild(pairDelBtn);
 
-  const chatMessagesEl = document.getElementById("chatMessages");
-  chatMessagesEl.appendChild(seqDiv);
-  chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+  if(chatMessagesEl){
+    chatMessagesEl.appendChild(seqDiv);
+    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+  }
 }
 
 // New model tabs logic

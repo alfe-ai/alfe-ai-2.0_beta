@@ -221,6 +221,14 @@ body {
   position: relative;
 }
 
+/* Date headers separating chat history by day */
+.date-header {
+  text-align: center;
+  margin: 10px 0;
+  font-weight: bold;
+  color: #555;
+}
+
 .delete-chat-btn {
   background: transparent;
   border: none;
