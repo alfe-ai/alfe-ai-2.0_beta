@@ -147,6 +147,11 @@ if (!db.getSetting("image_gen_service")) {
   db.setSetting("image_gen_service", "openai");
 }
 
+console.debug("[Server Debug] Checking or setting default 'show_session_id' in DB...");
+if (db.getSetting("show_session_id") === undefined) {
+  db.setSetting("show_session_id", false);
+}
+
 const app = express();
 const jobManager = new JobManager();
 
