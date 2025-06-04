@@ -446,6 +446,11 @@ body {
   margin-bottom: 0;
 }
 
+/* When sidebar is collapsed, shift the chat tabs bar to clear the logo */
+.app.sidebar-collapsed #chatTabs {
+  margin-left: 60px;
+}
+
 /* Icon displayed before chat tab names */
 #tabsContainer .tab-icon,
 #verticalTabsContainer .tab-icon {
