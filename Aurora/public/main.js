@@ -1580,6 +1580,7 @@ chatInputEl.addEventListener("keydown", (e) => {
 
 chatSendBtnEl.addEventListener("click", async () => {
   const chatMessagesEl = document.getElementById("chatMessages");
+  const placeholderEl = document.getElementById("chatPlaceholder");
   const userMessage = chatInputEl.value.trim();
   if(!userMessage && pendingImages.length===0) return;
   if(userMessage){
@@ -1724,6 +1725,7 @@ chatSendBtnEl.addEventListener("click", async () => {
   botDiv.appendChild(botBody);
 
   seqDiv.appendChild(botDiv);
+  if(placeholderEl) placeholderEl.style.display = "none";
   chatMessagesEl.appendChild(seqDiv);
   chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
   setTimeout(scrollChatToBottom, 0);
@@ -3057,10 +3059,12 @@ let chatHasMore = true;
 
 async function loadChatHistory(tabId = 1, reset=false) {
   const chatMessagesEl = document.getElementById("chatMessages");
+  const placeholderEl = document.getElementById("chatPlaceholder");
   if(reset){
     chatMessagesEl.innerHTML="";
     chatHistoryOffset = 0;
     chatHasMore = true;
+    if(placeholderEl) placeholderEl.style.display = "";
   }
   try {
     const resp = await fetch(`/api/chat/history?tabId=${tabId}&limit=10&offset=${chatHistoryOffset}&sessionId=${encodeURIComponent(sessionId)}`);
@@ -3084,6 +3088,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
             p.image_url, p.image_alt, p.image_title
         );
       }
+      if(pairs.length>0 && placeholderEl) placeholderEl.style.display = "none";
       scrollChatToBottom();
     } else {
       const scrollPos = chatMessagesEl.scrollHeight;
@@ -3231,6 +3236,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
         chatMessagesEl.appendChild(fragment);
       }
       chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight - scrollPos;
+      if(pairs.length>0 && placeholderEl) placeholderEl.style.display = "none";
     }
   } catch (err) {
     console.error("Error loading chat history:", err);
@@ -3476,6 +3482,8 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
   seqDiv.appendChild(pairDelBtn);
 
   const chatMessagesEl = document.getElementById("chatMessages");
+  const placeholderEl = document.getElementById("chatPlaceholder");
+  if(placeholderEl) placeholderEl.style.display = "none";
   chatMessagesEl.appendChild(seqDiv);
   chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
 }
@@ -3994,6 +4002,7 @@ function updateImagePreviewList(){
 // Append an AI image bubble to the chat
 function addImageChatBubble(url, altText="", title=""){
   const chatMessagesEl = document.getElementById("chatMessages");
+  const placeholderEl = document.getElementById("chatPlaceholder");
   if(!chatMessagesEl || !url) return;
 
   const seqDiv = document.createElement("div");
@@ -4028,6 +4037,7 @@ function addImageChatBubble(url, altText="", title=""){
   botDiv.appendChild(img);
 
   seqDiv.appendChild(botDiv);
+  if(placeholderEl) placeholderEl.style.display = "none";
   chatMessagesEl.appendChild(seqDiv);
   chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
 }
