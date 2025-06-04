@@ -1066,6 +1066,8 @@ async function addNewTab(){
     hideModal($("#newTabModal"));
     await loadTabs();
     renderTabs();
+    renderSidebarTabs();
+    renderArchivedSidebarTabs();
   }
 }
 async function renameTab(tabId){
@@ -2781,7 +2783,6 @@ btnNexumTabs?.addEventListener("click", () => { window.location.href = btnNexumT
 
   if(chatTabs.length === 0){
     openNewTabModal();
-    return;
   }
 
   const lastChatTab = await getSetting("last_chat_tab");
@@ -2809,7 +2810,9 @@ btnNexumTabs?.addEventListener("click", () => { window.location.href = btnNexumT
   renderTabs();
   renderSidebarTabs();
   renderArchivedSidebarTabs();
-  await loadChatHistory(currentTabId, true);
+  if(chatTabs.length>0){
+    await loadChatHistory(currentTabId, true);
+  }
 
   try {
     const r2 = await fetch("/api/settings/agent_instructions");
