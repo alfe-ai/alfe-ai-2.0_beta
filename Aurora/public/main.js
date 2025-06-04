@@ -3263,6 +3263,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
         botBody.textContent = p.ai_text || "";
         botDiv.appendChild(botBody);
 
+
         if(p.token_info && showSubbubbleToken){
           try {
             const tInfo = JSON.parse(p.token_info);
@@ -3275,6 +3276,12 @@ async function loadChatHistory(tabId = 1, reset=false) {
             console.debug("[Server Debug] Could not parse token_info for prepended pair =>", e.message);
           }
         }
+
+        // Show model name at bottom-left of AI bubble
+        const modelDiv = document.createElement("div");
+        modelDiv.className = "model-indicator";
+        modelDiv.textContent = `${provider} / ${shortModel}`;
+        botDiv.appendChild(modelDiv);
 
         seqDiv.appendChild(botDiv);
         const pairDel = document.createElement("button");
@@ -3428,6 +3435,12 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
       console.debug("[Server Debug] Could not parse token_info for pair =>", pairId, e.message);
     }
   }
+
+  // Show model name at bottom-left of AI bubble
+  const modelDiv = document.createElement("div");
+  modelDiv.className = "model-indicator";
+  modelDiv.textContent = `${provider} / ${shortModel}`;
+  botDiv.appendChild(modelDiv);
 
   seqDiv.appendChild(botDiv);
 

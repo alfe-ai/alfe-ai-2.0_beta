@@ -619,6 +619,15 @@ body {
   margin-top: 10px;
 }
 
+/* Model name indicator in bottom-left corner of AI bubble */
+.model-indicator {
+  position: absolute;
+  left: 8px;
+  font-size: 0.75rem;
+  color: #aaa;
+  margin-top: 10px;
+}
+
 /* Additional styling for the new Chat Tabs sidebar panel */
 #sidebarViewChatTabs {
   margin-top: 1rem;
