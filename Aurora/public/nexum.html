@@ -404,6 +404,11 @@
         gear.className = 'config-btn';
         gear.addEventListener('click', (e) => { e.stopPropagation(); openTabConfig(t.id); });
 
+        const renameBtn = document.createElement('button');
+        renameBtn.textContent = 'Rename';
+        renameBtn.className = 'config-btn';
+        renameBtn.addEventListener('click', e => { e.stopPropagation(); renameTab(t.id); });
+
         const archBtn = document.createElement('button');
         archBtn.innerHTML = t.archived ? 'Unarchive' : '&#128452;';
         archBtn.title = t.archived ? 'Unarchive' : 'Archive';
@@ -415,7 +420,8 @@
 
         item.appendChild(b);
         item.appendChild(gear);
-      item.appendChild(archBtn);
+        item.appendChild(renameBtn);
+        item.appendChild(archBtn);
       container.appendChild(item);
     });
     checkNoTabsDialog();

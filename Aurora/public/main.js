@@ -1207,6 +1207,12 @@ function renderTabs(){
     nameSpan.addEventListener("click", ()=>selectTab(tab.id));
     tabBtn.appendChild(nameSpan);
 
+    const renameBtn = document.createElement("button");
+    renameBtn.textContent = "Rename";
+    renameBtn.style.marginLeft = "4px";
+    renameBtn.addEventListener("click", e=>{ e.stopPropagation(); renameTab(tab.id); });
+    tabBtn.appendChild(renameBtn);
+
     const archBtn = document.createElement("button");
     archBtn.innerHTML = tab.archived ? "Unarchive" : "&#128452;";
     archBtn.title = tab.archived ? "Unarchive" : "Archive";
@@ -1268,6 +1274,13 @@ function renderSidebarTabs(){
     info.appendChild(b);
     info.appendChild(dateSpan);
 
+    const renameBtn = document.createElement("button");
+    renameBtn.textContent = "Rename";
+    renameBtn.addEventListener("click", e => {
+      e.stopPropagation();
+      renameTab(tab.id);
+    });
+
     const archBtn = document.createElement("button");
     archBtn.innerHTML = tab.archived ? "Unarchive" : "&#128452;";
     archBtn.title = tab.archived ? "Unarchive" : "Archive";
@@ -1277,6 +1290,7 @@ function renderSidebarTabs(){
     });
 
     wrapper.appendChild(info);
+    wrapper.appendChild(renameBtn);
     wrapper.appendChild(archBtn);
     container.appendChild(wrapper);
   });
