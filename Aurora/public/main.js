@@ -2996,59 +2996,61 @@ async function loadChatHistory(tabId = 1, reset=false) {
         seqDiv.className = "chat-sequence";
         seqDiv.dataset.pairId = p.id;
 
-        const userDiv = document.createElement("div");
-        userDiv.className = "chat-user";
-        {
-          const userHead = document.createElement("div");
-          userHead.className = "bubble-header";
-          userHead.innerHTML = `
-            <div class="name-oval name-oval-user">User</div>
-            <span style="opacity:0.8;">${formatTimestamp(p.timestamp)}</span>
-          `;
-        const uDel = document.createElement("button");
-        uDel.className = "delete-chat-btn bubble-delete-btn";
-        uDel.textContent = "x";
-        uDel.title = "Delete user message";
-        uDel.addEventListener("click", async () => {
-          if(!confirm("Delete this user message?")) return;
-          const r = await fetch(`/api/chat/pair/${p.id}/user`, { method:"DELETE" });
-          if(r.ok) userDiv.remove();
-        });
-        const uCopy = document.createElement("button");
-        uCopy.className = "bubble-copy-btn";
-        uCopy.textContent = "\u2398"; // copy icon
-        uCopy.title = "Copy message";
-        uCopy.addEventListener("click", () => {
-          navigator.clipboard.writeText(p.user_text || "");
-          showToast("Copied to clipboard");
-        });
-        userHead.appendChild(uCopy);
-        userHead.appendChild(uDel);
-        userDiv.appendChild(userHead);
+        if(p.user_text && p.user_text.trim()){
+          const userDiv = document.createElement("div");
+          userDiv.className = "chat-user";
+          {
+            const userHead = document.createElement("div");
+            userHead.className = "bubble-header";
+            userHead.innerHTML = `
+              <div class="name-oval name-oval-user">User</div>
+              <span style="opacity:0.8;">${formatTimestamp(p.timestamp)}</span>
+            `;
+            const uDel = document.createElement("button");
+            uDel.className = "delete-chat-btn bubble-delete-btn";
+            uDel.textContent = "x";
+            uDel.title = "Delete user message";
+            uDel.addEventListener("click", async () => {
+              if(!confirm("Delete this user message?")) return;
+              const r = await fetch(`/api/chat/pair/${p.id}/user`, { method:"DELETE" });
+              if(r.ok) userDiv.remove();
+            });
+            const uCopy = document.createElement("button");
+            uCopy.className = "bubble-copy-btn";
+            uCopy.textContent = "\u2398"; // copy icon
+            uCopy.title = "Copy message";
+            uCopy.addEventListener("click", () => {
+              navigator.clipboard.writeText(p.user_text || "");
+              showToast("Copied to clipboard");
+            });
+            userHead.appendChild(uCopy);
+            userHead.appendChild(uDel);
+            userDiv.appendChild(userHead);
 
-          const userBody = document.createElement("div");
-          userBody.textContent = p.user_text;
-          userDiv.appendChild(userBody);
-        }
-
-        if(p.token_info && showSubbubbleToken){
-          try {
-            const tInfo = JSON.parse(p.token_info);
-            const inputT = (tInfo.systemTokens || 0) + (tInfo.historyTokens || 0) + (tInfo.inputTokens || 0);
-            const outputT = (tInfo.assistantTokens || 0) + (tInfo.finalAssistantTokens || 0);
-
-            userDiv._tokenSections = { input: inputT, output: outputT };
-            const userTokenDiv = document.createElement("div");
-            userTokenDiv.className = "token-indicator";
-            const pairTokens = tInfo.inputTokens || 0;
-            userTokenDiv.textContent = `In: ${pairTokens} (${inputT})`;
-            userDiv.appendChild(userTokenDiv);
-          } catch (e) {
-            console.debug("[Server Debug] Could not parse token_info for pair =>", p.id, e.message);
+            const userBody = document.createElement("div");
+            userBody.textContent = p.user_text;
+            userDiv.appendChild(userBody);
           }
-        }
 
-        seqDiv.appendChild(userDiv);
+          if(p.token_info && showSubbubbleToken){
+            try {
+              const tInfo = JSON.parse(p.token_info);
+              const inputT = (tInfo.systemTokens || 0) + (tInfo.historyTokens || 0) + (tInfo.inputTokens || 0);
+              const outputT = (tInfo.assistantTokens || 0) + (tInfo.finalAssistantTokens || 0);
+
+              userDiv._tokenSections = { input: inputT, output: outputT };
+              const userTokenDiv = document.createElement("div");
+              userTokenDiv.className = "token-indicator";
+              const pairTokens = tInfo.inputTokens || 0;
+              userTokenDiv.textContent = `In: ${pairTokens} (${inputT})`;
+              userDiv.appendChild(userTokenDiv);
+            } catch (e) {
+              console.debug("[Server Debug] Could not parse token_info for pair =>", p.id, e.message);
+            }
+          }
+
+          seqDiv.appendChild(userDiv);
+        }
 
         const botDiv = document.createElement("div");
         botDiv.className = "chat-bot";
@@ -3142,60 +3144,62 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
   seqDiv.className = "chat-sequence";
   seqDiv.dataset.pairId = pairId;
 
-  const userDiv = document.createElement("div");
-  userDiv.className = "chat-user";
-  {
-    const userHead = document.createElement("div");
-  userHead.className = "bubble-header";
-  userHead.innerHTML = `
-    <div class="name-oval name-oval-user">User</div>
-    <span style="opacity:0.8;">${formatTimestamp(userTs)}</span>
-  `;
-  const userDelBtn = document.createElement("button");
-  userDelBtn.className = "delete-chat-btn bubble-delete-btn";
-  userDelBtn.textContent = "x";
-  userDelBtn.title = "Delete user message";
-  userDelBtn.addEventListener("click", async () => {
-    if (!confirm("Delete this user message?")) return;
-    const resp = await fetch(`/api/chat/pair/${pairId}/user`, { method: "DELETE" });
-    if (resp.ok) {
-      userDiv.remove();
-    } else {
-      alert("Failed to delete user message.");
+  if(userText && userText.trim()){
+    const userDiv = document.createElement("div");
+    userDiv.className = "chat-user";
+    {
+      const userHead = document.createElement("div");
+      userHead.className = "bubble-header";
+      userHead.innerHTML = `
+        <div class="name-oval name-oval-user">User</div>
+        <span style="opacity:0.8;">${formatTimestamp(userTs)}</span>
+      `;
+      const userDelBtn = document.createElement("button");
+      userDelBtn.className = "delete-chat-btn bubble-delete-btn";
+      userDelBtn.textContent = "x";
+      userDelBtn.title = "Delete user message";
+      userDelBtn.addEventListener("click", async () => {
+        if (!confirm("Delete this user message?")) return;
+        const resp = await fetch(`/api/chat/pair/${pairId}/user`, { method: "DELETE" });
+        if (resp.ok) {
+          userDiv.remove();
+        } else {
+          alert("Failed to delete user message.");
+        }
+      });
+      const userCopyBtn = document.createElement("button");
+      userCopyBtn.className = "bubble-copy-btn";
+      userCopyBtn.textContent = "\u2398";
+      userCopyBtn.title = "Copy message";
+      userCopyBtn.addEventListener("click", () => {
+        navigator.clipboard.writeText(userText || "");
+        showToast("Copied to clipboard");
+      });
+      userHead.appendChild(userCopyBtn);
+      userHead.appendChild(userDelBtn);
+      userDiv.appendChild(userHead);
+
+      const userBody = document.createElement("div");
+      userBody.textContent = userText;
+      userDiv.appendChild(userBody);
     }
-  });
-  const userCopyBtn = document.createElement("button");
-  userCopyBtn.className = "bubble-copy-btn";
-  userCopyBtn.textContent = "\u2398";
-  userCopyBtn.title = "Copy message";
-  userCopyBtn.addEventListener("click", () => {
-    navigator.clipboard.writeText(userText || "");
-    showToast("Copied to clipboard");
-  });
-  userHead.appendChild(userCopyBtn);
-  userHead.appendChild(userDelBtn);
-  userDiv.appendChild(userHead);
 
-    const userBody = document.createElement("div");
-    userBody.textContent = userText;
-    userDiv.appendChild(userBody);
-  }
-
-  if(tokenInfo && showSubbubbleToken){
-    try {
-      const tInfo = JSON.parse(tokenInfo);
-      const userInTokens = (tInfo.systemTokens||0) + (tInfo.historyTokens||0) + (tInfo.inputTokens||0);
-      const pairTokens = tInfo.inputTokens || 0;
-      const userTokenDiv = document.createElement("div");
-      userTokenDiv.className = "token-indicator";
-      userTokenDiv.textContent = `In: ${pairTokens} (${userInTokens})`;
-      userDiv.appendChild(userTokenDiv);
-    } catch(e){
-      console.debug("[Server Debug] Could not parse token_info for user subbubble =>", e.message);
+    if(tokenInfo && showSubbubbleToken){
+      try {
+        const tInfo = JSON.parse(tokenInfo);
+        const userInTokens = (tInfo.systemTokens||0) + (tInfo.historyTokens||0) + (tInfo.inputTokens||0);
+        const pairTokens = tInfo.inputTokens || 0;
+        const userTokenDiv = document.createElement("div");
+        userTokenDiv.className = "token-indicator";
+        userTokenDiv.textContent = `In: ${pairTokens} (${userInTokens})`;
+        userDiv.appendChild(userTokenDiv);
+      } catch(e){
+        console.debug("[Server Debug] Could not parse token_info for user subbubble =>", e.message);
+      }
     }
-  }
 
-  seqDiv.appendChild(userDiv);
+    seqDiv.appendChild(userDiv);
+  }
 
   const botDiv = document.createElement("div");
   botDiv.className = "chat-bot";
