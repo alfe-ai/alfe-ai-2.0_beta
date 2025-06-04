@@ -6,6 +6,22 @@ document.addEventListener('DOMContentLoaded', () => {
   if (sessEl) sessEl.textContent = sessionId;
   updateImageLimitInfo();
   document.title = defaultTitle;
+
+  // ---- Theme setup ----
+  const themeLink = document.getElementById('themeStylesheet');
+  const themeBtn = document.getElementById('themeToggleBtn');
+  let themeMode = localStorage.getItem('aurora_theme') || 'dark';
+  if (themeLink) themeLink.href = themeMode === 'light' ? 'styles_light.css' : 'styles.css';
+  if (themeBtn) {
+    themeBtn.textContent = themeMode === 'light' ? '🌙' : '☀️';
+    themeBtn.addEventListener('click', () => {
+      themeMode = themeMode === 'light' ? 'dark' : 'light';
+      if (themeLink) themeLink.href = themeMode === 'light' ? 'styles_light.css' : 'styles.css';
+      themeBtn.textContent = themeMode === 'light' ? '🌙' : '☀️';
+      localStorage.setItem('aurora_theme', themeMode);
+    });
+  }
+
   fetch('/api/version')
     .then(r => r.ok ? r.json() : null)
     .then(data => {
