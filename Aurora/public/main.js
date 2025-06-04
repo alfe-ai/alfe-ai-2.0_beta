@@ -135,6 +135,10 @@ function isoDate(d) {
   });
 }
 
+function isMobileViewport(){
+  return window.innerWidth <= 700;
+}
+
 function showModal(m){ m.style.display = "flex"; }
 function hideModal(m){ m.style.display = "none"; }
 $$(".modal").forEach(m => m.addEventListener("click", e => { if(e.target===m) hideModal(m); }));
@@ -1258,7 +1262,12 @@ function renderSidebarTabs(){
       b.classList.add("active");
     }
     b.style.flexGrow = "1";
-    b.addEventListener("click", () => selectTab(tab.id));
+    b.addEventListener("click", () => {
+      selectTab(tab.id);
+      if(isMobileViewport() && sidebarVisible){
+        toggleSidebar();
+      }
+    });
     b.addEventListener("contextmenu", e => {
       e.preventDefault();
       const choice = prompt("Type 'rename' or 'delete':", "");
