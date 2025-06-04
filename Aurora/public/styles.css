@@ -579,7 +579,7 @@ body {
   display: none !important;
 }
 
-/* When the image generation limit is reached (10/10),
+/* When the image generation limit is reached (50/50),
    highlight the info text in dark red for visibility
    by applying a new "limit-reached" class via JavaScript.
    This class is added dynamically when the count hits the limit.
@@ -588,7 +588,7 @@ body {
    This ensures normal color is used until the limit is hit.
 
    Example HTML after update:
-     <span id="imageLimitInfo" class="session-limit limit-reached">Images: 10/10 (IP 10/10)</span>
+     <span id="imageLimitInfo" class="session-limit limit-reached">Images: 50/50 (IP 50/50)</span>
 
    The dark red color uses the named color `darkred` for clarity.
    It roughly corresponds to #8B0000.

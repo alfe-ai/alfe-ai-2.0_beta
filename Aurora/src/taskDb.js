@@ -881,7 +881,7 @@ export default class TaskDB {
     return Math.floor(diffMs / (3600 * 1000));
   }
 
-  imageLimitForSession(sessionId, baseLimit = 10) {
+  imageLimitForSession(sessionId, baseLimit = 50) {
     const hours = this.hoursSinceImageSessionStart(sessionId);
     return Math.max(0, baseLimit - hours);
   }
