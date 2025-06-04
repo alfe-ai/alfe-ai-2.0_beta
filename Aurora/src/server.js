@@ -1981,7 +1981,7 @@ app.post("/api/image/generate", async (req, res) => {
     // Always use ChatGPT/DALL-E for image generation
     const openaiClient = new OpenAI({ apiKey: openAiKey });
 
-    const modelName = (model || "dall-e-3").toLowerCase();
+    let modelName = (model || "dall-e-3").toLowerCase();
     const allowedModels = ["dall-e-2", "dall-e-3"];
     if (!allowedModels.includes(modelName)) {
       return res.status(400).json({ error: "Invalid model" });
