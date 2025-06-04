@@ -220,6 +220,15 @@ async function setSetting(key, value){
   });
 }
 
+async function setSettings(map){
+  const settings = Object.entries(map).map(([key, value]) => ({ key, value }));
+  await fetch("/api/settings/batch", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ settings })
+  });
+}
+
 async function getSettings(keys){
   const q = encodeURIComponent(keys.join(','));
   const r = await fetch(`/api/settings?keys=${q}`);
@@ -1961,28 +1970,30 @@ async function chatSettingsSaveFlow() {
   imageLoopEnabled = $("#imageLoopCheck").checked;
   imageLoopMessage = $("#imageLoopMessageInput").value.trim() || imageLoopMessage;
 
-  await setSetting("chat_hide_metadata", chatHideMetadata);
-  await setSetting("chat_tab_auto_naming", chatTabAutoNaming);
-  await setSetting("show_subbubble_token_count", showSubbubbleToken);
-  await setSetting("sterling_chat_url_visible", sterlingChatUrlVisible);
-  await setSetting("project_info_bar_visible", projectInfoBarVisible);
-  await setSetting("aurora_project_bar_visible", auroraProjectBarVisible);
-  await setSetting("chat_streaming", chatStreaming);
-  await setSetting("markdown_panel_visible", markdownPanelVisible);
-  await setSetting("subroutine_panel_visible", subroutinePanelVisible);
-  await setSetting("enter_submits_message", enterSubmitsMessage);
-  await setSetting("nav_menu_visible", navMenuVisible);
-  await setSetting("top_chat_tabs_bar_visible", topChatTabsBarVisible);
-  await setSetting("view_tabs_bar_visible", viewTabsBarVisible);
-  await setSetting("show_archived_tabs", showArchivedTabs);
-  await setSetting("show_dependencies_column", showDependenciesColumn);
-
   imageGenService = $("#imageServiceSelect").value;
-  await setSetting("image_gen_service", imageGenService);
-
   const serviceSel = $("#aiServiceSelect").value;
   const modelSel = $("#aiModelSelect").value;
-  await setSetting("ai_service", serviceSel);
+
+  await setSettings({
+    chat_hide_metadata: chatHideMetadata,
+    chat_tab_auto_naming: chatTabAutoNaming,
+    show_subbubble_token_count: showSubbubbleToken,
+    sterling_chat_url_visible: sterlingChatUrlVisible,
+    project_info_bar_visible: projectInfoBarVisible,
+    aurora_project_bar_visible: auroraProjectBarVisible,
+    chat_streaming: chatStreaming,
+    markdown_panel_visible: markdownPanelVisible,
+    subroutine_panel_visible: subroutinePanelVisible,
+    enter_submits_message: enterSubmitsMessage,
+    nav_menu_visible: navMenuVisible,
+    top_chat_tabs_bar_visible: topChatTabsBarVisible,
+    view_tabs_bar_visible: viewTabsBarVisible,
+    show_archived_tabs: showArchivedTabs,
+    show_dependencies_column: showDependenciesColumn,
+    image_gen_service: imageGenService,
+    ai_service: serviceSel
+  });
+
   if (modelSel.trim()) {
     await setSetting("ai_model", modelSel.trim());
   }
