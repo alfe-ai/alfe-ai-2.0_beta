@@ -27,6 +27,12 @@ npm start
 ```
 Then open `http://localhost:3000` in your browser.
 
+### Environment variables
+
+`HTTPS_KEY_PATH` and `HTTPS_CERT_PATH` can be set to enable HTTPS if you provide
+paths to your SSL key and certificate. Without them the server uses HTTP.
+You can create these files with `../setup_certbot.sh <domain> <email>`.
+
 ## Note
 
 The repository does not include the WebVM source or disk images. Those need to be fetched separately when you have internet access.

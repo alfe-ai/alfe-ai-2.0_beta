@@ -23,6 +23,11 @@ npm start
 | `UPSCALE_SCRIPT_PATH` | (Optional) Path to the image upscale script. Defaults to the included loop.sh |
 | `PRINTIFY_SCRIPT_PATH` | (Optional) Path to the Printify submission script. Defaults to the included run.sh |
 | `STABLE_DIFFUSION_URL` | (Optional) Base URL for a self-hosted Stable Diffusion API |
+| `HTTPS_KEY_PATH` | (Optional) Path to SSL private key for HTTPS |
+| `HTTPS_CERT_PATH` | (Optional) Path to SSL certificate for HTTPS |
+
+Run `../setup_certbot.sh <domain> <email>` to quickly generate these files with
+Let's Encrypt.
 
 ### Obtaining API Keys
 1. **GitHub Token**:  
