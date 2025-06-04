@@ -147,6 +147,11 @@ if (!db.getSetting("image_gen_service")) {
   db.setSetting("image_gen_service", "openai");
 }
 
+console.debug("[Server Debug] Checking or setting default 'show_session_id' in DB...");
+if (db.getSetting("show_session_id") === undefined) {
+  db.setSetting("show_session_id", false);
+}
+
 const app = express();
 const jobManager = new JobManager();
 
@@ -1647,8 +1652,8 @@ app.get("/api/image/counts", (req, res) => {
     const ipAddress = (req.headers["x-forwarded-for"] || req.ip || "").split(",")[0].trim();
     const sessionCount = sessionId ? db.countImagesForSession(sessionId) : 0;
     const ipCount = ipAddress ? db.countImagesForIp(ipAddress) : 0;
-    const sessionLimit = sessionId ? db.imageLimitForSession(sessionId, 10) : 10;
-    const ipLimit = 10;
+    const sessionLimit = sessionId ? db.imageLimitForSession(sessionId, 50) : 50;
+    const ipLimit = 50;
     const nextReduction = sessionId ? db.nextImageLimitReductionTime(sessionId) : null;
     res.json({ sessionCount, sessionLimit, ipCount, ipLimit, nextReduction });
   } catch (err) {
@@ -2083,7 +2088,7 @@ app.post("/api/image/generate", async (req, res) => {
     if (sessionId) {
       db.ensureImageSession(sessionId);
       const current = db.countImagesForSession(sessionId);
-      const limit = db.imageLimitForSession(sessionId, 10);
+      const limit = db.imageLimitForSession(sessionId, 50);
       if (current >= limit) {
         return res.status(400).json({ error: 'Image generation limit reached for this session' });
       }
@@ -2091,7 +2096,7 @@ app.post("/api/image/generate", async (req, res) => {
 
     if (ipAddress) {
       const ipCount = db.countImagesForIp(ipAddress);
-      if (ipCount >= 10) {
+      if (ipCount >= 50) {
         return res.status(400).json({ error: 'Image generation limit reached for this IP' });
       }
     }

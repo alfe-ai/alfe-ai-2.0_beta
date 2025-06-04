@@ -146,9 +146,10 @@
   <div id="topRightButtons" class="top-right-buttons">
 <!--    <span class="subscribe-teaser">Join the beta:</span>-->
 <!--    <a id="subscribeBtn" href="#" class="top-btn">Subscribe</a>-->
-    <a id="githubBtn" href="https://github.com/alfe-ai" target="_blank" class="top-btn">GitHub</a>
+      <a id="githubBtn" href="https://github.com/alfe-ai" target="_blank" class="top-btn">GitHub</a>
+      <button id="chatSettingsBtn" class="top-btn" title="Chat Settings">⚙️</button>
 <!--    <a id="changelogBtn" href="/changelog.html" class="top-btn" target="_blank">Changelog</a>-->
-  </div>
+    </div>
 
   <div id="expandSidebarBtn" style="position: absolute; top: 75px; left: 8px; background: #444; color: #ddd; padding: 4px 8px; cursor: pointer; z-index: 999; display: none;">
     Show Sidebar
@@ -197,11 +198,10 @@
       <div id="subroutineCards" style="display:flex; gap:8px; margin-top:8px;"></div>
     </div>
 
-    <div id="chatPanel" style="position: relative;">
-      <div style="display: flex; align-items: center; gap: 0.5rem;">
-        <div id="modelHud" style="font-size:0.9rem; color:#aaa; margin-bottom:4px;"></div>
-        <button id="chatSettingsBtn" title="Chat Settings">⚙️</button>
-      </div>
+      <div id="chatPanel" style="position: relative;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <div id="modelHud" style="font-size:0.9rem; color:#aaa; margin-bottom:4px;"></div>
+        </div>
 
       <!-- New 'model tabs' section -->
       <div id="modelTabs" style="display:flex; gap:0.5rem; align-items:center; margin-bottom:4px;">
@@ -556,6 +556,7 @@
     <label><input type="checkbox" id="chatTabsMenuCheck"/> Show Chats button</label><br/>
     <label><input type="checkbox" id="viewTabsBarFlagCheck"/> Show Chat/Tasks bar</label><br/>
     <label><input type="checkbox" id="showProjectNameTabsCheck"/> Show project name in tabs</label><br/>
+    <label><input type="checkbox" id="showSessionIdCheck"/> Show Session ID</label><br/>
     <label><input type="checkbox" id="imageGeneratorMenuCheck"/> Show Image Generator menu</label>
     <br/>
     <label><input type="checkbox" id="upArrowHistoryCheck" checked/> Enable Arrow Up history recall</label>
