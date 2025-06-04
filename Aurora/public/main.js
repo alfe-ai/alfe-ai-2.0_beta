@@ -2094,7 +2094,7 @@ function toggleTopChatTabsVisibility(visible) {
   const btn = document.getElementById("toggleTopChatTabsBtn");
   if(!topTabs) return;
   topTabs.style.display = visible ? "" : "none";
-  if(btn) btn.textContent = visible ? "Hide chat tabs bar" : "Show chat tabs bar";
+  if(btn) btn.textContent = visible ? "Hide top chat tabs bar" : "Show top chat tabs bar";
 }
 
 function toggleViewTabsBarVisibility(visible) {
