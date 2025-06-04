@@ -1108,6 +1108,10 @@ app.post("/api/chat", async (req, res) => {
     const userMessage = req.body.message || "";
     const chatTabId = req.body.tabId || 1;
     const sessionId = req.body.sessionId || "";
+    const tabInfo = db.getChatTab(chatTabId, sessionId || null);
+    if (!tabInfo) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
     const userTime = req.body.userTime || new Date().toISOString();
 
     if (!userMessage) {
@@ -1119,7 +1123,6 @@ app.post("/api/chat", async (req, res) => {
     let model = db.getSetting("ai_model");
     const savedInstructions = db.getSetting("agent_instructions") || "";
 
-    const tabInfo = db.getChatTab(chatTabId);
     const isDesignTab = tabInfo && tabInfo.tab_type === 'design';
     let finalUserMessage = userMessage;
     if (isDesignTab) {
@@ -1280,8 +1283,14 @@ app.get("/api/chat/history", (req, res) => {
   console.debug("[Server Debug] GET /api/chat/history =>", req.query);
   try {
     const tabId = parseInt(req.query.tabId || "1", 10);
+    const sessionId = req.query.sessionId || "";
     const limit = parseInt(req.query.limit || "10", 10);
     const offset = parseInt(req.query.offset || "0", 10);
+
+    const tabInfo = db.getChatTab(tabId, sessionId || null);
+    if (!tabInfo) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
 
     const pairsDesc = db.getChatPairsPage(tabId, limit, offset);
     const pairsAsc = pairsDesc.slice().reverse();
@@ -1329,17 +1338,18 @@ app.get("/api/model", (req, res) => {
 app.get("/api/chat/tabs", (req, res) => {
   const nexumParam = req.query.nexum;
   const showArchivedParam = req.query.showArchived;
+  const sessionId = req.query.sessionId || "";
   console.debug(
-      `[Server Debug] GET /api/chat/tabs => listing tabs (nexum=${nexumParam}, showArchived=${showArchivedParam})`
+      `[Server Debug] GET /api/chat/tabs => listing tabs (nexum=${nexumParam}, showArchived=${showArchivedParam}, sessionId=${sessionId})`
   );
   try {
     let tabs;
     const includeArchived = showArchivedParam === "1" || showArchivedParam === "true";
     if (nexumParam === undefined) {
-      tabs = db.listChatTabs(null, includeArchived);
+      tabs = db.listChatTabs(null, includeArchived, sessionId);
     } else {
       const flag = parseInt(nexumParam, 10);
-      tabs = db.listChatTabs(flag ? 1 : 0, includeArchived);
+      tabs = db.listChatTabs(flag ? 1 : 0, includeArchived, sessionId);
     }
     res.json(tabs);
   } catch (err) {
@@ -1375,9 +1385,13 @@ app.post("/api/chat/tabs/new", (req, res) => {
 app.post("/api/chat/tabs/rename", (req, res) => {
   console.debug("[Server Debug] POST /api/chat/tabs/rename =>", req.body);
   try {
-    const { tabId, newName } = req.body;
+    const { tabId, newName, sessionId = '' } = req.body;
     if (!tabId || !newName) {
       return res.status(400).json({ error: "Missing tabId or newName" });
+    }
+    const tab = db.getChatTab(tabId, sessionId || null);
+    if (!tab) {
+      return res.status(403).json({ error: 'Forbidden' });
     }
     db.renameChatTab(tabId, newName);
     res.json({ success: true });
@@ -1390,9 +1404,13 @@ app.post("/api/chat/tabs/rename", (req, res) => {
 app.post("/api/chat/tabs/archive", (req, res) => {
   console.debug("[Server Debug] POST /api/chat/tabs/archive =>", req.body);
   try {
-    const { tabId, archived = true } = req.body;
+    const { tabId, archived = true, sessionId = '' } = req.body;
     if (!tabId) {
       return res.status(400).json({ error: "Missing tabId" });
+    }
+    const tab = db.getChatTab(tabId, sessionId || null);
+    if (!tab) {
+      return res.status(403).json({ error: 'Forbidden' });
     }
     db.setChatTabArchived(tabId, archived ? 1 : 0);
     res.json({ success: true });
@@ -1405,9 +1423,13 @@ app.post("/api/chat/tabs/archive", (req, res) => {
 app.post("/api/chat/tabs/generate_images", (req, res) => {
   console.debug("[Server Debug] POST /api/chat/tabs/generate_images =>", req.body);
   try {
-    const { tabId, enabled = true } = req.body;
+    const { tabId, enabled = true, sessionId = '' } = req.body;
     if (!tabId) {
       return res.status(400).json({ error: "Missing tabId" });
+    }
+    const tab = db.getChatTab(tabId, sessionId || null);
+    if (!tab) {
+      return res.status(403).json({ error: 'Forbidden' });
     }
     db.setChatTabGenerateImages(tabId, enabled ? 1 : 0);
     res.json({ success: true });
@@ -1420,9 +1442,13 @@ app.post("/api/chat/tabs/generate_images", (req, res) => {
 app.post("/api/chat/tabs/config", (req, res) => {
   console.debug("[Server Debug] POST /api/chat/tabs/config =>", req.body);
   try {
-    const { tabId, project = '', repo = '', type = 'chat' } = req.body;
+    const { tabId, project = '', repo = '', type = 'chat', sessionId = '' } = req.body;
     if (!tabId) {
       return res.status(400).json({ error: "Missing tabId" });
+    }
+    const tab = db.getChatTab(tabId, sessionId || null);
+    if (!tab) {
+      return res.status(403).json({ error: 'Forbidden' });
     }
     db.setChatTabConfig(tabId, project, repo, type);
     res.json({ success: true });
@@ -1492,8 +1518,13 @@ app.delete("/api/chat/tabs/:id", (req, res) => {
   console.debug("[Server Debug] DELETE /api/chat/tabs =>", req.params.id);
   try {
     const tabId = parseInt(req.params.id, 10);
+    const sessionId = req.query.sessionId || '';
     if (!tabId) {
       return res.status(400).json({ error: "Invalid tabId" });
+    }
+    const tab = db.getChatTab(tabId, sessionId || null);
+    if (!tab) {
+      return res.status(403).json({ error: 'Forbidden' });
     }
     db.deleteChatTab(tabId);
     db.prepare("DELETE FROM chat_pairs WHERE chat_tab_id=?").run(tabId);
@@ -1988,8 +2019,11 @@ app.post("/api/image/generate", async (req, res) => {
     }
 
     if (tabId) {
-      const tab = db.getChatTab(parseInt(tabId, 10));
-      if (tab && tab.tab_type !== 'design') {
+      const tab = db.getChatTab(parseInt(tabId, 10), sessionId || null);
+      if (!tab) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+      if (tab.tab_type !== 'design') {
         return res.status(400).json({ error: 'Image generation only allowed for design tabs' });
       }
     }
