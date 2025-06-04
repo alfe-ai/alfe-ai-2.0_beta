@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
+import https from "https";
 import GitHubClient from "./githubClient.js";
 import TaskQueue from "./taskQueue.js";
 import TaskDB from "./taskDb.js";
@@ -2447,6 +2448,19 @@ app.post("/api/markdown", (req, res) => {
 
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
-});
+const keyPath = process.env.HTTPS_KEY_PATH;
+const certPath = process.env.HTTPS_CERT_PATH;
+
+if (keyPath && certPath && fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+  const options = {
+    key: fs.readFileSync(keyPath),
+    cert: fs.readFileSync(certPath)
+  };
+  https.createServer(options, app).listen(PORT, () => {
+    console.log(`[TaskQueue] HTTPS server running on port ${PORT}`);
+  });
+} else {
+  app.listen(PORT, () => {
+    console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
+  });
+}

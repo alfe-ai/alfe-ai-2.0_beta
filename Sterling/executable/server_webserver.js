@@ -8,6 +8,7 @@ const multer = require("multer");
 const bodyParser = require("body-parser");
 const cron = require("node-cron");
 const http = require("http");
+const https = require("https");
 const { OpenAI } = require("openai");
 const app = express();
 
@@ -482,6 +483,20 @@ if (process.env.DEBUG) {
 } else {
     port = process.env.SERVER_PORT || 3000;
 }
-http.createServer(app).listen(port, () => {
-    console.log(`[DEBUG] Server running => http://localhost:${port}`);
-});
+
+const keyPath = process.env.HTTPS_KEY_PATH;
+const certPath = process.env.HTTPS_CERT_PATH;
+
+if (keyPath && certPath && fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+    const options = {
+        key: fs.readFileSync(keyPath),
+        cert: fs.readFileSync(certPath),
+    };
+    https.createServer(options, app).listen(port, () => {
+        console.log(`[DEBUG] HTTPS server running => https://localhost:${port}`);
+    });
+} else {
+    http.createServer(app).listen(port, () => {
+        console.log(`[DEBUG] Server running => http://localhost:${port}`);
+    });
+}
