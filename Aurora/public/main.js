@@ -1058,6 +1058,7 @@ function openNewTabModal(){
 }
 async function addNewTab(){
   const tabType = newTabSelectedType;
+  const reloadNeeded = chatTabs.length === 0; // check if no tabs existed prior
   const r = await fetch("/api/chat/tabs/new", {
     method:"POST",
     headers:{"Content-Type":"application/json"},
@@ -1071,7 +1072,10 @@ async function addNewTab(){
     renderArchivedSidebarTabs();
     // TODO: THIS WAS A TEMP FIX,
     // Reload the entire page so the new tab state is fully reflected
-    //window.location.reload();
+    // but only if this was the very first tab being created from the modal
+    if(reloadNeeded){
+      window.location.reload();
+    }
   }
 }
 async function renameTab(tabId){
