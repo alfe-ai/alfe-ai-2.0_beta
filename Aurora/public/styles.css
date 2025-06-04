@@ -244,7 +244,7 @@ body {
 
 .bubble-delete-btn {
   position: absolute;
-  top: 4px;
+  top: -16px;
   right: 4px;
 }
 
@@ -257,7 +257,7 @@ body {
 
 .bubble-copy-btn {
   position: absolute;
-  top: 4px;
+  top: -16px;
   right: 36px; /* increased for better spacing from delete button */
   background: transparent;
   border: none;
@@ -333,6 +333,8 @@ body {
 .chat-user,
 .chat-bot {
   font-size: 1rem;
+  position: relative;
+  top: 10px;
 }
 
 /* Thumbnail for user uploaded images */
