@@ -27,10 +27,11 @@ body {
 .sidebar {
   position: relative;
   width: 300px;
-  background: #2d2d2d;
+  background: var(--bg-main);
+  color: var(--text-color);
   padding: 3.5rem 1rem 1rem 1rem; /* leave room for toggle icon */
   overflow-y: auto;
-  border-right: 1px solid #aaa;
+  border-right: 1px solid var(--border);
   flex: none; /* Keep fixed width */
 }
 
