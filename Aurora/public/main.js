@@ -34,7 +34,7 @@ let modelName = "unknown";
 let tasksVisible = true;
 let markdownPanelVisible = false;
 let subroutinePanelVisible = false;
-let sidebarVisible = true;
+let sidebarVisible = window.innerWidth > 700;
 let chatTabs = [];
 let archivedTabs = [];
 let currentTabId = 1;
@@ -436,6 +436,8 @@ async function loadSettings(){
 
   if(typeof map.sidebar_visible !== "undefined"){
     sidebarVisible = !!map.sidebar_visible;
+  } else if(isMobileViewport()){
+    sidebarVisible = false;
   }
   $(".sidebar").style.display = sidebarVisible ? "" : "none";
   $("#divider").style.display = sidebarVisible ? "" : "none";
