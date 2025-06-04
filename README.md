@@ -30,3 +30,20 @@ services fall back to HTTP.
 You can quickly obtain free certificates from Let's Encrypt by running the
 `setup_certbot.sh` script. It installs Certbot and generates the key and
 certificate files for the domain you specify.
+
+### Listening on port 443 without root
+
+The Aurora server reads its port from the `AURORA_PORT` environment variable
+(default: `3000`). Binding directly to port `443` typically requires root
+privileges. If you prefer to run the server as a regular user, you can forward
+incoming connections from port `443` to your configured `AURORA_PORT`.
+
+Run the helper script with `sudo` to set up the forwarding rule:
+
+```bash
+sudo ./forward_port_443.sh 3000
+```
+
+Replace `3000` with your chosen `AURORA_PORT`. After adding the rule, start the
+server normally and clients can connect using `https://your-domain/` on port
+`443` while the Node.js process continues to run on the higher port.
