@@ -25,6 +25,7 @@ npm start
 | `STABLE_DIFFUSION_URL` | (Optional) Base URL for a self-hosted Stable Diffusion API |
 | `HTTPS_KEY_PATH` | (Optional) Path to SSL private key for HTTPS |
 | `HTTPS_CERT_PATH` | (Optional) Path to SSL certificate for HTTPS |
+| `AURORA_PORT` | (Optional) Port for the web server (default: 3000) |
 
 Run `../setup_certbot.sh <domain> <email>` to quickly generate these files with
 Let's Encrypt.
