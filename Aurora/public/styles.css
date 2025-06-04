@@ -557,7 +557,7 @@ body {
 /* Button to hide the sidebar */
 #hideSidebarBtn.hide-sidebar-btn {
   position: absolute;
-  top: 60px;
+  top: 45px;
   right: 8px;
   background: #444;
   border: 1px solid #666;
