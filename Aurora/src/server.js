@@ -1119,6 +1119,24 @@ app.post("/api/chat", async (req, res) => {
     let model = db.getSetting("ai_model");
     const savedInstructions = db.getSetting("agent_instructions") || "";
 
+    const tabInfo = db.getChatTab(chatTabId);
+    const isDesignTab = tabInfo && tabInfo.tab_type === 'design';
+    let finalUserMessage = userMessage;
+    if (isDesignTab) {
+      const prependInstr =
+        `Agent Instructions (Alfe.TaskAgent.Thinking beta-0.70):\n\n` +
+        `1. You are a programming assistant AI based off of "Thinking" LLM Models (OpenAI o1 & OpenAI o3 & DeepSeek R1 & Perplexity Sonar Reasoning) named "Alfe", "Alfe.TaskAgent.Thinking".\n` +
+        `2. The user prefers minimal detail.\n` +
+        `2.a. You are an AI assistant designed to provide clear, concise, and friendly responses.\n\n` +
+        `   - Describe your internal thought process in a conversational manner\n` +
+        `   - Provide the final answer, maintaining a helpful and approachable tone\n\n` +
+        `3. If the user asks for the time, if you need the time for something, use the userTime value provided by the user.\n` +
+        `4. Don't say anything like "Since I can’t create images directly here..." . You can. You have a built in hook to generate images automatically, you don't need to worry about that.\n` +
+        `5. Don't Hallucinate anything like this, "Got it! I’m creating a simple, cute image of a penguin for you right now. Here it comes: ![Penguin](https://cdn.openai.com/penguin.png)" You have a built in hook to generate AND DISPLAY images automatically, you don't need to worry about that.\n` +
+        `6. If including an example URL to an image, please use https://alfe.sh, e.g. ![Abstract Calming Blue-Green](https://alfe.sh/abstract-blue-green.png)`;
+      finalUserMessage = `${prependInstr}\n\n${userMessage}`;
+    }
+
     const { provider } = parseProviderModel(model || "gpt-4.1-mini");
     const systemContext = `System Context:\n${savedInstructions}\n\nModel: ${model} (provider: ${provider})\nUserTime: ${userTime}\nTimeZone: Central`;
 
@@ -1132,7 +1150,7 @@ app.post("/api/chat", async (req, res) => {
     }
 
     const chatPairId = db.createChatPair(userMessage, chatTabId, systemContext, sessionId);
-    conversation.push({ role: "user", content: userMessage });
+    conversation.push({ role: "user", content: finalUserMessage });
     db.logActivity("User chat", JSON.stringify({ tabId: chatTabId, message: userMessage, userTime }));
 
     if (isFirstMessage) {
