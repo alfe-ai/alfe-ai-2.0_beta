@@ -7,6 +7,22 @@ import TaskDB from "./taskDb.js";
 
 dotenv.config();
 
+const origDebug = console.debug.bind(console);
+console.debug = (...args) => {
+  const ts = new Date().toISOString();
+  origDebug(`[${ts}]`, ...args);
+};
+const origLog = console.log.bind(console);
+console.log = (...args) => {
+  const ts = new Date().toISOString();
+  origLog(`[${ts}]`, ...args);
+};
+const origError = console.error.bind(console);
+console.error = (...args) => {
+  const ts = new Date().toISOString();
+  origError(`[${ts}]`, ...args);
+};
+
 /**
  * Create a timestamped backup of issues.sqlite (if it exists).
  */
@@ -657,6 +673,25 @@ app.post("/api/settings", (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error("[TaskQueue] POST /api/settings failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/api/settings/batch", (req, res) => {
+  console.debug("[Server Debug] POST /api/settings/batch => body:", req.body);
+  try {
+    const { settings } = req.body;
+    if (!Array.isArray(settings)) {
+      return res.status(400).json({ error: "settings array required" });
+    }
+    settings.forEach(({ key, value }) => {
+      if (typeof key !== "undefined") {
+        db.setSetting(key, value);
+      }
+    });
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[TaskQueue] POST /api/settings/batch failed:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });

@@ -169,6 +169,15 @@ async function saveSettings(){
   });
 }
 
+async function setSettings(map){
+  const settings = Object.entries(map).map(([key, value]) => ({ key, value }));
+  await fetch("/api/settings/batch",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({ settings })
+  });
+}
+
 function renderHeader(){
   const tr = $("#headerRow");
   tr.innerHTML = "";
@@ -1045,20 +1054,10 @@ async function chatSettingsSaveFlow() {
   chatTabAutoNaming = $("#autoNamingCheck").checked;
   showSubbubbleToken = $("#subbubbleTokenCheck").checked;
 
-  await fetch("/api/settings", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ key: "chat_hide_metadata", value: chatHideMetadata })
-  });
-  await fetch("/api/settings", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ key: "chat_tab_auto_naming", value: chatTabAutoNaming })
-  });
-  await fetch("/api/settings", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ key: "show_subbubble_token_count", value: showSubbubbleToken })
+  await setSettings({
+    chat_hide_metadata: chatHideMetadata,
+    chat_tab_auto_naming: chatTabAutoNaming,
+    show_subbubble_token_count: showSubbubbleToken
   });
 
   hideModal($("#chatSettingsModal"));
