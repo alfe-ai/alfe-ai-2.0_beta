@@ -2481,7 +2481,7 @@ app.get("/api/version", (req, res) => {
       })
       .toString()
       .trim();
-    res.json({ version: latestTag });
+    res.json({ version: `beta-${latestTag}` });
   } catch (err) {
     console.error("[Server Debug] GET /api/version =>", err);
     res.status(500).json({ error: "Unable to determine version" });
