@@ -349,18 +349,29 @@ async function toggleSidebar(){
   await setSetting("sidebar_visible", sidebarVisible);
 }
 const toggleSidebarBtn = $("#toggleSidebarBtn");
-toggleSidebarBtn?.addEventListener("click", toggleSidebar);
-document.getElementById("sidebarToggleIcon")?.addEventListener("click", toggleSidebar);
-document.getElementById("hideSidebarBtn")?.addEventListener("click", toggleSidebar);
+toggleSidebarBtn?.addEventListener("click", ev => {
+  ev.stopPropagation();
+  toggleSidebar();
+});
+document.getElementById("sidebarToggleIcon")?.addEventListener("click", ev => {
+  ev.stopPropagation();
+  toggleSidebar();
+});
+document.getElementById("hideSidebarBtn")?.addEventListener("click", ev => {
+  ev.stopPropagation();
+  toggleSidebar();
+});
 
-document.getElementById("expandSidebarBtn").addEventListener("click", () => {
+document.getElementById("expandSidebarBtn").addEventListener("click", ev => {
+  ev.stopPropagation();
   if(!sidebarVisible) {
     toggleSidebar();
   }
 });
 
 const collapsedLogoEl = document.getElementById("collapsedSidebarLogo");
-collapsedLogoEl?.addEventListener("click", () => {
+collapsedLogoEl?.addEventListener("click", ev => {
+  ev.stopPropagation();
   if(!sidebarVisible){
     toggleSidebar();
   }
