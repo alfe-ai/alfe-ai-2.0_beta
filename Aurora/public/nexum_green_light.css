@@ -47,6 +47,7 @@ body {
 
 #sidebar {
   width: 220px;
+  max-width: calc(100vw - 100px);
   background: linear-gradient(180deg, var(--bg-alt), var(--bg-main));
   padding: 1rem;
   overflow-y: auto;

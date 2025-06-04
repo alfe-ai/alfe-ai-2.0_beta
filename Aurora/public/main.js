@@ -480,8 +480,8 @@ async function loadSettings(){
     enterSubmitsMessage = map.enter_submits_message !== false;
   }
 
-  if(typeof map.sidebar_width !== "undefined"){
-    const maxW = window.innerWidth;
+  if(typeof map.sidebar_width !== "undefined"){ 
+    const maxW = window.innerWidth - 100;
     const width = Math.min(map.sidebar_width, maxW);
     $(".sidebar").style.width = width + "px";
   }
@@ -2316,7 +2316,7 @@ function runImageLoop(){
     const dx = e.clientX - startX;
     const newWidth = startWidth + dx;
     const minWidth = 150;
-    const maxWidth = window.innerWidth;
+    const maxWidth = window.innerWidth - 100;
     if(newWidth >= minWidth) {
       const clamped = Math.min(newWidth, maxWidth);
       $(".sidebar").style.width = clamped + "px";

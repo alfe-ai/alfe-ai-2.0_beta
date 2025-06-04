@@ -27,6 +27,7 @@ body {
 .sidebar {
   position: relative;
   width: 300px;
+  max-width: calc(100vw - 100px);
   background: #2d2d2d;
   padding: 3.5rem 1rem 1rem 1rem; /* leave room for toggle icon */
   overflow-y: auto;
