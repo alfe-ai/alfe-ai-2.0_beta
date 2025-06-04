@@ -17,6 +17,12 @@ Alfe AI beta-0.4x+ (Software Development): https://github.com/alfe-ai/Sterling
 wget https://raw.githubusercontent.com/alfe-ai/alfe-ai-Aurelix/refs/heads/Aurora/Aurelix/dev/main-rel2/deploy_aurelix.sh && chmod +x deploy_aurelix.sh && ./deploy_aurelix.sh
 ```
 
-#### 2.0 Beta (Aurora/Aurelix)  
+#### 2.0 Beta (Aurora/Aurelix)
 
 ![image](https://github.com/user-attachments/assets/ec47be87-5577-45b2-a3af-17475860df46)
+
+### Environment variables
+
+Set `HTTPS_KEY_PATH` and `HTTPS_CERT_PATH` to the SSL key and certificate files
+to enable HTTPS across the included servers. If the files are missing the
+services fall back to HTTP.

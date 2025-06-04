@@ -76,6 +76,15 @@ found 0 vulnerabilities
 
 <!-- 8. In new chats, you can copy Agent Instructions from here: https://github.com/alfe-ai/alfe-agent_instructions (This will soon be integrated with the app)--><!--, I implemented this in an older branch, multiple agent support.)-->
 
+### Environment variables
+
+To run the web server over HTTPS, provide paths to your SSL certificate files:
+
+- `HTTPS_KEY_PATH` – path to your private key
+- `HTTPS_CERT_PATH` – path to your certificate
+
+If both files exist the server starts in HTTPS mode, otherwise it falls back to HTTP.
+
 ### Related Repositories:  
 Alfe AI / Agent Instructions: https://github.com/alfe-ai/alfe-agent_instructions
 
