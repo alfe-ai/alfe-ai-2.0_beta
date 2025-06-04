@@ -1068,6 +1068,7 @@ async function addNewTab(){
     renderTabs();
     renderSidebarTabs();
     renderArchivedSidebarTabs();
+    // TODO: IMPLEMENT RELOADING THE ENTIRE PAGE HERE.
   }
 }
 async function renameTab(tabId){
