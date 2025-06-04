@@ -262,6 +262,17 @@ async function toggleSidebar(){
   const expandBtn = document.getElementById("expandSidebarBtn");
   expandBtn.style.display = sidebarVisible ? "none" : "block";
 
+  // Shift top chat tabs bar when sidebar is collapsed so it doesn't
+  // overlap the logo icon in the top left.
+  const appEl = document.querySelector(".app");
+  if(appEl){
+    if(sidebarVisible){
+      appEl.classList.remove("sidebar-collapsed");
+    } else {
+      appEl.classList.add("sidebar-collapsed");
+    }
+  }
+
   await setSetting("sidebar_visible", sidebarVisible);
 }
 const toggleSidebarBtn = $("#toggleSidebarBtn");
@@ -380,6 +391,14 @@ async function loadSettings(){
       toggleSidebarBtn.textContent = sidebarVisible ? "Hide sidebar" : "Show sidebar";
     }
     document.getElementById("expandSidebarBtn").style.display = sidebarVisible ? "none" : "block";
+    const appEl = document.querySelector(".app");
+    if(appEl){
+      if(sidebarVisible){
+        appEl.classList.remove("sidebar-collapsed");
+      } else {
+        appEl.classList.add("sidebar-collapsed");
+      }
+    }
   }
   {
     const r = await fetch("/api/settings/enter_submits_message");
