@@ -102,8 +102,8 @@ const db = new TaskDB();
 console.debug("[Server Debug] Checking or setting default 'ai_model' in DB...");
 const currentModel = db.getSetting("ai_model");
 if (!currentModel) {
-  console.debug("[Server Debug] 'ai_model' is missing in DB, setting default to 'gpt-3.5-turbo'.");
-  db.setSetting("ai_model", "gpt-3.5-turbo");
+  console.debug("[Server Debug] 'ai_model' is missing in DB, setting default to 'gpt-4.1-mini'.");
+  db.setSetting("ai_model", "gpt-4.1-mini");
 } else {
   console.debug("[Server Debug] 'ai_model' found =>", currentModel);
 }
@@ -194,8 +194,8 @@ function getEncoding(modelName) {
   try {
     return encoding_for_model(modelName);
   } catch (e) {
-    console.debug("[Server Debug] Tokenizer load failed, falling back to gpt-3.5-turbo =>", e.message);
-    return encoding_for_model("gpt-3.5-turbo");
+    console.debug("[Server Debug] Tokenizer load failed, falling back to gpt-4.1-mini =>", e.message);
+    return encoding_for_model("gpt-4.1-mini");
   }
 }
 
@@ -214,7 +214,7 @@ async function deriveImageTitle(prompt, client = null) {
   if (client) {
     try {
       const completion = await client.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4.1-mini',
         messages: [
           { role: 'system', content: 'Create a short 3-6 word title describing the image prompt.' },
           { role: 'user', content: prompt }
@@ -253,7 +253,7 @@ async function deriveTabTitle(message, client = null) {
   if (client) {
     try {
       const completion = await client.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4.1-mini',
         messages: [
           { role: 'system', content: 'Create a short 3-6 word title summarizing the user message.' },
           { role: 'user', content: message }
@@ -1061,7 +1061,7 @@ app.post("/api/chat", async (req, res) => {
     let model = db.getSetting("ai_model");
     const savedInstructions = db.getSetting("agent_instructions") || "";
 
-    const { provider } = parseProviderModel(model || "gpt-3.5-turbo");
+    const { provider } = parseProviderModel(model || "gpt-4.1-mini");
     const systemContext = `System Context:\n${savedInstructions}\n\nModel: ${model} (provider: ${provider})\nUserTime: ${userTime}\nTimeZone: Central`;
 
     const conversation = [{ role: "system", content: systemContext }];
@@ -1099,7 +1099,7 @@ app.post("/api/chat", async (req, res) => {
     }
 
     function stripModelPrefix(m) {
-      if (!m) return "gpt-3.5-turbo";
+      if (!m) return "gpt-4.1-mini";
       if (m.startsWith("openai/")) return m.substring("openai/".length);
       if (m.startsWith("openrouter/")) return m.substring("openrouter/".length);
       return m;
