@@ -2855,6 +2855,8 @@ btnNexumChat?.addEventListener("click", () => { window.location.href = btnNexumC
 btnNexumTabs?.addEventListener("click", () => { window.location.href = btnNexumTabs.dataset.url; });
 
 (async function init(){
+  const placeholderEl = document.getElementById("chatPlaceholder");
+  if(placeholderEl) placeholderEl.style.display = "";
   await loadSettings();
   await getSettings([
     "ai_model","last_chat_tab","last_sidebar_view",
