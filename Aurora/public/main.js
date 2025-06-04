@@ -1068,7 +1068,8 @@ async function addNewTab(){
     renderTabs();
     renderSidebarTabs();
     renderArchivedSidebarTabs();
-    // TODO: IMPLEMENT RELOADING THE ENTIRE PAGE HERE.
+    // Reload the entire page so the new tab state is fully reflected
+    window.location.reload();
   }
 }
 async function renameTab(tabId){
