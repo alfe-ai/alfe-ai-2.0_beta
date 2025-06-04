@@ -554,6 +554,20 @@ body {
   z-index: 1000;
 }
 
+/* Button to hide the sidebar */
+#hideSidebarBtn.hide-sidebar-btn {
+  position: absolute;
+  top: 60px;
+  right: 8px;
+  background: #444;
+  border: 1px solid #666;
+  color: #ddd;
+  padding: 4px 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  z-index: 1000;
+}
+
 /* When the image generation limit is reached (10/10),
    highlight the info text in dark red for visibility
    by applying a new "limit-reached" class via JavaScript.
