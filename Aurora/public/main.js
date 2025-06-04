@@ -1712,7 +1712,13 @@ chatSendBtnEl.addEventListener("click", async () => {
   botDiv.appendChild(botHead);
 
   const botBody = document.createElement("div");
-  botBody.textContent = "Thinking…";
+  const botTextSpan = document.createElement("span");
+  botTextSpan.textContent = "Thinking…";
+  const botSpinner = document.createElement("span");
+  botSpinner.className = "loading-spinner";
+  botSpinner.style.marginLeft = "6px";
+  botBody.appendChild(botTextSpan);
+  botBody.appendChild(botSpinner);
   botDiv.appendChild(botBody);
 
   seqDiv.appendChild(botDiv);
@@ -1746,7 +1752,8 @@ chatSendBtnEl.addEventListener("click", async () => {
     waitingElem.textContent = "";
 
     if(!resp.ok){
-      botBody.textContent = "[Error contacting AI]";
+      botTextSpan.textContent = "[Error contacting AI]";
+      botSpinner.remove();
       botHead.querySelector("span").textContent = formatTimestamp(new Date().toISOString());
     } else {
       const reader = resp.body.getReader();
@@ -1754,9 +1761,10 @@ chatSendBtnEl.addEventListener("click", async () => {
         const { value, done } = await reader.read();
         if(done) break;
         partialText += new TextDecoder().decode(value);
-        botBody.textContent = partialText;
+        botTextSpan.textContent = partialText;
         chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
       }
+      botSpinner.remove();
       botHead.querySelector("span").textContent = formatTimestamp(new Date().toISOString());
     }
 
@@ -1780,7 +1788,8 @@ chatSendBtnEl.addEventListener("click", async () => {
   } catch(e) {
     clearInterval(waitInterval);
     waitingElem.textContent = "";
-    botBody.textContent = "[Error occurred]";
+    botTextSpan.textContent = "[Error occurred]";
+    botSpinner.remove();
     botHead.querySelector("span").textContent = formatTimestamp(new Date().toISOString());
   }
 
