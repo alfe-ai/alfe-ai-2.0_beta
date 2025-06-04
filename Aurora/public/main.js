@@ -293,6 +293,7 @@ async function toggleSidebar(){
 const toggleSidebarBtn = $("#toggleSidebarBtn");
 toggleSidebarBtn?.addEventListener("click", toggleSidebar);
 document.getElementById("sidebarToggleIcon")?.addEventListener("click", toggleSidebar);
+document.getElementById("hideSidebarBtn")?.addEventListener("click", toggleSidebar);
 
 document.getElementById("expandSidebarBtn").addEventListener("click", () => {
   if(!sidebarVisible) {
