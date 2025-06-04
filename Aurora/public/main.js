@@ -220,6 +220,14 @@ async function setSetting(key, value){
   });
 }
 
+async function getSettings(keys){
+  const q = encodeURIComponent(keys.join(','));
+  const r = await fetch(`/api/settings?keys=${q}`);
+  if(!r.ok) return {};
+  const { settings } = await r.json();
+  return Object.fromEntries(settings.map(s=>[s.key,s.value]));
+}
+
 async function getSetting(key){
   const r = await fetch(`/api/settings/${key}`);
   if(!r.ok) return undefined;
@@ -313,319 +321,181 @@ function updateView(v){
 }
 
 async function loadSettings(){
-  {
-    const r = await fetch("/api/settings/visible_columns");
-    if(r.ok){
-      const { value } = await r.json();
-      if(Array.isArray(value)){ visibleCols = new Set(value); }
-    }
+  const keys = [
+    "visible_columns","columns_order","tasks_visible","markdown_panel_visible",
+    "subroutine_panel_visible","sidebar_visible","enter_submits_message",
+    "sidebar_width","model_tabs_bar_visible","top_chat_tabs_bar_visible",
+    "project_info_bar_visible","aurora_project_bar_visible","nav_menu_visible",
+    "view_tabs_bar_visible","show_project_name_in_tabs","show_archived_tabs",
+    "show_dependencies_column","image_gen_service","image_upload_enabled",
+    "image_paint_tray_enabled","activity_iframe_menu_visible",
+    "nexum_chat_menu_visible","nexum_tabs_menu_visible",
+    "image_generator_menu_visible","file_tree_menu_visible",
+    "ai_models_menu_visible","tasks_menu_visible","jobs_menu_visible",
+    "chat_tabs_menu_visible","up_arrow_history_enabled",
+    "new_tab_project_enabled"
+  ];
+  const map = await getSettings(keys);
+
+  if(Array.isArray(map.visible_columns)){
+    visibleCols = new Set(map.visible_columns);
   }
-  {
-    const r = await fetch("/api/settings/columns_order");
-    if(r.ok){
-      const { value } = await r.json();
-      if(Array.isArray(value)){
-        const map = Object.fromEntries(columnsOrder.map(c=>[c.key,c]));
-        const newOrd = [];
-        value.forEach(k => { if(map[k]){ newOrd.push(map[k]); delete map[k]; }});
-        Object.values(map).forEach(c => newOrd.push(c));
-        columnsOrder = newOrd;
-      }
-    }
+  if(Array.isArray(map.columns_order)){
+    const arr = map.columns_order;
+    const m = Object.fromEntries(columnsOrder.map(c=>[c.key,c]));
+    const newOrd = [];
+    arr.forEach(k=>{ if(m[k]){ newOrd.push(m[k]); delete m[k]; }});
+    Object.values(m).forEach(c=>newOrd.push(c));
+    columnsOrder = newOrd;
   }
-  {
-    const r = await fetch("/api/settings/tasks_visible");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== "undefined"){
-        tasksVisible = !!value;
-      }
-    }
-    $("#tasks").style.display = tasksVisible ? "" : "none";
-    $("#toggleTasksBtn").textContent = tasksVisible ? "Hide tasks" : "Show tasks";
+  if(typeof map.tasks_visible !== "undefined"){
+    tasksVisible = !!map.tasks_visible;
   }
-  {
-    const r = await fetch("/api/settings/markdown_panel_visible");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== "undefined"){
-        markdownPanelVisible = !!value;
-      }
-    }
-    const pnl = document.getElementById("taskListPanel");
-    if(pnl) pnl.style.display = markdownPanelVisible ? "" : "none";
+  $("#tasks").style.display = tasksVisible ? "" : "none";
+  $("#toggleTasksBtn").textContent = tasksVisible ? "Hide tasks" : "Show tasks";
+
+  if(typeof map.markdown_panel_visible !== "undefined"){
+    markdownPanelVisible = !!map.markdown_panel_visible;
   }
-  {
-    const r = await fetch("/api/settings/subroutine_panel_visible");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== "undefined"){
-        subroutinePanelVisible = !!value;
-      }
-    }
-    $("#chatSubroutinesPanel").style.display = subroutinePanelVisible ? "" : "none";
+  const pnl = document.getElementById("taskListPanel");
+  if(pnl) pnl.style.display = markdownPanelVisible ? "" : "none";
+
+  if(typeof map.subroutine_panel_visible !== "undefined"){
+    subroutinePanelVisible = !!map.subroutine_panel_visible;
   }
-  {
-    const r = await fetch("/api/settings/sidebar_visible");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== "undefined"){
-        sidebarVisible = !!value;
-      }
-    }
-    $(".sidebar").style.display = sidebarVisible ? "" : "none";
-    $("#divider").style.display = sidebarVisible ? "" : "none";
-    const toggleSidebarBtn = $("#toggleSidebarBtn");
-    if(toggleSidebarBtn){
-      toggleSidebarBtn.textContent = sidebarVisible ? "Hide sidebar" : "Show sidebar";
-    }
-    document.getElementById("expandSidebarBtn").style.display = sidebarVisible ? "none" : "block";
+  $("#chatSubroutinesPanel").style.display = subroutinePanelVisible ? "" : "none";
+
+  if(typeof map.sidebar_visible !== "undefined"){
+    sidebarVisible = !!map.sidebar_visible;
   }
-  {
-    const r = await fetch("/api/settings/enter_submits_message");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== "undefined"){
-        enterSubmitsMessage = (value !== false);
-      }
-    }
+  $(".sidebar").style.display = sidebarVisible ? "" : "none";
+  $("#divider").style.display = sidebarVisible ? "" : "none";
+  const toggleSidebarBtn = $("#toggleSidebarBtn");
+  if(toggleSidebarBtn){
+    toggleSidebarBtn.textContent = sidebarVisible ? "Hide sidebar" : "Show sidebar";
   }
-  {
-    const r = await fetch("/api/settings/sidebar_width");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== 'undefined'){
-        $(".sidebar").style.width = value + "px";
-      }
-    }
+  document.getElementById("expandSidebarBtn").style.display = sidebarVisible ? "none" : "block";
+
+  if(typeof map.enter_submits_message !== "undefined"){
+    enterSubmitsMessage = map.enter_submits_message !== false;
   }
-  {
-    const r = await fetch("/api/settings/model_tabs_bar_visible");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== 'undefined'){
-        modelTabsBarVisible = !!value;
-      }
-    }
-    const cont = document.getElementById("modelTabsContainer");
-    const newBtn = document.getElementById("newModelTabBtn");
-    const toggleBtn = document.getElementById("toggleModelTabsBtn");
-    if(cont) cont.style.display = modelTabsBarVisible ? "" : "none";
-    if(newBtn) newBtn.style.display = modelTabsBarVisible ? "" : "none";
-    if(toggleBtn) toggleBtn.textContent = modelTabsBarVisible ? "Hide Models" : "Models";
+
+  if(typeof map.sidebar_width !== "undefined"){
+    $(".sidebar").style.width = map.sidebar_width + "px";
   }
-  {
-    const r = await fetch("/api/settings/top_chat_tabs_bar_visible");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== 'undefined'){
-        topChatTabsBarVisible = value !== false;
-      }
-    }
-    toggleTopChatTabsVisibility(topChatTabsBarVisible);
+
+  if(typeof map.model_tabs_bar_visible !== "undefined"){
+    modelTabsBarVisible = !!map.model_tabs_bar_visible;
   }
-  {
-    const r = await fetch("/api/settings/project_info_bar_visible");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== 'undefined'){
-        projectInfoBarVisible = value !== false;
-      }
-    }
+  const cont = document.getElementById("modelTabsContainer");
+  const newBtn = document.getElementById("newModelTabBtn");
+  const toggleBtn = document.getElementById("toggleModelTabsBtn");
+  if(cont) cont.style.display = modelTabsBarVisible ? "" : "none";
+  if(newBtn) newBtn.style.display = modelTabsBarVisible ? "" : "none";
+  if(toggleBtn) toggleBtn.textContent = modelTabsBarVisible ? "Hide Models" : "Models";
+
+  if(typeof map.top_chat_tabs_bar_visible !== "undefined"){
+    topChatTabsBarVisible = map.top_chat_tabs_bar_visible !== false;
   }
-  {
-    const r = await fetch("/api/settings/aurora_project_bar_visible");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== 'undefined'){
-        auroraProjectBarVisible = value !== false;
-      }
-    }
-    toggleProjectInfoBarVisibility(projectInfoBarVisible && auroraProjectBarVisible);
+  toggleTopChatTabsVisibility(topChatTabsBarVisible);
+
+  if(typeof map.project_info_bar_visible !== "undefined"){
+    projectInfoBarVisible = map.project_info_bar_visible !== false;
   }
-  {
-    const r = await fetch("/api/settings/nav_menu_visible");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== 'undefined'){
-        navMenuVisible = value !== false;
-      }
-    }
-    toggleNavMenuVisibility(navMenuVisible);
+  if(typeof map.aurora_project_bar_visible !== "undefined"){
+    auroraProjectBarVisible = map.aurora_project_bar_visible !== false;
   }
-  {
-    const r = await fetch("/api/settings/view_tabs_bar_visible");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== 'undefined'){
-        viewTabsBarVisible = !!value;
-      }
-    }
-    toggleViewTabsBarVisibility(viewTabsBarVisible);
+  toggleProjectInfoBarVisibility(projectInfoBarVisible && auroraProjectBarVisible);
+
+  if(typeof map.nav_menu_visible !== "undefined"){
+    navMenuVisible = map.nav_menu_visible !== false;
   }
-  {
-    const r = await fetch("/api/settings/show_project_name_in_tabs");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== 'undefined'){
-        showProjectNameInTabs = value !== false;
-      }
-    }
+  toggleNavMenuVisibility(navMenuVisible);
+
+  if(typeof map.view_tabs_bar_visible !== "undefined"){
+    viewTabsBarVisible = !!map.view_tabs_bar_visible;
   }
-  {
-    const r = await fetch("/api/settings/show_archived_tabs");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== 'undefined'){
-        showArchivedTabs = !!value;
-      }
-    }
+  toggleViewTabsBarVisibility(viewTabsBarVisible);
+
+  if(typeof map.show_project_name_in_tabs !== "undefined"){
+    showProjectNameInTabs = map.show_project_name_in_tabs !== false;
   }
-  {
-    const r = await fetch("/api/settings/show_dependencies_column");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== 'undefined'){
-        showDependenciesColumn = !!value;
-      }
-    }
+
+  if(typeof map.show_archived_tabs !== "undefined"){
+    showArchivedTabs = !!map.show_archived_tabs;
   }
-  {
-    const r = await fetch("/api/settings/image_gen_service");
-    if(r.ok){
-      const { value } = await r.json();
-      if(value) imageGenService = value;
-    }
+
+  if(typeof map.show_dependencies_column !== "undefined"){
+    showDependenciesColumn = !!map.show_dependencies_column;
   }
-  {
-    const r = await fetch("/api/settings/image_upload_enabled");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== 'undefined'){
-        imageUploadEnabled = !!value;
-      }
-    }
-    toggleImageUploadButton(imageUploadEnabled);
+
+  if(typeof map.image_gen_service !== "undefined" && map.image_gen_service){
+    imageGenService = map.image_gen_service;
   }
-  {
-    const r = await fetch("/api/settings/image_paint_tray_enabled");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== 'undefined'){
-        imagePaintTrayEnabled = value !== false;
-      }
-    }
-    toggleImagePaintTrayButton(imagePaintTrayEnabled);
+
+  if(typeof map.image_upload_enabled !== "undefined"){
+    imageUploadEnabled = !!map.image_upload_enabled;
   }
-  {
-    const r = await fetch("/api/settings/activity_iframe_menu_visible");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== 'undefined'){
-        activityIframeMenuVisible = value !== false;
-      }
-    }
-    toggleActivityIframeMenu(activityIframeMenuVisible);
+  toggleImageUploadButton(imageUploadEnabled);
+
+  if(typeof map.image_paint_tray_enabled !== "undefined"){
+    imagePaintTrayEnabled = map.image_paint_tray_enabled !== false;
   }
-  {
-    const r = await fetch("/api/settings/nexum_chat_menu_visible");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== 'undefined'){
-        nexumChatMenuVisible = value !== false;
-      }
-    }
-    toggleNexumChatMenu(nexumChatMenuVisible);
+  toggleImagePaintTrayButton(imagePaintTrayEnabled);
+
+  if(typeof map.activity_iframe_menu_visible !== "undefined"){
+    activityIframeMenuVisible = map.activity_iframe_menu_visible !== false;
   }
-  {
-    const r = await fetch("/api/settings/nexum_tabs_menu_visible");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== 'undefined'){
-        nexumTabsMenuVisible = value !== false;
-      }
-    }
-    toggleNexumTabsMenu(nexumTabsMenuVisible);
+  toggleActivityIframeMenu(activityIframeMenuVisible);
+
+  if(typeof map.nexum_chat_menu_visible !== "undefined"){
+    nexumChatMenuVisible = map.nexum_chat_menu_visible !== false;
   }
-  {
-    const r = await fetch("/api/settings/image_generator_menu_visible");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== 'undefined'){
-        imageGeneratorMenuVisible = value !== false;
-      }
-    }
-    toggleImageGeneratorMenu(imageGeneratorMenuVisible);
+  toggleNexumChatMenu(nexumChatMenuVisible);
+
+  if(typeof map.nexum_tabs_menu_visible !== "undefined"){
+    nexumTabsMenuVisible = map.nexum_tabs_menu_visible !== false;
   }
-  {
-    const r = await fetch("/api/settings/file_tree_menu_visible");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== 'undefined'){
-        fileTreeMenuVisible = value !== false;
-      }
-    }
-    toggleFileTreeMenu(fileTreeMenuVisible);
+  toggleNexumTabsMenu(nexumTabsMenuVisible);
+
+  if(typeof map.image_generator_menu_visible !== "undefined"){
+    imageGeneratorMenuVisible = map.image_generator_menu_visible !== false;
   }
-  {
-    const r = await fetch("/api/settings/ai_models_menu_visible");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== 'undefined'){
-        aiModelsMenuVisible = value !== false;
-      }
-    }
-    toggleAiModelsMenu(aiModelsMenuVisible);
+  toggleImageGeneratorMenu(imageGeneratorMenuVisible);
+
+  if(typeof map.file_tree_menu_visible !== "undefined"){
+    fileTreeMenuVisible = map.file_tree_menu_visible !== false;
   }
-  {
-    const r = await fetch("/api/settings/tasks_menu_visible");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== 'undefined'){
-        tasksMenuVisible = value !== false;
-      }
-    }
-    toggleTasksMenu(tasksMenuVisible);
+  toggleFileTreeMenu(fileTreeMenuVisible);
+
+  if(typeof map.ai_models_menu_visible !== "undefined"){
+    aiModelsMenuVisible = map.ai_models_menu_visible !== false;
   }
-  {
-    const r = await fetch("/api/settings/jobs_menu_visible");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== 'undefined'){
-        jobsMenuVisible = value !== false;
-      }
-    }
-    toggleJobsMenu(jobsMenuVisible);
+  toggleAiModelsMenu(aiModelsMenuVisible);
+
+  if(typeof map.tasks_menu_visible !== "undefined"){
+    tasksMenuVisible = map.tasks_menu_visible !== false;
   }
-  {
-    const r = await fetch("/api/settings/chat_tabs_menu_visible");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== 'undefined'){
-        chatTabsMenuVisible = value !== false;
-      }
-    }
-    toggleChatTabsMenu(chatTabsMenuVisible);
+  toggleTasksMenu(tasksMenuVisible);
+
+  if(typeof map.jobs_menu_visible !== "undefined"){
+    jobsMenuVisible = map.jobs_menu_visible !== false;
   }
-  {
-    const r = await fetch("/api/settings/up_arrow_history_enabled");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== 'undefined'){
-        upArrowHistoryEnabled = value !== false;
-      }
-    }
+  toggleJobsMenu(jobsMenuVisible);
+
+  if(typeof map.chat_tabs_menu_visible !== "undefined"){
+    chatTabsMenuVisible = map.chat_tabs_menu_visible !== false;
   }
-  {
-    const r = await fetch("/api/settings/new_tab_project_enabled");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== 'undefined'){
-        newTabProjectNameEnabled = value !== false;
-      }
-    }
-    toggleNewTabProjectField(newTabProjectNameEnabled);
+  toggleChatTabsMenu(chatTabsMenuVisible);
+
+  if(typeof map.up_arrow_history_enabled !== "undefined"){
+    upArrowHistoryEnabled = map.up_arrow_history_enabled !== false;
   }
+
+  if(typeof map.new_tab_project_enabled !== "undefined"){
+    newTabProjectNameEnabled = map.new_tab_project_enabled !== false;
+  }
+  toggleNewTabProjectField(newTabProjectNameEnabled);
 }
 async function saveSettings(){
   await fetch("/api/settings",{
@@ -3808,110 +3678,34 @@ document.getElementById("taskListConfigCloseBtn").addEventListener("click", () =
 // ----------------------------------------------------------------------
 // Feature Flags modal
 // ----------------------------------------------------------------------
+async function loadFeatureFlags(){
+  const keys = [
+    "image_upload_enabled","image_paint_tray_enabled","activity_iframe_menu_visible",
+    "nexum_chat_menu_visible","nexum_tabs_menu_visible","image_generator_menu_visible",
+    "file_tree_menu_visible","ai_models_menu_visible","tasks_menu_visible",
+    "jobs_menu_visible","view_tabs_bar_visible","chat_tabs_menu_visible",
+    "show_project_name_in_tabs","up_arrow_history_enabled","new_tab_project_enabled"
+  ];
+  const map = await getSettings(keys);
+  if(typeof map.image_upload_enabled !== "undefined") imageUploadEnabled = !!map.image_upload_enabled;
+  if(typeof map.image_paint_tray_enabled !== "undefined") imagePaintTrayEnabled = map.image_paint_tray_enabled !== false;
+  if(typeof map.activity_iframe_menu_visible !== "undefined") activityIframeMenuVisible = map.activity_iframe_menu_visible !== false;
+  if(typeof map.nexum_chat_menu_visible !== "undefined") nexumChatMenuVisible = map.nexum_chat_menu_visible !== false;
+  if(typeof map.nexum_tabs_menu_visible !== "undefined") nexumTabsMenuVisible = map.nexum_tabs_menu_visible !== false;
+  if(typeof map.image_generator_menu_visible !== "undefined") imageGeneratorMenuVisible = map.image_generator_menu_visible !== false;
+  if(typeof map.file_tree_menu_visible !== "undefined") fileTreeMenuVisible = map.file_tree_menu_visible !== false;
+  if(typeof map.ai_models_menu_visible !== "undefined") aiModelsMenuVisible = map.ai_models_menu_visible !== false;
+  if(typeof map.tasks_menu_visible !== "undefined") tasksMenuVisible = map.tasks_menu_visible !== false;
+  if(typeof map.jobs_menu_visible !== "undefined") jobsMenuVisible = map.jobs_menu_visible !== false;
+  if(typeof map.view_tabs_bar_visible !== "undefined") viewTabsBarVisible = !!map.view_tabs_bar_visible;
+  if(typeof map.chat_tabs_menu_visible !== "undefined") chatTabsMenuVisible = map.chat_tabs_menu_visible !== false;
+  if(typeof map.show_project_name_in_tabs !== "undefined") showProjectNameInTabs = map.show_project_name_in_tabs !== false;
+  if(typeof map.up_arrow_history_enabled !== "undefined") upArrowHistoryEnabled = map.up_arrow_history_enabled !== false;
+  if(typeof map.new_tab_project_enabled !== "undefined") newTabProjectNameEnabled = map.new_tab_project_enabled !== false;
+}
+
 document.getElementById("featureFlagsBtn").addEventListener("click", async () => {
-  try {
-    const r = await fetch("/api/settings/image_upload_enabled");
-    if(r.ok){
-      const { value } = await r.json();
-      imageUploadEnabled = !!value;
-    }
-    const r2 = await fetch("/api/settings/image_paint_tray_enabled");
-    if(r2.ok){
-      const { value } = await r2.json();
-      imagePaintTrayEnabled = value !== false;
-    }
-  } catch {}
-  try {
-    const r1 = await fetch("/api/settings/activity_iframe_menu_visible");
-    if(r1.ok){
-      const { value } = await r1.json();
-      activityIframeMenuVisible = value !== false;
-    }
-  } catch {}
-  try {
-    const r2 = await fetch("/api/settings/nexum_chat_menu_visible");
-    if(r2.ok){
-      const { value } = await r2.json();
-      nexumChatMenuVisible = value !== false;
-    }
-  } catch {}
-  try {
-    const r3 = await fetch("/api/settings/nexum_tabs_menu_visible");
-    if(r3.ok){
-      const { value } = await r3.json();
-      nexumTabsMenuVisible = value !== false;
-    }
-  } catch {}
-  try {
-    const r4 = await fetch("/api/settings/image_generator_menu_visible");
-    if(r4.ok){
-      const { value } = await r4.json();
-      imageGeneratorMenuVisible = value !== false;
-    }
-  } catch {}
-  try {
-    const r5 = await fetch("/api/settings/file_tree_menu_visible");
-    if(r5.ok){
-      const { value } = await r5.json();
-      fileTreeMenuVisible = value !== false;
-    }
-  } catch {}
-  try {
-    const r6 = await fetch("/api/settings/ai_models_menu_visible");
-    if(r6.ok){
-      const { value } = await r6.json();
-      aiModelsMenuVisible = value !== false;
-    }
-  } catch {}
-  try {
-    const r7 = await fetch("/api/settings/tasks_menu_visible");
-    if(r7.ok){
-      const { value } = await r7.json();
-      tasksMenuVisible = value !== false;
-    }
-  } catch {}
-  try {
-    const rJobs = await fetch("/api/settings/jobs_menu_visible");
-    if(rJobs.ok){
-      const { value } = await rJobs.json();
-      jobsMenuVisible = value !== false;
-    }
-  } catch {}
-  try {
-    const r8 = await fetch("/api/settings/view_tabs_bar_visible");
-    if(r8.ok){
-      const { value } = await r8.json();
-      viewTabsBarVisible = !!value;
-    }
-  } catch {}
-  try {
-    const rChat = await fetch("/api/settings/chat_tabs_menu_visible");
-    if(rChat.ok){
-      const { value } = await rChat.json();
-      chatTabsMenuVisible = value !== false;
-    }
-  } catch {}
-  try {
-    const r10 = await fetch("/api/settings/show_project_name_in_tabs");
-    if(r10.ok){
-      const { value } = await r10.json();
-      showProjectNameInTabs = value !== false;
-    }
-  } catch {}
-  try {
-    const r9 = await fetch("/api/settings/up_arrow_history_enabled");
-    if(r9.ok){
-      const { value } = await r9.json();
-      upArrowHistoryEnabled = value !== false;
-    }
-  } catch {}
-  try {
-    const r10 = await fetch("/api/settings/new_tab_project_enabled");
-    if(r10.ok){
-      const { value } = await r10.json();
-      newTabProjectNameEnabled = value !== false;
-    }
-  } catch {}
+  await loadFeatureFlags();
   document.getElementById("imageUploadEnabledCheck").checked = imageUploadEnabled;
   document.getElementById("imagePaintTrayEnabledCheck").checked = imagePaintTrayEnabled;
   document.getElementById("activityIframeMenuCheck").checked = activityIframeMenuVisible;
