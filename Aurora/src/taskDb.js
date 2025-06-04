@@ -672,25 +672,29 @@ export default class TaskDB {
     return lastInsertRowid;
   }
 
-  listChatTabs(nexum = null, includeArchived = true) {
-    if (nexum === null) {
-      if (includeArchived) {
-        return this.db.prepare("SELECT * FROM chat_tabs ORDER BY id ASC").all();
-      }
-      return this.db
-          .prepare("SELECT * FROM chat_tabs WHERE archived=0 ORDER BY id ASC")
-          .all();
+  listChatTabs(nexum = null, includeArchived = true, sessionId = '') {
+    let query = 'SELECT * FROM chat_tabs';
+    const params = [];
+    const conditions = [];
+
+    if (sessionId) {
+      conditions.push('session_id=?');
+      params.push(sessionId);
     }
-    if (includeArchived) {
-      return this.db
-          .prepare("SELECT * FROM chat_tabs WHERE nexum=? ORDER BY id ASC")
-          .all(nexum ? 1 : 0);
+    if (nexum !== null) {
+      conditions.push('nexum=?');
+      params.push(nexum ? 1 : 0);
     }
-    return this.db
-        .prepare(
-            "SELECT * FROM chat_tabs WHERE nexum=? AND archived=0 ORDER BY id ASC"
-        )
-        .all(nexum ? 1 : 0);
+    if (!includeArchived) {
+      conditions.push('archived=0');
+    }
+
+    if (conditions.length) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+    query += ' ORDER BY id ASC';
+
+    return this.db.prepare(query).all(...params);
   }
 
   renameChatTab(tabId, newName) {
@@ -720,7 +724,12 @@ export default class TaskDB {
     ).run(project, repo, type, genImages, tabId);
   }
 
-  getChatTab(tabId) {
+  getChatTab(tabId, sessionId = null) {
+    if (sessionId) {
+      return this.db
+          .prepare("SELECT * FROM chat_tabs WHERE id=? AND session_id=?")
+          .get(tabId, sessionId);
+    }
     return this.db.prepare("SELECT * FROM chat_tabs WHERE id=?").get(tabId);
   }
 

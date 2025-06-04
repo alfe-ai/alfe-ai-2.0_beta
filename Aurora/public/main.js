@@ -343,7 +343,7 @@ document.getElementById("navMenuToggle")?.addEventListener("click", toggleNavMen
     const r = await fetch('/api/chat/tabs/generate_images', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tabId: currentTabId, enabled: tabGenerateImages })
+      body: JSON.stringify({ tabId: currentTabId, enabled: tabGenerateImages, sessionId })
     });
     if(r.ok){
       if(t) t.generate_images = tabGenerateImages ? 1 : 0;
@@ -954,7 +954,7 @@ $("#createTaskBtn").addEventListener("click", async ()=>{
 $("#cancelTaskBtn").addEventListener("click",()=>hideModal($("#newTaskModal")));
 
 async function loadTabs(){
-  const res = await fetch("/api/chat/tabs?nexum=0&showArchived=1");
+  const res = await fetch(`/api/chat/tabs?nexum=0&showArchived=1&sessionId=${encodeURIComponent(sessionId)}`);
   chatTabs = await res.json();
   archivedTabs = chatTabs.filter(t => t.archived);
 }
@@ -1080,7 +1080,7 @@ async function renameTab(tabId){
   const r = await fetch("/api/chat/tabs/rename", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tabId, newName })
+    body: JSON.stringify({ tabId, newName, sessionId })
   });
   if(r.ok){
     await loadTabs();
@@ -1091,7 +1091,7 @@ async function renameTab(tabId){
 }
 async function deleteTab(tabId){
   if(!confirm("Are you sure you want to delete this tab (and all its messages)?")) return;
-  const r = await fetch(`/api/chat/tabs/${tabId}`, { method: "DELETE" });
+  const r = await fetch(`/api/chat/tabs/${tabId}?sessionId=${encodeURIComponent(sessionId)}`, { method: "DELETE" });
   if(r.ok){
     await loadTabs();
     if(chatTabs.length>0){
@@ -1115,7 +1115,7 @@ async function toggleArchiveTab(tabId, archived){
   const r = await fetch('/api/chat/tabs/archive', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ tabId, archived })
+    body: JSON.stringify({ tabId, archived, sessionId })
   });
   if(r.ok){
     await loadTabs();
@@ -2964,7 +2964,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
     chatHasMore = true;
   }
   try {
-    const resp = await fetch(`/api/chat/history?tabId=${tabId}&limit=10&offset=${chatHistoryOffset}`);
+    const resp = await fetch(`/api/chat/history?tabId=${tabId}&limit=10&offset=${chatHistoryOffset}&sessionId=${encodeURIComponent(sessionId)}`);
     if(!resp.ok){
       console.error("Error loading chat history from server");
       return;
