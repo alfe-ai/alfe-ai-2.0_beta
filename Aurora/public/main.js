@@ -58,7 +58,7 @@ let fileTreeMenuVisible = false;      // show File Tree button
 let aiModelsMenuVisible = false;      // show AI Models link
 let tasksMenuVisible = false;         // show Tasks button
 let jobsMenuVisible = false;         // show Jobs button
-let chatTabsMenuVisible = false;     // show Chats button
+let chatTabsMenuVisible = true;     // show Chats button
 let upArrowHistoryEnabled = true;    // use Arrow Up/Down for input history
 let newTabProjectNameEnabled = true; // show Project name field in New Tab dialog
 let chatSubroutines = [];
@@ -954,7 +954,7 @@ $("#createTaskBtn").addEventListener("click", async ()=>{
 $("#cancelTaskBtn").addEventListener("click",()=>hideModal($("#newTaskModal")));
 
 async function loadTabs(){
-  const res = await fetch("/api/chat/tabs?nexum=0&showArchived=1");
+  const res = await fetch(`/api/chat/tabs?nexum=0&showArchived=1&sessionId=${encodeURIComponent(sessionId)}`);
   chatTabs = await res.json();
   archivedTabs = chatTabs.filter(t => t.archived);
 }

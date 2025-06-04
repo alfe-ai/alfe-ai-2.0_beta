@@ -1329,17 +1329,18 @@ app.get("/api/model", (req, res) => {
 app.get("/api/chat/tabs", (req, res) => {
   const nexumParam = req.query.nexum;
   const showArchivedParam = req.query.showArchived;
+  const sessionIdParam = req.query.sessionId || "";
   console.debug(
-      `[Server Debug] GET /api/chat/tabs => listing tabs (nexum=${nexumParam}, showArchived=${showArchivedParam})`
+      `[Server Debug] GET /api/chat/tabs => listing tabs (nexum=${nexumParam}, showArchived=${showArchivedParam}, sessionId=${sessionIdParam})`
   );
   try {
     let tabs;
     const includeArchived = showArchivedParam === "1" || showArchivedParam === "true";
     if (nexumParam === undefined) {
-      tabs = db.listChatTabs(null, includeArchived);
+      tabs = db.listChatTabs(null, includeArchived, sessionIdParam);
     } else {
       const flag = parseInt(nexumParam, 10);
-      tabs = db.listChatTabs(flag ? 1 : 0, includeArchived);
+      tabs = db.listChatTabs(flag ? 1 : 0, includeArchived, sessionIdParam);
     }
     res.json(tabs);
   } catch (err) {
