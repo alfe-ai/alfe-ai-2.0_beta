@@ -288,11 +288,11 @@ async function toggleSidebar(){
   const expandBtn = document.getElementById("expandSidebarBtn");
   expandBtn.style.display = sidebarVisible ? "none" : "block";
 
-<<<<<<< HEAD
   const collapsedLogo = document.getElementById("collapsedSidebarLogo");
   if(collapsedLogo){
     collapsedLogo.style.display = sidebarVisible ? "none" : "block";
-=======
+  }
+
   // Shift top chat tabs bar when sidebar is collapsed so it doesn't
   // overlap the logo icon in the top left.
   const appEl = document.querySelector(".app");
@@ -302,7 +302,6 @@ async function toggleSidebar(){
     } else {
       appEl.classList.add("sidebar-collapsed");
     }
->>>>>>> Aurora/Aurelix/dev/main-rel
   }
 
   await setSetting("sidebar_visible", sidebarVisible);
@@ -406,36 +405,10 @@ async function loadSettings(){
   if(typeof map.subroutine_panel_visible !== "undefined"){
     subroutinePanelVisible = !!map.subroutine_panel_visible;
   }
-<<<<<<< HEAD
   $("#chatSubroutinesPanel").style.display = subroutinePanelVisible ? "" : "none";
 
   if(typeof map.sidebar_visible !== "undefined"){
     sidebarVisible = !!map.sidebar_visible;
-=======
-  {
-    const r = await fetch("/api/settings/sidebar_visible");
-    if(r.ok){
-      const { value } = await r.json();
-      if(typeof value !== "undefined"){
-        sidebarVisible = !!value;
-      }
-    }
-    $(".sidebar").style.display = sidebarVisible ? "" : "none";
-    $("#divider").style.display = sidebarVisible ? "" : "none";
-    const toggleSidebarBtn = $("#toggleSidebarBtn");
-    if(toggleSidebarBtn){
-      toggleSidebarBtn.textContent = sidebarVisible ? "Hide sidebar" : "Show sidebar";
-    }
-    document.getElementById("expandSidebarBtn").style.display = sidebarVisible ? "none" : "block";
-    const appEl = document.querySelector(".app");
-    if(appEl){
-      if(sidebarVisible){
-        appEl.classList.remove("sidebar-collapsed");
-      } else {
-        appEl.classList.add("sidebar-collapsed");
-      }
-    }
->>>>>>> Aurora/Aurelix/dev/main-rel
   }
   $(".sidebar").style.display = sidebarVisible ? "" : "none";
   $("#divider").style.display = sidebarVisible ? "" : "none";
@@ -447,6 +420,14 @@ async function loadSettings(){
   const collapsedLogoInit = document.getElementById("collapsedSidebarLogo");
   if(collapsedLogoInit){
     collapsedLogoInit.style.display = sidebarVisible ? "none" : "block";
+  }
+  const appEl = document.querySelector(".app");
+  if(appEl){
+    if(sidebarVisible){
+      appEl.classList.remove("sidebar-collapsed");
+    } else {
+      appEl.classList.add("sidebar-collapsed");
+    }
   }
 
   if(typeof map.enter_submits_message !== "undefined"){
