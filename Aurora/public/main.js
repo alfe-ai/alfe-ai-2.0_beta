@@ -1543,8 +1543,8 @@ function getEncoding(modelName) {
   try {
     return encoding_for_model(modelName);
   } catch (e) {
-    console.debug("[Server Debug] Tokenizer load failed, falling back to gpt-3.5-turbo =>", e.message);
-    return encoding_for_model("gpt-3.5-turbo");
+    console.debug("[Server Debug] Tokenizer load failed, falling back to gpt-4.1-mini =>", e.message);
+    return encoding_for_model("gpt-4.1-mini");
   }
 }
 

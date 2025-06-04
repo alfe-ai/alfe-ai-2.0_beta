@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
   // Prepare chat completion payload
   const body = JSON.stringify({
-    model: 'gpt-3.5-turbo',
+    model: 'gpt-4.1-mini',
     messages: userMessages,
     temperature: 0.7,
     stream: true
