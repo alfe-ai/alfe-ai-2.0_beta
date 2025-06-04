@@ -2792,6 +2792,11 @@ btnNexumTabs?.addEventListener("click", () => { window.location.href = btnNexumT
   await loadSubroutines();
   renderSubroutines();
 
+  if(chatTabs.length === 0){
+    openNewTabModal();
+    return;
+  }
+
   const lastChatTab = await getSetting("last_chat_tab");
   if(lastChatTab) {
     const foundTab = chatTabs.find(t => t.id===parseInt(lastChatTab,10));
@@ -2800,20 +2805,9 @@ btnNexumTabs?.addEventListener("click", () => { window.location.href = btnNexumT
       const firstActive = chatTabs.find(t => !t.archived);
       currentTabId = firstActive ? firstActive.id : chatTabs[0].id;
     }
-  } else {
-    if(chatTabs.length>0){
-      const firstActive = chatTabs.find(t => !t.archived);
-      currentTabId = firstActive ? firstActive.id : chatTabs[0].id;
-    } else {
-      await fetch("/api/chat/tabs/new", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "Main", nexum: 0, sessionId })
-      });
-      await loadTabs();
-      const firstActive = chatTabs.find(t => !t.archived);
-      currentTabId = firstActive ? firstActive.id : chatTabs[0].id;
-    }
+  } else if(chatTabs.length>0){
+    const firstActive = chatTabs.find(t => !t.archived);
+    currentTabId = firstActive ? firstActive.id : chatTabs[0].id;
   }
   {
     const firstTab = chatTabs.find(t => t.id === currentTabId);
