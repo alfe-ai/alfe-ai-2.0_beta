@@ -6,7 +6,8 @@ import { Octokit } from "@octokit/rest";
 export default class GitHubClient {
   constructor({ token, owner, repo }) {
     if (!token || !owner || !repo) {
-      throw new Error("GitHub token, owner and repo must be provided");
+      //throw new Error("GitHub token, owner and repo must be provided");
+      return;
     }
 
     this.owner = owner;
