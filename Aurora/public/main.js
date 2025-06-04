@@ -391,6 +391,42 @@ document.addEventListener("click", ev => {
   }
 });
 
+// Swipe gestures on mobile to open/close the sidebar
+let swipeStartX = null;
+let swipeStartY = null;
+let swipeStartTime = 0;
+const swipeThreshold = 40; // minimum horizontal movement in px
+const swipeEdgeSize = 40;  // active zone from screen/element edge
+const swipeAllowedTime = 500; // max time in ms
+
+document.addEventListener("touchstart", ev => {
+  if(ev.touches.length !== 1) return;
+  swipeStartX = ev.touches[0].clientX;
+  swipeStartY = ev.touches[0].clientY;
+  swipeStartTime = Date.now();
+});
+
+document.addEventListener("touchend", ev => {
+  if(swipeStartX === null) return;
+  const dx = ev.changedTouches[0].clientX - swipeStartX;
+  const dy = Math.abs(ev.changedTouches[0].clientY - swipeStartY);
+  const dt = Date.now() - swipeStartTime;
+  if(dt <= swipeAllowedTime && Math.abs(dx) > swipeThreshold && Math.abs(dx) > dy){
+    if(dx > 0 && !sidebarVisible && swipeStartX < swipeEdgeSize && isMobileViewport()){
+      toggleSidebar();
+    } else if(dx < 0 && sidebarVisible){
+      const sidebarEl = document.querySelector(".sidebar");
+      if(sidebarEl){
+        const rect = sidebarEl.getBoundingClientRect();
+        if(swipeStartX > rect.right - swipeEdgeSize){
+          toggleSidebar();
+        }
+      }
+    }
+  }
+  swipeStartX = null;
+});
+
 async function toggleNavMenu(){
   navMenuVisible = !navMenuVisible;
   toggleNavMenuVisibility(navMenuVisible);
