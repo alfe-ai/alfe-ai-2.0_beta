@@ -615,6 +615,29 @@ app.post("/api/tasks/new", async (req, res) => {
   }
 });
 
+app.get("/api/settings", (req, res) => {
+  console.debug("[Server Debug] GET /api/settings =>", req.query.keys);
+  try {
+    const keysParam = req.query.keys;
+    let settings;
+    if (keysParam) {
+      const keys = Array.isArray(keysParam)
+        ? keysParam
+        : String(keysParam)
+            .split(",")
+            .map((k) => k.trim())
+            .filter((k) => k);
+      settings = keys.map((k) => ({ key: k, value: db.getSetting(k) }));
+    } else {
+      settings = db.allSettings();
+    }
+    res.json({ settings });
+  } catch (err) {
+    console.error("[TaskQueue] GET /api/settings failed", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.get("/api/settings/:key", (req, res) => {
   console.debug("[Server Debug] GET /api/settings/:key =>", req.params.key);
   try {
