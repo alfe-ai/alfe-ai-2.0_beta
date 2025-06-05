@@ -11,12 +11,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const themeLink = document.getElementById('themeStylesheet');
   const themeBtn = document.getElementById('themeToggleBtn');
   let themeMode = localStorage.getItem('aurora_theme') || 'dark';
-  if (themeLink) themeLink.href = themeMode === 'light' ? 'styles_light.css' : 'styles.css';
+  if (themeLink) themeLink.href = themeMode === 'light' ? '/styles_light.css' : '/styles.css';
   if (themeBtn) {
     themeBtn.textContent = themeMode === 'light' ? '🌙' : '☀️';
     themeBtn.addEventListener('click', () => {
       themeMode = themeMode === 'light' ? 'dark' : 'light';
-      if (themeLink) themeLink.href = themeMode === 'light' ? 'styles_light.css' : 'styles.css';
+      if (themeLink) themeLink.href = themeMode === 'light' ? '/styles_light.css' : '/styles.css';
       themeBtn.textContent = themeMode === 'light' ? '🌙' : '☀️';
       localStorage.setItem('aurora_theme', themeMode);
     });
@@ -101,8 +101,8 @@ let modelTabs = [];
 let currentModelTabId = null;
 let modelTabsBarVisible = false;
 
-const defaultFavicon = "alfe_favicon_64x64.ico";
-const rotatingFavicon = "alfe_favicon_64x64.ico";
+const defaultFavicon = "/alfe_favicon_64x64.ico";
+const rotatingFavicon = "/alfe_favicon_64x64.ico";
 let favElement = null;
 
 const tabTypeIcons = { chat: "💬", design: "🎨" };
