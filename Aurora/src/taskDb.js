@@ -646,6 +646,13 @@ export default class TaskDB {
         .all(tabId);
   }
 
+  hasUserMessages(tabId = 1) {
+    const row = this.db
+        .prepare("SELECT 1 FROM chat_pairs WHERE chat_tab_id=? AND user_text<>'' LIMIT 1")
+        .get(tabId);
+    return !!row;
+  }
+
   getChatPairsPage(tabId = 1, limit = 10, offset = 0) {
     return this.db.prepare(`
       SELECT * FROM chat_pairs
