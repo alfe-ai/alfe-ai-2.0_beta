@@ -133,13 +133,9 @@ let fileSortAsc = false;
 function formatTimestamp(isoStr){
   if(!isoStr) return "(no time)";
   const d = new Date(isoStr);
-  return d.toLocaleString([], {
-    year: '2-digit',
-    month: '2-digit',
-    day: '2-digit',
+  return d.toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
-    second: '2-digit',
     hour12: true
   });
 }
@@ -3132,6 +3128,7 @@ function initChatScrollLoading(){
 
 let chatHistoryOffset = 0;
 let chatHasMore = true;
+let lastChatDate = null;
 
 async function loadChatHistory(tabId = 1, reset=false) {
   const chatMessagesEl = document.getElementById("chatMessages");
@@ -3140,6 +3137,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
     chatMessagesEl.innerHTML="";
     chatHistoryOffset = 0;
     chatHasMore = true;
+    lastChatDate = null;
     if(placeholderEl) placeholderEl.style.display = "";
   }
   try {
@@ -3169,8 +3167,17 @@ async function loadChatHistory(tabId = 1, reset=false) {
     } else {
       const scrollPos = chatMessagesEl.scrollHeight;
       const fragment = document.createDocumentFragment();
+      let prevDate = null;
       for (let i = pairs.length-1; i>=0; i--){
         const p = pairs[i];
+        const dateStr = isoDate(p.timestamp || p.ai_timestamp);
+        if(prevDate !== dateStr){
+          const dateDiv = document.createElement("div");
+          dateDiv.className = "chat-date-header";
+          dateDiv.textContent = dateStr;
+          fragment.appendChild(dateDiv);
+          prevDate = dateStr;
+        }
         const seqDiv = document.createElement("div");
         seqDiv.className = "chat-sequence";
         seqDiv.dataset.pairId = p.id;
@@ -3327,6 +3334,17 @@ async function loadChatHistory(tabId = 1, reset=false) {
 }
 
 function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemContext, fullHistory, tokenInfo, imageUrl=null, imageAlt='', imageTitle='') {
+  const chatMessagesEl = document.getElementById("chatMessages");
+  const ts = userTs || aiTs || new Date().toISOString();
+  const dateStr = isoDate(ts);
+  if(chatMessagesEl && lastChatDate !== dateStr){
+    const dateDiv = document.createElement("div");
+    dateDiv.className = "chat-date-header";
+    dateDiv.textContent = dateStr;
+    chatMessagesEl.appendChild(dateDiv);
+    lastChatDate = dateStr;
+  }
+
   const seqDiv = document.createElement("div");
   seqDiv.className = "chat-sequence";
   seqDiv.dataset.pairId = pairId;
@@ -3570,7 +3588,6 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
   }
   seqDiv.appendChild(pairDelBtn);
 
-  const chatMessagesEl = document.getElementById("chatMessages");
   const placeholderEl = document.getElementById("chatPlaceholder");
   if(placeholderEl) placeholderEl.style.display = "none";
   chatMessagesEl.appendChild(seqDiv);
