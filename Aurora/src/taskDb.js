@@ -653,7 +653,7 @@ export default class TaskDB {
     });
   }
 
-  createImagePair(url, altText = '', chatTabId = 1, title = '', status = 'Generated', sessionId = '', ipAddress = '') {
+  createImagePair(url, altText = '', chatTabId = 1, title = '', status = 'Generated', sessionId = '', ipAddress = '', model = '') {
     const ts = new Date().toISOString();
     const uuid = randomUUID().split('-')[0];
     const { lastInsertRowid } = this.db.prepare(`
@@ -661,8 +661,8 @@ export default class TaskDB {
         user_text, ai_text, model, timestamp, ai_timestamp,
         chat_tab_id, system_context, token_info,
         image_url, image_alt, image_title, image_status, session_id, ip_address, image_uuid
-      ) VALUES ('', '', '', @ts, @ts, @chat_tab_id, '', NULL, @url, @alt, @title, @status, @session_id, @ip_address, @uuid)
-    `).run({ ts, chat_tab_id: chatTabId, url, alt: altText, title, status, session_id: sessionId, ip_address: ipAddress, uuid });
+      ) VALUES ('', '', @model, @ts, @ts, @chat_tab_id, '', NULL, @url, @alt, @title, @status, @session_id, @ip_address, @uuid)
+    `).run({ ts, chat_tab_id: chatTabId, url, alt: altText, title, status, session_id: sessionId, ip_address: ipAddress, uuid, model });
     return lastInsertRowid;
   }
 
@@ -980,7 +980,7 @@ export default class TaskDB {
     const stmt = this.db.prepare("UPDATE chat_pairs SET image_status=? WHERE image_url=?");
     const info = stmt.run(status, url);
     if(info.changes === 0){
-      this.createImagePair(url, '', 1, '', status, '', '');
+      this.createImagePair(url, '', 1, '', status, '', '', '');
     }
   }
 
