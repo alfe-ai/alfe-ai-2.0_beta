@@ -125,6 +125,11 @@ if (!currentModel) {
   console.debug("[Server Debug] 'ai_model' found =>", currentModel);
 }
 
+console.debug("[Server Debug] Checking or setting default 'ai_service' in DB...");
+if (!db.getSetting("ai_service")) {
+  db.setSetting("ai_service", "openrouter");
+}
+
 // Theme setting for Nexum UI
 console.debug("[Server Debug] Checking or setting default theme settings in DB...");
 let themeColor = db.getSetting("nexum_theme_color");
