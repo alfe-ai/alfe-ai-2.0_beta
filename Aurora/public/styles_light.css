@@ -610,6 +610,11 @@ body {
   display: none;
 }
 
+/* Hide large toggle icon when sidebar is collapsed */
+.app.sidebar-collapsed #sidebarToggleIcon {
+  display: none;
+}
+
 /* Display session ID next to the sidebar icon */
 #sessionIdText.session-id {
   display: none;
