@@ -1982,8 +1982,7 @@ chatSendBtnEl.addEventListener("click", async () => {
       loaderEl.style.display = "";
       scrollChatToBottom();
     }
-    // Disable chat input and send button while images upload
-    chatInputEl.disabled = true;
+    // Disable send button while images upload
     chatSendBtnEl.disabled = true;
 
     try {
@@ -2018,8 +2017,7 @@ chatSendBtnEl.addEventListener("click", async () => {
         loaderEl.style.display = "none";
         scrollChatToBottom();
       }
-      // Re-enable chat input and send button
-      chatInputEl.disabled = false;
+      // Re-enable send button
       chatSendBtnEl.disabled = false;
     }
 
@@ -2598,7 +2596,6 @@ function toggleSessionIdVisibility(visible) {
 }
 
 function setLoopUi(active){
-  if(chatInputEl) chatInputEl.disabled = active;
   if(chatSendBtnEl) chatSendBtnEl.style.display = active ? 'none' : '';
 }
 
@@ -4624,7 +4621,6 @@ registerActionHook("generateImage", async ({response}) => {
     if(prompt === lastImagePrompt) return;
     lastImagePrompt = prompt;
     isImageGenerating = true;
-    if(chatInputEl) chatInputEl.disabled = true;
     if(chatSendBtnEl) chatSendBtnEl.disabled = true;
     const genIndicator = document.getElementById("imageGenerationIndicator");
     if(genIndicator) {
@@ -4642,7 +4638,6 @@ registerActionHook("generateImage", async ({response}) => {
     }
     isImageGenerating = false;
     lastImagePrompt = null;
-    if(chatInputEl) chatInputEl.disabled = false;
     if(chatSendBtnEl) chatSendBtnEl.disabled = false;
     const data = await r.json();
       if(r.ok && data.url){
@@ -4665,7 +4660,6 @@ registerActionHook("generateImage", async ({response}) => {
     }
     isImageGenerating = false;
     lastImagePrompt = null;
-    if(chatInputEl) chatInputEl.disabled = false;
     if(chatSendBtnEl) chatSendBtnEl.disabled = false;
     console.error('[Hook generateImage] failed:', err);
   }
