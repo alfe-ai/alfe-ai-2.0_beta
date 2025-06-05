@@ -1194,12 +1194,10 @@ async function addNewTab(){
     body: JSON.stringify({ name:"", nexum: 0, project:"", type: tabType, sessionId })
   });
   if(r.ok){
+    const data = await r.json();
     hideModal($("#newTabModal"));
     await loadTabs();
-    renderTabs();
-    renderSidebarTabs();
-    renderArchivedSidebarTabs();
-    updatePageTitle();
+    await selectTab(data.id);
     // TODO: THIS WAS A TEMP FIX,
     // Reload the entire page so the new tab state is fully reflected
     // but only if this was the very first tab being created from the modal
