@@ -968,6 +968,33 @@ body {
   color: #000;
 }
 
+/* Thin sidebar shown when main sidebar is collapsed */
+.thin-sidebar {
+  position: absolute;
+  top: 60px;
+  left: 8px;
+  width: 36px;
+  background: #eee;
+  border: 1px solid #bbb;
+  border-radius: 8px;
+  padding: 4px 0;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  z-index: 1001;
+}
+.app.sidebar-collapsed .thin-sidebar {
+  display: flex;
+}
+.thin-sidebar .thin-icon {
+  background: none;
+  border: none;
+  color: #333;
+  font-size: 1.2rem;
+  margin: 4px 0;
+  cursor: pointer;
+}
+
 /* Version info in sidebar */
 .version-info {
   font-size: 0.75rem;
