@@ -489,12 +489,12 @@ body {
 
 /* When sidebar is collapsed, shift the chat tabs bar to clear the logo */
 .app.sidebar-collapsed #chatTabs {
-  margin-left: 60px;
+  margin-left: 50px;
 }
 
 /* Collapsed sidebar layout */
 .app.sidebar-collapsed .sidebar {
-  width: 60px !important;
+  width: 50px !important;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
 }
@@ -615,6 +615,12 @@ body {
   font-size: 0.7rem;
   color: #aaa;
   z-index: 1000;
+}
+
+/* Hide counters when sidebar is collapsed */
+.app.sidebar-collapsed #imageLimitInfo,
+.app.sidebar-collapsed #imageLimitCountdown {
+  display: none !important;
 }
 
 /* Button to hide the sidebar */
