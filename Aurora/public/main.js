@@ -143,6 +143,16 @@ function showModal(m){ m.style.display = "flex"; }
 function hideModal(m){ m.style.display = "none"; }
 $$(".modal").forEach(m => m.addEventListener("click", e => { if(e.target===m) hideModal(m); }));
 
+function showPageLoader(){
+  const loader = document.getElementById("pageLoader");
+  if(loader) loader.classList.add("show");
+}
+
+function hidePageLoader(){
+  const loader = document.getElementById("pageLoader");
+  if(loader) loader.classList.remove("show");
+}
+
 function showToast(msg, duration=1500){
   const el = document.getElementById("toast");
   if(!el) return;
@@ -1765,6 +1775,7 @@ chatSendBtnEl.addEventListener("click", async () => {
 });
 
 async function openChatSettings(){
+  showPageLoader();
   const r = await fetch("/api/settings/chat_hide_metadata");
   if(r.ok){
     const { value } = await r.json();
@@ -1941,6 +1952,8 @@ async function openChatSettings(){
     }
   } catch(e){
     console.error("Error populating AI service/model lists:", e);
+  } finally {
+    hidePageLoader();
   }
 
   showModal($("#chatSettingsModal"));
