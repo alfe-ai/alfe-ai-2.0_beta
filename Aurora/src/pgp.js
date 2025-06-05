@@ -18,11 +18,20 @@ export async function encryptMessage(text, publicKeyArmored) {
 
 export async function decryptMessage(encryptedText, privateKeyArmored, passphrase) {
   if (!privateKeyArmored) return encryptedText;
-  const privateKey = await openpgp.decryptKey({
-    privateKey: await openpgp.readPrivateKey({ armoredKey: privateKeyArmored }),
-    passphrase
-  });
-  const message = await openpgp.readMessage({ armoredMessage: encryptedText });
-  const { data } = await openpgp.decrypt({ message, decryptionKeys: privateKey });
-  return data;
+  try {
+    if (typeof encryptedText !== 'string' ||
+        !encryptedText.trim().startsWith('-----BEGIN PGP MESSAGE-----')) {
+      return encryptedText;
+    }
+    const privateKey = await openpgp.decryptKey({
+      privateKey: await openpgp.readPrivateKey({ armoredKey: privateKeyArmored }),
+      passphrase
+    });
+    const message = await openpgp.readMessage({ armoredMessage: encryptedText });
+    const { data } = await openpgp.decrypt({ message, decryptionKeys: privateKey });
+    return data;
+  } catch (err) {
+    console.debug('[PGP] decryptMessage failed, returning plaintext =>', err.message);
+    return encryptedText;
+  }
 }
