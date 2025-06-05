@@ -264,6 +264,10 @@ body {
   padding: 4px;
 }
 
+.table-download-btn {
+  margin-left: 4px;
+}
+
 .bubble-delete-btn {
   position: absolute;
   top: -16px;
