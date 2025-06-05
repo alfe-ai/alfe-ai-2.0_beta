@@ -2428,7 +2428,7 @@ function renderFileList(){
     const tr = document.createElement("tr");
     tr.dataset.fileName = f.name;
     const tdIndex = document.createElement("td");
-    tdIndex.textContent = f.id ?? "";
+    tdIndex.textContent = f.uuid ?? f.id ?? "";
     const tdThumb = document.createElement("td");
     const thumbImg = document.createElement("img");
     thumbImg.src = `/uploads/${encodeURIComponent(f.name)}`;
