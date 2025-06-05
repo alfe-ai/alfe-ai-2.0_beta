@@ -3,7 +3,10 @@ import fs from "fs";
 import path from "path";
 import GitHubClient from "./githubClient.js";
 import TaskQueue from "./taskQueue.js";
-import TaskDB from "./taskDb.js";
+import TaskDBLocal from "./taskDb.js";
+import TaskDBAws from "./taskDbAws.js";
+
+const TaskDB = process.env.AWS_DB_URL ? TaskDBAws : TaskDBLocal;
 
 dotenv.config();
 
@@ -41,7 +44,7 @@ async function main() {
       repo: process.env.GITHUB_REPO
     });
 
-    const db = new TaskDB(); // creates/open issues.sqlite in cwd
+    const db = new TaskDB(); // uses AWS RDS when AWS_DB_URL is set
     const queue = new TaskQueue();
 
     const label = process.env.GITHUB_LABEL;

@@ -26,6 +26,7 @@ npm start
 | `HTTPS_KEY_PATH` | (Optional) Path to SSL private key for HTTPS |
 | `HTTPS_CERT_PATH` | (Optional) Path to SSL certificate for HTTPS |
 | `AURORA_PORT` | (Optional) Port for the web server (default: 3000) |
+| `AWS_DB_URL` | (Optional) PostgreSQL connection string for AWS RDS. If set, the local SQLite DB is ignored |
 
 Run `../setup_certbot.sh <domain> <email>` to quickly generate these files with
 Let's Encrypt.
