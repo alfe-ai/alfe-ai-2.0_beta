@@ -2327,12 +2327,30 @@ app.get("/Image.html", (req, res) => {
 app.get("/", (req, res) => {
   const sessionId = getSessionIdFromRequest(req);
   try {
-    if (
-      !sessionId ||
-      db.listChatTabs(null, false, sessionId).length === 0
-    ) {
+    if (!sessionId) {
       console.debug("[Server Debug] GET / => Redirecting to nexum.html");
       return res.redirect("/nexum.html");
+    }
+
+    const tabs = db.listChatTabs(null, false, sessionId);
+    if (tabs.length === 0) {
+      console.debug("[Server Debug] GET / => Redirecting to nexum.html");
+      return res.redirect("/nexum.html");
+    }
+
+    const lastTabId = db.getSetting("last_chat_tab");
+    let target = null;
+    if (typeof lastTabId !== "undefined") {
+      target = db.getChatTab(lastTabId, sessionId);
+    }
+    if (!target) {
+      target = tabs[0];
+    }
+    if (target && target.tab_uuid) {
+      console.debug(
+        `[Server Debug] GET / => Redirecting to last tab ${target.tab_uuid}`
+      );
+      return res.redirect(`/chat/${target.tab_uuid}`);
     }
   } catch (err) {
     console.error("[Server Debug] Error checking chat tabs:", err);
@@ -2354,22 +2372,6 @@ app.get("/chat/:tabUuid", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/aurora.html"));
 });
 
-app.get("/", (req, res) => {
-  const sessionId = getSessionIdFromRequest(req);
-  try {
-    if (
-      !sessionId ||
-      db.listChatTabs(null, false, sessionId).length === 0
-    ) {
-      console.debug("[Server Debug] GET / => Redirecting to nexum.html");
-      return res.redirect("/nexum.html");
-    }
-  } catch (err) {
-    console.error("[Server Debug] Error checking chat tabs:", err);
-  }
-  console.debug("[Server Debug] GET / => Serving aurora.html");
-  res.sendFile(path.join(__dirname, "../public/aurora.html"));
-});
 
 app.get("/test_projects", (req, res) => {
   console.debug("[Server Debug] GET /test_projects => Serving test_projects.html");
