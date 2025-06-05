@@ -343,6 +343,11 @@ async function toggleSidebar(){
     toggleSidebarBtnEl.textContent = sidebarVisible ? "Hide sidebar" : "Show sidebar";
   }
 
+  const topBtns = document.getElementById("topRightButtons");
+  if(topBtns){
+    topBtns.style.display = sidebarVisible ? "none" : "flex";
+  }
+
   const expandBtn = document.getElementById("expandSidebarBtn");
   expandBtn.style.display = sidebarVisible ? "none" : "block";
 
@@ -543,6 +548,10 @@ async function loadSettings(){
   const collapsedLogoInit = document.getElementById("collapsedSidebarLogo");
   if(collapsedLogoInit){
     collapsedLogoInit.style.display = sidebarVisible ? "none" : "block";
+  }
+  const initTopBtns = document.getElementById("topRightButtons");
+  if(initTopBtns){
+    initTopBtns.style.display = sidebarVisible ? "none" : "flex";
   }
   const appEl = document.querySelector(".app");
   if(appEl){
@@ -1511,13 +1520,16 @@ document.getElementById("viewTabTasks").addEventListener("click", () => updateVi
 document.getElementById("viewTabArchive").addEventListener("click", () => updateView('archive'));
 
 // New: Button to toggle top chat tabs bar
-document.getElementById("toggleTopChatTabsBtn").addEventListener("click", async () => {
-  topChatTabsBarVisible = !topChatTabsBarVisible;
-  const chk = document.getElementById("showTopChatTabsCheck");
-  if(chk) chk.checked = topChatTabsBarVisible;
-  toggleTopChatTabsVisibility(topChatTabsBarVisible);
-  await setSetting("top_chat_tabs_bar_visible", topChatTabsBarVisible);
-});
+const toggleTopChatTabsBtn = document.getElementById("toggleTopChatTabsBtn");
+if(toggleTopChatTabsBtn){
+  toggleTopChatTabsBtn.addEventListener("click", async () => {
+    topChatTabsBarVisible = !topChatTabsBarVisible;
+    const chk = document.getElementById("showTopChatTabsCheck");
+    if(chk) chk.checked = topChatTabsBarVisible;
+    toggleTopChatTabsVisibility(topChatTabsBarVisible);
+    await setSetting("top_chat_tabs_bar_visible", topChatTabsBarVisible);
+  });
+}
 
 document.getElementById("createSterlingChatBtn").addEventListener("click", async () => {
   try {
