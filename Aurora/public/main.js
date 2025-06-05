@@ -2456,7 +2456,7 @@ function renderFileList(){
 
     const dlBtn = document.createElement("button");
     dlBtn.className = "download-chat-btn table-download-btn";
-    dlBtn.textContent = "↓";
+    dlBtn.textContent = "⤓";
     dlBtn.title = "Download this image";
     dlBtn.addEventListener("click", () => {
       const a = document.createElement("a");
