@@ -3300,7 +3300,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
         // Show model name at bottom-left of AI bubble
         const modelDiv = document.createElement("div");
         modelDiv.className = "model-indicator";
-        modelDiv.textContent = `${provider} / ${shortModel}`;
+        modelDiv.textContent = `${shortModel}`;
         botDiv.appendChild(modelDiv);
 
         seqDiv.appendChild(botDiv);
@@ -3470,7 +3470,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
   // Show model name at bottom-left of AI bubble
   const modelDiv = document.createElement("div");
   modelDiv.className = "model-indicator";
-  modelDiv.textContent = `${provider} / ${shortModel}`;
+  modelDiv.textContent = `${shortModel}`;
   botDiv.appendChild(modelDiv);
 
   seqDiv.appendChild(botDiv);
@@ -3493,7 +3493,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
 
     if (model) {
       const modelLabel = document.createElement("div");
-      modelLabel.textContent = `${provider} / ${model}`;
+      modelLabel.textContent = `${model}`;
       metaContainer.appendChild(modelLabel);
     }
 
