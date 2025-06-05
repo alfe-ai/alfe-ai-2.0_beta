@@ -73,7 +73,7 @@ let showDependenciesColumn = false;
 let tabGenerateImages = false; // per-tab auto image toggle (design tabs only)
 let imageLoopEnabled = false; // automatic image generation loop mode
 let imageLoopMessage = "Next image";
-let imageGenService = 'openai';
+let imageGenService = 'openrouter';
 let isImageGenerating = false; // true while an image is being generated
 let imageUploadEnabled = false; // show image upload button
 let imagePaintTrayEnabled = true; // show image paint tray button
@@ -3663,7 +3663,7 @@ function renderModelTabs(){
       opt.textContent = sv;
       serviceSelect.appendChild(opt);
     });
-    serviceSelect.value = tab.service || "openai";
+    serviceSelect.value = tab.service || "openrouter";
     serviceSelect.addEventListener("change", async (evt)=>{
       tab.service = evt.target.value;
       await saveModelTabs();
@@ -3736,7 +3736,7 @@ async function addModelTab(modelId){
     id: newId,
     name,
     modelId: name,
-    service: parseProviderModel(name).provider || "openai"
+    service: parseProviderModel(name).provider || "openrouter"
   };
   modelTabs.push(newObj);
   currentModelTabId = newId;
