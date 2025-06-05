@@ -11,7 +11,7 @@ const {
 } = require('../../../server_defs');
 
 // Default model
-const DEFAULT_AIMODEL = 'o3';
+const DEFAULT_AIMODEL = 'deepseek/deepseek-chat';
 
 /**
  * Provide a function to read global agent instructions from disk
@@ -135,7 +135,7 @@ router.post('/createChat', (req, res) => {
     agentInstructions: globalInstructions,
     attachedFiles: [],
     chatHistory: [],
-    aiProvider: 'openai',
+    aiProvider: 'openrouter',
     aiModel: DEFAULT_AIMODEL,
     pushAfterCommit: true
   };

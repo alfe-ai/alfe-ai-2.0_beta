@@ -95,7 +95,7 @@ function setupGetRoutes(deps) {
             agentInstructions: loadGlobalInstructions(),
             attachedFiles: [],
             chatHistory: [],
-            aiProvider: "openai",
+            aiProvider: "openrouter",
             aiModel: DEFAULT_AIMODEL,
             pushAfterCommit: true,
         };
@@ -115,7 +115,7 @@ function setupGetRoutes(deps) {
 
         /* defaults */
         chatData.aiModel = (chatData.aiModel || DEFAULT_AIMODEL).toLowerCase();
-        chatData.aiProvider = chatData.aiProvider || "openai";
+        chatData.aiProvider = chatData.aiProvider || "openrouter";
         chatData.additionalRepos = chatData.additionalRepos || [];
 
         const {

@@ -43,9 +43,9 @@ const { execSync } = require('child_process');
 async function reconcileMissingChunksUsingAI(originalFileContent, newFileContent) {
   console.log("[DEBUG] reconcileMissingChunksUsingAI => Preparing request to AI API...");
   try {
-    const apiKey = process.env.OPENAI_API_KEY || 'your_openai_api_key';
-    const model = 'o3'; // updated to use "o3"
-    const endpoint = 'https://api.openai.com/v1/chat/completions';
+    const apiKey = process.env.OPENROUTER_API_KEY || 'your_openrouter_api_key';
+    const model = 'deepseek/deepseek-chat';
+    const endpoint = 'https://openrouter.ai/api/v1/chat/completions';
 
     const userPrompt = `
 We have two file versions:
