@@ -3275,7 +3275,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
           img.src = p.image_url;
           img.alt = p.image_alt || "";
           if(p.image_title) img.title = p.image_title;
-          img.style.maxWidth = "100%";
+          img.style.maxWidth = "400px";
           botDiv.appendChild(img);
         }
 
@@ -3446,7 +3446,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
     img.src = imageUrl;
     img.alt = imageAlt;
     if(imageTitle) img.title = imageTitle;
-    img.style.maxWidth = "100%";
+    img.style.maxWidth = "400px";
     botDiv.appendChild(img);
   }
 
@@ -4138,7 +4138,7 @@ function addImageChatBubble(url, altText="", title=""){
   img.src = url;
   img.alt = altText;
   if(title) img.title = title;
-  img.style.maxWidth = "100%";
+  img.style.maxWidth = "400px";
   img.addEventListener('load', scrollChatToBottom);
   botDiv.appendChild(img);
 
