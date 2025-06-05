@@ -3271,8 +3271,8 @@ btnNexumChat?.addEventListener("click", () => { window.location.href = btnNexumC
 btnNexumTabs?.addEventListener("click", () => { window.location.href = btnNexumTabs.dataset.url; });
 
 // Icon button actions (expand sidebar then open panel or link)
-function openPanelWithSidebar(fn){
-  if(!sidebarVisible) toggleSidebar();
+async function openPanelWithSidebar(fn){
+  if(!sidebarVisible) await toggleSidebar();
   fn();
 }
 btnTasksIcon?.addEventListener("click", () => openPanelWithSidebar(showTasksPanel));
