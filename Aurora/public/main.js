@@ -1610,6 +1610,10 @@ document.getElementById("addModelModalAddBtn").addEventListener("click", async (
 document.getElementById("addModelModalCancelBtn").addEventListener("click", () => {
   hideModal(document.getElementById("addModelModal"));
 });
+document.getElementById("favoriteModelsBtn").addEventListener("click", openFavoriteModelsModal);
+document.getElementById("favoriteModelsCloseBtn").addEventListener("click", () => {
+  hideModal(document.getElementById("favoriteModelsModal"));
+});
 document.getElementById("newSubroutineBtn").addEventListener("click", addNewSubroutine);
 document.getElementById("viewActionHooksBtn").addEventListener("click", () => {
   renderActionHooks();
@@ -4120,6 +4124,53 @@ async function openAddModelModal(){
     }
   }
   showModal(document.getElementById("addModelModal"));
+}
+
+async function openFavoriteModelsModal(){
+  const listEl = document.getElementById("favoriteModelsList");
+  if(listEl){
+    listEl.innerHTML = "<p>Loading...</p>";
+    try{
+      const r = await fetch("/api/ai/models");
+      if(r.ok){
+        const data = await r.json();
+        listEl.innerHTML = "";
+        (data.models||[]).forEach(m=>{
+          const row = document.createElement("div");
+          const star = document.createElement("span");
+          star.textContent = m.favorite ? "★" : "☆";
+          star.className = `favorite-star ${m.favorite ? "starred" : "unstarred"}`;
+          star.dataset.modelid = m.id;
+          star.addEventListener("click", async () => {
+            const newFav = !star.classList.contains("starred");
+            try {
+              const resp = await fetch("/api/ai/favorites", {
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body: JSON.stringify({ modelId: m.id, favorite: newFav })
+              });
+              if(resp.ok){
+                star.classList.toggle("starred", newFav);
+                star.classList.toggle("unstarred", !newFav);
+                star.textContent = newFav ? "★" : "☆";
+              }
+            } catch(e){ console.error("Error toggling favorite:",e); }
+          });
+          row.appendChild(star);
+          const txt = document.createElement("span");
+          txt.textContent = ` ${m.id} (${m.provider})`;
+          row.appendChild(txt);
+          listEl.appendChild(row);
+        });
+      } else {
+        listEl.textContent = "Error";
+      }
+    }catch(e){
+      console.error("Error loading models:", e);
+      listEl.textContent = "Error";
+    }
+  }
+  showModal(document.getElementById("favoriteModelsModal"));
 }
 
 // Add a new model tab using given model id
