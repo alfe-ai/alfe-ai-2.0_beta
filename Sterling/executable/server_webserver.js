@@ -13,7 +13,7 @@ const { OpenAI } = require("openai");
 const app = express();
 
 const PROJECT_ROOT = path.resolve(__dirname, "..");
-const DEFAULT_AIMODEL = "o3";
+const DEFAULT_AIMODEL = "deepseek/deepseek-chat";
 
 /**
  * Global Agent Instructions

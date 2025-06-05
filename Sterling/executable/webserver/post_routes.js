@@ -130,7 +130,7 @@ function setupPostRoutes(deps) {
             }
 
             chatData.aiModel = (chatData.aiModel || DEFAULT_AIMODEL).toLowerCase();
-            chatData.aiProvider = chatData.aiProvider || "openai";
+            chatData.aiProvider = chatData.aiProvider || "openrouter";
 
             const repoCfg = loadSingleRepoConfig(repoName);
             if (!repoCfg) {

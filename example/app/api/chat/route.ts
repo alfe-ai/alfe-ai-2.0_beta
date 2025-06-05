@@ -20,38 +20,40 @@ export async function POST(req: NextRequest) {
     : [{ role: 'user', content: 'Say hello!' }];
 
   // 3. Make OpenAI API request with streaming enabled
-  const openAiKey = process.env.OPENAI_API_KEY || '';
-  if (!openAiKey) {
-    return new Response('[Error]: Missing OpenAI API key', { status: 500 });
+  const openRouterKey = process.env.OPENROUTER_API_KEY || '';
+  if (!openRouterKey) {
+    return new Response('[Error]: Missing OpenRouter API key', { status: 500 });
   }
 
   // Prepare chat completion payload
   const body = JSON.stringify({
-    model: 'gpt-4.1-mini',
+    model: 'deepseek/deepseek-chat',
     messages: userMessages,
     temperature: 0.7,
     stream: true
   });
 
-  // Forward request to OpenAI with fetch
-  const openAiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+  // Forward request to OpenRouter with fetch
+  const openRouterResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${openAiKey}`
+      Authorization: `Bearer ${openRouterKey}`,
+      'X-Title': 'MyAwesomeApp',
+      'HTTP-Referer': 'https://my-awesome-app.example.com'
     },
     body
   });
 
-  if (!openAiResponse.ok || !openAiResponse.body) {
-    return new Response('[Error]: OpenAI request failed', { status: 500 });
+  if (!openRouterResponse.ok || !openRouterResponse.body) {
+    return new Response('[Error]: OpenRouter request failed', { status: 500 });
   }
 
   // 4. Create a readable stream to transform OpenAI chunks to SSE format
   const readableStream = new ReadableStream({
     async start(controller) {
       // Use reader to read the response body
-      const reader = openAiResponse.body.getReader();
+      const reader = openRouterResponse.body.getReader();
       const decoder = new TextDecoder('utf-8');
       let done = false;
 

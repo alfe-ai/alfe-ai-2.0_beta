@@ -119,8 +119,8 @@ const db = new TaskDB();
 console.debug("[Server Debug] Checking or setting default 'ai_model' in DB...");
 const currentModel = db.getSetting("ai_model");
 if (!currentModel) {
-  console.debug("[Server Debug] 'ai_model' is missing in DB, setting default to 'gpt-4.1-mini'.");
-  db.setSetting("ai_model", "gpt-4.1-mini");
+  console.debug("[Server Debug] 'ai_model' is missing in DB, setting default to 'deepseek/deepseek-chat'.");
+  db.setSetting("ai_model", "deepseek/deepseek-chat");
 } else {
   console.debug("[Server Debug] 'ai_model' found =>", currentModel);
 }
@@ -160,7 +160,7 @@ const jobManager = new JobManager();
  * Added checks to help diagnose missing or invalid API keys.
  */
 function getOpenAiClient() {
-  let service = db.getSetting("ai_service") || "openai";
+  let service = db.getSetting("ai_service") || "openrouter";
   const openAiKey = process.env.OPENAI_API_KEY || "";
   const openRouterKey = process.env.OPENROUTER_API_KEY || "";
 
@@ -1187,7 +1187,7 @@ app.post("/api/chat", async (req, res) => {
       finalUserMessage = `${prependInstr}\n\n${userMessage}`;
     }
 
-    const { provider } = parseProviderModel(model || "gpt-4.1-mini");
+    const { provider } = parseProviderModel(model || "deepseek/deepseek-chat");
     const systemContext = `System Context:\n${savedInstructions}\n\nModel: ${model} (provider: ${provider})\nUserTime: ${userTime}\nTimeZone: Central`;
 
     const conversation = [{ role: "system", content: systemContext }];
@@ -1225,7 +1225,7 @@ app.post("/api/chat", async (req, res) => {
     }
 
     function stripModelPrefix(m) {
-      if (!m) return "gpt-4.1-mini";
+      if (!m) return "deepseek/deepseek-chat";
       if (m.startsWith("openai/")) return m.substring("openai/".length);
       if (m.startsWith("openrouter/")) return m.substring("openrouter/".length);
       return m;

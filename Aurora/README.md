@@ -19,7 +19,7 @@ npm start
 | `GITHUB_REPO`    | Repository name.                                      |
 | `GITHUB_LABEL`   | (Optional) Issue label to filter on. If omitted, **all** open issues are returned. |
 | `OPENAI_API_KEY` | OpenAI API key for AI features ([get here](https://platform.openai.com/api-keys)) |
-| `OPENAI_MODEL`   | (Optional) Model ID for completions (default: gpt-4)  |
+| `OPENAI_MODEL`   | (Optional) Model ID for completions (default: deepseek/deepseek-chat)  |
 | `UPSCALE_SCRIPT_PATH` | (Optional) Path to the image upscale script. Defaults to the included loop.sh |
 | `PRINTIFY_SCRIPT_PATH` | (Optional) Path to the Printify submission script. Defaults to the included run.sh |
 | `STABLE_DIFFUSION_URL` | (Optional) Base URL for a self-hosted Stable Diffusion API |
