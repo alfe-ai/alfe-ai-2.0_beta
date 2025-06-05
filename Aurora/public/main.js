@@ -3309,13 +3309,37 @@ btnPipelineQueueIcon?.addEventListener("click", () => { if(!sidebarVisible) togg
 btnNexumChatIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); window.location.href = btnNexumChat.dataset.url; });
 btnNexumTabsIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); window.location.href = btnNexumTabs.dataset.url; });
 // Thin sidebar icon actions
-thinChatIcon?.addEventListener("click", () => openPanelWithSidebar(showChatTabsPanel));
-thinImagesIcon?.addEventListener("click", () => openPanelWithSidebar(showUploaderPanel));
-thinArchiveIcon?.addEventListener("click", () => openPanelWithSidebar(showArchiveTabsPanel));
+thinChatIcon?.addEventListener("click", ev => {
+  ev.preventDefault();
+  ev.stopPropagation();
+  openPanelWithSidebar(showChatTabsPanel);
+});
+thinImagesIcon?.addEventListener("click", ev => {
+  ev.preventDefault();
+  ev.stopPropagation();
+  openPanelWithSidebar(showUploaderPanel);
+});
+thinArchiveIcon?.addEventListener("click", ev => {
+  ev.preventDefault();
+  ev.stopPropagation();
+  openPanelWithSidebar(showArchiveTabsPanel);
+});
 // Ensure taps on mobile trigger the same actions
-thinChatIcon?.addEventListener("touchstart", () => openPanelWithSidebar(showChatTabsPanel));
-thinImagesIcon?.addEventListener("touchstart", () => openPanelWithSidebar(showUploaderPanel));
-thinArchiveIcon?.addEventListener("touchstart", () => openPanelWithSidebar(showArchiveTabsPanel));
+thinChatIcon?.addEventListener("touchstart", ev => {
+  ev.preventDefault();
+  ev.stopPropagation();
+  openPanelWithSidebar(showChatTabsPanel);
+});
+thinImagesIcon?.addEventListener("touchstart", ev => {
+  ev.preventDefault();
+  ev.stopPropagation();
+  openPanelWithSidebar(showUploaderPanel);
+});
+thinArchiveIcon?.addEventListener("touchstart", ev => {
+  ev.preventDefault();
+  ev.stopPropagation();
+  openPanelWithSidebar(showArchiveTabsPanel);
+});
 
 (async function init(){
   const placeholderEl = document.getElementById("chatPlaceholder");
