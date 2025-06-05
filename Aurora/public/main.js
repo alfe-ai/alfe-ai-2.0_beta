@@ -1809,6 +1809,15 @@ chatSendBtnEl.addEventListener("click", async () => {
     waitingElem.textContent = `Waiting: ${waitTime.toFixed(1)}s`;
   }, 100);
 
+  // Start an animated ellipsis loader that appends dots to the bot's text
+  let ellipsisStep = 0;
+  const ellipsisInterval = setInterval(() => {
+    const dots = '.'.repeat((ellipsisStep % 3) + 1);
+    ellipsisStep++;
+    botTextSpan.textContent = partialText + dots;
+    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+  }, 500);
+
   try {
     const resp = await fetch("/api/chat",{
       method:"POST",
@@ -1819,6 +1828,7 @@ chatSendBtnEl.addEventListener("click", async () => {
     waitingElem.textContent = "";
 
     if(!resp.ok){
+      clearInterval(ellipsisInterval);
       botTextSpan.textContent = "[Error contacting AI]";
       botHead.querySelector("span").textContent = formatTimestamp(new Date().toISOString());
     } else {
@@ -1827,9 +1837,11 @@ chatSendBtnEl.addEventListener("click", async () => {
         const { value, done } = await reader.read();
         if(done) break;
         partialText += new TextDecoder().decode(value);
-        botTextSpan.textContent = partialText;
-        chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
       }
+      // Update once more without the loader after streaming finishes
+      botTextSpan.textContent = partialText;
+      chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+      clearInterval(ellipsisInterval);
       botHead.querySelector("span").textContent = formatTimestamp(new Date().toISOString());
     }
 
@@ -1852,6 +1864,7 @@ chatSendBtnEl.addEventListener("click", async () => {
     });
   } catch(e) {
     clearInterval(waitInterval);
+    clearInterval(ellipsisInterval);
     waitingElem.textContent = "";
     botTextSpan.textContent = "[Error occurred]";
     botHead.querySelector("span").textContent = formatTimestamp(new Date().toISOString());
