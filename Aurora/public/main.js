@@ -102,6 +102,7 @@ let imageLoopEnabled = false; // automatic image generation loop mode
 let imageLoopMessage = "Next image";
 let imageGenService = 'openai';
 let isImageGenerating = false; // true while an image is being generated
+let lastImagePrompt = null; // avoid repeating generation for same prompt
 let imageUploadEnabled = false; // show image upload button
 let imagePaintTrayEnabled = true; // show image paint tray button
 let activityIframeMenuVisible = false; // show Activity IFrame menu item
@@ -4616,9 +4617,12 @@ registerActionHook("afterSendLog", ({message, response}) => {
 // Automatically generate an image from the AI response
 registerActionHook("generateImage", async ({response}) => {
   try {
+    if(isImageGenerating) return;
     if(currentTabType !== 'design' || !tabGenerateImages) return;
     const prompt = (response || "").trim();
     if(!prompt) return;
+    if(prompt === lastImagePrompt) return;
+    lastImagePrompt = prompt;
     isImageGenerating = true;
     if(chatInputEl) chatInputEl.disabled = true;
     if(chatSendBtnEl) chatSendBtnEl.disabled = true;
@@ -4637,6 +4641,7 @@ registerActionHook("generateImage", async ({response}) => {
       scrollChatToBottom();
     }
     isImageGenerating = false;
+    lastImagePrompt = null;
     if(chatInputEl) chatInputEl.disabled = false;
     if(chatSendBtnEl) chatSendBtnEl.disabled = false;
     const data = await r.json();
@@ -4659,6 +4664,7 @@ registerActionHook("generateImage", async ({response}) => {
       scrollChatToBottom();
     }
     isImageGenerating = false;
+    lastImagePrompt = null;
     if(chatInputEl) chatInputEl.disabled = false;
     if(chatSendBtnEl) chatSendBtnEl.disabled = false;
     console.error('[Hook generateImage] failed:', err);
