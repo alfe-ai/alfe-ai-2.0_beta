@@ -1856,12 +1856,17 @@ chatSendBtnEl.addEventListener("click", async () => {
     });
 
     await loadChatHistory(currentTabId, true);
+    await loadTabs();
+    renderTabs();
+    renderSidebarTabs();
+    renderArchivedSidebarTabs();
+    updatePageTitle();
     actionHooks.forEach(h => {
       if(typeof h.fn === "function"){
         try { h.fn({type:"afterSend", message: combinedUserText, response: partialText}); }
         catch(err){ console.error("Action hook error:", err); }
       }
-    });
+      });
   } catch(e) {
     clearInterval(waitInterval);
     clearInterval(ellipsisInterval);
