@@ -5,9 +5,14 @@ import https from "https";
 import GitHubClient from "./githubClient.js";
 import TaskQueue from "./taskQueue.js";
 import TaskDB from "./taskDb.js";
+import { encryptMessage, decryptMessage } from "./pgp.js";
 import { pbkdf2Sync, randomBytes } from "crypto";
 
 dotenv.config();
+
+const PGP_PUBLIC_KEY = process.env.PGP_PUBLIC_KEY || "";
+const PGP_PRIVATE_KEY = process.env.PGP_PRIVATE_KEY || "";
+const PGP_PASSPHRASE = process.env.PGP_PASSPHRASE || "";
 
 const origDebug = console.debug.bind(console);
 console.debug = (...args) => {
@@ -396,7 +401,8 @@ async function createInitialTabMessage(tabId, type, sessionId = '') {
   const greeting = await generateInitialGreeting(type);
   const pairId = db.createChatPair('', tabId, '', sessionId);
   const defaultModel = db.getSetting('ai_model') || 'deepseek/deepseek-chat';
-  db.finalizeChatPair(pairId, greeting, defaultModel, new Date().toISOString(), null);
+  const encryptedGreet = await encryptMessage(greeting, PGP_PUBLIC_KEY);
+  db.finalizeChatPair(pairId, encryptedGreet, defaultModel, new Date().toISOString(), null);
 }
 
 // Explicit CORS configuration
@@ -1299,7 +1305,13 @@ app.post("/api/chat", async (req, res) => {
       return res.status(400).send("Missing message");
     }
 
-    const priorPairsAll = db.getAllChatPairs(chatTabId);
+    const priorPairsRaw = db.getAllChatPairs(chatTabId);
+    const priorPairsAll = [];
+    for (const p of priorPairsRaw) {
+      const user_text = await decryptMessage(p.user_text, PGP_PRIVATE_KEY, PGP_PASSPHRASE);
+      const ai_text = p.ai_text ? await decryptMessage(p.ai_text, PGP_PRIVATE_KEY, PGP_PASSPHRASE) : "";
+      priorPairsAll.push({ ...p, user_text, ai_text });
+    }
     const isFirstMessage = !db.hasUserMessages(chatTabId);
     let model = db.getSetting("ai_model");
     const savedInstructions = db.getSetting("agent_instructions") || "";
@@ -1333,7 +1345,8 @@ app.post("/api/chat", async (req, res) => {
       }
     }
 
-    const chatPairId = db.createChatPair(userMessage, chatTabId, systemContext, sessionId);
+    const encryptedUser = await encryptMessage(userMessage, PGP_PUBLIC_KEY);
+    const chatPairId = db.createChatPair(encryptedUser, chatTabId, systemContext, sessionId);
     conversation.push({ role: "user", content: finalUserMessage });
     db.logActivity("User chat", JSON.stringify({ tabId: chatTabId, message: userMessage, userTime }));
 
@@ -1450,7 +1463,8 @@ app.post("/api/chat", async (req, res) => {
       responseTime
     };
 
-    db.finalizeChatPair(chatPairId, assistantMessage, model, new Date().toISOString(), JSON.stringify(tokenInfo));
+    const encryptedAssistant = await encryptMessage(assistantMessage, PGP_PUBLIC_KEY);
+    db.finalizeChatPair(chatPairId, encryptedAssistant, model, new Date().toISOString(), JSON.stringify(tokenInfo));
     db.logActivity("AI chat", JSON.stringify({ tabId: chatTabId, response: assistantMessage, tokenInfo }));
   } catch (err) {
     console.error("[Server Debug] /api/chat error:", err);
@@ -1460,7 +1474,7 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
-app.get("/api/chat/history", (req, res) => {
+app.get("/api/chat/history", async (req, res) => {
   console.debug("[Server Debug] GET /api/chat/history =>", req.query);
   try {
     const tabId = parseInt(req.query.tabId || "1", 10);
@@ -1473,8 +1487,13 @@ app.get("/api/chat/history", (req, res) => {
       return res.status(403).json({ error: "Forbidden" });
     }
 
-    const pairsDesc = db.getChatPairsPage(tabId, limit, offset);
-    const pairsAsc = pairsDesc.slice().reverse();
+    const pairsDescRaw = db.getChatPairsPage(tabId, limit, offset);
+    const pairsAsc = [];
+    for (const p of pairsDescRaw.slice().reverse()) {
+      const user_text = await decryptMessage(p.user_text, PGP_PRIVATE_KEY, PGP_PASSPHRASE);
+      const ai_text = p.ai_text ? await decryptMessage(p.ai_text, PGP_PRIVATE_KEY, PGP_PASSPHRASE) : "";
+      pairsAsc.push({ ...p, user_text, ai_text });
+    }
 
     let totalInputTokens = 0;
     let totalOutputTokens = 0;
@@ -1718,13 +1737,24 @@ app.delete("/api/chat/tabs/:id", (req, res) => {
   }
 });
 
-app.get("/pair/:id", (req, res) => {
+app.get("/pair/:id", async (req, res) => {
   console.debug("[Server Debug] GET /pair/:id =>", req.params.id);
   const pairId = parseInt(req.params.id, 10);
   if (Number.isNaN(pairId)) return res.status(400).send("Invalid pair ID");
-  const pair = db.getPairById(pairId);
+  const pairRaw = db.getPairById(pairId);
+  const pair = {
+    ...pairRaw,
+    user_text: await decryptMessage(pairRaw.user_text, PGP_PRIVATE_KEY, PGP_PASSPHRASE),
+    ai_text: pairRaw.ai_text ? await decryptMessage(pairRaw.ai_text, PGP_PRIVATE_KEY, PGP_PASSPHRASE) : ""
+  };
   if (!pair) return res.status(404).send("Pair not found");
-  const allPairs = db.getAllChatPairs(pair.chat_tab_id);
+  const allRaw = db.getAllChatPairs(pair.chat_tab_id);
+  const allPairs = [];
+  for (const p of allRaw) {
+    const user_text = await decryptMessage(p.user_text, PGP_PRIVATE_KEY, PGP_PASSPHRASE);
+    const ai_text = p.ai_text ? await decryptMessage(p.ai_text, PGP_PRIVATE_KEY, PGP_PASSPHRASE) : "";
+    allPairs.push({ ...p, user_text, ai_text });
+  }
   res.json({
     pair,
     conversation: allPairs

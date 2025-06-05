@@ -20,6 +20,8 @@
     "express": "^4.19.2",
     "multer": "^1.4.5-lts.1",
     "openai": "^4.7.1",
-    "tiktoken": "^1.0.4"
+    "tiktoken": "^1.0.4",
+    "openpgp": "^5.10.0",
+    "bcryptjs": "^2.4.3"
   }
 }
