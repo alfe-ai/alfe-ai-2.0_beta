@@ -690,9 +690,8 @@ async function loadSettings(){
   if(newBtn) newBtn.style.display = modelTabsBarVisible ? "" : "none";
   if(toggleBtn) toggleBtn.textContent = modelTabsBarVisible ? "Hide Models" : "Models";
 
-  if(typeof map.top_chat_tabs_bar_visible !== "undefined"){
-    topChatTabsBarVisible = map.top_chat_tabs_bar_visible !== false;
-  }
+  // Force the top chat tabs bar to remain hidden regardless of saved setting
+  topChatTabsBarVisible = false;
   toggleTopChatTabsVisibility(topChatTabsBarVisible);
 
   if(typeof map.project_info_bar_visible !== "undefined"){
