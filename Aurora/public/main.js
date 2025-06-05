@@ -345,7 +345,11 @@ async function toggleSidebar(){
 
   const topBtns = document.getElementById("topRightButtons");
   if(topBtns){
-    topBtns.style.display = sidebarVisible ? "none" : "flex";
+    if(isMobileViewport()){
+      topBtns.style.display = sidebarVisible ? "none" : "flex";
+    } else {
+      topBtns.style.display = "flex";
+    }
   }
 
   const expandBtn = document.getElementById("expandSidebarBtn");
@@ -551,7 +555,11 @@ async function loadSettings(){
   }
   const initTopBtns = document.getElementById("topRightButtons");
   if(initTopBtns){
-    initTopBtns.style.display = sidebarVisible ? "none" : "flex";
+    if(isMobileViewport()){
+      initTopBtns.style.display = sidebarVisible ? "none" : "flex";
+    } else {
+      initTopBtns.style.display = "flex";
+    }
   }
   const appEl = document.querySelector(".app");
   if(appEl){
