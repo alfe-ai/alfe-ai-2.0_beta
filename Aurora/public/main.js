@@ -447,7 +447,7 @@ document.addEventListener("touchend", ev => {
   const dy = Math.abs(ev.changedTouches[0].clientY - swipeStartY);
   const dt = Date.now() - swipeStartTime;
   if(dt <= swipeAllowedTime && Math.abs(dx) > swipeThreshold && Math.abs(dx) > dy){
-    if(dx > 0 && !sidebarVisible && swipeStartX < swipeEdgeSize && isMobileViewport()){
+    if(dx > 0 && !sidebarVisible && isMobileViewport()){
       toggleSidebar();
     } else if(dx < 0 && sidebarVisible){
       const sidebarEl = document.querySelector(".sidebar");
