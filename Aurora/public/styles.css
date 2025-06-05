@@ -968,7 +968,7 @@ body {
 /* Thin sidebar shown when main sidebar is collapsed */
 .thin-sidebar {
   position: absolute;
-  top: 60px;
+  top: 120px;
   left: 8px;
   width: 36px;
   background: #2d2d2d;
