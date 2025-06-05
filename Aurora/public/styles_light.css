@@ -983,6 +983,19 @@ body {
   align-items: center;
   z-index: 1001;
 }
+.app.sidebar-collapsed #expandSidebarArrow {
+  display: block;
+}
+#expandSidebarArrow {
+  position: absolute;
+  top: 20px;
+  left: 48px;
+  font-size: 1.4rem;
+  color: #333;
+  cursor: pointer;
+  display: none;
+  z-index: 1000;
+}
 .app.sidebar-collapsed .thin-sidebar {
   display: flex;
 }
