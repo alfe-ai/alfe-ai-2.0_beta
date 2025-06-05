@@ -4,7 +4,10 @@ import path from "path";
 import https from "https";
 import GitHubClient from "./githubClient.js";
 import TaskQueue from "./taskQueue.js";
-import TaskDB from "./taskDb.js";
+import TaskDBLocal from "./taskDb.js";
+import TaskDBAws from "./taskDbAws.js";
+
+const TaskDB = process.env.AWS_DB_URL ? TaskDBAws : TaskDBLocal;
 import { pbkdf2Sync, randomBytes } from "crypto";
 import speakeasy from "speakeasy";
 
@@ -30,6 +33,7 @@ console.error = (...args) => {
  * Create a timestamped backup of issues.sqlite (if it exists).
  */
 function backupDb() {
+  if (process.env.AWS_DB_URL) return; // RDS is managed separately
   const dbPath = path.resolve("issues.sqlite");
   if (!fs.existsSync(dbPath)) {
     console.log("[TaskQueue] No existing DB to backup (first run).");
@@ -39,7 +43,6 @@ function backupDb() {
   const backupsDir = path.resolve("backups");
   fs.mkdirSync(backupsDir, { recursive: true });
 
-  // ISO string is filesystem-friendly after removing colon/period characters.
   const ts = new Date().toISOString().replace(/[:.]/g, "-");
   const backupPath = path.join(backupsDir, `issues-${ts}.sqlite`);
 
@@ -60,7 +63,7 @@ async function main() {
       repo: process.env.GITHUB_REPO
     });
 
-    const db = new TaskDB(); // creates/open issues.sqlite in cwd
+    const db = new TaskDB(); // uses AWS RDS when AWS_DB_URL is set
     const queue = new TaskQueue();
 
     const label = process.env.GITHUB_LABEL;
