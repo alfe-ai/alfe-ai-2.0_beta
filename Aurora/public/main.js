@@ -3922,6 +3922,46 @@ document.getElementById("taskListConfigCloseBtn").addEventListener("click", () =
 });
 
 // ----------------------------------------------------------------------
+// Global AI Settings modal
+// ----------------------------------------------------------------------
+async function openGlobalAiSettings(){
+  showPageLoader();
+  try {
+    const service = await getSetting("ai_service");
+    const resp = await fetch("/api/ai/models");
+    if(resp.ok){
+      const data = await resp.json();
+      const sel = document.getElementById("globalAiModelSelect");
+      sel.innerHTML = "";
+      (data.models || []).forEach(m => {
+        sel.appendChild(new Option(`${m.id} (limit ${m.tokenLimit}, in ${m.inputCost}, out ${m.outputCost})`, m.id));
+      });
+      const curModel = await getSetting("ai_model");
+      if(curModel) sel.value = curModel;
+    }
+    document.getElementById("globalAiServiceSelect").value = service || "openrouter";
+  } catch(e){
+    console.error("Error opening global AI settings:", e);
+  } finally {
+    hidePageLoader();
+    showModal(document.getElementById("globalAiSettingsModal"));
+  }
+}
+
+async function saveGlobalAiSettings(){
+  const svc = document.getElementById("globalAiServiceSelect").value;
+  const model = document.getElementById("globalAiModelSelect").value;
+  await setSettings({ ai_service: svc, ai_model: model });
+  hideModal(document.getElementById("globalAiSettingsModal"));
+}
+
+document.getElementById("globalAiSettingsBtn").addEventListener("click", openGlobalAiSettings);
+document.getElementById("globalAiSettingsSaveBtn").addEventListener("click", saveGlobalAiSettings);
+document.getElementById("globalAiSettingsCancelBtn").addEventListener("click", () => {
+  hideModal(document.getElementById("globalAiSettingsModal"));
+});
+
+// ----------------------------------------------------------------------
 // Feature Flags modal
 // ----------------------------------------------------------------------
 async function loadFeatureFlags(){
