@@ -54,6 +54,9 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(data => updateAccountButton(data))
       .catch(err => console.error('Failed to fetch account', err));
   }
+
+  updateChatPanelVisibility();
+  window.addEventListener('resize', updateChatPanelVisibility);
 });
 
 let columnsOrder = [
@@ -184,6 +187,16 @@ function isoDate(d) {
 
 function isMobileViewport(){
   return window.innerWidth <= 700;
+}
+
+function updateChatPanelVisibility(){
+  const chatPanel = document.querySelector(".chat-panel");
+  if(!chatPanel) return;
+  if(isMobileViewport() && sidebarVisible){
+    chatPanel.style.display = "none";
+  } else {
+    chatPanel.style.display = "";
+  }
 }
 
 function showModal(m){ m.style.display = "flex"; }
@@ -417,6 +430,8 @@ async function toggleSidebar(){
     collapsedLogo.style.display = sidebarVisible ? "none" : "block";
   }
 
+  updateChatPanelVisibility();
+
   // Shift top chat tabs bar when sidebar is collapsed so it doesn't
   // overlap the logo icon in the top left.
   const appEl = document.querySelector(".app");
@@ -610,6 +625,7 @@ async function loadSettings(){
   if(collapsedLogoInit){
     collapsedLogoInit.style.display = sidebarVisible ? "none" : "block";
   }
+  updateChatPanelVisibility();
   const initTopBtns = document.getElementById("topRightButtons");
   if(initTopBtns){
     if(isMobileViewport()){
