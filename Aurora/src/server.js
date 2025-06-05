@@ -2313,8 +2313,23 @@ app.post("/api/image/generate", async (req, res) => {
       const tab = parseInt(tabId, 10) || 1;
       const imageTitle = await deriveImageTitle(prompt);
       const modelId = model ? `stable-diffusion/${model}` : 'stable-diffusion';
-      db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated', sessionId, ipAddress, modelId);
-      return res.json({ success: true, url: localUrl, title: imageTitle });
+      const pairId = db.createImagePair(
+        localUrl,
+        prompt || '',
+        tab,
+        imageTitle,
+        'Generated',
+        sessionId,
+        ipAddress,
+        modelId
+      );
+      return res.json({
+        success: true,
+        url: localUrl,
+        title: imageTitle,
+        model: modelId,
+        pairId
+      });
     }
 
     const openAiKey = process.env.OPENAI_API_KEY;
@@ -2398,9 +2413,24 @@ app.post("/api/image/generate", async (req, res) => {
     const tab = parseInt(tabId, 10) || 1;
     const imageTitle = await deriveImageTitle(prompt, openaiClient);
     const modelId = `openai/${modelName}`;
-    db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated', sessionId, ipAddress, modelId);
+    const pairId = db.createImagePair(
+      localUrl,
+      prompt || '',
+      tab,
+      imageTitle,
+      'Generated',
+      sessionId,
+      ipAddress,
+      modelId
+    );
 
-    res.json({ success: true, url: localUrl, title: imageTitle });
+    res.json({
+      success: true,
+      url: localUrl,
+      title: imageTitle,
+      model: modelId,
+      pairId
+    });
   } catch (err) {
     console.error("[Server Debug] /api/image/generate error:", err);
     const status = err?.status || err?.response?.status || 500;

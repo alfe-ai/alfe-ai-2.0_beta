@@ -4563,7 +4563,7 @@ function updateImagePreviewList(){
 }
 
 // Append an AI image bubble to the chat
-function addImageChatBubble(url, altText="", title=""){
+function addImageChatBubble(url, altText="", title="", model=""){
   const chatMessagesEl = document.getElementById("chatMessages");
   const placeholderEl = document.getElementById("chatPlaceholder");
   if(!chatMessagesEl || !url) return;
@@ -4599,6 +4599,14 @@ function addImageChatBubble(url, altText="", title=""){
   img.style.height = "auto";
   img.addEventListener('load', scrollChatToBottom);
   botDiv.appendChild(img);
+
+  if(model){
+    const { shortModel } = parseProviderModel(model);
+    const modelDiv = document.createElement("div");
+    modelDiv.className = "model-indicator";
+    modelDiv.textContent = `${shortModel}`;
+    botDiv.appendChild(modelDiv);
+  }
 
   seqDiv.appendChild(botDiv);
   if(placeholderEl) placeholderEl.style.display = "none";
@@ -4641,7 +4649,7 @@ registerActionHook("generateImage", async ({response}) => {
     if(chatSendBtnEl) chatSendBtnEl.disabled = false;
     const data = await r.json();
       if(r.ok && data.url){
-        addImageChatBubble(data.url, prompt, data.title || "");
+        addImageChatBubble(data.url, prompt, data.title || "", data.model || "");
         updateImageLimitInfo();
         if(sidebarViewUploader && sidebarViewUploader.style.display !== "none"){
           await loadFileList();
