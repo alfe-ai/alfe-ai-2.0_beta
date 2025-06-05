@@ -413,7 +413,7 @@ async function toggleSidebar(){
   sidebarVisible = !sidebarVisible;
   const sidebarEl = $(".sidebar");
   const dividerEl = $("#divider");
-  sidebarEl.style.display = sidebarVisible ? "" : "none";
+  sidebarEl.classList.toggle("collapsed", !sidebarVisible);
   dividerEl.style.display = sidebarVisible ? "" : "none";
   const toggleSidebarBtnEl = $("#toggleSidebarBtn");
   if(toggleSidebarBtnEl){
@@ -430,22 +430,18 @@ async function toggleSidebar(){
   }
 
   const expandBtn = document.getElementById("expandSidebarBtn");
-  expandBtn.style.display = sidebarVisible ? "none" : "block";
+  expandBtn.style.display = "none";
 
   const collapsedLogo = document.getElementById("collapsedSidebarLogo");
   if(collapsedLogo){
-    collapsedLogo.style.display = sidebarVisible ? "none" : "block";
+    collapsedLogo.style.display = "none";
   }
 
   // Shift top chat tabs bar when sidebar is collapsed so it doesn't
   // overlap the logo icon in the top left.
   const appEl = document.querySelector(".app");
   if(appEl){
-    if(sidebarVisible){
-      appEl.classList.remove("sidebar-collapsed");
-    } else {
-      appEl.classList.add("sidebar-collapsed");
-    }
+    appEl.classList.toggle("sidebar-collapsed", !sidebarVisible);
   }
 
   await setSetting("sidebar_visible", sidebarVisible);
@@ -619,16 +615,16 @@ async function loadSettings(){
   if(isMobileViewport()){
     sidebarVisible = false;
   }
-  $(".sidebar").style.display = sidebarVisible ? "" : "none";
+  $(".sidebar").classList.toggle("collapsed", !sidebarVisible);
   $("#divider").style.display = sidebarVisible ? "" : "none";
   const toggleSidebarBtn = $("#toggleSidebarBtn");
   if(toggleSidebarBtn){
     toggleSidebarBtn.textContent = sidebarVisible ? "Hide sidebar" : "Show sidebar";
   }
-  document.getElementById("expandSidebarBtn").style.display = sidebarVisible ? "none" : "block";
+  document.getElementById("expandSidebarBtn").style.display = "none";
   const collapsedLogoInit = document.getElementById("collapsedSidebarLogo");
   if(collapsedLogoInit){
-    collapsedLogoInit.style.display = sidebarVisible ? "none" : "block";
+    collapsedLogoInit.style.display = "none";
   }
   const initTopBtns = document.getElementById("topRightButtons");
   if(initTopBtns){
@@ -640,11 +636,7 @@ async function loadSettings(){
   }
   const appEl = document.querySelector(".app");
   if(appEl){
-    if(sidebarVisible){
-      appEl.classList.remove("sidebar-collapsed");
-    } else {
-      appEl.classList.add("sidebar-collapsed");
-    }
+    appEl.classList.toggle("sidebar-collapsed", !sidebarVisible);
   }
 
   if(typeof map.enter_submits_message !== "undefined"){
@@ -3166,6 +3158,19 @@ const btnJobs = document.getElementById("navJobsBtn");
 const btnPipelineQueue = document.getElementById("navPipelineQueueBtn");
 const btnNexumChat = document.getElementById("navNexumChatBtn");
 const btnNexumTabs = document.getElementById("navNexumTabsBtn");
+// Icon buttons for collapsed sidebar
+const btnTasksIcon = document.getElementById("navTasksIcon");
+const btnUploaderIcon = document.getElementById("navUploaderIcon");
+const btnChatTabsIcon = document.getElementById("navChatTabsIcon");
+const btnArchiveTabsIcon = document.getElementById("navArchiveTabsIcon");
+const btnFileTreeIcon = document.getElementById("navFileTreeIcon");
+const btnAiModelsIcon = document.getElementById("navAiModelsIcon");
+const btnImageGeneratorIcon = document.getElementById("navImageGeneratorIcon");
+const btnJobsIcon = document.getElementById("navJobsIcon");
+const btnPipelineQueueIcon = document.getElementById("navPipelineQueueIcon");
+const btnActivityIframeIcon = document.getElementById("navActivityIframeIcon");
+const btnNexumChatIcon = document.getElementById("navNexumChatIcon");
+const btnNexumTabsIcon = document.getElementById("navNexumTabsIcon");
 
 btnTasks.addEventListener("click", showTasksPanel);
 btnUploader.addEventListener("click", showUploaderPanel);
@@ -3185,6 +3190,24 @@ btnPipelineQueue?.addEventListener("click", () => {
 });
 btnNexumChat?.addEventListener("click", () => { window.location.href = btnNexumChat.dataset.url; });
 btnNexumTabs?.addEventListener("click", () => { window.location.href = btnNexumTabs.dataset.url; });
+
+// Icon button actions (expand sidebar then open panel or link)
+function openPanelWithSidebar(fn){
+  if(!sidebarVisible) toggleSidebar();
+  fn();
+}
+btnTasksIcon?.addEventListener("click", () => openPanelWithSidebar(showTasksPanel));
+btnUploaderIcon?.addEventListener("click", () => openPanelWithSidebar(showUploaderPanel));
+btnChatTabsIcon?.addEventListener("click", () => openPanelWithSidebar(showChatTabsPanel));
+btnArchiveTabsIcon?.addEventListener("click", () => openPanelWithSidebar(showArchiveTabsPanel));
+btnFileTreeIcon?.addEventListener("click", () => openPanelWithSidebar(showFileTreePanel));
+btnActivityIframeIcon?.addEventListener("click", () => openPanelWithSidebar(showActivityIframePanel));
+btnAiModelsIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); window.location.href = btnAiModels.dataset.url; });
+btnImageGeneratorIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); window.location.href = btnImageGenerator.dataset.url; });
+btnJobsIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); const url = btnJobs.dataset.url; window.open(url, "_blank"); });
+btnPipelineQueueIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); const url = btnPipelineQueue.dataset.url; window.open(url, "_blank"); });
+btnNexumChatIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); window.location.href = btnNexumChat.dataset.url; });
+btnNexumTabsIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); window.location.href = btnNexumTabs.dataset.url; });
 
 (async function init(){
   const placeholderEl = document.getElementById("chatPlaceholder");
