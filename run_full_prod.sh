@@ -12,7 +12,9 @@ if screen -list 2>/dev/null | grep -q "${SCREEN_NAME}"; then
 fi
 
 git pull
-git log -n 3
+git log -n 5
+
+echo ""
 
 # Start a detached screen session and run the full stack
 screen -S "$SCREEN_NAME" -dm bash -c "./run_full.sh"
