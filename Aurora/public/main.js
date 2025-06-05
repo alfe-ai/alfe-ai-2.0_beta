@@ -3312,6 +3312,10 @@ btnNexumTabsIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSi
 thinChatIcon?.addEventListener("click", () => openPanelWithSidebar(showChatTabsPanel));
 thinImagesIcon?.addEventListener("click", () => openPanelWithSidebar(showUploaderPanel));
 thinArchiveIcon?.addEventListener("click", () => openPanelWithSidebar(showArchiveTabsPanel));
+// Ensure taps on mobile trigger the same actions
+thinChatIcon?.addEventListener("touchstart", () => openPanelWithSidebar(showChatTabsPanel));
+thinImagesIcon?.addEventListener("touchstart", () => openPanelWithSidebar(showUploaderPanel));
+thinArchiveIcon?.addEventListener("touchstart", () => openPanelWithSidebar(showArchiveTabsPanel));
 
 (async function init(){
   const placeholderEl = document.getElementById("chatPlaceholder");
