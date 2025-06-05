@@ -1523,6 +1523,48 @@ if (subscribeCloseBtn) {
   );
 }
 
+const signupBtn = document.getElementById("signupBtn");
+if (signupBtn) {
+  signupBtn.addEventListener("click", e => {
+    e.preventDefault();
+    showModal(document.getElementById("signupModal"));
+  });
+}
+const signupCancelBtn = document.getElementById("signupCancelBtn");
+if (signupCancelBtn) {
+  signupCancelBtn.addEventListener("click", () =>
+    hideModal(document.getElementById("signupModal"))
+  );
+}
+const signupSubmitBtn = document.getElementById("signupSubmitBtn");
+if (signupSubmitBtn) {
+  signupSubmitBtn.addEventListener("click", async () => {
+    const email = document.getElementById("signupEmail").value.trim();
+    const password = document.getElementById("signupPassword").value;
+    if(!email || !password){
+      showToast("Email and password required");
+      return;
+    }
+    try {
+      const resp = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, sessionId })
+      });
+      const data = await resp.json().catch(() => null);
+      if(resp.ok && data && data.success){
+        showToast("Registered!");
+        hideModal(document.getElementById("signupModal"));
+      } else {
+        showToast(data?.error || "Registration failed");
+      }
+    } catch(err){
+      console.error("Registration failed", err);
+      showToast("Registration failed");
+    }
+  });
+}
+
 document.getElementById("viewTabChat").addEventListener("click", () => updateView('chat'));
 document.getElementById("viewTabTasks").addEventListener("click", () => updateView('tasks'));
 document.getElementById("viewTabArchive").addEventListener("click", () => updateView('archive'));

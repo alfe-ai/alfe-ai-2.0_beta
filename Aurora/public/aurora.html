@@ -151,6 +151,7 @@
       <button id="themeToggleBtn" class="top-btn" title="Toggle Theme">☀️</button>
       <button id="chatSettingsBtn" class="top-btn" title="Chat Settings" style="display:none;">⚙️</button>
       <button id="globalAiSettingsBtn" class="top-btn" title="Global AI Settings" style="display:none;">⚙️</button>
+      <button id="signupBtn" class="top-btn">Sign Up</button>
 <!--    <a id="changelogBtn" href="/changelog.html" class="top-btn" target="_blank">Changelog</a>-->
     </div>
 
@@ -604,6 +605,23 @@
     <ul id="actionHooksList"></ul>
     <div class="modal-buttons">
       <button id="actionHooksCloseBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sign Up modal -->
+<div id="signupModal" class="modal">
+  <div class="modal-content">
+    <h2>Create Account</h2>
+    <label>Email:<br/>
+      <input type="email" id="signupEmail" style="width:100%;" />
+    </label>
+    <label style="margin-top:8px;">Password:<br/>
+      <input type="password" id="signupPassword" style="width:100%;" />
+    </label>
+    <div class="modal-buttons">
+      <button id="signupSubmitBtn">Register</button>
+      <button id="signupCancelBtn">Cancel</button>
     </div>
   </div>
 </div>

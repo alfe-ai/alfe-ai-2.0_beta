@@ -276,6 +276,16 @@ export default class TaskDB {
       );
     `);
 
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS accounts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        session_id TEXT DEFAULT '',
+        created_at TEXT NOT NULL
+      );
+    `);
+
     console.debug("[TaskDB Debug] Finished DB schema init.");
   }
 
@@ -987,6 +997,29 @@ export default class TaskDB {
         .prepare("SELECT upscaled FROM upscaled_images WHERE original=?")
         .get(originalUrl);
     return row ? row.upscaled : null;
+  }
+
+  createAccount(email, passwordHash, sessionId = '') {
+    const ts = new Date().toISOString();
+    const { lastInsertRowid } = this.db
+        .prepare(
+            `INSERT INTO accounts (email, password_hash, session_id, created_at)
+             VALUES (?, ?, ?, ?)`
+        )
+        .run(email, passwordHash, sessionId, ts);
+    return lastInsertRowid;
+  }
+
+  getAccountByEmail(email) {
+    return this.db.prepare('SELECT * FROM accounts WHERE email=?').get(email);
+  }
+
+  setAccountSession(id, sessionId) {
+    this.db.prepare('UPDATE accounts SET session_id=? WHERE id=?').run(sessionId, id);
+  }
+
+  getAccountBySession(sessionId) {
+    return this.db.prepare('SELECT * FROM accounts WHERE session_id=?').get(sessionId);
   }
 }
 

@@ -5,6 +5,7 @@ import https from "https";
 import GitHubClient from "./githubClient.js";
 import TaskQueue from "./taskQueue.js";
 import TaskDB from "./taskDb.js";
+import { pbkdf2Sync, randomBytes } from "crypto";
 
 dotenv.config();
 
@@ -241,6 +242,18 @@ function getSessionIdFromRequest(req) {
     cookies[name] = val;
   });
   return cookies.sessionId || "";
+}
+
+function hashPassword(password) {
+  const salt = randomBytes(16).toString('hex');
+  const hash = pbkdf2Sync(password, salt, 10000, 64, 'sha256').toString('hex');
+  return `${salt}$${hash}`;
+}
+
+function verifyPassword(password, stored) {
+  const [salt, hash] = stored.split('$');
+  const h = pbkdf2Sync(password, salt, 10000, 64, 'sha256').toString('hex');
+  return h === hash;
 }
 
 async function deriveImageTitle(prompt, client = null) {
@@ -797,6 +810,26 @@ app.post("/api/feedback", (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error("[TaskQueue] POST /api/feedback failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/api/register", (req, res) => {
+  console.debug("[Server Debug] POST /api/register =>", req.body);
+  try {
+    const { email, password } = req.body;
+    const sessionId = req.body.sessionId || getSessionIdFromRequest(req);
+    if (!email || !password) {
+      return res.status(400).json({ error: "email and password required" });
+    }
+    if (db.getAccountByEmail(email)) {
+      return res.status(400).json({ error: "account exists" });
+    }
+    const hash = hashPassword(password);
+    const id = db.createAccount(email, hash, sessionId);
+    res.json({ success: true, id });
+  } catch (err) {
+    console.error("[TaskQueue] POST /api/register failed:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
