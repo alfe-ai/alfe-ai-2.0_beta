@@ -2299,7 +2299,8 @@ app.post("/api/image/generate", async (req, res) => {
       );
       const tab = parseInt(tabId, 10) || 1;
       const imageTitle = await deriveImageTitle(prompt);
-      db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated', sessionId, ipAddress);
+      const modelId = model ? `stable-diffusion/${model}` : 'stable-diffusion';
+      db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated', sessionId, ipAddress, modelId);
       return res.json({ success: true, url: localUrl, title: imageTitle });
     }
 
@@ -2383,7 +2384,8 @@ app.post("/api/image/generate", async (req, res) => {
 
     const tab = parseInt(tabId, 10) || 1;
     const imageTitle = await deriveImageTitle(prompt, openaiClient);
-    db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated', sessionId, ipAddress);
+    const modelId = `openai/${modelName}`;
+    db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated', sessionId, ipAddress, modelId);
 
     res.json({ success: true, url: localUrl, title: imageTitle });
   } catch (err) {

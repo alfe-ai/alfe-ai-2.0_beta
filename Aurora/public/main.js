@@ -1888,6 +1888,8 @@ function parseProviderModel(model) {
     return { provider: "openrouter", shortModel: model.replace(/^openrouter\//,'') };
   } else if(model.startsWith("deepseek/")) {
     return { provider: "openrouter", shortModel: model.replace(/^deepseek\//,'') };
+  } else if(model.startsWith("stable-diffusion/")) {
+    return { provider: "stable-diffusion", shortModel: model.replace(/^stable-diffusion\//,'') };
   }
   return { provider: "Unknown", shortModel: model };
 }
@@ -3696,7 +3698,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
           }
         }
 
-        if(!p.image_url){
+        if(p.model){
           // Show model name at bottom-left of AI bubble
           const modelDiv = document.createElement("div");
           modelDiv.className = "model-indicator";
@@ -3871,7 +3873,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
     }
   }
 
-  if(!imageUrl){
+  if(model){
     // Show model name at bottom-left of AI bubble
     const modelDiv = document.createElement("div");
     modelDiv.className = "model-indicator";
