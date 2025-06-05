@@ -12,3 +12,7 @@ fi
 
 # Start a detached screen session and run the full stack
 screen -S "$SCREEN_NAME" -dm bash -c "./run_full.sh"
+
+# Display information about the new screen session
+echo "Screen session started: $SCREEN_NAME"
+screen -ls | grep "$SCREEN_NAME"
