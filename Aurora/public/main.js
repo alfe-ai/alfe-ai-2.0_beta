@@ -226,6 +226,7 @@ function updateAccountButton(info){
   if(!btn) return;
   btn.removeEventListener("click", openSignupModal);
   btn.removeEventListener("click", openAccountModal);
+  btn.removeEventListener("click", openLoginModal);
   if(info && info.exists){
     accountInfo = info;
     btn.textContent = "Account";
