@@ -342,7 +342,7 @@ body {
 /* Match font sizes between chat bubbles and input box */
 .chat-user,
 .chat-bot {
-  font-size: 1rem;
+  font-size: 0.95rem;
   position: relative;
   top: 10px;
 }
@@ -393,7 +393,7 @@ body {
   padding: 8px;
   flex: 1;
   outline: none;
-  font-size: 1rem;
+  font-size: 0.95rem;
   resize: none;
   min-height: 40px;
   overflow-y: auto;
