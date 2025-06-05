@@ -2778,10 +2778,10 @@ function renderFileList(){
     const tdAction = document.createElement("td");
     const openBtn = document.createElement("button");
     openBtn.textContent = "Open";
-    openBtn.addEventListener("click", () => {
-      window.open(`Image.html?file=${encodeURIComponent(f.name)}`,
-                  "_blank");
-    });
+      openBtn.addEventListener("click", () => {
+        window.open(`/Image.html?file=${encodeURIComponent(f.name)}`,
+                    "_blank");
+      });
     tdAction.appendChild(openBtn);
 
     const dlBtn = document.createElement("button");

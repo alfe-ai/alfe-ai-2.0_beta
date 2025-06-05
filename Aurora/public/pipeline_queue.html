@@ -114,7 +114,7 @@
           const tr = document.createElement('tr');
           const jobLink = job.jobId ? `<a href="jobs.html?jobId=${job.jobId}" target="_blank">${job.jobId}</a>` : '';
           const dbLink = job.dbId
-            ? `<a href="Image.html?file=${encodeURIComponent(job.file)}" target="_blank">${job.dbId}</a>`
+            ? `<a href="/Image.html?file=${encodeURIComponent(job.file)}" target="_blank">${job.dbId}</a>`
             : '';
           tr.innerHTML = `
             <td>${job.id}</td>
