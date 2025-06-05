@@ -230,6 +230,19 @@ function countTokens(encoder, text) {
   return encoder.encode(text || "").length;
 }
 
+function getSessionIdFromRequest(req) {
+  const header = req.headers.cookie || "";
+  const cookies = {};
+  header.split(";").forEach((c) => {
+    const idx = c.indexOf("=");
+    if (idx === -1) return;
+    const name = c.slice(0, idx).trim();
+    const val = decodeURIComponent(c.slice(idx + 1).trim());
+    cookies[name] = val;
+  });
+  return cookies.sessionId || "";
+}
+
 async function deriveImageTitle(prompt, client = null) {
   if (!prompt) return '';
 
@@ -2261,6 +2274,15 @@ app.get("/Image.html", (req, res) => {
 
 // Default landing page
 app.get("/", (req, res) => {
+  const sessionId = getSessionIdFromRequest(req);
+  try {
+    if (!sessionId || db.listChatTabs(null, true, sessionId).length === 0) {
+      console.debug("[Server Debug] GET / => Redirecting to nexum.html");
+      return res.redirect("/nexum.html");
+    }
+  } catch (err) {
+    console.error("[Server Debug] Error checking chat tabs:", err);
+  }
   console.debug("[Server Debug] GET / => Serving aurora.html");
   res.sendFile(path.join(__dirname, "../public/aurora.html"));
 });
@@ -2273,6 +2295,15 @@ app.get("/beta", (req, res) => {
 app.use(express.static(path.join(__dirname, "../public")));
 
 app.get("/", (req, res) => {
+  const sessionId = getSessionIdFromRequest(req);
+  try {
+    if (!sessionId || db.listChatTabs(null, true, sessionId).length === 0) {
+      console.debug("[Server Debug] GET / => Redirecting to nexum.html");
+      return res.redirect("/nexum.html");
+    }
+  } catch (err) {
+    console.error("[Server Debug] Error checking chat tabs:", err);
+  }
   console.debug("[Server Debug] GET / => Serving aurora.html");
   res.sendFile(path.join(__dirname, "../public/aurora.html"));
 });
