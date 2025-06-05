@@ -4284,6 +4284,46 @@ registerActionHook("generateImage", async ({response}) => {
   }
 });
 
+// Embed generated images for markdown placeholders like
+// ![Alt Text](https://alfe.sh/example.png)
+const processedPlaceholders = new Set();
+registerActionHook("embedMockImages", async ({response}) => {
+  const regex = /!\[([^\]]+)\]\(https:\/\/alfe\.sh\/[^)]+\)/g;
+  const matches = [...(response || "").matchAll(regex)];
+  if(matches.length === 0) return;
+
+  const chatMessagesEl = document.getElementById("chatMessages");
+  const lastBotText = chatMessagesEl?.lastElementChild?.querySelector(
+    ".chat-bot > div:last-child"
+  );
+  if(!lastBotText) return;
+
+  let html = lastBotText.textContent;
+  for(const m of matches){
+    const placeholder = m[0];
+    const alt = m[1];
+    if(processedPlaceholders.has(placeholder)) continue;
+    processedPlaceholders.add(placeholder);
+    try {
+      const r = await fetch('/api/image/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: alt, tabId: currentTabId, provider: imageGenService, sessionId })
+      });
+      const data = await r.json();
+      if(r.ok && data.url){
+        const imgTag = `<img src="${data.url}" alt="${alt}" style="max-width:400px;">`;
+        html = html.replace(placeholder, imgTag);
+        updateImageLimitInfo();
+      }
+    } catch(err){
+      console.error('[Hook embedMockImages] failed:', err);
+    }
+  }
+  lastBotText.innerHTML = html;
+  scrollChatToBottom();
+});
+
 console.log("[Server Debug] main.js fully loaded. End of script.");
 setTimeout(() => {
   navMenuLoading = false;
