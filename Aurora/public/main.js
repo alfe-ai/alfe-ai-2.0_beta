@@ -343,6 +343,11 @@ async function toggleSidebar(){
     toggleSidebarBtnEl.textContent = sidebarVisible ? "Hide sidebar" : "Show sidebar";
   }
 
+  const topBtns = document.getElementById("topRightButtons");
+  if(topBtns){
+    topBtns.style.display = sidebarVisible ? "none" : "flex";
+  }
+
   const expandBtn = document.getElementById("expandSidebarBtn");
   expandBtn.style.display = sidebarVisible ? "none" : "block";
 
@@ -543,6 +548,10 @@ async function loadSettings(){
   const collapsedLogoInit = document.getElementById("collapsedSidebarLogo");
   if(collapsedLogoInit){
     collapsedLogoInit.style.display = sidebarVisible ? "none" : "block";
+  }
+  const initTopBtns = document.getElementById("topRightButtons");
+  if(initTopBtns){
+    initTopBtns.style.display = sidebarVisible ? "none" : "flex";
   }
   const appEl = document.querySelector(".app");
   if(appEl){
