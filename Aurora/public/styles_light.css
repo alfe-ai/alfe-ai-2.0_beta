@@ -1,17 +1,19 @@
 /* Dark theme for the Task Queue page */
 :root {
-  --bg-main: #f0f0f0;
-  --bg-alt: #ffffff;
-  --accent: #ccc;
-  --accent-light: #bbb;
+  /* Slightly darker palette for light mode */
+  --bg-main: #e8e8e8;
+  --bg-alt: #f5f5f5;
+  --accent: #bbb;
+  --accent-light: #aaa;
   --text-color: #111;
-  --border: #aaa;
+  --border: #999;
 }
 body {
   margin: 0;
   padding: 0;
   font-family: sans-serif;
-  background-color: #ffffff;
+  /* Slightly darker body background */
+  background-color: #f5f5f5;
   color: #111;
 }
 
@@ -50,7 +52,7 @@ body {
   display: flex;
   flex-direction: column;
   padding: 1rem;
-  background-color: #ffffff;
+  background-color: var(--bg-alt);
   color: #111;
   overflow: hidden; /* Hide overflow here */
   min-height: 0;    /* Allow flex children to scroll properly */
@@ -65,7 +67,7 @@ body {
 #tasks {
   width: 100%;
   border-collapse: collapse;
-  background: #f0f0f0;
+  background: #e8e8e8;
   margin-bottom: 2rem;
   display: table;
   color: #111;
@@ -147,7 +149,7 @@ body {
 }
 
 .modal-content {
-  background-color: #f0f0f0;
+  background-color: #e8e8e8;
   color: #111;
   padding: 1rem;
   position: relative;
@@ -211,7 +213,7 @@ body {
 
 /* Chat message bubble grouping */
 .chat-sequence {
-  background: #f0f0f0;
+  background: #e8e8e8;
   border: 1px solid #aaa;
   border-radius: 8px;
   padding: 8px;
@@ -329,7 +331,7 @@ body {
 
 /* User bubble: displayed on the right side */
 .chat-user {
-  background: #3b3b3b;
+  background: #dcdcdc;
   padding: 10px 12px; /* slightly increased for spacing */
   border-radius: 12px;
   margin-bottom: 12px; /* more vertical space between elements */
@@ -771,7 +773,7 @@ body {
 }
 
 #stageList li {
-  background: #f0f0f0;
+  background: #e8e8e8;
   border: 1px solid #aaa;
   border-radius: 4px;
   padding: 4px 8px;
