@@ -1823,10 +1823,17 @@ app.get("/api/image/counts", (req, res) => {
   try {
     const sessionId = req.query.sessionId || "";
     const ipAddress = (req.headers["x-forwarded-for"] || req.ip || "").split(",")[0].trim();
+    const account = sessionId ? db.getAccountBySession(sessionId) : null;
     const sessionCount = sessionId ? db.countImagesForSession(sessionId) : 0;
     const ipCount = ipAddress ? db.countImagesForIp(ipAddress) : 0;
-    const sessionLimit = sessionId ? db.imageLimitForSession(sessionId, 50) : 50;
-    const ipLimit = 50;
+
+    let sessionLimit = sessionId ? db.imageLimitForSession(sessionId, 50) : 50;
+    let ipLimit = 50;
+    if (account) {
+      sessionLimit = Infinity;
+      ipLimit = Infinity;
+    }
+
     const nextReduction = sessionId ? db.nextImageLimitReductionTime(sessionId) : null;
     res.json({ sessionCount, sessionLimit, ipCount, ipLimit, nextReduction });
   } catch (err) {
@@ -2236,6 +2243,7 @@ app.post("/api/image/generate", async (req, res) => {
   try {
     const { prompt, n, size, model, provider, tabId, sessionId } = req.body || {};
     const ipAddress = (req.headers["x-forwarded-for"] || req.ip || "").split(",")[0].trim();
+    const account = sessionId ? db.getAccountBySession(sessionId) : null;
     if (!prompt) {
       return res.status(400).json({ error: "Missing prompt" });
     }
@@ -2260,17 +2268,22 @@ app.post("/api/image/generate", async (req, res) => {
 
     if (sessionId) {
       db.ensureImageSession(sessionId);
-      const current = db.countImagesForSession(sessionId);
-      const limit = db.imageLimitForSession(sessionId, 50);
-      if (current >= limit) {
-        return res.status(400).json({ error: 'Image generation limit reached for this session' });
-      }
     }
 
-    if (ipAddress) {
-      const ipCount = db.countImagesForIp(ipAddress);
-      if (ipCount >= 50) {
-        return res.status(400).json({ error: 'Image generation limit reached for this IP' });
+    if (!account) {
+      if (sessionId) {
+        const current = db.countImagesForSession(sessionId);
+        const limit = db.imageLimitForSession(sessionId, 50);
+        if (current >= limit) {
+          return res.status(400).json({ error: 'Image generation limit reached for this session' });
+        }
+      }
+
+      if (ipAddress) {
+        const ipCount = db.countImagesForIp(ipAddress);
+        if (ipCount >= 50) {
+          return res.status(400).json({ error: 'Image generation limit reached for this IP' });
+        }
       }
     }
 
