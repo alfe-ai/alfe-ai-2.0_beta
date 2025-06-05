@@ -973,4 +973,17 @@ button:disabled {
   display: none !important;
 }
 
+/* Favorite star styling */
+.favorite-star {
+  cursor: pointer;
+  font-size: 1.2rem;
+  user-select: none;
+}
+.favorite-star.starred {
+  color: gold;
+}
+.favorite-star.unstarred {
+  color: #777;
+}
+
 
