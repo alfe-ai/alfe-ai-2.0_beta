@@ -2471,6 +2471,19 @@ function renderFileList(){
     tr.appendChild(tdAction);
     tbody.appendChild(tr);
   });
+  updateHeaderArrows();
+}
+
+function updateHeaderArrows(){
+  $$("#secureFilesList th").forEach(th => {
+    const col = th.dataset.col;
+    if(!col) return;
+    if(!th.dataset.label) th.dataset.label = th.textContent.trim();
+    th.textContent = th.dataset.label;
+    if(fileSortColumn === col){
+      th.textContent += fileSortAsc ? " \u25B2" : " \u25BC";
+    }
+  });
 }
 
 function setupFileSorting(){
