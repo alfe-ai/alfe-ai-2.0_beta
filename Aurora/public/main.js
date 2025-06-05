@@ -1496,6 +1496,10 @@ document.getElementById("addModelModalAddBtn").addEventListener("click", async (
 document.getElementById("addModelModalCancelBtn").addEventListener("click", () => {
   hideModal(document.getElementById("addModelModal"));
 });
+document.getElementById("favoriteModelsBtn").addEventListener("click", openFavoriteModelsModal);
+document.getElementById("favoriteModelsCloseBtn").addEventListener("click", () => {
+  hideModal(document.getElementById("favoriteModelsModal"));
+});
 document.getElementById("newSubroutineBtn").addEventListener("click", addNewSubroutine);
 document.getElementById("viewActionHooksBtn").addEventListener("click", () => {
   renderActionHooks();
@@ -3804,6 +3808,51 @@ async function openAddModelModal(){
     }
   }
   showModal(document.getElementById("addModelModal"));
+}
+
+async function openFavoriteModelsModal(){
+  const container = document.getElementById("favoriteModelsContainer");
+  container.innerHTML = "Loading...";
+  showModal(document.getElementById("favoriteModelsModal"));
+  try {
+    const res = await fetch("/api/ai/models");
+    if(!res.ok){
+      container.textContent = "Error loading models";
+      return;
+    }
+    const data = await res.json();
+    const models = data.models || [];
+    let html = '<table style="width:100%;border-collapse:collapse;">'+
+               '<thead><tr><th>Fav</th><th>Model</th><th>Provider</th></tr></thead><tbody>';
+    models.forEach(m=>{
+      const starCls = m.favorite ? "favorite-star starred" : "favorite-star unstarred";
+      const starChar = m.favorite ? "★" : "☆";
+      html += `<tr><td><span class="${starCls}" data-id="${m.id}">${starChar}</span></td><td>${m.id}</td><td>${m.provider}</td></tr>`;
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
+    container.querySelectorAll('.favorite-star').forEach(star=>{
+      star.addEventListener('click', async ()=>{
+        const modelId = star.dataset.id;
+        const newFav = !star.classList.contains('starred');
+        try{
+          const r = await fetch('/api/ai/favorites', {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ modelId, favorite:newFav })
+          });
+          if(r.ok){
+            star.classList.toggle('starred', newFav);
+            star.classList.toggle('unstarred', !newFav);
+            star.textContent = newFav ? '★' : '☆';
+          }
+        }catch(err){ console.error('Toggle favorite error', err); }
+      });
+    });
+  }catch(e){
+    console.error('Error loading favorites modal:', e);
+    container.textContent = 'Error loading models';
+  }
 }
 
 // Add a new model tab using given model id
