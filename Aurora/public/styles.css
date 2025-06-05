@@ -19,7 +19,7 @@ body {
 /* App layout: sidebar + main chat panel */
 .app {
   display: flex;
-  min-height: 100vh;
+  min-height: 100dvh;
   height: 100dvh;
   overflow: hidden; /* Restored overflow hidden to allow separate scrolling areas */
   position: relative; /* For absolute positioning of exclamation icon */
@@ -411,6 +411,7 @@ body {
   margin-top: 0.5rem;
   width: 100%;
   flex: 0 0 auto;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .chat-input-container textarea {
