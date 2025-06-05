@@ -834,6 +834,19 @@ app.post("/api/register", (req, res) => {
   }
 });
 
+app.get("/api/account", (req, res) => {
+  console.debug("[Server Debug] GET /api/account");
+  try {
+    const sessionId = getSessionIdFromRequest(req);
+    const account = sessionId ? db.getAccountBySession(sessionId) : null;
+    if (!account) return res.json({ exists: false });
+    res.json({ exists: true, id: account.id, email: account.email });
+  } catch(err) {
+    console.error("[TaskQueue] GET /api/account failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.get("/api/tasks/:id", (req, res) => {
   console.debug("[Server Debug] GET /api/tasks/:id =>", req.params.id);
   try {
