@@ -2026,8 +2026,9 @@ chatSendBtnEl.addEventListener("click", async () => {
   const userHead = document.createElement("div");
   userHead.className = "bubble-header";
   const userTime = new Date().toISOString();
+  const userLabel = accountInfo?.email || "User";
   userHead.innerHTML = `
-    <div class="name-oval name-oval-user">User</div>
+    <div class="name-oval name-oval-user">${userLabel}</div>
     <span style="opacity:0.8;">${formatTimestamp(userTime)}</span>
   `;
   userDiv.appendChild(userHead);
@@ -3555,8 +3556,9 @@ async function loadChatHistory(tabId = 1, reset=false) {
           {
             const userHead = document.createElement("div");
             userHead.className = "bubble-header";
+            const userLabel = accountInfo?.email || "User";
             userHead.innerHTML = `
-              <div class="name-oval name-oval-user">User</div>
+              <div class="name-oval name-oval-user">${userLabel}</div>
               <span style="opacity:0.8;">${formatTimestamp(p.timestamp)}</span>
             `;
             const uDel = document.createElement("button");
@@ -3726,8 +3728,9 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
     {
       const userHead = document.createElement("div");
       userHead.className = "bubble-header";
+      const userLabel = accountInfo?.email || "User";
       userHead.innerHTML = `
-        <div class="name-oval name-oval-user">User</div>
+        <div class="name-oval name-oval-user">${userLabel}</div>
         <span style="opacity:0.8;">${formatTimestamp(userTs)}</span>
       `;
       const userDelBtn = document.createElement("button");
