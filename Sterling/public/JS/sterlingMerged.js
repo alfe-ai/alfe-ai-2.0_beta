@@ -718,16 +718,20 @@ async function updateProjectInfo() {
         }
       }
     }
-    if(projectName){
-      $("#projectInfo").textContent = branch
-          ? `Project: ${projectName} (branch: ${branch})`
-          : `Project: ${projectName} (no branch set)`;
-    } else {
-      $("#projectInfo").textContent = "(No project set)";
+    const infoEl = $("#projectInfo");
+    if(infoEl){
+      if(projectName){
+        infoEl.textContent = branch
+            ? `Project: ${projectName} (branch: ${branch})`
+            : `Project: ${projectName} (no branch set)`;
+      } else {
+        infoEl.textContent = "(No project set)";
+      }
     }
   } catch(e) {
     console.error("Error updating project info:", e);
-    $("#projectInfo").textContent = "(No project set)";
+    const infoEl = $("#projectInfo");
+    if(infoEl) infoEl.textContent = "(No project set)";
   }
 }
 
