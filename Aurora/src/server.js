@@ -2261,8 +2261,8 @@ app.get("/Image.html", (req, res) => {
 
 // Default landing page
 app.get("/", (req, res) => {
-  console.debug("[Server Debug] GET / => Serving aurora.html");
-  res.sendFile(path.join(__dirname, "../public/aurora.html"));
+  console.debug("[Server Debug] GET / => Serving nexum.html");
+  res.sendFile(path.join(__dirname, "../public/nexum.html"));
 });
 
 app.get("/beta", (req, res) => {
@@ -2273,8 +2273,8 @@ app.get("/beta", (req, res) => {
 app.use(express.static(path.join(__dirname, "../public")));
 
 app.get("/", (req, res) => {
-  console.debug("[Server Debug] GET / => Serving aurora.html");
-  res.sendFile(path.join(__dirname, "../public/aurora.html"));
+  console.debug("[Server Debug] GET / => Serving nexum.html");
+  res.sendFile(path.join(__dirname, "../public/nexum.html"));
 });
 
 app.get("/test_projects", (req, res) => {
