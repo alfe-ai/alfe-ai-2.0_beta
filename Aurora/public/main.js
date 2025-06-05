@@ -3258,8 +3258,9 @@ async function loadChatHistory(tabId = 1, reset=false) {
         botHead.className = "bubble-header";
 
         const { provider, shortModel } = parseProviderModel(p.model);
+        const titleAttr = p.image_url ? "" : ` title="${provider} / ${shortModel}"`;
         botHead.innerHTML = `
-          <div class="name-oval name-oval-ai" title="${provider} / ${shortModel}">${window.agentName}</div>
+          <div class="name-oval name-oval-ai"${titleAttr}>${window.agentName}</div>
           <span style="opacity:0.8;">${p.ai_timestamp ? formatTimestamp(p.ai_timestamp) : "…"}</span>
         `;
         const aDel = document.createElement("button");
@@ -3310,11 +3311,13 @@ async function loadChatHistory(tabId = 1, reset=false) {
           }
         }
 
-        // Show model name at bottom-left of AI bubble
-        const modelDiv = document.createElement("div");
-        modelDiv.className = "model-indicator";
-        modelDiv.textContent = `${shortModel}`;
-        botDiv.appendChild(modelDiv);
+        if(!p.image_url){
+          // Show model name at bottom-left of AI bubble
+          const modelDiv = document.createElement("div");
+          modelDiv.className = "model-indicator";
+          modelDiv.textContent = `${shortModel}`;
+          botDiv.appendChild(modelDiv);
+        }
 
         seqDiv.appendChild(botDiv);
         const pairDel = document.createElement("button");
@@ -3425,8 +3428,9 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
   const botHead = document.createElement("div");
   botHead.className = "bubble-header";
   const { provider, shortModel } = parseProviderModel(model);
+  const titleAttr = imageUrl ? "" : ` title="${provider} / ${shortModel}"`;
   botHead.innerHTML = `
-    <div class="name-oval name-oval-ai" title="${provider} / ${shortModel}">${window.agentName}</div>
+    <div class="name-oval name-oval-ai"${titleAttr}>${window.agentName}</div>
     <span style="opacity:0.8;">${aiTs ? formatTimestamp(aiTs) : "…"}</span>
   `;
   const aiDelBtn = document.createElement("button");
@@ -3480,11 +3484,13 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
     }
   }
 
-  // Show model name at bottom-left of AI bubble
-  const modelDiv = document.createElement("div");
-  modelDiv.className = "model-indicator";
-  modelDiv.textContent = `${shortModel}`;
-  botDiv.appendChild(modelDiv);
+  if(!imageUrl){
+    // Show model name at bottom-left of AI bubble
+    const modelDiv = document.createElement("div");
+    modelDiv.className = "model-indicator";
+    modelDiv.textContent = `${shortModel}`;
+    botDiv.appendChild(modelDiv);
+  }
 
   seqDiv.appendChild(botDiv);
 
