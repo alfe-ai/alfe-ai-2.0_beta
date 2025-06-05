@@ -3246,6 +3246,10 @@ const btnPipelineQueueIcon = document.getElementById("navPipelineQueueIcon");
 const btnActivityIframeIcon = document.getElementById("navActivityIframeIcon");
 const btnNexumChatIcon = document.getElementById("navNexumChatIcon");
 const btnNexumTabsIcon = document.getElementById("navNexumTabsIcon");
+// Thin sidebar icons
+const thinChatIcon = document.getElementById("thinIconChats");
+const thinImagesIcon = document.getElementById("thinIconImages");
+const thinArchiveIcon = document.getElementById("thinIconArchived");
 
 btnTasks.addEventListener("click", showTasksPanel);
 btnUploader.addEventListener("click", showUploaderPanel);
@@ -3283,6 +3287,10 @@ btnJobsIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar
 btnPipelineQueueIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); const url = btnPipelineQueue.dataset.url; window.open(url, "_blank"); });
 btnNexumChatIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); window.location.href = btnNexumChat.dataset.url; });
 btnNexumTabsIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); window.location.href = btnNexumTabs.dataset.url; });
+// Thin sidebar icon actions
+thinChatIcon?.addEventListener("click", () => openPanelWithSidebar(showChatTabsPanel));
+thinImagesIcon?.addEventListener("click", () => openPanelWithSidebar(showUploaderPanel));
+thinArchiveIcon?.addEventListener("click", () => openPanelWithSidebar(showArchiveTabsPanel));
 
 (async function init(){
   const placeholderEl = document.getElementById("chatPlaceholder");
