@@ -205,6 +205,11 @@ function openSignupModal(e){
   showModal(document.getElementById("signupModal"));
 }
 
+function openLoginModal(e){
+  if(e) e.preventDefault();
+  showModal(document.getElementById("loginModal"));
+}
+
 function openAccountModal(e){
   if(e) e.preventDefault();
   if(accountInfo){
@@ -228,8 +233,8 @@ function updateAccountButton(info){
     btn.style.display = "inline-block";
   } else {
     accountInfo = null;
-    btn.textContent = "Sign Up";
-    btn.addEventListener("click", openSignupModal);
+    btn.textContent = "Sign Up/Login";
+    btn.addEventListener("click", openLoginModal);
   }
 }
 
@@ -1596,7 +1601,7 @@ if (subscribeCloseBtn) {
 
 const signupBtn = document.getElementById("signupBtn");
 if (signupBtn) {
-  signupBtn.addEventListener("click", openSignupModal);
+  signupBtn.addEventListener("click", openLoginModal);
 }
 const signupCancelBtn = document.getElementById("signupCancelBtn");
 if (signupCancelBtn) {
@@ -1630,6 +1635,51 @@ if (signupSubmitBtn) {
     } catch(err){
       console.error("Registration failed", err);
       showToast("Registration failed");
+    }
+  });
+}
+
+const loginCancelBtn = document.getElementById("loginCancelBtn");
+if (loginCancelBtn) {
+  loginCancelBtn.addEventListener("click", () =>
+    hideModal(document.getElementById("loginModal"))
+  );
+}
+
+const loginSignupBtn = document.getElementById("loginSignupBtn");
+if (loginSignupBtn) {
+  loginSignupBtn.addEventListener("click", () => {
+    hideModal(document.getElementById("loginModal"));
+    openSignupModal();
+  });
+}
+
+const loginSubmitBtn = document.getElementById("loginSubmitBtn");
+if (loginSubmitBtn) {
+  loginSubmitBtn.addEventListener("click", async () => {
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value;
+    if(!email || !password){
+      showToast("Email and password required");
+      return;
+    }
+    try {
+      const resp = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, sessionId })
+      });
+      const data = await resp.json().catch(() => null);
+      if(resp.ok && data && data.success){
+        showToast("Logged in!");
+        hideModal(document.getElementById("loginModal"));
+        updateAccountButton({exists:true, id:data.id, email});
+      } else {
+        showToast(data?.error || "Login failed");
+      }
+    } catch(err){
+      console.error("Login failed", err);
+      showToast("Login failed");
     }
   });
 }
