@@ -664,11 +664,11 @@ async function loadSettings(){
   document.getElementById("expandSidebarBtn").style.display = "none";
   const collapsedLogoInit = document.getElementById("collapsedSidebarLogo");
   if(collapsedLogoInit){
-    collapsedLogoInit.style.display = "none";
+    collapsedLogoInit.style.display = sidebarVisible ? "none" : "block";
   }
   const collapsedArrowInit = document.getElementById("expandSidebarArrow");
   if(collapsedArrowInit){
-    collapsedArrowInit.style.display = "none";
+    collapsedArrowInit.style.display = sidebarVisible ? "none" : "block";
   }
   updateChatPanelVisibility();
   const initTopBtns = document.getElementById("topRightButtons");
