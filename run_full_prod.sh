@@ -12,7 +12,7 @@ if screen -list 2>/dev/null | grep -q "${SCREEN_NAME}"; then
 fi
 
 git pull
-git log -n 5
+git log -n 6
 
 echo ""
 
