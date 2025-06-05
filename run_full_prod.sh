@@ -11,6 +11,7 @@ if screen -list 2>/dev/null | grep -q "${SCREEN_NAME}"; then
   sleep 1
 fi
 
+git stash
 git pull
 git log -n 6
 
