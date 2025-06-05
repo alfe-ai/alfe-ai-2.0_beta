@@ -36,9 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (signupEl) {
     fetch('/api/account')
       .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (data && data.exists) signupEl.style.display = 'none';
-      })
+      .then(data => updateAccountButton(data))
       .catch(err => console.error('Failed to fetch account', err));
   }
 });
@@ -103,6 +101,7 @@ let newTabProjectNameEnabled = true; // show Project name field in New Tab dialo
 let chatSubroutines = [];
 let actionHooks = [];
 let editingSubroutineId = null;
+let accountInfo = null; // details returned from /api/account
 let currentView = 'chat';
 window.agentName = "Alfe";
 
@@ -184,6 +183,39 @@ function showPageLoader(){
 function hidePageLoader(){
   const loader = document.getElementById("pageLoader");
   if(loader) loader.classList.remove("show");
+}
+
+function openSignupModal(e){
+  if(e) e.preventDefault();
+  showModal(document.getElementById("signupModal"));
+}
+
+function openAccountModal(e){
+  if(e) e.preventDefault();
+  if(accountInfo){
+    const emailEl = document.getElementById("accountEmail");
+    const idEl = document.getElementById("accountId");
+    if(emailEl) emailEl.textContent = accountInfo.email;
+    if(idEl) idEl.textContent = accountInfo.id;
+  }
+  showModal(document.getElementById("accountModal"));
+}
+
+function updateAccountButton(info){
+  const btn = document.getElementById("signupBtn");
+  if(!btn) return;
+  btn.removeEventListener("click", openSignupModal);
+  btn.removeEventListener("click", openAccountModal);
+  if(info && info.exists){
+    accountInfo = info;
+    btn.textContent = "Account";
+    btn.addEventListener("click", openAccountModal);
+    btn.style.display = "inline-block";
+  } else {
+    accountInfo = null;
+    btn.textContent = "Sign Up";
+    btn.addEventListener("click", openSignupModal);
+  }
 }
 
 function showToast(msg, duration=1500){
@@ -1535,10 +1567,7 @@ if (subscribeCloseBtn) {
 
 const signupBtn = document.getElementById("signupBtn");
 if (signupBtn) {
-  signupBtn.addEventListener("click", e => {
-    e.preventDefault();
-    showModal(document.getElementById("signupModal"));
-  });
+  signupBtn.addEventListener("click", openSignupModal);
 }
 const signupCancelBtn = document.getElementById("signupCancelBtn");
 if (signupCancelBtn) {
@@ -1565,7 +1594,7 @@ if (signupSubmitBtn) {
       if(resp.ok && data && data.success){
         showToast("Registered!");
         hideModal(document.getElementById("signupModal"));
-        if(signupBtn) signupBtn.style.display = "none";
+        updateAccountButton({exists:true, id:data.id, email});
       } else {
         showToast(data?.error || "Registration failed");
       }
@@ -1574,6 +1603,13 @@ if (signupSubmitBtn) {
       showToast("Registration failed");
     }
   });
+}
+
+const accountCloseBtn = document.getElementById("accountCloseBtn");
+if(accountCloseBtn){
+  accountCloseBtn.addEventListener("click", () =>
+    hideModal(document.getElementById("accountModal"))
+  );
 }
 
 document.getElementById("viewTabChat").addEventListener("click", () => updateView('chat'));
