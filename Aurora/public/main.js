@@ -1433,6 +1433,7 @@ async function selectTab(tabId){
 }
 function renderTabs(){
   const tc = $("#tabsContainer");
+  if(!tc) return;
   tc.innerHTML="";
   chatTabs.filter(t => showArchivedTabs || !t.archived).forEach(tab => {
     const tabBtn = document.createElement("div");
@@ -4211,17 +4212,24 @@ document.getElementById("toggleModelTabsBtn").addEventListener("click", async ()
 // ----------------------------------------------------------------------
 // NEW: "Change Sterling Branch" button event + modal logic
 // ----------------------------------------------------------------------
-document.getElementById("changeSterlingBranchBtn").addEventListener("click", () => {
-  showModal($("#changeBranchModal"));
-});
+{
+  const btn = document.getElementById("changeSterlingBranchBtn");
+  if(btn) btn.addEventListener("click", () => {
+    showModal($("#changeBranchModal"));
+  });
+}
 
 // Cancel button for branch
-document.getElementById("sterlingBranchCancelBtn").addEventListener("click", () => {
-  hideModal($("#changeBranchModal"));
-});
+{
+  const cancelBtn = document.getElementById("sterlingBranchCancelBtn");
+  if(cancelBtn) cancelBtn.addEventListener("click", () => {
+    hideModal($("#changeBranchModal"));
+  });
+}
 
 // Save button for branch
-document.getElementById("sterlingBranchSaveBtn").addEventListener("click", async () => {
+const saveBtnSterling = document.getElementById("sterlingBranchSaveBtn");
+if(saveBtnSterling) saveBtnSterling.addEventListener("click", async () => {
   const createNew = $("#createSterlingNewBranchCheck").checked;
   const branchName = $("#sterlingBranchNameInput").value.trim();
   const msgElem = $("#sterlingBranchMsg");
