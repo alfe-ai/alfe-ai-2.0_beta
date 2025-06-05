@@ -27,7 +27,19 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(data => {
       if (data && data.version) {
         const vSpan = document.getElementById('versionSpan');
-        if (vSpan) vSpan.textContent = data.version;
+        if (vSpan) {
+          vSpan.textContent = data.version;
+          vSpan.addEventListener('click', () => {
+            fetch('/api/git-sha')
+              .then(r => r.ok ? r.json() : null)
+              .then(d => {
+                if (d && d.sha) {
+                  showToast(`Git SHA: ${d.sha}`, 3000);
+                }
+              })
+              .catch(err => console.error('Failed to fetch git sha', err));
+          });
+        }
       }
     })
     .catch(err => console.error('Failed to fetch version', err));
