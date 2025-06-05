@@ -232,15 +232,13 @@ body {
 .delete-chat-btn {
   background: transparent;
   border: none;
-  color: #f55;
-  font-weight: bold;
-  font-size: 1.2rem;
-  text-shadow: 0 0 2px #000;
+  color: #888;
+  font-size: 1rem;
   cursor: pointer;
 }
 
 .delete-chat-btn:hover {
-  color: #ff7777;
+  color: #aaa;
 }
 
 .pair-delete-btn {
