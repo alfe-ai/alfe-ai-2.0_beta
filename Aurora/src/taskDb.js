@@ -708,7 +708,8 @@ export default class TaskDB {
     if (conditions.length) {
       query += ' WHERE ' + conditions.join(' AND ');
     }
-    query += ' ORDER BY id ASC';
+    // Show most recently created tabs first
+    query += ' ORDER BY id DESC';
 
     return this.db.prepare(query).all(...params);
   }
