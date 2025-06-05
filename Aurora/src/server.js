@@ -2295,6 +2295,8 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/aurora.html"));
 });
 
+app.use(express.static(path.join(__dirname, "../public")));
+
 app.get("/beta", (req, res) => {
   console.debug("[Server Debug] GET /beta => Redirecting to home page");
   res.redirect("/");
@@ -2305,8 +2307,6 @@ app.get("/chat/:tabUuid", (req, res) => {
   console.debug(`[Server Debug] GET /chat/${req.params.tabUuid} => Serving aurora.html`);
   res.sendFile(path.join(__dirname, "../public/aurora.html"));
 });
-
-app.use(express.static(path.join(__dirname, "../public")));
 
 app.get("/", (req, res) => {
   const sessionId = getSessionIdFromRequest(req);
