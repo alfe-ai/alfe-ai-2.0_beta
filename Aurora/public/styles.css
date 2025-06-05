@@ -1006,8 +1006,9 @@ body {
   border: none;
   color: #ddd;
   font-size: 1.2rem;
-  margin: 4px 0;
+  margin: 8px 0; /* more spacing for easier tapping */
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 /* Version info in sidebar */
