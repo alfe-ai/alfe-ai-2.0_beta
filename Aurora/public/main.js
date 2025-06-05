@@ -31,6 +31,16 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     })
     .catch(err => console.error('Failed to fetch version', err));
+
+  const signupEl = document.getElementById('signupBtn');
+  if (signupEl) {
+    fetch('/api/account')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data && data.exists) signupEl.style.display = 'none';
+      })
+      .catch(err => console.error('Failed to fetch account', err));
+  }
 });
 
 let columnsOrder = [
@@ -1555,6 +1565,7 @@ if (signupSubmitBtn) {
       if(resp.ok && data && data.success){
         showToast("Registered!");
         hideModal(document.getElementById("signupModal"));
+        if(signupBtn) signupBtn.style.display = "none";
       } else {
         showToast(data?.error || "Registration failed");
       }
