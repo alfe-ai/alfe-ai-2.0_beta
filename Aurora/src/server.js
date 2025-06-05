@@ -717,6 +717,15 @@ app.post("/api/tasks/new", async (req, res) => {
       repo: process.env.GITHUB_REPO
     });
 
+    if (!gh.octokit) {
+      console.debug(
+        "[Server Debug] GitHub credentials missing; skipping issue creation."
+      );
+      return res
+        .status(200)
+        .json({ success: false, message: "GitHub not configured" });
+    }
+
     const newIssue = await gh.createIssue(title, body || "");
     db.upsertIssue(newIssue, `${gh.owner}/${gh.repo}`);
     db.logActivity(

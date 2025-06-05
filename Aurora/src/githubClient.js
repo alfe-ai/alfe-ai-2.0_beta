@@ -5,13 +5,16 @@ import { Octokit } from "@octokit/rest";
  */
 export default class GitHubClient {
   constructor({ token, owner, repo }) {
+    this.owner = owner;
+    this.repo = repo;
     if (!token || !owner || !repo) {
-      //throw new Error("GitHub token, owner and repo must be provided");
+      console.warn(
+        "[GitHubClient] Missing token/owner/repo. GitHub integration disabled."
+      );
+      this.octokit = null;
       return;
     }
 
-    this.owner = owner;
-    this.repo = repo;
     this.octokit = new Octokit({ auth: token });
   }
 
@@ -48,11 +51,14 @@ export default class GitHubClient {
    * @returns {Promise<Object>} newly created issue object
    */
   async createIssue(title, body = "") {
+    if (!this.octokit) {
+      throw new Error("GitHub client not configured");
+    }
     const { data } = await this.octokit.issues.create({
       owner: this.owner,
       repo: this.repo,
       title,
-      body
+      body,
     });
     return data;
   }
@@ -64,11 +70,14 @@ export default class GitHubClient {
    * @param {string} newTitle
    */
   async updateIssueTitle(issueNumber, newTitle) {
+    if (!this.octokit) {
+      throw new Error("GitHub client not configured");
+    }
     const { data } = await this.octokit.issues.update({
       owner: this.owner,
       repo: this.repo,
       issue_number: issueNumber,
-      title: newTitle
+      title: newTitle,
     });
     return data;
   }
