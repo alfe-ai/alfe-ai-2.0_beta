@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+clear
 SCREEN_NAME="auroraFULL"
 
 # If a screen session with this name is already running, kill it
