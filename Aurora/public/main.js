@@ -455,8 +455,12 @@ async function toggleSidebar(){
   expandBtn.style.display = "none";
 
   const collapsedLogo = document.getElementById("collapsedSidebarLogo");
+  const collapsedArrow = document.getElementById("expandSidebarArrow");
   if(collapsedLogo){
-    collapsedLogo.style.display = "none";
+    collapsedLogo.style.display = sidebarVisible ? "none" : "block";
+  }
+  if(collapsedArrow){
+    collapsedArrow.style.display = sidebarVisible ? "none" : "block";
   }
 
   updateChatPanelVisibility();
@@ -499,6 +503,14 @@ document.getElementById("expandSidebarBtn").addEventListener("click", ev => {
 
 const collapsedLogoEl = document.getElementById("collapsedSidebarLogo");
 collapsedLogoEl?.addEventListener("click", ev => {
+  ev.stopPropagation();
+  if(!sidebarVisible){
+    toggleSidebar();
+  }
+});
+
+const collapsedArrowEl = document.getElementById("expandSidebarArrow");
+collapsedArrowEl?.addEventListener("click", ev => {
   ev.stopPropagation();
   if(!sidebarVisible){
     toggleSidebar();
@@ -655,6 +667,10 @@ async function loadSettings(){
   const collapsedLogoInit = document.getElementById("collapsedSidebarLogo");
   if(collapsedLogoInit){
     collapsedLogoInit.style.display = "none";
+  }
+  const collapsedArrowInit = document.getElementById("expandSidebarArrow");
+  if(collapsedArrowInit){
+    collapsedArrowInit.style.display = "none";
   }
   updateChatPanelVisibility();
   const initTopBtns = document.getElementById("topRightButtons");
