@@ -3388,7 +3388,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
             `;
             const uDel = document.createElement("button");
             uDel.className = "delete-chat-btn bubble-delete-btn";
-            uDel.textContent = "x";
+            uDel.textContent = "🗑";
             uDel.title = "Delete user message";
             uDel.addEventListener("click", async () => {
               if(!confirm("Delete this user message?")) return;
@@ -3446,7 +3446,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
         `;
         const aDel = document.createElement("button");
         aDel.className = "delete-chat-btn bubble-delete-btn";
-        aDel.textContent = "x";
+        aDel.textContent = "🗑";
         aDel.title = "Delete AI reply";
         aDel.addEventListener("click", async () => {
           if(!confirm("Delete this AI reply?")) return;
@@ -3503,7 +3503,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
         seqDiv.appendChild(botDiv);
         const pairDel = document.createElement("button");
         pairDel.className = "delete-chat-btn pair-delete-btn";
-        pairDel.textContent = "x";
+        pairDel.textContent = "🗑";
         pairDel.title = "Delete this chat pair";
         pairDel.addEventListener("click", async () => {
           if(!confirm("Are you sure you want to delete this pair?")) return;
@@ -3558,7 +3558,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
       `;
       const userDelBtn = document.createElement("button");
       userDelBtn.className = "delete-chat-btn bubble-delete-btn";
-      userDelBtn.textContent = "x";
+      userDelBtn.textContent = "🗑";
       userDelBtn.title = "Delete user message";
       userDelBtn.addEventListener("click", async () => {
         if (!confirm("Delete this user message?")) return;
@@ -3616,7 +3616,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
   `;
   const aiDelBtn = document.createElement("button");
   aiDelBtn.className = "delete-chat-btn bubble-delete-btn";
-  aiDelBtn.textContent = "x";
+  aiDelBtn.textContent = "🗑";
   aiDelBtn.title = "Delete AI reply";
   aiDelBtn.addEventListener("click", async () => {
     if (!confirm("Delete this AI reply?")) return;
@@ -3771,7 +3771,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
 
   const pairDelBtn = document.createElement("button");
   pairDelBtn.className = "delete-chat-btn pair-delete-btn";
-  pairDelBtn.textContent = "x";
+  pairDelBtn.textContent = "🗑";
   pairDelBtn.title = "Delete this chat pair";
   pairDelBtn.addEventListener("click", async () => {
     if (!confirm("Are you sure you want to delete this pair?")) return;
@@ -3858,7 +3858,7 @@ function renderModelTabs(){
     b.appendChild(serviceSelect);
 
     const delBtn = document.createElement("button");
-    delBtn.textContent = "x";
+    delBtn.textContent = "🗑";
     delBtn.className = "model-delete-btn";
     delBtn.title = "Delete";
     delBtn.addEventListener("click", e => { e.stopPropagation(); deleteModelTab(tab.id); });
