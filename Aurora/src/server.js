@@ -1463,8 +1463,8 @@ app.post("/api/chat/tabs/new", (req, res) => {
       name = `${projectName}: ${name}`;
     }
 
-    const tabId = db.createChatTab(name, nexum, project, repo, type, sessionId);
-    res.json({ success: true, id: tabId });
+    const { id: tabId, uuid } = db.createChatTab(name, nexum, project, repo, type, sessionId);
+    res.json({ success: true, id: tabId, uuid });
     createInitialTabMessage(tabId, type, sessionId).catch(e =>
       console.error('[Server Debug] Initial message error:', e.message));
   } catch (err) {
@@ -2298,6 +2298,12 @@ app.get("/", (req, res) => {
 app.get("/beta", (req, res) => {
   console.debug("[Server Debug] GET /beta => Redirecting to home page");
   res.redirect("/");
+});
+
+// Serve aurora UI for per-tab URLs
+app.get("/chat/:tabUuid", (req, res) => {
+  console.debug(`[Server Debug] GET /chat/${req.params.tabUuid} => Serving aurora.html`);
+  res.sendFile(path.join(__dirname, "../public/aurora.html"));
 });
 
 app.use(express.static(path.join(__dirname, "../public")));
