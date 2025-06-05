@@ -228,15 +228,21 @@ function countTokens(encoder, text) {
 async function deriveImageTitle(prompt, client = null) {
   if (!prompt) return '';
 
-  const openAiKey = process.env.OPENAI_API_KEY || '';
-  if (!client && openAiKey) {
-    client = new OpenAI({ apiKey: openAiKey });
+  const openAiClient = client || getOpenAiClient();
+  const storedModel = db.getSetting('ai_model') || 'deepseek/deepseek-chat';
+  function stripModelPrefix(m) {
+    if (!m) return 'deepseek/deepseek-chat';
+    if (m.startsWith('openai/')) return m.substring('openai/'.length);
+    if (m.startsWith('openrouter/')) return m.substring('openrouter/'.length);
+    if (m.startsWith('deepseek/')) return m.substring('deepseek/'.length);
+    return m;
   }
+  const modelForOpenAI = stripModelPrefix(storedModel);
 
-  if (client) {
+  if (openAiClient) {
     try {
-      const completion = await client.chat.completions.create({
-        model: 'gpt-4.1-mini',
+      const completion = await openAiClient.chat.completions.create({
+        model: modelForOpenAI,
         messages: [
           { role: 'system', content: 'Create a short 3-6 word title describing the image prompt.' },
           { role: 'user', content: prompt }
@@ -267,15 +273,21 @@ async function deriveImageTitle(prompt, client = null) {
 async function deriveTabTitle(message, client = null) {
   if (!message) return '';
 
-  const openAiKey = process.env.OPENAI_API_KEY || '';
-  if (!client && openAiKey) {
-    client = new OpenAI({ apiKey: openAiKey });
+  const openAiClient = client || getOpenAiClient();
+  const storedModel = db.getSetting('ai_model') || 'deepseek/deepseek-chat';
+  function stripModelPrefix(m) {
+    if (!m) return 'deepseek/deepseek-chat';
+    if (m.startsWith('openai/')) return m.substring('openai/'.length);
+    if (m.startsWith('openrouter/')) return m.substring('openrouter/'.length);
+    if (m.startsWith('deepseek/')) return m.substring('deepseek/'.length);
+    return m;
   }
+  const modelForOpenAI = stripModelPrefix(storedModel);
 
-  if (client) {
+  if (openAiClient) {
     try {
-      const completion = await client.chat.completions.create({
-        model: 'gpt-4.1-mini',
+      const completion = await openAiClient.chat.completions.create({
+        model: modelForOpenAI,
         messages: [
           { role: 'system', content: 'Create a short 3-6 word title summarizing the user message.' },
           { role: 'user', content: message }
@@ -304,10 +316,16 @@ async function deriveTabTitle(message, client = null) {
 }
 
 async function generateInitialGreeting(type, client = null) {
-  const openAiKey = process.env.OPENAI_API_KEY || '';
-  if (!client && openAiKey) {
-    client = new OpenAI({ apiKey: openAiKey });
+  const openAiClient = getOpenAiClient();
+  const storedModel = db.getSetting('ai_model') || 'deepseek/deepseek-chat';
+  function stripModelPrefix(m) {
+    if (!m) return 'deepseek/deepseek-chat';
+    if (m.startsWith('openai/')) return m.substring('openai/'.length);
+    if (m.startsWith('openrouter/')) return m.substring('openrouter/'.length);
+    if (m.startsWith('deepseek/')) return m.substring('deepseek/'.length);
+    return m;
   }
+  const modelForOpenAI = stripModelPrefix(storedModel);
 
   let prompt = 'Write a brief friendly greeting as an AI assistant named Alfe. ';
   if (type === 'design') {
@@ -316,10 +334,10 @@ async function generateInitialGreeting(type, client = null) {
     prompt += 'Invite the user to share what they would like to discuss.';
   }
 
-  if (client) {
+  if (openAiClient) {
     try {
-      const completion = await client.chat.completions.create({
-        model: 'gpt-4.1-mini',
+      const completion = await openAiClient.chat.completions.create({
+        model: modelForOpenAI,
         messages: [
           { role: 'user', content: prompt }
         ],
@@ -341,7 +359,8 @@ async function generateInitialGreeting(type, client = null) {
 async function createInitialTabMessage(tabId, type, sessionId = '') {
   const greeting = await generateInitialGreeting(type);
   const pairId = db.createChatPair('', tabId, '', sessionId);
-  db.finalizeChatPair(pairId, greeting, 'gpt-4.1-mini', new Date().toISOString(), null);
+  const defaultModel = db.getSetting('ai_model') || 'deepseek/deepseek-chat';
+  db.finalizeChatPair(pairId, greeting, defaultModel, new Date().toISOString(), null);
 }
 
 // Explicit CORS configuration
