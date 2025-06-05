@@ -19,7 +19,8 @@ body {
 /* App layout: sidebar + main chat panel */
 .app {
   display: flex;
-  height: 100vh;
+  min-height: 100vh;
+  height: 100dvh;
   overflow: hidden; /* Restored overflow hidden to allow separate scrolling areas */
   position: relative; /* For absolute positioning of exclamation icon */
 }
