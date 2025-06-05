@@ -1520,13 +1520,16 @@ document.getElementById("viewTabTasks").addEventListener("click", () => updateVi
 document.getElementById("viewTabArchive").addEventListener("click", () => updateView('archive'));
 
 // New: Button to toggle top chat tabs bar
-document.getElementById("toggleTopChatTabsBtn").addEventListener("click", async () => {
-  topChatTabsBarVisible = !topChatTabsBarVisible;
-  const chk = document.getElementById("showTopChatTabsCheck");
-  if(chk) chk.checked = topChatTabsBarVisible;
-  toggleTopChatTabsVisibility(topChatTabsBarVisible);
-  await setSetting("top_chat_tabs_bar_visible", topChatTabsBarVisible);
-});
+const toggleTopChatTabsBtn = document.getElementById("toggleTopChatTabsBtn");
+if(toggleTopChatTabsBtn){
+  toggleTopChatTabsBtn.addEventListener("click", async () => {
+    topChatTabsBarVisible = !topChatTabsBarVisible;
+    const chk = document.getElementById("showTopChatTabsCheck");
+    if(chk) chk.checked = topChatTabsBarVisible;
+    toggleTopChatTabsVisibility(topChatTabsBarVisible);
+    await setSetting("top_chat_tabs_bar_visible", topChatTabsBarVisible);
+  });
+}
 
 document.getElementById("createSterlingChatBtn").addEventListener("click", async () => {
   try {
