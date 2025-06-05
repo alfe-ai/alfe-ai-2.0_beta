@@ -2281,7 +2281,10 @@ app.get("/Image.html", (req, res) => {
 app.get("/", (req, res) => {
   const sessionId = getSessionIdFromRequest(req);
   try {
-    if (!sessionId || db.listChatTabs(null, true, sessionId).length === 0) {
+    if (
+      !sessionId ||
+      db.listChatTabs(null, false, sessionId).length === 0
+    ) {
       console.debug("[Server Debug] GET / => Redirecting to nexum.html");
       return res.redirect("/nexum.html");
     }
@@ -2302,7 +2305,10 @@ app.use(express.static(path.join(__dirname, "../public")));
 app.get("/", (req, res) => {
   const sessionId = getSessionIdFromRequest(req);
   try {
-    if (!sessionId || db.listChatTabs(null, true, sessionId).length === 0) {
+    if (
+      !sessionId ||
+      db.listChatTabs(null, false, sessionId).length === 0
+    ) {
       console.debug("[Server Debug] GET / => Redirecting to nexum.html");
       return res.redirect("/nexum.html");
     }
