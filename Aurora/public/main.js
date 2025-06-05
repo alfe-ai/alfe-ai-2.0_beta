@@ -4643,6 +4643,9 @@ registerActionHook("generateImage", async ({response}) => {
     const prompt = (response || "").trim();
     if(!prompt) return;
     if(prompt === lastImagePrompt) return;
+    // If the response already contains placeholder image links,
+    // let the embedMockImages hook handle them to avoid duplicates
+    if(/!\[[^\]]*\]\(https:\/\/alfe\.sh\/[^)]+\)/.test(prompt)) return;
     lastImagePrompt = prompt;
     isImageGenerating = true;
     if(chatSendBtnEl) chatSendBtnEl.disabled = true;
