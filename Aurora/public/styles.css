@@ -243,6 +243,27 @@ body {
   padding: 4px;
 }
 
+.download-chat-btn {
+  background: transparent;
+  border: none;
+  color: #4da3ff;
+  font-weight: bold;
+  font-size: 1.2rem;
+  text-shadow: 0 0 2px #000;
+  cursor: pointer;
+}
+
+.download-chat-btn:hover {
+  color: #6cb8ff;
+}
+
+.pair-download-btn {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  padding: 4px;
+}
+
 .bubble-delete-btn {
   position: absolute;
   top: -16px;
