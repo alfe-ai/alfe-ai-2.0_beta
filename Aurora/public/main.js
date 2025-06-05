@@ -4173,7 +4173,7 @@ function addImageChatBubble(url, altText="", title=""){
   const botHead = document.createElement("div");
   botHead.className = "bubble-header";
   botHead.innerHTML = `
-    <div class="name-oval name-oval-ai" title="${modelName}">${window.agentName}</div>
+    <div class="name-oval name-oval-ai">${window.agentName}</div>
     <span style="opacity:0.8;">${formatTimestamp(new Date().toISOString())}</span>
   `;
   const imgCopyBtn = document.createElement("button");
