@@ -282,9 +282,17 @@ export default class TaskDB {
         email TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
         session_id TEXT DEFAULT '',
-        created_at TEXT NOT NULL
+        created_at TEXT NOT NULL,
+        totp_secret TEXT DEFAULT ''
       );
     `);
+
+    try {
+      this.db.exec('ALTER TABLE accounts ADD COLUMN totp_secret TEXT DEFAULT "";');
+      console.debug("[TaskDB Debug] Added accounts.totp_secret column");
+    } catch(e) {
+      // column exists
+    }
 
     console.debug("[TaskDB Debug] Finished DB schema init.");
   }
@@ -1016,6 +1024,10 @@ export default class TaskDB {
 
   setAccountSession(id, sessionId) {
     this.db.prepare('UPDATE accounts SET session_id=? WHERE id=?').run(sessionId, id);
+  }
+
+  setAccountTotpSecret(id, secret) {
+    this.db.prepare('UPDATE accounts SET totp_secret=? WHERE id=?').run(secret, id);
   }
 
   getAccountBySession(sessionId) {

@@ -230,6 +230,15 @@ function openAccountModal(e){
     const idEl = document.getElementById("accountId");
     if(emailEl) emailEl.textContent = accountInfo.email;
     if(idEl) idEl.textContent = accountInfo.id;
+    const enabledMsg = document.getElementById('totpEnabledMsg');
+    const enableBtn = document.getElementById('enableTotpBtn');
+    if(accountInfo.totpEnabled){
+      if(enabledMsg) enabledMsg.style.display = 'block';
+      if(enableBtn) enableBtn.style.display = 'none';
+    } else {
+      if(enabledMsg) enabledMsg.style.display = 'none';
+      if(enableBtn) enableBtn.style.display = 'inline-block';
+    }
   }
   showModal(document.getElementById("accountModal"));
 }
@@ -1643,7 +1652,7 @@ if (signupSubmitBtn) {
       if(resp.ok && data && data.success){
         showToast("Registered!");
         hideModal(document.getElementById("signupModal"));
-        updateAccountButton({exists:true, id:data.id, email});
+        updateAccountButton({exists:true, id:data.id, email, totpEnabled: data.totpEnabled});
       } else {
         showToast(data?.error || "Registration failed");
       }
@@ -1674,6 +1683,7 @@ if (loginSubmitBtn) {
   loginSubmitBtn.addEventListener("click", async () => {
     const email = document.getElementById("loginEmail").value.trim();
     const password = document.getElementById("loginPassword").value;
+    const token = document.getElementById("loginTotp")?.value.trim();
     if(!email || !password){
       showToast("Email and password required");
       return;
@@ -1682,7 +1692,7 @@ if (loginSubmitBtn) {
       const resp = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, sessionId })
+        body: JSON.stringify({ email, password, token, sessionId })
       });
       const data = await resp.json().catch(() => null);
       if(resp.ok && data && data.success){
@@ -1693,8 +1703,14 @@ if (loginSubmitBtn) {
         }
         showToast("Logged in!");
         hideModal(document.getElementById("loginModal"));
-        updateAccountButton({exists:true, id:data.id, email});
+        const lbl = document.getElementById('totpLoginLabel');
+        if(lbl) lbl.style.display = 'none';
+        updateAccountButton({exists:true, id:data.id, email, totpEnabled: data.totpEnabled});
       } else {
+        if(data?.error === 'totp required' || data?.error === 'invalid totp') {
+          const lbl = document.getElementById('totpLoginLabel');
+          if(lbl) lbl.style.display = 'block';
+        }
         showToast(data?.error || "Login failed");
       }
     } catch(err){
@@ -1714,6 +1730,43 @@ if(accountCloseBtn){
 const accountLogoutBtn = document.getElementById("accountLogoutBtn");
 if(accountLogoutBtn){
   accountLogoutBtn.addEventListener("click", logout);
+}
+
+const enableTotpBtn = document.getElementById('enableTotpBtn');
+if(enableTotpBtn){
+  enableTotpBtn.addEventListener('click', async () => {
+    const resp = await fetch('/api/totp/generate');
+    const data = await resp.json().catch(() => null);
+    if(resp.ok && data){
+      document.getElementById('totpSecret').textContent = data.secret;
+      document.getElementById('totpSetup').style.display = 'block';
+      enableTotpBtn.style.display = 'none';
+    } else {
+      showToast('Failed to start 2FA setup');
+    }
+  });
+}
+
+const totpVerifyBtn = document.getElementById('totpVerifyBtn');
+if(totpVerifyBtn){
+  totpVerifyBtn.addEventListener('click', async () => {
+    const secret = document.getElementById('totpSecret').textContent.trim();
+    const token = document.getElementById('totpToken').value.trim();
+    const resp = await fetch('/api/totp/enable', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret, token })
+    });
+    const data = await resp.json().catch(() => null);
+    if(resp.ok && data && data.success){
+      accountInfo.totpEnabled = true;
+      document.getElementById('totpSetup').style.display = 'none';
+      document.getElementById('totpEnabledMsg').style.display = 'block';
+      showToast('2FA enabled');
+    } else {
+      showToast(data?.error || 'Verification failed');
+    }
+  });
 }
 
 document.getElementById("viewTabChat").addEventListener("click", () => updateView('chat'));

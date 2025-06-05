@@ -652,6 +652,9 @@
     <label style="margin-top:8px;">Password:<br/>
       <input type="password" id="loginPassword" style="width:100%;" />
     </label>
+    <label id="totpLoginLabel" style="margin-top:8px; display:none;">Auth Code:<br/>
+      <input type="text" id="loginTotp" style="width:100%;" />
+    </label>
     <div class="modal-buttons">
       <button id="loginSubmitBtn">Login</button>
       <button id="loginSignupBtn">Sign Up</button>
@@ -666,6 +669,16 @@
     <h2>Account</h2>
     <p>Email: <span id="accountEmail"></span></p>
     <p>ID: <span id="accountId"></span></p>
+    <div id="totpSection" style="margin-top:10px;">
+      <button id="enableTotpBtn">Enable 2FA</button>
+      <div id="totpSetup" style="display:none; margin-top:10px;">
+        <p>Enter the code from your authenticator app:</p>
+        <p><code id="totpSecret"></code></p>
+        <input type="text" id="totpToken" style="width:100%;" />
+        <button id="totpVerifyBtn">Verify</button>
+      </div>
+      <p id="totpEnabledMsg" style="display:none;">2FA Enabled</p>
+    </div>
     <div class="modal-buttons">
       <button id="accountLogoutBtn">Logout</button>
       <button id="accountCloseBtn">Close</button>

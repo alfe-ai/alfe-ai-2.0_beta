@@ -6,6 +6,7 @@ import GitHubClient from "./githubClient.js";
 import TaskQueue from "./taskQueue.js";
 import TaskDB from "./taskDb.js";
 import { pbkdf2Sync, randomBytes } from "crypto";
+import speakeasy from "speakeasy";
 
 dotenv.config();
 
@@ -837,7 +838,7 @@ app.post("/api/register", (req, res) => {
 app.post("/api/login", (req, res) => {
   console.debug("[Server Debug] POST /api/login =>", req.body);
   try {
-    const { email, password } = req.body;
+    const { email, password, token } = req.body;
     let sessionId = req.body.sessionId || getSessionIdFromRequest(req);
     if (!email || !password) {
       return res.status(400).json({ error: "email and password required" });
@@ -845,6 +846,16 @@ app.post("/api/login", (req, res) => {
     const account = db.getAccountByEmail(email);
     if (!account || !verifyPassword(password, account.password_hash)) {
       return res.status(400).json({ error: "invalid credentials" });
+    }
+
+    if (account.totp_secret) {
+      if (!token) {
+        return res.status(400).json({ error: "totp required" });
+      }
+      const ok = speakeasy.totp.verify({ secret: account.totp_secret, encoding: 'base32', token, window: 1 });
+      if (!ok) {
+        return res.status(400).json({ error: "invalid totp" });
+      }
     }
 
     if (account.session_id && account.session_id !== sessionId) {
@@ -860,13 +871,37 @@ app.post("/api/login", (req, res) => {
   }
 });
 
+app.get("/api/totp/generate", (req, res) => {
+  const sessionId = getSessionIdFromRequest(req);
+  const account = sessionId ? db.getAccountBySession(sessionId) : null;
+  if (!account) return res.status(401).json({ error: "not logged in" });
+  const secret = speakeasy.generateSecret({ name: "Aurora" });
+  res.json({ secret: secret.base32, otpauth_url: secret.otpauth_url });
+});
+
+app.post("/api/totp/enable", (req, res) => {
+  const sessionId = getSessionIdFromRequest(req);
+  const account = sessionId ? db.getAccountBySession(sessionId) : null;
+  if (!account) return res.status(401).json({ error: "not logged in" });
+  const { secret, token } = req.body || {};
+  if (!secret || !token) {
+    return res.status(400).json({ error: "missing secret or token" });
+  }
+  const ok = speakeasy.totp.verify({ secret, encoding: 'base32', token, window: 1 });
+  if (!ok) {
+    return res.status(400).json({ error: "invalid token" });
+  }
+  db.setAccountTotpSecret(account.id, secret);
+  res.json({ success: true });
+});
+
 app.get("/api/account", (req, res) => {
   console.debug("[Server Debug] GET /api/account");
   try {
     const sessionId = getSessionIdFromRequest(req);
     const account = sessionId ? db.getAccountBySession(sessionId) : null;
     if (!account) return res.json({ exists: false });
-    res.json({ exists: true, id: account.id, email: account.email });
+    res.json({ exists: true, id: account.id, email: account.email, totpEnabled: !!account.totp_secret });
   } catch(err) {
     console.error("[TaskQueue] GET /api/account failed:", err);
     res.status(500).json({ error: "Internal server error" });
