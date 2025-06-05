@@ -1671,6 +1671,11 @@ if (loginSubmitBtn) {
       });
       const data = await resp.json().catch(() => null);
       if(resp.ok && data && data.success){
+        if(data.sessionId && data.sessionId !== sessionId){
+          sessionStorage.setItem('sessionId', data.sessionId);
+          setCookie('sessionId', data.sessionId);
+          setTimeout(() => location.reload(), 500);
+        }
         showToast("Logged in!");
         hideModal(document.getElementById("loginModal"));
         updateAccountButton({exists:true, id:data.id, email});

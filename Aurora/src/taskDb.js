@@ -1021,6 +1021,26 @@ export default class TaskDB {
   getAccountBySession(sessionId) {
     return this.db.prepare('SELECT * FROM accounts WHERE session_id=?').get(sessionId);
   }
+
+  mergeSessions(targetId, sourceId) {
+    if (!targetId || !sourceId || targetId === sourceId) return;
+
+    this.db.prepare('UPDATE chat_tabs SET session_id=? WHERE session_id=?').run(targetId, sourceId);
+    this.db.prepare('UPDATE chat_pairs SET session_id=? WHERE session_id=?').run(targetId, sourceId);
+
+    const srcStart = this.getImageSessionStart(sourceId);
+    const tgtStart = this.getImageSessionStart(targetId);
+    if (srcStart) {
+      if (!tgtStart || new Date(srcStart) < new Date(tgtStart)) {
+        this.db.prepare(
+          `INSERT INTO image_sessions (session_id, start_time)
+           VALUES (?, ?)
+           ON CONFLICT(session_id) DO UPDATE SET start_time=excluded.start_time`
+        ).run(targetId, srcStart);
+      }
+    }
+    this.db.prepare('DELETE FROM image_sessions WHERE session_id=?').run(sourceId);
+  }
 }
 
 
