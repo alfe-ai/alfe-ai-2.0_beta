@@ -792,6 +792,25 @@ body {
   border-width: 3px;
 }
 
+/* Full page loader overlay */
+.page-loader {
+  display: none;
+  position: fixed;
+  z-index: 10002;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  align-items: center;
+  justify-content: center;
+}
+
+.page-loader.show {
+  display: flex;
+}
+
 .nav-placeholder {
   width: 100%;
   height: 1.2rem;
