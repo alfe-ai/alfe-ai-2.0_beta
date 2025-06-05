@@ -1208,7 +1208,7 @@ app.post("/api/chat", async (req, res) => {
     }
 
     const priorPairsAll = db.getAllChatPairs(chatTabId);
-    const isFirstMessage = priorPairsAll.length === 0;
+    const isFirstMessage = !db.hasUserMessages(chatTabId);
     let model = db.getSetting("ai_model");
     const savedInstructions = db.getSetting("agent_instructions") || "";
 
