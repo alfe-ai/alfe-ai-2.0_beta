@@ -47,6 +47,22 @@
           link.appendChild(img);
           wrapper.appendChild(link);
 
+          const dl = document.createElement('button');
+          dl.className = 'download-chat-btn pair-download-btn';
+          dl.textContent = '↓';
+          dl.title = 'Download this image';
+          dl.addEventListener('click', () => {
+            const a = document.createElement('a');
+            a.href = '/uploads/' + encodeURIComponent(f.name);
+            a.download = f.name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          });
+          dl.style.bottom = '4px';
+          dl.style.left = '4px';
+          wrapper.appendChild(dl);
+
           if(f.id){
             const del = document.createElement('button');
             del.className = 'delete-chat-btn pair-delete-btn';
