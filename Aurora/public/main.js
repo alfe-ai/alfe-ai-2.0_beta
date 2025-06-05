@@ -2449,7 +2449,7 @@ function renderFileList(){
     tdStatus.textContent = f.status || "";
     tdStatus.className = "img-status-cell";
     const tdSize = document.createElement("td");
-    tdSize.textContent = f.size;
+    tdSize.textContent = Math.round(f.size / 1024) + " KB";
     const tdMtime = document.createElement("td");
     tdMtime.textContent = new Date(f.mtime).toLocaleString();
     const tdAction = document.createElement("td");
