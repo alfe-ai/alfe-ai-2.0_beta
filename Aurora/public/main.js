@@ -54,6 +54,7 @@ let sidebarVisible = window.innerWidth > 700;
 let chatTabs = [];
 let archivedTabs = [];
 let currentTabId = 1;
+let initialTabUuid = null;
 let currentTabType = 'chat';
 let chatHideMetadata = false;
 let chatTabAutoNaming = false;
@@ -109,6 +110,15 @@ let newTabSelectedType = 'chat';
 
 const $  = (sel, ctx=document) => ctx.querySelector(sel);
 const $$ = (sel, ctx=document) => [...ctx.querySelectorAll(sel)];
+
+function getTabUuidFromLocation(){
+  const m = window.location.pathname.match(/\/chat\/([^/]+)/);
+  if(m) return m[1];
+  const params = new URLSearchParams(window.location.search);
+  return params.get('tab');
+}
+
+initialTabUuid = getTabUuidFromLocation();
 
 /* Introduce an image buffer and preview, plus an array to hold their descriptions. */
 let pendingImages = [];
@@ -1213,6 +1223,10 @@ async function renameTab(tabId){
     renderSidebarTabs();
     renderArchivedSidebarTabs();
     updatePageTitle();
+    const ct = chatTabs.find(t => t.id === currentTabId);
+    if(ct && ct.tab_uuid){
+      window.history.replaceState({}, '', `/chat/${ct.tab_uuid}`);
+    }
   }
 }
 async function deleteTab(tabId){
@@ -1230,6 +1244,10 @@ async function deleteTab(tabId){
     renderSidebarTabs();
     renderArchivedSidebarTabs();
     await loadChatHistory(currentTabId, true);
+    const ct = chatTabs.find(t => t.id === currentTabId);
+    if(ct && ct.tab_uuid){
+      window.history.replaceState({}, '', `/chat/${ct.tab_uuid}`);
+    }
     await loadTabs();
     renderTabs();
     renderSidebarTabs();
@@ -1275,6 +1293,12 @@ async function selectTab(tabId){
     setTimeout(runImageLoop, 0);
   }
   updatePageTitle();
+  if(t && t.tab_uuid){
+    const newPath = `/chat/${t.tab_uuid}`;
+    if(window.location.pathname !== newPath){
+      window.history.replaceState({}, '', newPath);
+    }
+  }
 }
 function renderTabs(){
   const tc = $("#tabsContainer");
@@ -2992,16 +3016,19 @@ btnNexumTabs?.addEventListener("click", () => { window.location.href = btnNexumT
   if(chatTabs.length === 0){
     openNewTabModal();
   }
-
   const lastChatTab = await getSetting("last_chat_tab");
-  if(lastChatTab) {
+  if(initialTabUuid){
+    const found = chatTabs.find(t => t.tab_uuid === initialTabUuid);
+    if(found) currentTabId = found.id;
+    else if(lastChatTab){
+      const foundTab = chatTabs.find(t => t.id===parseInt(lastChatTab,10));
+      if(foundTab) currentTabId = foundTab.id;
+    }
+  } else if(lastChatTab){
     const foundTab = chatTabs.find(t => t.id===parseInt(lastChatTab,10));
     if(foundTab) currentTabId = foundTab.id;
-    else if(chatTabs.length>0){
-      const firstActive = chatTabs.find(t => !t.archived);
-      currentTabId = firstActive ? firstActive.id : chatTabs[0].id;
-    }
-  } else if(chatTabs.length>0){
+  }
+  if(!currentTabId && chatTabs.length>0){
     const firstActive = chatTabs.find(t => !t.archived);
     currentTabId = firstActive ? firstActive.id : chatTabs[0].id;
   }
@@ -3020,6 +3047,10 @@ btnNexumTabs?.addEventListener("click", () => { window.location.href = btnNexumT
   renderArchivedSidebarTabs();
   if(chatTabs.length>0){
     await loadChatHistory(currentTabId, true);
+    const ct = chatTabs.find(t => t.id === currentTabId);
+    if(ct && ct.tab_uuid){
+      window.history.replaceState({}, '', `/chat/${ct.tab_uuid}`);
+    }
   }
 
   try {
