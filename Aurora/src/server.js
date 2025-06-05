@@ -2622,7 +2622,13 @@ app.get("/api/git-sha", (req, res) => {
       })
       .toString()
       .trim();
-    res.json({ sha });
+    const timestamp = child_process
+      .execSync("git log -1 --format=%cI HEAD", {
+        cwd: path.join(__dirname, ".."),
+      })
+      .toString()
+      .trim();
+    res.json({ sha, timestamp });
   } catch (err) {
     console.error("[Server Debug] GET /api/git-sha =>", err);
     res.status(500).json({ error: "Unable to determine git SHA" });

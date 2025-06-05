@@ -34,7 +34,10 @@ document.addEventListener('DOMContentLoaded', () => {
               .then(r => r.ok ? r.json() : null)
               .then(d => {
                 if (d && d.sha) {
-                  showToast(`Git SHA: ${d.sha}`, 3000);
+                  const msg = d.timestamp
+                    ? `Git SHA: ${d.sha} (${d.timestamp})`
+                    : `Git SHA: ${d.sha}`;
+                  showToast(msg, 3000);
                 }
               })
               .catch(err => console.error('Failed to fetch git sha', err));
