@@ -241,6 +241,20 @@ function showToast(msg, duration=1500){
   setTimeout(() => el.classList.remove("show"), duration);
 }
 
+async function logout(){
+  try {
+    await fetch("/api/logout", { method: "POST" });
+  } catch(err){
+    console.error("Logout failed", err);
+  }
+  document.cookie = "sessionId=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+  sessionStorage.removeItem('sessionId');
+  hideModal(document.getElementById("accountModal"));
+  updateAccountButton(null);
+  showToast("Logged out");
+  setTimeout(() => location.reload(), 500);
+}
+
 let limitCountdownTimer = null;
 
 function startLimitCountdown(targetTime){
@@ -1625,6 +1639,11 @@ if(accountCloseBtn){
   accountCloseBtn.addEventListener("click", () =>
     hideModal(document.getElementById("accountModal"))
   );
+}
+
+const accountLogoutBtn = document.getElementById("accountLogoutBtn");
+if(accountLogoutBtn){
+  accountLogoutBtn.addEventListener("click", logout);
 }
 
 document.getElementById("viewTabChat").addEventListener("click", () => updateView('chat'));
