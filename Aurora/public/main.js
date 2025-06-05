@@ -2460,6 +2460,20 @@ function renderFileList(){
                   "_blank");
     });
     tdAction.appendChild(openBtn);
+
+    const dlBtn = document.createElement("button");
+    dlBtn.className = "download-chat-btn table-download-btn";
+    dlBtn.textContent = "↓";
+    dlBtn.title = "Download this image";
+    dlBtn.addEventListener("click", () => {
+      const a = document.createElement("a");
+      a.href = `/uploads/${encodeURIComponent(f.name)}`;
+      a.download = f.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    });
+    tdAction.appendChild(dlBtn);
     tr.appendChild(tdIndex);
     tr.appendChild(tdThumb);
     tr.appendChild(tdName);
