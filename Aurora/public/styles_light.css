@@ -298,6 +298,14 @@ body {
   font-size: 0.9rem;
 }
 
+/* Date divider in chat history */
+.chat-date-header {
+  text-align: center;
+  margin: 10px 0;
+  color: #555;
+  font-size: 0.8rem;
+}
+
 /* User bubble: displayed on the right side */
 .chat-user {
   background: #3b3b3b;
