@@ -227,9 +227,7 @@ function openAccountModal(e){
   if(e) e.preventDefault();
   if(accountInfo){
     const emailEl = document.getElementById("accountEmail");
-    const idEl = document.getElementById("accountId");
     if(emailEl) emailEl.textContent = accountInfo.email;
-    if(idEl) idEl.textContent = accountInfo.id;
     const enabledMsg = document.getElementById('totpEnabledMsg');
     const enableBtn = document.getElementById('enableTotpBtn');
     if(accountInfo.totpEnabled){
