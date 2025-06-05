@@ -1784,9 +1784,9 @@ if(totpVerifyBtn){
   });
 }
 
-document.getElementById("viewTabChat").addEventListener("click", () => updateView('chat'));
-document.getElementById("viewTabTasks").addEventListener("click", () => updateView('tasks'));
-document.getElementById("viewTabArchive").addEventListener("click", () => updateView('archive'));
+document.getElementById("viewTabChat")?.addEventListener("click", () => updateView('chat'));
+document.getElementById("viewTabTasks")?.addEventListener("click", () => updateView('tasks'));
+document.getElementById("viewTabArchive")?.addEventListener("click", () => updateView('archive'));
 
 // New: Button to toggle top chat tabs bar
 const toggleTopChatTabsBtn = document.getElementById("toggleTopChatTabsBtn");
@@ -1800,7 +1800,7 @@ if(toggleTopChatTabsBtn){
   });
 }
 
-document.getElementById("createSterlingChatBtn").addEventListener("click", async () => {
+document.getElementById("createSterlingChatBtn")?.addEventListener("click", async () => {
   try {
     const resp = await fetch("/api/createSterlingChat", {
       method: "POST",
@@ -1822,11 +1822,11 @@ document.getElementById("createSterlingChatBtn").addEventListener("click", async
   }
 });
 
-document.getElementById("setProjectBtn").addEventListener("click", () => {
+document.getElementById("setProjectBtn")?.addEventListener("click", () => {
   $("#selectedProjectInput").value = "";
   showModal($("#setProjectModal"));
 });
-document.getElementById("setProjectSaveBtn").addEventListener("click", async () => {
+document.getElementById("setProjectSaveBtn")?.addEventListener("click", async () => {
   const pName = $("#selectedProjectInput").value.trim();
   if(!pName){
     alert("Please enter a project name.");
@@ -1841,7 +1841,7 @@ document.getElementById("setProjectSaveBtn").addEventListener("click", async () 
   hideModal($("#setProjectModal"));
   await updateProjectInfo();
 });
-document.getElementById("setProjectCancelBtn").addEventListener("click", () => {
+document.getElementById("setProjectCancelBtn")?.addEventListener("click", () => {
   hideModal($("#setProjectModal"));
 });
 
