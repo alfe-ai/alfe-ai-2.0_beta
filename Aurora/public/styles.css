@@ -664,6 +664,22 @@ body {
   display: none !important;
 }
 
+/* Arrow indicator for expanding the collapsed sidebar */
+#expandSidebarArrow {
+  display: none;
+  position: absolute;
+  top: 16px;
+  left: 44px;
+  font-size: 1.5rem;
+  color: #888;
+  cursor: pointer;
+  user-select: none;
+  z-index: 1000;
+}
+.app.sidebar-collapsed #expandSidebarArrow {
+  display: block;
+}
+
 /* When the image generation limit is reached (50/50),
    highlight the info text in dark red for visibility
    by applying a new "limit-reached" class via JavaScript.

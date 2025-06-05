@@ -459,6 +459,11 @@ async function toggleSidebar(){
     collapsedLogo.style.display = "none";
   }
 
+  const expandArrow = document.getElementById("expandSidebarArrow");
+  if(expandArrow){
+    expandArrow.style.display = sidebarVisible ? "none" : "block";
+  }
+
   updateChatPanelVisibility();
 
   // Shift top chat tabs bar when sidebar is collapsed so it doesn't
@@ -655,6 +660,10 @@ async function loadSettings(){
   const collapsedLogoInit = document.getElementById("collapsedSidebarLogo");
   if(collapsedLogoInit){
     collapsedLogoInit.style.display = "none";
+  }
+  const expandArrowInit = document.getElementById("expandSidebarArrow");
+  if(expandArrowInit){
+    expandArrowInit.style.display = sidebarVisible ? "none" : "block";
   }
   updateChatPanelVisibility();
   const initTopBtns = document.getElementById("topRightButtons");
