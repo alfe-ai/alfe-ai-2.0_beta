@@ -455,6 +455,12 @@ document.getElementById("sidebarToggleIcon")?.addEventListener("click", ev => {
   ev.stopPropagation();
   toggleSidebar();
 });
+document.getElementById("closeSidebarIcon")?.addEventListener("click", ev => {
+  ev.stopPropagation();
+  if(sidebarVisible){
+    toggleSidebar();
+  }
+});
 document.getElementById("hideSidebarBtn")?.addEventListener("click", ev => {
   ev.stopPropagation();
   toggleSidebar();
