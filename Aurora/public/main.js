@@ -1250,6 +1250,9 @@ async function toggleArchiveTab(tabId, archived){
     renderSidebarTabs();
     renderArchivedSidebarTabs();
     updatePageTitle();
+    if(chatTabs.length > 0 && chatTabs.every(t => t.archived)){
+      location.href = '/nexum.html';
+    }
   }
 }
 async function selectTab(tabId){
