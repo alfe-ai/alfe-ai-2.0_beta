@@ -847,6 +847,21 @@ app.get("/api/account", (req, res) => {
   }
 });
 
+app.post("/api/logout", (req, res) => {
+  console.debug("[Server Debug] POST /api/logout");
+  try {
+    const sessionId = getSessionIdFromRequest(req);
+    if (sessionId) {
+      const account = db.getAccountBySession(sessionId);
+      if (account) db.setAccountSession(account.id, "");
+    }
+    res.json({ success: true });
+  } catch(err) {
+    console.error("[TaskQueue] POST /api/logout failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.get("/api/tasks/:id", (req, res) => {
   console.debug("[Server Debug] GET /api/tasks/:id =>", req.params.id);
   try {
