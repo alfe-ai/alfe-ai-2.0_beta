@@ -262,7 +262,12 @@ async function deriveImageTitle(prompt, client = null) {
       const completion = await openAiClient.chat.completions.create({
         model: modelForOpenAI,
         messages: [
-          { role: 'system', content: 'Create a short 3-6 word title describing the image prompt.' },
+          {
+            role: 'system',
+            content:
+              'Given the following AI generated text description of an image, '
+              + 'respond ONLY with a concise 3-6 word title for that image.'
+          },
           { role: 'user', content: prompt }
         ],
         max_tokens: 16,
