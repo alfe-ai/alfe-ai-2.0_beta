@@ -879,7 +879,12 @@ app.post("/api/logout", (req, res) => {
     const sessionId = getSessionIdFromRequest(req);
     if (sessionId) {
       const account = db.getAccountBySession(sessionId);
-      if (account) db.setAccountSession(account.id, "");
+      // Preserve the account's session to allow chats to be restored on
+      // next login. Removing the session ID here prevents the user from
+      // recovering previous conversations after logging back in.
+      // The client clears its cookies, effectively logging out without
+      // deleting the stored session.
+      if (account) console.debug("[Server Debug] Keeping session", sessionId, "for account", account.id);
     }
     res.json({ success: true });
   } catch(err) {
