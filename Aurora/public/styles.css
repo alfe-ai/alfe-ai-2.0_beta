@@ -584,6 +584,21 @@ body {
   z-index: 1000;
 }
 
+.close-sidebar-icon {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 1.2rem;
+  color: #888;
+  cursor: pointer;
+  user-select: none;
+  z-index: 1000;
+}
+
+.app.sidebar-collapsed .close-sidebar-icon {
+  display: none;
+}
+
 /* Display session ID next to the sidebar icon */
 #sessionIdText.session-id {
   display: none;
