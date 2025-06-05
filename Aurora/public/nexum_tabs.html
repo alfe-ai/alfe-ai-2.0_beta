@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Nexum Tabs</title>
-  <link id="themeStylesheet" rel="stylesheet" href="nexum.css" />
+  <link id="themeStylesheet" rel="stylesheet" href="/nexum.css" />
 </head>
 <body>
   <h1>Nexum Tabs</h1>
@@ -70,15 +70,15 @@ function applyTheme(color, mode){
   const link = document.getElementById('themeStylesheet');
   if(!link) return;
   const files = {
-    purple: {dark:'nexum.css', light:'nexum_purple_light.css'},
-    lightblue: {dark:'nexum_lightblue.css', light:'nexum_lightblue_light.css'},
-    red: {dark:'nexum_red.css', light:'nexum_red_light.css'},
-    green: {dark:'nexum_green.css', light:'nexum_green_light.css'},
-    orange: {dark:'nexum_orange.css', light:'nexum_orange_light.css'},
-    teal: {dark:'nexum_teal.css', light:'nexum_teal_light.css'},
-    pink: {dark:'nexum_pink.css', light:'nexum_pink_light.css'}
+    purple: {dark:'/nexum.css', light:'/nexum_purple_light.css'},
+    lightblue: {dark:'/nexum_lightblue.css', light:'/nexum_lightblue_light.css'},
+    red: {dark:'/nexum_red.css', light:'/nexum_red_light.css'},
+    green: {dark:'/nexum_green.css', light:'/nexum_green_light.css'},
+    orange: {dark:'/nexum_orange.css', light:'/nexum_orange_light.css'},
+    teal: {dark:'/nexum_teal.css', light:'/nexum_teal_light.css'},
+    pink: {dark:'/nexum_pink.css', light:'/nexum_pink_light.css'}
   };
-  link.href = files[color]?.[mode] || 'nexum.css';
+  link.href = files[color]?.[mode] || '/nexum.css';
 }
 
 async function loadTabs(){
