@@ -1,4 +1,5 @@
 import Database from "better-sqlite3";
+import { randomUUID } from "crypto";
 
 export default class TaskDB {
   constructor(dbPath = "issues.sqlite") {
@@ -150,7 +151,8 @@ export default class TaskDB {
                                               image_alt TEXT DEFAULT '',
                                               image_title TEXT DEFAULT '',
                                               image_status TEXT DEFAULT '',
-                                              session_id TEXT DEFAULT ''
+                                              session_id TEXT DEFAULT '',
+                                              image_uuid TEXT DEFAULT ''
       );
     `);
 
@@ -219,6 +221,12 @@ export default class TaskDB {
       console.debug("[TaskDB Debug] Added chat_pairs.ip_address column");
     } catch(e) {
       //console.debug("[TaskDB Debug] chat_pairs.ip_address column exists, skipping.", e.message);
+    }
+    try {
+      this.db.exec(`ALTER TABLE chat_pairs ADD COLUMN image_uuid TEXT DEFAULT '';`);
+      console.debug("[TaskDB Debug] Added chat_pairs.image_uuid column");
+    } catch(e) {
+      //console.debug("[TaskDB Debug] chat_pairs.image_uuid column exists, skipping.", e.message);
     }
 
     this.db.exec(`
@@ -621,13 +629,14 @@ export default class TaskDB {
 
   createImagePair(url, altText = '', chatTabId = 1, title = '', status = 'Generated', sessionId = '', ipAddress = '') {
     const ts = new Date().toISOString();
+    const uuid = randomUUID().split('-')[0];
     const { lastInsertRowid } = this.db.prepare(`
       INSERT INTO chat_pairs (
         user_text, ai_text, model, timestamp, ai_timestamp,
         chat_tab_id, system_context, token_info,
-        image_url, image_alt, image_title, image_status, session_id, ip_address
-      ) VALUES ('', '', '', @ts, @ts, @chat_tab_id, '', NULL, @url, @alt, @title, @status, @session_id, @ip_address)
-    `).run({ ts, chat_tab_id: chatTabId, url, alt: altText, title, status, session_id: sessionId, ip_address: ipAddress });
+        image_url, image_alt, image_title, image_status, session_id, ip_address, image_uuid
+      ) VALUES ('', '', '', @ts, @ts, @chat_tab_id, '', NULL, @url, @alt, @title, @status, @session_id, @ip_address, @uuid)
+    `).run({ ts, chat_tab_id: chatTabId, url, alt: altText, title, status, session_id: sessionId, ip_address: ipAddress, uuid });
     return lastInsertRowid;
   }
 
@@ -843,6 +852,19 @@ export default class TaskDB {
         .prepare("SELECT id FROM chat_pairs WHERE image_url=? ORDER BY id DESC LIMIT 1")
         .get(url);
     return row ? row.id : null;
+  }
+
+  getImageUuidForUrl(url) {
+    const row = this.db
+        .prepare("SELECT id, image_uuid FROM chat_pairs WHERE image_url=? ORDER BY id DESC LIMIT 1")
+        .get(url);
+    if (!row) return null;
+    if (!row.image_uuid) {
+      const uuid = randomUUID().split('-')[0];
+      this.db.prepare("UPDATE chat_pairs SET image_uuid=? WHERE id=?").run(uuid, row.id);
+      return uuid;
+    }
+    return row.image_uuid;
   }
 
   getImageSessionForUrl(url) {

@@ -1635,9 +1635,10 @@ app.get("/api/upload/list", (req, res) => {
       const { size, mtime } = fs.statSync(path.join(uploadsDir, name));
       const title = db.getImageTitleForUrl(`/uploads/${name}`);
       const id = db.getImageIdForUrl(`/uploads/${name}`);
+      const uuid = db.getImageUuidForUrl(`/uploads/${name}`);
       const source = db.isGeneratedImage(`/uploads/${name}`) ? 'Generated' : 'Uploaded';
       const status = db.getImageStatusForUrl(`/uploads/${name}`) || (source === 'Generated' ? 'Generated' : 'Uploaded');
-      files.push({ id, name, size, mtime, title, source, status });
+      files.push({ id, uuid, name, size, mtime, title, source, status });
     }
     res.json(files);
   } catch (err) {
