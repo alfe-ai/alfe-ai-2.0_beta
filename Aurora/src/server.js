@@ -838,7 +838,7 @@ app.post("/api/login", (req, res) => {
   console.debug("[Server Debug] POST /api/login =>", req.body);
   try {
     const { email, password } = req.body;
-    const sessionId = req.body.sessionId || getSessionIdFromRequest(req);
+    let sessionId = req.body.sessionId || getSessionIdFromRequest(req);
     if (!email || !password) {
       return res.status(400).json({ error: "email and password required" });
     }
@@ -846,8 +846,14 @@ app.post("/api/login", (req, res) => {
     if (!account || !verifyPassword(password, account.password_hash)) {
       return res.status(400).json({ error: "invalid credentials" });
     }
+
+    if (account.session_id && account.session_id !== sessionId) {
+      db.mergeSessions(account.session_id, sessionId);
+      sessionId = account.session_id;
+    }
+
     db.setAccountSession(account.id, sessionId);
-    res.json({ success: true, id: account.id, email: account.email });
+    res.json({ success: true, id: account.id, email: account.email, sessionId });
   } catch (err) {
     console.error("[TaskQueue] POST /api/login failed:", err);
     res.status(500).json({ error: "Internal server error" });
