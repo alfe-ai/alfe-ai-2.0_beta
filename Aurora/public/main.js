@@ -1912,11 +1912,13 @@ setLoopUi(imageLoopEnabled);
 let inputHistory = [];
 let inputHistoryPos = -1;
 
-scrollDownBtnEl.addEventListener("click", ()=>{
-  const chatMessagesEl = document.getElementById("chatMessages");
-  chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
-  setTimeout(scrollChatToBottom, 0);
-});
+if (scrollDownBtnEl) {
+  scrollDownBtnEl.addEventListener("click", () => {
+    const chatMessagesEl = document.getElementById("chatMessages");
+    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+    setTimeout(scrollChatToBottom, 0);
+  });
+}
 
 chatInputEl.addEventListener("keydown", (e) => {
   if (upArrowHistoryEnabled && e.key === "ArrowUp") {
