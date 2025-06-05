@@ -71,7 +71,7 @@ body {
   justify-content: space-between;
   cursor: pointer;
   transition: background 0.3s;
-  border-radius: 6px;
+  border-radius: 10px;
 }
 
 #tabsList button:hover {
@@ -156,7 +156,7 @@ main {
   text-align: left;
   cursor: pointer;
   transition: background 0.3s;
-  border-radius: 6px;
+  border-radius: 10px;
 }
 
 #startSuggestions button {
@@ -167,7 +167,7 @@ main {
   text-align: left;
   cursor: pointer;
   transition: background 0.3s;
-  border-radius: 6px;
+  border-radius: 10px;
 }
 
 #suggestions button:hover {
@@ -181,7 +181,7 @@ main {
 .msg {
   border: 1px solid var(--border);
   padding: 8px;
-  border-radius: 8px;
+  border-radius: 12px;
   white-space: pre-wrap;
   box-shadow: 0 0 6px rgba(0,0,0,0.5);
 }
@@ -225,7 +225,7 @@ main {
   padding: 8px;
   font-family: monospace;
   resize: vertical;
-  border-radius: 6px;
+  border-radius: 10px;
 }
 
 button {
@@ -235,7 +235,7 @@ button {
   padding: 6px 12px;
   cursor: pointer;
   transition: background 0.3s, color 0.3s;
-  border-radius: 6px;
+  border-radius: 10px;
 }
 
 button:hover {
@@ -250,7 +250,7 @@ button:hover {
   padding: 4px 8px;
   cursor: pointer;
   transition: background 0.3s;
-  border-radius: 6px;
+  border-radius: 10px;
 }
 
 .view-tab.active {
@@ -292,7 +292,7 @@ button:hover {
   width: 300px;
   color: var(--text-color);
   box-shadow: 0 0 8px rgba(0,0,0,0.7);
-  border-radius: 6px;
+  border-radius: 10px;
 }
 
 /* Table styles used on nexum_tabs.html */
@@ -345,7 +345,7 @@ a:hover {
 
 #tasks {
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 10px;
   overflow: hidden;
 }
 #taskListPanel {

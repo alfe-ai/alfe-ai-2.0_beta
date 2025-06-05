@@ -72,7 +72,7 @@ body {
   display: table;
   color: #111;
   border: 1px solid #aaa;
-  border-radius: 6px;
+  border-radius: 10px;
   overflow: hidden;
 }
 
@@ -156,7 +156,7 @@ body {
   width: 90%;
   max-width: 600px;
   margin: auto;
-  border-radius: 4px;
+  border-radius: 8px;
   border: 1px solid #aaa;
 }
 
@@ -215,7 +215,7 @@ body {
 .chat-sequence {
   background: #e8e8e8;
   border: 1px solid #aaa;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 8px;
   margin-bottom: 8px;
   color: #111;
@@ -337,7 +337,7 @@ body {
 .chat-user {
   background: #dcdcdc;
   padding: 10px 12px; /* slightly increased for spacing */
-  border-radius: 12px;
+  border-radius: 16px;
   margin-bottom: 12px; /* more vertical space between elements */
   align-self: flex-end;
   text-align: right;
@@ -354,7 +354,7 @@ body {
 .chat-bot {
   background: #eaeaea;
   padding: 10px 12px; /* slightly increased for spacing */
-  border-radius: 12px;
+  border-radius: 16px;
   margin-bottom: 12px;
   display: block;
   max-width: 70%;
@@ -394,7 +394,7 @@ body {
 .chat-instructions {
   background: #ccc;
   padding: 6px 8px;
-  border-radius: 4px;
+  border-radius: 8px;
   margin-bottom: 6px;
   color: #111;
   font-size: 0.875rem;
@@ -407,7 +407,7 @@ body {
   align-items: center;
   background: #eaeaea;
   border: 1px solid #aaa;
-  border-radius: 4px;
+  border-radius: 8px;
   margin-top: 0.5rem;
   width: 100%;
   flex: 0 0 auto;
@@ -438,7 +438,7 @@ body {
   outline: none;
   padding: 8px 12px;
   cursor: pointer;
-  border-radius: 0 4px 4px 0;
+  border-radius: 0 8px 8px 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -454,7 +454,7 @@ body {
   color: #111;
   border: 1px solid #666;
   padding: 6px 12px;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   display: inline-block;
   z-index: 10;
@@ -466,7 +466,7 @@ body {
   margin-bottom: 1rem;
   background: #ccc;
   padding: 8px;
-  border-radius: 4px;
+  border-radius: 8px;
   border: 1px solid #aaa;
 }
 
@@ -529,7 +529,7 @@ body {
   border: 1px solid #666;
   color: #111;
   padding: 4px 6px;
-  border-radius: 4px;
+  border-radius: 8px;
   text-decoration: none;
   font-size: 0.8rem;
 }
@@ -678,7 +678,7 @@ body {
   cursor: pointer;
   align-items: center;
   text-align: left;
-  border-radius: 2px;
+  border-radius: 8px;
 }
 
 
@@ -779,7 +779,7 @@ body {
 #stageList li {
   background: #e8e8e8;
   border: 1px solid #aaa;
-  border-radius: 4px;
+  border-radius: 8px;
   padding: 4px 8px;
   color: #111;
 }
@@ -849,7 +849,7 @@ body {
   width: 100%;
   height: 1.2rem;
   background-color: #ddd;
-  border-radius: 4px;
+  border-radius: 8px;
   margin: 4px 0;
   animation: nav-skeleton-loading 1s linear infinite alternate;
 }
@@ -874,7 +874,7 @@ body {
   border: 1px solid #aaa;
   color: #111;
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: 8px;
   margin-bottom: 4px;
   cursor: pointer;
   text-decoration: none;
@@ -905,7 +905,7 @@ body {
   background: rgba(0, 0, 0, 0.8);
   color: #fff;
   padding: 8px 12px;
-  border-radius: 4px;
+  border-radius: 8px;
   display: none;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -938,7 +938,7 @@ button:disabled {
   height: 80px;
   background: var(--bg-main);
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 10px;
   cursor: pointer;
   font-size: 1.1rem;
   transition: background 0.3s, color 0.3s;
