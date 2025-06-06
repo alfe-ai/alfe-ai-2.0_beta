@@ -236,7 +236,7 @@
         <div id="modelTabsContainer" style="flex-wrap: wrap;display:none;gap:0.5rem;"></div>
         <button id="newModelTabBtn" style="display:none;">➕ Model</button>
         <!-- Added toggle for model tabs bar -->
-        <button id="toggleModelTabsBtn">Models</button>
+        <button id="toggleModelTabsBtn" hidden>Models</button>
       </div>
 
       <div id="chatMessages">
@@ -436,7 +436,7 @@
         </select>
       </label>
     </div>
-    <div style="margin-top:8px;">
+    <div style="margin-top:8px;" hidden>
       <label>AI Model:
         <select id="aiModelSelect">
           <!-- populated dynamically -->
