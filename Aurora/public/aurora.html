@@ -237,13 +237,14 @@
         <button id="toggleModelTabsBtn" hidden>Models</button>
       </div>
 
-      <div id="chatMessages"></div>
-      <div id="chatPlaceholder" style="text-align:center;margin:1rem 0;">
-        <span class="loading-spinner"></span>
+      <div id="chatMessages">
+        <div id="chatPlaceholder" style="text-align:center;margin:1rem 0;">
+          <span class="loading-spinner"></span>
+        </div>
+        <div id="imageGenerationIndicator" style="display:none; color:#0ff; margin:8px 0;">Generating image<span class="loading-spinner"></span></div>
       </div>
 
       <div id="waitingCounter"></div>
-      <div id="imageGenerationIndicator" style="display:none; color:#0ff; margin:8px 0;">Generating image<span class="loading-spinner"></span></div>
       <div class="chat-input-container">
         <!-- Hidden file input for image uploading -->
         <input type="file" id="imageUploadInput" accept="image/*" style="display:none" multiple />

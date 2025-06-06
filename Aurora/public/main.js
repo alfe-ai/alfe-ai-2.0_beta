@@ -310,6 +310,22 @@ function scrollChatToBottom(){
   if(el) el.scrollTop = el.scrollHeight;
 }
 
+function appendChatElement(el){
+  const chatMessagesEl = document.getElementById("chatMessages");
+  if(!chatMessagesEl) return;
+  const placeholder = document.getElementById("chatPlaceholder");
+  if(placeholder && placeholder.parentElement === chatMessagesEl){
+    chatMessagesEl.insertBefore(el, placeholder);
+    return;
+  }
+  const indicator = document.getElementById("imageGenerationIndicator");
+  if(indicator && indicator.parentElement === chatMessagesEl){
+    chatMessagesEl.insertBefore(el, indicator);
+  } else {
+    chatMessagesEl.appendChild(el);
+  }
+}
+
 async function updateImageLimitInfo(files){
   try {
     const resp = await fetch(`/api/image/counts?sessionId=${encodeURIComponent(sessionId)}`);
@@ -2102,7 +2118,7 @@ chatSendBtnEl.addEventListener("click", async () => {
 
   seqDiv.appendChild(botDiv);
   if(placeholderEl) placeholderEl.style.display = "none";
-  chatMessagesEl.appendChild(seqDiv);
+  appendChatElement(seqDiv);
   chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
   setTimeout(scrollChatToBottom, 0);
 
@@ -3770,7 +3786,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
     const dateDiv = document.createElement("div");
     dateDiv.className = "chat-date-header";
     dateDiv.textContent = dateStr;
-    chatMessagesEl.appendChild(dateDiv);
+    appendChatElement(dateDiv);
     lastChatDate = dateStr;
   }
 
@@ -4024,7 +4040,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
 
   const placeholderEl = document.getElementById("chatPlaceholder");
   if(placeholderEl) placeholderEl.style.display = "none";
-  chatMessagesEl.appendChild(seqDiv);
+  appendChatElement(seqDiv);
   chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
 }
 
@@ -4626,7 +4642,7 @@ function addImageChatBubble(url, altText="", title=""){
 
   seqDiv.appendChild(botDiv);
   if(placeholderEl) placeholderEl.style.display = "none";
-  chatMessagesEl.appendChild(seqDiv);
+  appendChatElement(seqDiv);
   chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
 }
 
