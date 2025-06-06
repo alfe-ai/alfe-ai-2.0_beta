@@ -1349,7 +1349,10 @@ app.get("/api/ai/models", async (req, res) => {
     ...deepseekModelData
   ].sort((a, b) => a.id.localeCompare(b.id));
 
-  const favorites = db.getSetting("favorite_ai_models") || [];
+  const sessionId = getSessionIdFromRequest(req);
+  const account = sessionId ? db.getAccountBySession(sessionId) : null;
+  const favorites =
+      account && account.id === 1 ? db.getSetting("favorite_ai_models") || [] : [];
   for (const m of combinedModels) {
     m.favorite = favorites.includes(m.id);
   }
@@ -2684,6 +2687,12 @@ app.post("/api/projects/rename", (req, res) => {
 // New route to toggle favorites
 app.post("/api/ai/favorites", (req, res) => {
   try {
+    const sessionId = getSessionIdFromRequest(req);
+    const account = sessionId ? db.getAccountBySession(sessionId) : null;
+    if (!account || account.id !== 1) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
     const { modelId, favorite } = req.body;
     if (!modelId || typeof favorite !== "boolean") {
       return res.status(400).json({ error: "Missing modelId or favorite boolean" });

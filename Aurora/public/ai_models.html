@@ -120,11 +120,24 @@
   let modelList = [];
   let currentSortCol = null;
   let currentSortDir = 1; // 1 = ascending, -1 = descending
+  let canSetFavorites = false;
 
   const providerFilterEl = document.getElementById("providerFilter");
   const favoritesOnlyCheckEl = document.getElementById("favoritesOnlyCheck");
 
   document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const resp = await fetch('/api/account');
+      if(resp.ok){
+        const info = await resp.json();
+        if(info && info.exists && info.id === 1){
+          canSetFavorites = true;
+        }
+      }
+    } catch(e){
+      console.error('Failed to fetch account info', e);
+    }
+
     const tableHead = document.querySelector('#modelsTable thead');
     tableHead.addEventListener('click', (e) => {
       const th = e.target.closest('th');
@@ -203,6 +216,10 @@
     // Attach star click events
     const stars = tbody.querySelectorAll(".favorite-star");
     stars.forEach(star => {
+      if(!canSetFavorites){
+        star.style.cursor = "default";
+        return;
+      }
       star.addEventListener("click", async () => {
         const modelId = star.dataset.modelid;
         const isCurrentlyStarred = star.classList.contains("starred");
