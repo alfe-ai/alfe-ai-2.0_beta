@@ -1859,8 +1859,11 @@ document.getElementById("createSterlingChatBtn")?.addEventListener("click", asyn
     }
     const data = await resp.json();
     if (data.success && data.sterlingUrl) {
-      document.getElementById("sterlingUrlLabel").innerHTML =
-          'Sterling chat: <a href="' + data.sterlingUrl + '" target="_blank">' + data.sterlingUrl + '</a>';
+      const lbl = document.getElementById("sterlingUrlLabel");
+      if (lbl) {
+        lbl.innerHTML =
+            'Sterling chat: <a href="' + data.sterlingUrl + '" target="_blank">' + data.sterlingUrl + '</a>';
+      }
     }
   } catch(e) {
     console.error("CreateSterlingChat call failed:", e);
@@ -3540,8 +3543,11 @@ thinArchiveIcon?.addEventListener("touchstart", ev => {
     if(r.ok){
       const { value } = await r.json();
       if(value){
-        document.getElementById("sterlingUrlLabel").innerHTML =
+        const lbl = document.getElementById("sterlingUrlLabel");
+        if(lbl){
+          lbl.innerHTML =
             'Sterling chat: <a href="' + value + '" target="_blank">' + value + '</a>';
+        }
       }
     }
   } catch(e){
