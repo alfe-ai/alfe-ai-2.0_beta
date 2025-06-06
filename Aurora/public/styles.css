@@ -275,6 +275,8 @@ body {
   position: absolute;
   top: 4px; /* align inside bubble */
   right: 4px;
+  line-height: 1; /* consistent vertical alignment */
+  font-size: 1rem;
 }
 
 .model-delete-btn {
@@ -292,6 +294,8 @@ body {
   border: none;
   color: #4da3ff;
   font-weight: bold;
+  font-size: 1rem;
+  line-height: 1; /* ensure same baseline as trash button */
   cursor: pointer;
 }
 
