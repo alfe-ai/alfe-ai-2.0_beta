@@ -2039,6 +2039,7 @@ chatSendBtnEl.addEventListener("click", async () => {
   const placeholderEl = document.getElementById("chatPlaceholder");
   const userMessage = chatInputEl.value.trim();
   if(!userMessage && pendingImages.length===0) return;
+  chatSendBtnEl.disabled = true;
   if(userMessage){
     inputHistory.push(userMessage);
     inputHistoryPos = -1;
@@ -2092,8 +2093,7 @@ chatSendBtnEl.addEventListener("click", async () => {
         loaderEl.style.display = "none";
         scrollChatToBottom();
       }
-      // Re-enable send button
-      chatSendBtnEl.disabled = false;
+      // Send button remains disabled until streaming completes
     }
 
     // Clear the buffer for images
@@ -2106,6 +2106,7 @@ chatSendBtnEl.addEventListener("click", async () => {
     chatInputEl.value = "";
   } else if(!userMessage && descsForThisSend.length===0){
     if (favElement) favElement.href = defaultFavicon;
+    chatSendBtnEl.disabled = false;
     return;
   }
 
@@ -2269,6 +2270,7 @@ chatSendBtnEl.addEventListener("click", async () => {
 
   chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
   setTimeout(scrollChatToBottom, 0);
+  chatSendBtnEl.disabled = false;
 });
 
 async function openChatSettings(){
