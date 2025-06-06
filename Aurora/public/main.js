@@ -3739,7 +3739,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
             uCopy.textContent = "\u2398"; // copy icon
             uCopy.title = "Copy message";
             uCopy.addEventListener("click", () => {
-              navigator.clipboard.writeText(p.user_text || "");
+              navigator.clipboard.writeText(stripPlaceholderImageLines(p.user_text) || "");
               showToast("Copied to clipboard");
             });
             userHead.appendChild(uCopy);
@@ -3798,7 +3798,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
         aCopy.textContent = "\u2398";
         aCopy.title = "Copy message";
         aCopy.addEventListener("click", () => {
-          navigator.clipboard.writeText(p.ai_text || "");
+          navigator.clipboard.writeText(stripPlaceholderImageLines(p.ai_text) || "");
           showToast("Copied to clipboard");
         });
         botHead.appendChild(aCopy);
@@ -3916,7 +3916,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
       userCopyBtn.textContent = "\u2398";
       userCopyBtn.title = "Copy message";
       userCopyBtn.addEventListener("click", () => {
-        navigator.clipboard.writeText(userText || "");
+        navigator.clipboard.writeText(stripPlaceholderImageLines(userText) || "");
         showToast("Copied to clipboard");
       });
       userHead.appendChild(userCopyBtn);
@@ -3975,7 +3975,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
   aiCopyBtn.textContent = "\u2398";
   aiCopyBtn.title = "Copy message";
   aiCopyBtn.addEventListener("click", () => {
-    navigator.clipboard.writeText(aiText || "");
+    navigator.clipboard.writeText(stripPlaceholderImageLines(aiText) || "");
     showToast("Copied to clipboard");
   });
   botHead.appendChild(aiCopyBtn);
@@ -4778,7 +4778,7 @@ function addImageChatBubble(url, altText="", title=""){
   imgCopyBtn.textContent = "\u2398";
   imgCopyBtn.title = "Copy alt text";
   imgCopyBtn.addEventListener("click", () => {
-    navigator.clipboard.writeText(altText || "");
+    navigator.clipboard.writeText(stripPlaceholderImageLines(altText) || "");
     showToast("Copied to clipboard");
   });
   botHead.appendChild(imgCopyBtn);
