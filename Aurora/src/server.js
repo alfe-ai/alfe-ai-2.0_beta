@@ -1946,6 +1946,15 @@ app.post("/api/upscale", async (req, res) => {
       return res.status(400).json({ error: "Missing file" });
     }
 
+    const sessionId = getSessionIdFromRequest(req);
+    const account = sessionId ? db.getAccountBySession(sessionId) : null;
+    if (!account) {
+      return res.status(401).json({ error: "not logged in" });
+    }
+    if (account.id !== 1) {
+      return res.status(403).json({ error: "upscale restricted" });
+    }
+
     const scriptPath =
       process.env.UPSCALE_SCRIPT_PATH ||
       "/mnt/part5/dot_fayra/Whimsical/git/PrintifyPuppet-PuppetCore-Sterling/LeonardoUpscalePuppet/loop.sh";
