@@ -4809,7 +4809,7 @@ function addImageChatBubble(url, altText="", title=""){
   if(title) img.title = title;
   img.style.maxWidth = "min(100%, 400px)";
   img.style.height = "auto";
-  img.addEventListener('load', scrollChatToBottom);
+  img.addEventListener('load', () => setTimeout(scrollChatToBottom, 1000));
   botDiv.appendChild(img);
 
   seqDiv.appendChild(botDiv);
