@@ -333,6 +333,11 @@ body {
   position: relative;
 }
 
+/* Extra space to place buttons above timestamp */
+.chat-user .bubble-header {
+  padding-top: 16px;
+}
+
 /* Date header separating chat days */
 .chat-date-header {
   text-align: center;
@@ -399,6 +404,7 @@ body {
 /* Individual user message within a chat bubble */
 .user-subbubble {
   max-width: 100%;
+  min-height: 2.2rem; /* extra height for header buttons */
 }
 
 /* Thumbnail images in the secure uploader table */
