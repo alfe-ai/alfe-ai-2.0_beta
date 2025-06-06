@@ -2252,6 +2252,10 @@ app.post("/api/image/generate", async (req, res) => {
   try {
     const { prompt, n, size, model, provider, tabId, sessionId } = req.body || {};
     const ipAddress = (req.headers["x-forwarded-for"] || req.ip || "").split(",")[0].trim();
+    console.debug(
+      "[Server Debug] /api/image/generate =>",
+      JSON.stringify({ prompt, n, size, model, provider, tabId, sessionId })
+    );
     const account = sessionId ? db.getAccountBySession(sessionId) : null;
     if (!prompt) {
       return res.status(400).json({ error: "Missing prompt" });
@@ -2305,6 +2309,7 @@ app.post("/api/image/generate", async (req, res) => {
       const sdEndpoint = sdBase.replace(/\/$/, "") + "/sdapi/v1/txt2img";
       const payload = { prompt, width: w, height: h, steps: 20, batch_size: countParsed };
       if (model) payload.model = model;
+      console.debug("[Server Debug] Calling Stable Diffusion =>", sdEndpoint, JSON.stringify(payload));
       const resp = await axios.post(sdEndpoint, payload);
       const b64 = resp.data?.images?.[0];
       if (!b64) {
@@ -2314,6 +2319,7 @@ app.post("/api/image/generate", async (req, res) => {
       const filename = `sd-${Date.now()}-${Math.round(Math.random() * 1e9)}.png`;
       const filePath = path.join(uploadsDir, filename);
       fs.writeFileSync(filePath, buffer);
+      console.debug("[Server Debug] Saved Stable Diffusion image =>", filePath);
       const localUrl = `/uploads/${filename}`;
       db.logActivity(
         "Image generate",
@@ -2347,6 +2353,11 @@ app.post("/api/image/generate", async (req, res) => {
     } else {
       countParsed = Math.min(countParsed, 4); // limit for dall-e-2
     }
+
+    console.debug(
+      "[Server Debug] Calling OpenAI image API =>",
+      JSON.stringify({ model: modelName, n: countParsed, size: imgSize })
+    );
 
     let result;
     try {
@@ -2382,6 +2393,7 @@ app.post("/api/image/generate", async (req, res) => {
     }
 
     const first = result.data?.[0]?.url || null;
+    console.debug("[Server Debug] OpenAI response url =>", first);
     if (!first) {
       return res.status(502).json({ error: "Received empty response from AI service" });
     }
@@ -2394,6 +2406,7 @@ app.post("/api/image/generate", async (req, res) => {
       const filename = `generated-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
       const filePath = path.join(uploadsDir, filename);
       fs.writeFileSync(filePath, resp.data);
+      console.debug("[Server Debug] Saved OpenAI image =>", filePath);
       localUrl = `/uploads/${filename}`;
     } catch(downloadErr) {
       console.error("[Server Debug] Failed to download generated image:", downloadErr);
