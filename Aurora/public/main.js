@@ -195,7 +195,8 @@ function stripPlaceholderImageLines(text){
   if(!text) return text;
   return text
     .split("\n")
-    .filter(line => !/!\[[^\]]*\]\(https:\/\/alfe\.sh\/abstract-calm-\d+\.png\)/.test(line.trim()))
+    // Strip any Alfe placeholder images (abstract calm, puzzle borders, etc.)
+    .filter(line => !/!\[[^\]]*\]\(https?:\/\/alfe\.sh\/[^)]+\)/.test(line.trim()))
     .join("\n");
 }
 
