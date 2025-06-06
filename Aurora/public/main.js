@@ -4520,9 +4520,14 @@ async function openGlobalAiSettings(){
       const data = await resp.json();
       const sel = document.getElementById("globalAiModelSelect");
       sel.innerHTML = "";
-      (data.models || []).forEach(m => {
-        sel.appendChild(new Option(`${m.id} (limit ${m.tokenLimit}, in ${m.inputCost}, out ${m.outputCost})`, m.id));
-      });
+      const favs = (data.models || []).filter(m => m.favorite);
+      if(favs.length === 0){
+        sel.appendChild(new Option("(no favorites)", ""));
+      } else {
+        favs.forEach(m => {
+          sel.appendChild(new Option(`${m.id} (limit ${m.tokenLimit}, in ${m.inputCost}, out ${m.outputCost})`, m.id));
+        });
+      }
       const curModel = await getSetting("ai_model");
       if(curModel) sel.value = curModel;
     }
