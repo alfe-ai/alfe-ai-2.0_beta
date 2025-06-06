@@ -27,6 +27,11 @@ npm start
 | `HTTPS_CERT_PATH` | (Optional) Path to SSL certificate for HTTPS |
 | `AURORA_PORT` | (Optional) Port for the web server (default: 3000) |
 | `AWS_DB_URL` | (Optional) PostgreSQL connection string for AWS RDS. If set, the local SQLite DB is ignored |
+| `AWS_DB_HOST` | (Optional) Hostname for AWS RDS. If set (with other credentials), enables the RDS integration |
+| `AWS_DB_USER` | (Optional) Username for AWS RDS |
+| `AWS_DB_PASSWORD` | (Optional) Password for AWS RDS |
+| `AWS_DB_NAME` | (Optional) Database name for AWS RDS |
+| `AWS_DB_PORT` | (Optional) Port for AWS RDS (default: 5432) |
 
 Run `../setup_certbot.sh <domain> <email>` to quickly generate these files with
 Let's Encrypt.
