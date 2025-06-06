@@ -1685,17 +1685,23 @@ $$('#newTabTypeButtons .start-type-btn').forEach(btn => {
     await addNewTab();
   });
 });
-document.getElementById("addModelModalAddBtn").addEventListener("click", async () => {
-  const sel = document.getElementById("favoriteModelSelect");
-  const modelId = sel ? sel.value : "";
-  if(modelId){
-    await addModelTab(modelId);
-  }
-  hideModal(document.getElementById("addModelModal"));
-});
-document.getElementById("addModelModalCancelBtn").addEventListener("click", () => {
-  hideModal(document.getElementById("addModelModal"));
-});
+const addModelModalAddBtn = document.getElementById("addModelModalAddBtn");
+if(addModelModalAddBtn){
+  addModelModalAddBtn.addEventListener("click", async () => {
+    const sel = document.getElementById("favoriteModelSelect");
+    const modelId = sel ? sel.value : "";
+    if(modelId){
+      await addModelTab(modelId);
+    }
+    hideModal(document.getElementById("addModelModal"));
+  });
+}
+const addModelModalCancelBtn = document.getElementById("addModelModalCancelBtn");
+if(addModelModalCancelBtn){
+  addModelModalCancelBtn.addEventListener("click", () => {
+    hideModal(document.getElementById("addModelModal"));
+  });
+}
 document.getElementById("newSubroutineBtn").addEventListener("click", addNewSubroutine);
 document.getElementById("viewActionHooksBtn").addEventListener("click", () => {
   renderActionHooks();
@@ -2633,7 +2639,7 @@ async function chatSettingsSaveFlow() {
     const { provider: autoProvider } = parseProviderModel(modelName);
     console.log("[OBTAINED PROVIDER] => (global model removed in UI, fallback only)");
     console.log("[OBTAINED PROVIDER] =>", autoProvider);
-    $("#modelHud").textContent = "";
+    $("#modelHud").textContent = `Model: ${modelName}`;
   }
 
   hideModal($("#chatSettingsModal"));
@@ -3489,7 +3495,7 @@ thinArchiveIcon?.addEventListener("touchstart", ev => {
   console.log("[OBTAINED PROVIDER] => (global model removed in UI, fallback only)");
   const { provider: autoProvider } = parseProviderModel(modelName);
   console.log("[OBTAINED PROVIDER] =>", autoProvider);
-  $("#modelHud").textContent = "";
+  $("#modelHud").textContent = `Model: ${modelName}`;
 
   await loadTabs();
   await loadSubroutines();
@@ -3633,8 +3639,6 @@ thinArchiveIcon?.addEventListener("touchstart", ev => {
 
   initChatScrollLoading();
 
-  // Initialize model tabs
-  initModelTabs();
   updatePageTitle();
 
   // -----------------------------------------------------------------------
@@ -4351,24 +4355,27 @@ async function saveModelTabs(){
   await setSetting("model_tabs", modelTabs);
 }
 
-document.getElementById("toggleModelTabsBtn").addEventListener("click", async () => {
-  const cont = document.getElementById("modelTabsContainer");
-  const newBtn = document.getElementById("newModelTabBtn");
-  const toggleBtn = document.getElementById("toggleModelTabsBtn");
-  if(modelTabsBarVisible){
-    if(cont) cont.style.display = "none";
-    if(newBtn) newBtn.style.display = "none";
-    toggleBtn.textContent = "Model";
-    modelTabsBarVisible = false;
-    await setSetting("model_tabs_bar_visible", false);
-  } else {
-    if(cont) cont.style.display = "";
-    if(newBtn) newBtn.style.display = "";
-    toggleBtn.textContent = "Minimize model tabs bar";
-    modelTabsBarVisible = true;
-    await setSetting("model_tabs_bar_visible", true);
-  }
-});
+const toggleModelTabsBtn = document.getElementById("toggleModelTabsBtn");
+if(toggleModelTabsBtn){
+  toggleModelTabsBtn.addEventListener("click", async () => {
+    const cont = document.getElementById("modelTabsContainer");
+    const newBtn = document.getElementById("newModelTabBtn");
+    const toggleBtn = document.getElementById("toggleModelTabsBtn");
+    if(modelTabsBarVisible){
+      if(cont) cont.style.display = "none";
+      if(newBtn) newBtn.style.display = "none";
+      toggleBtn.textContent = "Model";
+      modelTabsBarVisible = false;
+      await setSetting("model_tabs_bar_visible", false);
+    } else {
+      if(cont) cont.style.display = "";
+      if(newBtn) newBtn.style.display = "";
+      toggleBtn.textContent = "Minimize model tabs bar";
+      modelTabsBarVisible = true;
+      await setSetting("model_tabs_bar_visible", true);
+    }
+  });
+}
 
 // ----------------------------------------------------------------------
 // NEW: "Change Sterling Branch" button event + modal logic
@@ -4522,6 +4529,8 @@ async function saveGlobalAiSettings(){
   const svc = document.getElementById("globalAiServiceSelect").value;
   const model = document.getElementById("globalAiModelSelect").value;
   await setSettings({ ai_service: svc, ai_model: model });
+  modelName = model || "unknown";
+  document.getElementById("modelHud").textContent = `Model: ${modelName}`;
   hideModal(document.getElementById("globalAiSettingsModal"));
 }
 
