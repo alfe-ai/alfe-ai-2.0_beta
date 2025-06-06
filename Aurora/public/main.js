@@ -310,6 +310,25 @@ function scrollChatToBottom(){
   if(el) el.scrollTop = el.scrollHeight;
 }
 
+function showImageGenerationIndicator(){
+  const chatMessagesEl = document.getElementById("chatMessages");
+  let indicator = document.getElementById("imageGenerationIndicator");
+  if(!indicator){
+    indicator = document.createElement("div");
+    indicator.id = "imageGenerationIndicator";
+    indicator.style.color = "#0ff";
+    indicator.innerHTML = "Generating image<span class=\"loading-spinner\"></span>";
+    if(chatMessagesEl) chatMessagesEl.appendChild(indicator);
+  }
+  indicator.style.display = "";
+  indicator.scrollIntoView({ behavior: "smooth", block: "end" });
+}
+
+function hideImageGenerationIndicator(){
+  const indicator = document.getElementById("imageGenerationIndicator");
+  if(indicator) indicator.style.display = "none";
+}
+
 function appendChatElement(el){
   const chatMessagesEl = document.getElementById("chatMessages");
   if(!chatMessagesEl) return;
@@ -4686,11 +4705,7 @@ registerActionHook("generateImage", async ({response}) => {
     lastImagePrompt = prompt;
     isImageGenerating = true;
     if(chatSendBtnEl) chatSendBtnEl.disabled = true;
-    const genIndicator = document.getElementById("imageGenerationIndicator");
-    if(genIndicator) {
-      genIndicator.style.display = "";
-      scrollChatToBottom();
-    }
+    showImageGenerationIndicator();
     console.debug('[Hook generateImage] sending request to /api/image/generate');
     const r = await fetch('/api/image/generate', {
       method: 'POST',
@@ -4698,10 +4713,7 @@ registerActionHook("generateImage", async ({response}) => {
       body: JSON.stringify({ prompt, tabId: currentTabId, provider: imageGenService, sessionId })
     });
     console.debug('[Hook generateImage] response status', r.status);
-    if(genIndicator) {
-      genIndicator.style.display = "none";
-      scrollChatToBottom();
-    }
+    hideImageGenerationIndicator();
     isImageGenerating = false;
     lastImagePrompt = null;
     if(chatSendBtnEl) chatSendBtnEl.disabled = false;
@@ -4719,11 +4731,7 @@ registerActionHook("generateImage", async ({response}) => {
       console.error('[Hook generateImage] API error:', data.error);
     }
   } catch(err){
-    const genIndicator = document.getElementById("imageGenerationIndicator");
-    if(genIndicator) {
-      genIndicator.style.display = "none";
-      scrollChatToBottom();
-    }
+    hideImageGenerationIndicator();
     isImageGenerating = false;
     lastImagePrompt = null;
     if(chatSendBtnEl) chatSendBtnEl.disabled = false;
