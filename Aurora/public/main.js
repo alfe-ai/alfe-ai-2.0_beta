@@ -3572,14 +3572,19 @@ let lastChatDate = null;
 
 async function loadChatHistory(tabId = 1, reset=false) {
   const chatMessagesEl = document.getElementById("chatMessages");
-  const placeholderEl = document.getElementById("chatPlaceholder");
   if(reset){
-    chatMessagesEl.innerHTML="";
+    chatMessagesEl.innerHTML = `
+      <div id="chatPlaceholder" style="text-align:center;margin:1rem 0;">
+        <span class="loading-spinner"></span>
+      </div>
+      <div id="imageGenerationIndicator" style="display:none; color:#0ff; margin:8px 0;">Generating image<span class="loading-spinner"></span></div>
+    `;
     chatHistoryOffset = 0;
     chatHasMore = true;
     lastChatDate = null;
-    if(placeholderEl) placeholderEl.style.display = "";
   }
+  const placeholderEl = document.getElementById("chatPlaceholder");
+  if(reset && placeholderEl) placeholderEl.style.display = "";
   try {
     const resp = await fetch(`/api/chat/history?tabId=${tabId}&limit=10&offset=${chatHistoryOffset}&sessionId=${encodeURIComponent(sessionId)}`);
     if(!resp.ok){
