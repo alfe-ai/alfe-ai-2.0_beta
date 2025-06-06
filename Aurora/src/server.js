@@ -297,13 +297,19 @@ async function deriveImageTitle(prompt, client = null) {
     }
   }
 
-  let str = prompt.trim();
+  let str = prompt.trim().split('\n')[0];
+  str = str.replace(/^\s*[-*]+\s*/, '');
+  str = str.replace(/^(?:Thought\s+Process|Observation|Prompt|Image\s+Desc|Description|Title|Caption)\s*:\s*/i, '');
   const sentEnd = str.search(/[.!?]/);
   if (sentEnd !== -1) {
     str = str.slice(0, sentEnd);
   }
-  const words = str.split(/\s+/).slice(0, 6);
-  let title = words.join(' ');
+  const words = str.split(/\s+/).filter(Boolean);
+  let titleWords = words.slice(0, 6);
+  if (titleWords.length < 3) {
+    titleWords = words.slice(0, 3);
+  }
+  let title = titleWords.join(' ');
   if (title) {
     title = title.charAt(0).toUpperCase() + title.slice(1);
   }
