@@ -395,7 +395,7 @@ body {
 
 /* Individual user message within a chat bubble */
 .user-subbubble {
-  min-width: 350px;
+  max-width: 100%;
 }
 
 /* Thumbnail images in the secure uploader table */
