@@ -4733,11 +4733,13 @@ registerActionHook("generateImage", async ({response}) => {
       console.log('[Hook generateImage] skipping - duplicate prompt');
       return;
     }
-    // If the response already contains placeholder image links,
-    // let the embedMockImages hook handle them to avoid duplicates
+    // Previously, responses containing placeholder image links were skipped
+    // here to avoid generating a duplicate image. This prevented the main
+    // generateImage hook from running when markdown placeholders were present.
+    // The new behaviour continues to log the detection but allows image
+    // generation to proceed.
     if(/!\[[^\]]*\]\(https:\/\/alfe\.sh\/[^)]+\)/.test(prompt)){
-      console.log('[Hook generateImage] skipping - contains placeholder');
-      return;
+      console.log('[Hook generateImage] detected placeholder in response');
     }
     lastImagePrompt = prompt;
     isImageGenerating = true;
