@@ -229,6 +229,8 @@ function openAccountModal(e){
   if(accountInfo){
     const emailEl = document.getElementById("accountEmail");
     if(emailEl) emailEl.textContent = accountInfo.email;
+    const tzEl = document.getElementById('accountTimezone');
+    if(tzEl) tzEl.value = accountInfo.timezone || '';
     const enabledMsg = document.getElementById('totpEnabledMsg');
     const enableBtn = document.getElementById('enableTotpBtn');
     if(accountInfo.totpEnabled){
@@ -1780,6 +1782,25 @@ if(totpVerifyBtn){
       showToast('2FA enabled');
     } else {
       showToast(data?.error || 'Verification failed');
+    }
+  });
+}
+
+const timezoneSaveBtn = document.getElementById('timezoneSaveBtn');
+if(timezoneSaveBtn){
+  timezoneSaveBtn.addEventListener('click', async () => {
+    const tz = document.getElementById('accountTimezone').value.trim();
+    const resp = await fetch('/api/account/timezone', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ timezone: tz })
+    });
+    const data = await resp.json().catch(() => null);
+    if(resp.ok && data && data.success){
+      if(accountInfo) accountInfo.timezone = tz;
+      showToast('Timezone saved');
+    } else {
+      showToast(data?.error || 'Failed to save timezone');
     }
   });
 }
