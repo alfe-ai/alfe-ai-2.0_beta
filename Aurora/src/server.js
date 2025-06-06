@@ -300,6 +300,7 @@ async function deriveImageTitle(prompt, client = null) {
   let str = prompt.trim().split('\n')[0];
   str = str.replace(/^\s*[-*]+\s*/, '');
   str = str.replace(/^(?:Thought\s+Process|Observation|Prompt|Image\s+Desc|Description|Title|Caption)\s*:\s*/i, '');
+  str = str.replace(/^here['’]s another design[:\s-]*/i, '');
   const sentEnd = str.search(/[.!?]/);
   if (sentEnd !== -1) {
     str = str.slice(0, sentEnd);
@@ -349,6 +350,7 @@ async function deriveTabTitle(message, client = null) {
   }
 
   let str = message.trim();
+  str = str.replace(/^here['’]s another design[:\s-]*/i, '');
   const sentEnd = str.search(/[.!?]/);
   if (sentEnd !== -1) {
     str = str.slice(0, sentEnd);
