@@ -2414,8 +2414,12 @@ async function openChatSettings(){
   $("#showArchivedTabsCheck").checked = showArchivedTabs;
   $("#tabGenerateImagesCheck").checked = tabGenerateImages;
   $("#tabGenerateImagesCheck").disabled = currentTabType !== 'design';
-  $("#imageLoopCheck").checked = imageLoopEnabled;
+  // Disable image loop controls
+  imageLoopEnabled = false;
+  $("#imageLoopCheck").checked = false;
+  $("#imageLoopCheck").disabled = true;
   $("#imageLoopMessageInput").value = imageLoopMessage;
+  $("#imageLoopMessageInput").disabled = true;
 
   try {
     const modelListResp = await fetch("/api/ai/models");
@@ -2567,7 +2571,10 @@ async function chatSettingsSaveFlow() {
   topChatTabsBarVisible = $("#showTopChatTabsCheck").checked;
   viewTabsBarVisible = $("#showViewTabsBarCheck").checked;
   showArchivedTabs = $("#showArchivedTabsCheck").checked;
-  imageLoopEnabled = $("#imageLoopCheck").checked;
+  // Force image loop mode off
+  imageLoopEnabled = false;
+  $("#imageLoopCheck").checked = false;
+  $("#imageLoopMessageInput").disabled = true;
   imageLoopMessage = $("#imageLoopMessageInput").value.trim() || imageLoopMessage;
 
   imageGenService = $("#imageServiceSelect").value;
