@@ -280,6 +280,10 @@ function openAccountModal(e){
       loopSection.style.display = allowed ? 'block' : 'none';
       loopCheck.checked = imageLoopEnabled;
     }
+    const autoScrollCheck = document.getElementById('accountAutoScrollCheck');
+    if(autoScrollCheck){
+      autoScrollCheck.checked = chatAutoScroll;
+    }
   }
   showModal(document.getElementById("accountModal"));
 }
@@ -697,7 +701,7 @@ async function loadSettings(){
     "image_generator_menu_visible","file_tree_menu_visible",
     "ai_models_menu_visible","tasks_menu_visible","jobs_menu_visible",
     "chat_tabs_menu_visible","up_arrow_history_enabled",
-    "show_session_id",
+    "chat_auto_scroll","show_session_id",
     "new_tab_project_enabled"
   ];
   const map = await getSettings(keys);
@@ -885,6 +889,10 @@ async function loadSettings(){
 
   if(typeof map.up_arrow_history_enabled !== "undefined"){
     upArrowHistoryEnabled = map.up_arrow_history_enabled !== false;
+  }
+
+  if(typeof map.chat_auto_scroll !== "undefined"){
+    chatAutoScroll = !!map.chat_auto_scroll;
   }
 
   if(typeof map.new_tab_project_enabled !== "undefined"){
@@ -1905,6 +1913,17 @@ if(accountImageLoopCheck){
       setTimeout(runImageLoop, 0);
     }
     accountImageLoopCheck.checked = imageLoopEnabled;
+  });
+}
+
+const accountAutoScrollCheck = document.getElementById('accountAutoScrollCheck');
+if(accountAutoScrollCheck){
+  accountAutoScrollCheck.addEventListener('change', async () => {
+    chatAutoScroll = accountAutoScrollCheck.checked;
+    if(chatAutoScroll){
+      setTimeout(scrollChatToBottom, 0);
+    }
+    await setSetting('chat_auto_scroll', chatAutoScroll);
   });
 }
 
