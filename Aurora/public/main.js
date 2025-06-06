@@ -186,6 +186,14 @@ function isoDate(d) {
   });
 }
 
+function stripPlaceholderImageLines(text){
+  if(!text) return text;
+  return text
+    .split("\n")
+    .filter(line => !/!\[[^\]]*\]\(https:\/\/alfe\.sh\/abstract-calm-\d+\.png\)/.test(line.trim()))
+    .join("\n");
+}
+
 function isMobileViewport(){
   return window.innerWidth <= 700;
 }
@@ -2188,7 +2196,7 @@ chatSendBtnEl.addEventListener("click", async () => {
   const ellipsisInterval = setInterval(() => {
     const dots = '.'.repeat((ellipsisStep % 3) + 1);
     ellipsisStep++;
-    botTextSpan.textContent = partialText + dots;
+    botTextSpan.textContent = stripPlaceholderImageLines(partialText) + dots;
     chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
   }, 500);
 
@@ -2213,7 +2221,7 @@ chatSendBtnEl.addEventListener("click", async () => {
         partialText += new TextDecoder().decode(value);
       }
       // Update once more without the loader after streaming finishes
-      botTextSpan.textContent = partialText;
+      botTextSpan.textContent = stripPlaceholderImageLines(partialText);
       chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
       clearInterval(ellipsisInterval);
       botHead.querySelector("span").textContent = formatTimestamp(new Date().toISOString());
@@ -3784,7 +3792,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
         }
 
         const botBody = document.createElement("div");
-        botBody.textContent = p.ai_text || "";
+        botBody.textContent = stripPlaceholderImageLines(p.ai_text || "");
         botDiv.appendChild(botBody);
 
 
@@ -3960,7 +3968,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
   }
 
   const botBody = document.createElement("div");
-  botBody.textContent = aiText || "";
+  botBody.textContent = stripPlaceholderImageLines(aiText || "");
   botDiv.appendChild(botBody);
 
   if(tokenInfo && showSubbubbleToken){
