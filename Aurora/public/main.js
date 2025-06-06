@@ -262,8 +262,6 @@ function openAccountModal(e){
   if(accountInfo){
     const emailEl = document.getElementById("accountEmail");
     if(emailEl) emailEl.textContent = accountInfo.email;
-    const tzEl = document.getElementById('accountTimezone');
-    if(tzEl) tzEl.value = accountInfo.timezone || '';
     const enabledMsg = document.getElementById('totpEnabledMsg');
     const enableBtn = document.getElementById('enableTotpBtn');
     if(accountInfo.totpEnabled){
@@ -273,6 +271,15 @@ function openAccountModal(e){
       if(enabledMsg) enabledMsg.style.display = 'none';
       if(enableBtn) enableBtn.style.display = 'inline-block';
     }
+  }
+  showModal(document.getElementById("accountModal"));
+}
+
+function openSettingsModal(e){
+  if(e) e.preventDefault();
+  if(accountInfo){
+    const tzEl = document.getElementById('accountTimezone');
+    if(tzEl) tzEl.value = accountInfo.timezone || '';
     const loopSection = document.getElementById('imageLoopSection');
     const loopCheck = document.getElementById('accountImageLoopCheck');
     if(loopSection && loopCheck){
@@ -280,12 +287,12 @@ function openAccountModal(e){
       loopSection.style.display = allowed ? 'block' : 'none';
       loopCheck.checked = imageLoopEnabled;
     }
-    const autoScrollCheck = document.getElementById('accountAutoScrollCheck');
-    if(autoScrollCheck){
-      autoScrollCheck.checked = chatAutoScroll;
-    }
   }
-  showModal(document.getElementById("accountModal"));
+  const autoScrollCheck = document.getElementById('accountAutoScrollCheck');
+  if(autoScrollCheck){
+    autoScrollCheck.checked = chatAutoScroll;
+  }
+  showModal(document.getElementById("settingsModal"));
 }
 
 function updateAccountButton(info){
@@ -1853,6 +1860,18 @@ if(accountCloseBtn){
 const accountLogoutBtn = document.getElementById("accountLogoutBtn");
 if(accountLogoutBtn){
   accountLogoutBtn.addEventListener("click", logout);
+}
+
+const settingsBtn = document.getElementById("settingsBtn");
+if(settingsBtn){
+  settingsBtn.addEventListener("click", openSettingsModal);
+}
+
+const settingsCloseBtn = document.getElementById("settingsCloseBtn");
+if(settingsCloseBtn){
+  settingsCloseBtn.addEventListener("click", () =>
+    hideModal(document.getElementById("settingsModal"))
+  );
 }
 
 const enableTotpBtn = document.getElementById('enableTotpBtn');

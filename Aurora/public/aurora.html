@@ -169,6 +169,7 @@
       <button id="chatSettingsBtn" class="top-btn" title="Chat Settings" style="display:none;">⚙️</button>
       <button id="globalAiSettingsBtn" class="top-btn" title="Global AI Settings">🤖</button>
       <button id="aiFavoritesBtn" class="top-btn" title="AI Favorites" style="color: gold; display:none;">⭐</button>
+      <button id="settingsBtn" class="top-btn" title="Settings">⚙️</button>
       <button id="signupBtn" class="top-btn">Sign Up/Login</button>
 <!--    <a id="changelogBtn" href="/changelog.html" class="top-btn" target="_blank">Changelog</a>-->
     </div>
@@ -675,6 +676,17 @@
       </div>
       <p id="totpEnabledMsg" style="display:none;">2FA Enabled</p>
     </div>
+    <div class="modal-buttons">
+      <button id="accountLogoutBtn">Logout</button>
+      <button id="accountCloseBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div id="settingsModal" class="modal">
+  <div class="modal-content">
+    <h2>Settings</h2>
     <div id="timezoneSection" style="margin-top:10px;">
       <label>Timezone:<br/>
         <input type="text" id="accountTimezone" style="width:100%;" placeholder="e.g., America/Chicago" />
@@ -688,8 +700,7 @@
       <label><input type="checkbox" id="accountAutoScrollCheck"/> Keep chat pinned to bottom</label>
     </div>
     <div class="modal-buttons">
-      <button id="accountLogoutBtn">Logout</button>
-      <button id="accountCloseBtn">Close</button>
+      <button id="settingsCloseBtn">Close</button>
     </div>
   </div>
 </div>
