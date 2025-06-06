@@ -793,6 +793,13 @@ app.post("/api/settings", (req, res) => {
   console.debug("[Server Debug] POST /api/settings => body:", req.body);
   try {
     const { key, value } = req.body;
+    if (["ai_service", "ai_model"].includes(key)) {
+      const sessionId = getSessionIdFromRequest(req);
+      const account = sessionId ? db.getAccountBySession(sessionId) : null;
+      if (!account || account.id !== 1) {
+        return res.status(401).json({ error: "not allowed" });
+      }
+    }
     db.setSetting(key, value);
     res.json({ success: true });
   } catch (err) {
@@ -808,10 +815,16 @@ app.post("/api/settings/batch", (req, res) => {
     if (!Array.isArray(settings)) {
       return res.status(400).json({ error: "settings array required" });
     }
+    const sessionId = getSessionIdFromRequest(req);
+    const account = sessionId ? db.getAccountBySession(sessionId) : null;
     settings.forEach(({ key, value }) => {
-      if (typeof key !== "undefined") {
-        db.setSetting(key, value);
+      if (typeof key === "undefined") return;
+      if (["ai_service", "ai_model"].includes(key)) {
+        if (!account || account.id !== 1) {
+          return;
+        }
       }
+      db.setSetting(key, value);
     });
     res.json({ success: true });
   } catch (err) {
@@ -2684,6 +2697,11 @@ app.post("/api/projects/rename", (req, res) => {
 // New route to toggle favorites
 app.post("/api/ai/favorites", (req, res) => {
   try {
+    const sessionId = getSessionIdFromRequest(req);
+    const account = sessionId ? db.getAccountBySession(sessionId) : null;
+    if (!account || account.id !== 1) {
+      return res.status(401).json({ error: "not allowed" });
+    }
     const { modelId, favorite } = req.body;
     if (!modelId || typeof favorite !== "boolean") {
       return res.status(400).json({ error: "Missing modelId or favorite boolean" });

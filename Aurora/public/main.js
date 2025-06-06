@@ -286,6 +286,8 @@ function openAccountModal(e){
 
 function updateAccountButton(info){
   const btn = document.getElementById("signupBtn");
+  const globalBtn = document.getElementById("globalAiSettingsBtn");
+  const favBtn = document.getElementById("aiFavoritesBtn");
   if(!btn) return;
   btn.removeEventListener("click", openSignupModal);
   btn.removeEventListener("click", openAccountModal);
@@ -295,10 +297,15 @@ function updateAccountButton(info){
     btn.textContent = "Account";
     btn.addEventListener("click", openAccountModal);
     btn.style.display = "inline-block";
+    const allowed = accountInfo.id === 1;
+    if(globalBtn) globalBtn.style.display = allowed ? "inline-block" : "none";
+    if(favBtn) favBtn.style.display = allowed ? "inline-block" : "none";
   } else {
     accountInfo = null;
     btn.textContent = "Sign Up/Login";
     btn.addEventListener("click", openLoginModal);
+    if(globalBtn) globalBtn.style.display = "none";
+    if(favBtn) favBtn.style.display = "none";
   }
 }
 
@@ -4512,6 +4519,7 @@ document.getElementById("taskListConfigCloseBtn").addEventListener("click", () =
 // Global AI Settings modal
 // ----------------------------------------------------------------------
 async function openGlobalAiSettings(){
+  if(!accountInfo || accountInfo.id !== 1) return;
   showPageLoader();
   try {
     const service = await getSetting("ai_service");
@@ -4559,6 +4567,7 @@ document.getElementById("globalAiSettingsCancelBtn").addEventListener("click", (
 // AI Favorites modal
 // ----------------------------------------------------------------------
 async function openAiFavoritesModal(){
+  if(!accountInfo || accountInfo.id !== 1) return;
   const listEl = document.getElementById("aiFavoritesList");
   if(listEl){
     listEl.textContent = "Loading...";
