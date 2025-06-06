@@ -214,14 +214,30 @@ function hidePageLoader(){
   if(loader) loader.classList.remove("show");
 }
 
+function showSignupForm(){
+  const login = document.getElementById('loginForm');
+  const signup = document.getElementById('signupForm');
+  if(login) login.style.display = 'none';
+  if(signup) signup.style.display = 'block';
+}
+
+function showLoginForm(){
+  const login = document.getElementById('loginForm');
+  const signup = document.getElementById('signupForm');
+  if(signup) signup.style.display = 'none';
+  if(login) login.style.display = 'block';
+}
+
 function openSignupModal(e){
   if(e) e.preventDefault();
-  showModal(document.getElementById("signupModal"));
+  showSignupForm();
+  showModal(document.getElementById("authModal"));
 }
 
 function openLoginModal(e){
   if(e) e.preventDefault();
-  showModal(document.getElementById("loginModal"));
+  showLoginForm();
+  showModal(document.getElementById("authModal"));
 }
 
 function openAccountModal(e){
@@ -1688,12 +1704,6 @@ const signupBtn = document.getElementById("signupBtn");
 if (signupBtn) {
   signupBtn.addEventListener("click", openLoginModal);
 }
-const signupCancelBtn = document.getElementById("signupCancelBtn");
-if (signupCancelBtn) {
-  signupCancelBtn.addEventListener("click", () =>
-    hideModal(document.getElementById("signupModal"))
-  );
-}
 const signupSubmitBtn = document.getElementById("signupSubmitBtn");
 if (signupSubmitBtn) {
   signupSubmitBtn.addEventListener("click", async () => {
@@ -1712,7 +1722,7 @@ if (signupSubmitBtn) {
       const data = await resp.json().catch(() => null);
       if(resp.ok && data && data.success){
         showToast("Registered!");
-        hideModal(document.getElementById("signupModal"));
+        hideModal(document.getElementById("authModal"));
         updateAccountButton({exists:true, id:data.id, email, totpEnabled: data.totpEnabled});
       } else {
         showToast(data?.error || "Registration failed");
@@ -1727,16 +1737,18 @@ if (signupSubmitBtn) {
 const loginCancelBtn = document.getElementById("loginCancelBtn");
 if (loginCancelBtn) {
   loginCancelBtn.addEventListener("click", () =>
-    hideModal(document.getElementById("loginModal"))
+    hideModal(document.getElementById("authModal"))
   );
 }
 
-const loginSignupBtn = document.getElementById("loginSignupBtn");
-if (loginSignupBtn) {
-  loginSignupBtn.addEventListener("click", () => {
-    hideModal(document.getElementById("loginModal"));
-    openSignupModal();
-  });
+const showSignupBtn = document.getElementById("showSignupBtn");
+if (showSignupBtn) {
+  showSignupBtn.addEventListener("click", showSignupForm);
+}
+
+const showLoginBtn = document.getElementById("showLoginBtn");
+if (showLoginBtn) {
+  showLoginBtn.addEventListener("click", showLoginForm);
 }
 
 const loginSubmitBtn = document.getElementById("loginSubmitBtn");
@@ -1763,7 +1775,7 @@ if (loginSubmitBtn) {
           setTimeout(() => location.reload(), 500);
         }
         showToast("Logged in!");
-        hideModal(document.getElementById("loginModal"));
+        hideModal(document.getElementById("authModal"));
         const lbl = document.getElementById('totpLoginLabel');
         if(lbl) lbl.style.display = 'none';
         updateAccountButton({exists:true, id:data.id, email, totpEnabled: data.totpEnabled});
