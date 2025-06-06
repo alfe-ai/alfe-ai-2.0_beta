@@ -633,40 +633,38 @@
   </div>
 </div>
 
-<!-- Sign Up modal -->
-<div id="signupModal" class="modal">
+<!-- Login/Signup modal -->
+<div id="authModal" class="modal">
   <div class="modal-content">
-    <h2>Create Account</h2>
-    <label>Email:<br/>
-      <input type="email" id="signupEmail" style="width:100%;" />
-    </label>
-    <label style="margin-top:8px;">Password:<br/>
-      <input type="password" id="signupPassword" style="width:100%;" />
-    </label>
-    <div class="modal-buttons">
-      <button id="signupSubmitBtn">Register</button>
-      <button id="signupCancelBtn">Cancel</button>
+    <div id="loginForm">
+      <h2>Login</h2>
+      <label>Email:<br/>
+        <input type="email" id="loginEmail" style="width:100%;" />
+      </label>
+      <label style="margin-top:8px;">Password:<br/>
+        <input type="password" id="loginPassword" style="width:100%;" />
+      </label>
+      <label id="totpLoginLabel" style="margin-top:8px; display:none;">Auth Code:<br/>
+        <input type="text" id="loginTotp" style="width:100%;" />
+      </label>
+      <div class="modal-buttons">
+        <button id="loginSubmitBtn">Login</button>
+        <button id="showSignupBtn">Sign Up</button>
+        <button id="loginCancelBtn">Cancel</button>
+      </div>
     </div>
-  </div>
-</div>
-
-<!-- Login modal -->
-<div id="loginModal" class="modal">
-  <div class="modal-content">
-    <h2>Login</h2>
-    <label>Email:<br/>
-      <input type="email" id="loginEmail" style="width:100%;" />
-    </label>
-    <label style="margin-top:8px;">Password:<br/>
-      <input type="password" id="loginPassword" style="width:100%;" />
-    </label>
-    <label id="totpLoginLabel" style="margin-top:8px; display:none;">Auth Code:<br/>
-      <input type="text" id="loginTotp" style="width:100%;" />
-    </label>
-    <div class="modal-buttons">
-      <button id="loginSubmitBtn">Login</button>
-      <button id="loginSignupBtn">Sign Up</button>
-      <button id="loginCancelBtn">Cancel</button>
+    <div id="signupForm" style="display:none;">
+      <h2>Create Account</h2>
+      <label>Email:<br/>
+        <input type="email" id="signupEmail" style="width:100%;" />
+      </label>
+      <label style="margin-top:8px;">Password:<br/>
+        <input type="password" id="signupPassword" style="width:100%;" />
+      </label>
+      <div class="modal-buttons">
+        <button id="signupSubmitBtn">Register</button>
+        <button id="showLoginBtn">Back to Login</button>
+      </div>
     </div>
   </div>
 </div>
