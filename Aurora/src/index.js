@@ -6,7 +6,8 @@ import TaskQueue from "./taskQueue.js";
 import TaskDBLocal from "./taskDb.js";
 import TaskDBAws from "./taskDbAws.js";
 
-const TaskDB = process.env.AWS_DB_URL ? TaskDBAws : TaskDBLocal;
+const useRds = process.env.AWS_DB_URL || process.env.AWS_DB_HOST;
+const TaskDB = useRds ? TaskDBAws : TaskDBLocal;
 
 dotenv.config();
 
@@ -14,6 +15,7 @@ dotenv.config();
  * Create a timestamped backup of issues.sqlite (if it exists).
  */
 function backupDb() {
+  if (useRds) return; // RDS is managed separately
   const dbPath = path.resolve("issues.sqlite");
   if (!fs.existsSync(dbPath)) {
     console.log("[TaskQueue] No existing DB to backup (first run).");
@@ -44,7 +46,7 @@ async function main() {
       repo: process.env.GITHUB_REPO
     });
 
-    const db = new TaskDB(); // uses AWS RDS when AWS_DB_URL is set
+    const db = new TaskDB(); // uses AWS RDS when AWS_DB_URL or AWS_DB_HOST is set
     const queue = new TaskQueue();
 
     const label = process.env.GITHUB_LABEL;
