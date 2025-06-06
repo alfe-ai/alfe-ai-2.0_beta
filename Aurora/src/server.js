@@ -1967,8 +1967,15 @@ app.post("/api/upscale", async (req, res) => {
     }
 
     if (!fs.existsSync(scriptPath)) {
-      console.debug("[Server Debug] /api/upscale => script not found:", scriptPath);
-      return res.status(500).json({ error: "Upscale script missing" });
+      console.debug(
+        "[Server Debug] /api/upscale => script not found:",
+        scriptPath,
+      );
+      return res
+        .status(500)
+        .json({
+          error: `Upscale script missing. Expected at ${scriptPath} (set UPSCALE_SCRIPT_PATH to override).`,
+        });
     }
 
     const job = jobManager.createJob(scriptPath, [filePath], { cwd: scriptCwd, file });
