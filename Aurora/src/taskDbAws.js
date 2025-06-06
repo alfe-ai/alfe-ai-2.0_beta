@@ -1,5 +1,8 @@
 import pg from 'pg';
 import { randomUUID } from 'crypto';
+import Database from 'better-sqlite3';
+import fs from 'fs';
+import path from 'path';
 
 export default class TaskDBAws {
   constructor() {
@@ -52,6 +55,12 @@ export default class TaskDBAws {
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL
       );`);
+
+      const { rows } = await client.query('SELECT COUNT(*) AS count FROM issues');
+      const issueCount = parseInt(rows[0].count, 10);
+      if (issueCount === 0) {
+        await this._importFromSqlite(client);
+      }
     } finally {
       client.release();
     }
@@ -171,6 +180,67 @@ export default class TaskDBAws {
       'INSERT INTO settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = excluded.value',
       [key, val]
     );
+  }
+
+  async _importFromSqlite(client) {
+    const sqlitePath = path.resolve('issues.sqlite');
+    if (!fs.existsSync(sqlitePath)) {
+      console.log('[TaskDBAws] SQLite DB not found, skipping import.');
+      return;
+    }
+
+    console.log('[TaskDBAws] Importing data from SQLite…');
+    const sqlite = new Database(sqlitePath);
+    try {
+      const issues = sqlite.prepare('SELECT * FROM issues').all();
+      for (const row of issues) {
+        await client.query(
+          `INSERT INTO issues (
+            github_id, repository, number, title, html_url,
+            task_id_slug, priority_number, priority, hidden,
+            project, sprint, fib_points, assignee, created_at,
+            closed, status, dependencies, blocking
+          ) VALUES (
+            $1,$2,$3,$4,$5,
+            $6,$7,$8,$9,
+            $10,$11,$12,$13,$14,
+            $15,$16,$17,$18
+          )
+          ON CONFLICT(github_id) DO NOTHING`,
+          [
+            row.github_id,
+            row.repository,
+            row.number,
+            row.title,
+            row.html_url,
+            row.task_id_slug,
+            row.priority_number,
+            row.priority,
+            row.hidden,
+            row.project,
+            row.sprint,
+            row.fib_points,
+            row.assignee,
+            row.created_at,
+            row.closed,
+            row.status,
+            row.dependencies,
+            row.blocking
+          ]
+        );
+      }
+
+      const settings = sqlite.prepare('SELECT key, value FROM settings').all();
+      for (const s of settings) {
+        await client.query(
+          `INSERT INTO settings (key, value) VALUES ($1, $2)
+           ON CONFLICT (key) DO UPDATE SET value = excluded.value`,
+          [s.key, s.value]
+        );
+      }
+    } finally {
+      sqlite.close();
+    }
   }
 
   // Placeholder methods for the rest of the TaskDB API used by server.js
