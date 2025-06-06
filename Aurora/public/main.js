@@ -1,6 +1,9 @@
 // sessionId is defined in session.js and available globally
 // sessionId is provided globally by session.js
 const defaultTitle = "Alfe AI - AI Image Design and Software Development Platform";
+// Disable automatic scrolling of the chat by default. Manual scrolling
+// (e.g. via the scroll down button) can still force scrolling.
+let chatAutoScroll = false;
 document.addEventListener('DOMContentLoaded', () => {
   const sessEl = document.getElementById('sessionIdText');
   if (sessEl) sessEl.textContent = sessionId;
@@ -344,7 +347,8 @@ function startLimitCountdown(targetTime){
   limitCountdownTimer = setInterval(update, 1000);
 }
 
-function scrollChatToBottom(){
+function scrollChatToBottom(force = false){
+  if(!force && !chatAutoScroll) return;
   const el = document.getElementById("chatMessages");
   if(el) el.scrollTop = el.scrollHeight;
 }
@@ -360,7 +364,9 @@ function showImageGenerationIndicator(){
     if(chatMessagesEl) chatMessagesEl.appendChild(indicator);
   }
   indicator.style.display = "";
-  indicator.scrollIntoView({ behavior: "smooth", block: "end" });
+  if(chatAutoScroll){
+    indicator.scrollIntoView({ behavior: "smooth", block: "end" });
+  }
 }
 
 function hideImageGenerationIndicator(){
@@ -2045,7 +2051,7 @@ if (scrollDownBtnEl) {
   scrollDownBtnEl.addEventListener("click", () => {
     const chatMessagesEl = document.getElementById("chatMessages");
     chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
-    setTimeout(scrollChatToBottom, 0);
+    setTimeout(() => scrollChatToBottom(true), 0);
   });
 }
 
@@ -2227,8 +2233,10 @@ chatSendBtnEl.addEventListener("click", async () => {
   seqDiv.appendChild(botDiv);
   if(placeholderEl) placeholderEl.style.display = "none";
   appendChatElement(seqDiv);
-  chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
-  setTimeout(scrollChatToBottom, 0);
+  if(chatAutoScroll){
+    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+    setTimeout(scrollChatToBottom, 0);
+  }
 
   let combinedUserText = "";
   if(descsForThisSend.length>0){
@@ -2252,7 +2260,7 @@ chatSendBtnEl.addEventListener("click", async () => {
     const dots = '.'.repeat((ellipsisStep % 3) + 1);
     ellipsisStep++;
     botTextSpan.textContent = stripPlaceholderImageLines(partialText) + dots;
-    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+    if(chatAutoScroll) chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
   }, 500);
 
   try {
@@ -2277,7 +2285,7 @@ chatSendBtnEl.addEventListener("click", async () => {
       }
       // Update once more without the loader after streaming finishes
       botTextSpan.textContent = stripPlaceholderImageLines(partialText);
-      chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+      if(chatAutoScroll) chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
       clearInterval(ellipsisInterval);
       botHead.querySelector("span").textContent = formatTimestamp(new Date().toISOString());
     }
@@ -2314,8 +2322,10 @@ chatSendBtnEl.addEventListener("click", async () => {
 
   if (favElement) favElement.href = defaultFavicon;
 
-  chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
-  setTimeout(scrollChatToBottom, 0);
+  if(chatAutoScroll){
+    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+    setTimeout(scrollChatToBottom, 0);
+  }
   chatSendBtnEl.disabled = false;
 });
 
@@ -4158,7 +4168,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
   const placeholderEl = document.getElementById("chatPlaceholder");
   if(placeholderEl) placeholderEl.style.display = "none";
   appendChatElement(seqDiv);
-  chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+  if(chatAutoScroll) chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
 }
 
 // New model tabs logic
@@ -4824,7 +4834,7 @@ function addImageChatBubble(url, altText="", title=""){
   seqDiv.appendChild(botDiv);
   if(placeholderEl) placeholderEl.style.display = "none";
   appendChatElement(seqDiv);
-  chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+  if(chatAutoScroll) chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
 }
 
 // Example hook registration
