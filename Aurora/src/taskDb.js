@@ -290,13 +290,21 @@ export default class TaskDB {
         password_hash TEXT NOT NULL,
         session_id TEXT DEFAULT '',
         created_at TEXT NOT NULL,
-        totp_secret TEXT DEFAULT ''
+        totp_secret TEXT DEFAULT '',
+        timezone TEXT DEFAULT ''
       );
     `);
 
     try {
       this.db.exec('ALTER TABLE accounts ADD COLUMN totp_secret TEXT DEFAULT "";');
       console.debug("[TaskDB Debug] Added accounts.totp_secret column");
+    } catch(e) {
+      // column exists
+    }
+
+    try {
+      this.db.exec('ALTER TABLE accounts ADD COLUMN timezone TEXT DEFAULT "";');
+      console.debug("[TaskDB Debug] Added accounts.timezone column");
     } catch(e) {
       // column exists
     }
@@ -1020,14 +1028,14 @@ export default class TaskDB {
     return row ? row.upscaled : null;
   }
 
-  createAccount(email, passwordHash, sessionId = '') {
+  createAccount(email, passwordHash, sessionId = '', timezone = '') {
     const ts = new Date().toISOString();
     const { lastInsertRowid } = this.db
         .prepare(
-            `INSERT INTO accounts (email, password_hash, session_id, created_at)
-             VALUES (?, ?, ?, ?)`
+            `INSERT INTO accounts (email, password_hash, session_id, created_at, timezone)
+             VALUES (?, ?, ?, ?, ?)`
         )
-        .run(email, passwordHash, sessionId, ts);
+        .run(email, passwordHash, sessionId, ts, timezone);
     return lastInsertRowid;
   }
 
@@ -1041,6 +1049,10 @@ export default class TaskDB {
 
   setAccountTotpSecret(id, secret) {
     this.db.prepare('UPDATE accounts SET totp_secret=? WHERE id=?').run(secret, id);
+  }
+
+  setAccountTimezone(id, timezone) {
+    this.db.prepare('UPDATE accounts SET timezone=? WHERE id=?').run(timezone, id);
   }
 
   getAccountBySession(sessionId) {

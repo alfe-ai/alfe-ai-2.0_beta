@@ -913,11 +913,29 @@ app.get("/api/account", (req, res) => {
     const sessionId = getSessionIdFromRequest(req);
     const account = sessionId ? db.getAccountBySession(sessionId) : null;
     if (!account) return res.json({ exists: false });
-    res.json({ exists: true, id: account.id, email: account.email, totpEnabled: !!account.totp_secret });
+    res.json({
+      exists: true,
+      id: account.id,
+      email: account.email,
+      totpEnabled: !!account.totp_secret,
+      timezone: account.timezone || ''
+    });
   } catch(err) {
     console.error("[TaskQueue] GET /api/account failed:", err);
     res.status(500).json({ error: "Internal server error" });
   }
+});
+
+app.post("/api/account/timezone", (req, res) => {
+  const sessionId = getSessionIdFromRequest(req);
+  const account = sessionId ? db.getAccountBySession(sessionId) : null;
+  if (!account) return res.status(401).json({ error: "not logged in" });
+  const { timezone } = req.body || {};
+  if (typeof timezone !== 'string') {
+    return res.status(400).json({ error: "timezone required" });
+  }
+  db.setAccountTimezone(account.id, timezone);
+  res.json({ success: true });
 });
 
 app.post("/api/logout", (req, res) => {
