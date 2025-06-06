@@ -366,10 +366,10 @@ body {
   font-family: monospace;      /* Changed to monospaced */
 }
 
-/* Ensure images fit within chat bubbles */
+/* Ensure images fit within chat bubbles and cap width */
 .chat-user img,
 .chat-bot img {
-  max-width: 100%;
+  max-width: min(100%, 400px);
   height: auto;
 }
 
