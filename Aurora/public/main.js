@@ -4723,13 +4723,29 @@ registerActionHook("generateImage", async ({response}) => {
     isImageGenerating = true;
     if(chatSendBtnEl) chatSendBtnEl.disabled = true;
     showImageGenerationIndicator();
-    console.debug('[Hook generateImage] sending request to /api/image/generate');
-    const r = await fetch('/api/image/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, tabId: currentTabId, provider: imageGenService, sessionId })
-    });
+    const payload = { prompt, tabId: currentTabId, provider: imageGenService, sessionId };
+    console.debug('[Hook generateImage] sending request to /api/image/generate', payload);
+    let r;
+    try {
+      r = await fetch('/api/image/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    } catch(fetchErr){
+      console.error('[Hook generateImage] fetch failed:', fetchErr);
+      hideImageGenerationIndicator();
+      isImageGenerating = false;
+      lastImagePrompt = null;
+      if(chatSendBtnEl) chatSendBtnEl.disabled = false;
+      return;
+    }
     console.debug('[Hook generateImage] response status', r.status);
+    const rawText = await r.clone().text().catch(e => {
+      console.error('[Hook generateImage] error reading response text:', e);
+      return '';
+    });
+    console.debug('[Hook generateImage] response body', rawText);
     hideImageGenerationIndicator();
     isImageGenerating = false;
     lastImagePrompt = null;
