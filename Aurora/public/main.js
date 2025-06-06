@@ -290,6 +290,7 @@ function openAccountModal(e){
 
 function updateAccountButton(info){
   const btn = document.getElementById("signupBtn");
+  const favBtn = document.getElementById("aiFavoritesBtn");
   if(!btn) return;
   btn.removeEventListener("click", openSignupModal);
   btn.removeEventListener("click", openAccountModal);
@@ -299,10 +300,16 @@ function updateAccountButton(info){
     btn.textContent = "Account";
     btn.addEventListener("click", openAccountModal);
     btn.style.display = "inline-block";
+    if(favBtn){
+      favBtn.style.display = info.id === 1 ? "inline-block" : "none";
+    }
   } else {
     accountInfo = null;
     btn.textContent = "Sign Up/Login";
     btn.addEventListener("click", openLoginModal);
+    if(favBtn){
+      favBtn.style.display = "none";
+    }
   }
 }
 
@@ -4578,6 +4585,7 @@ document.getElementById("globalAiSettingsCancelBtn").addEventListener("click", (
 // AI Favorites modal
 // ----------------------------------------------------------------------
 async function openAiFavoritesModal(){
+  if(!accountInfo || accountInfo.id !== 1) return;
   const listEl = document.getElementById("aiFavoritesList");
   if(listEl){
     listEl.textContent = "Loading...";
