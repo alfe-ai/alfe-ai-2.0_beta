@@ -389,6 +389,11 @@ body {
   border: 1px solid #555;
 }
 
+/* Individual user message within a chat bubble */
+.user-subbubble {
+  min-width: 250px;
+}
+
 /* Thumbnail images in the secure uploader table */
 .table-thumb {
   max-width: 40px;
