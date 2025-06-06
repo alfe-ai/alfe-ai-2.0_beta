@@ -2313,14 +2313,8 @@ async function openChatSettings(){
     chatTabAutoNaming = !!value;
   }
 
-  const r3 = await fetch("/api/settings/show_subbubble_token_count");
-  if(r3.ok){
-    const { value } = await r3.json();
-    showSubbubbleToken = !!value;
-  } else {
-    showSubbubbleToken = true;
-    await setSetting("show_subbubble_token_count", showSubbubbleToken);
-  }
+  // Always hide token counts for now
+  showSubbubbleToken = false;
 
   const r4 = await fetch("/api/settings/sterling_chat_url_visible");
   if(r4.ok){
@@ -2403,7 +2397,8 @@ async function openChatSettings(){
 
   $("#hideMetadataCheck").checked = chatHideMetadata;
   $("#autoNamingCheck").checked = chatTabAutoNaming;
-  $("#subbubbleTokenCheck").checked = showSubbubbleToken;
+  const subbubbleTokenCheckEl = $("#subbubbleTokenCheck");
+  if(subbubbleTokenCheckEl) subbubbleTokenCheckEl.checked = showSubbubbleToken;
   $("#sterlingUrlCheck").checked = sterlingChatUrlVisible;
   $("#showProjectInfoCheck").checked = projectInfoBarVisible;
   $("#showAuroraProjectBarCheck").checked = auroraProjectBarVisible;
@@ -2556,7 +2551,8 @@ $("#aiServiceSelect").addEventListener("change", async ()=>{
 async function chatSettingsSaveFlow() {
   chatHideMetadata = $("#hideMetadataCheck").checked;
   chatTabAutoNaming = $("#autoNamingCheck").checked;
-  showSubbubbleToken = $("#subbubbleTokenCheck").checked;
+  const subbubbleTokenEl = $("#subbubbleTokenCheck");
+  showSubbubbleToken = subbubbleTokenEl ? subbubbleTokenEl.checked : false;
   sterlingChatUrlVisible = $("#sterlingUrlCheck").checked;
   projectInfoBarVisible = $("#showProjectInfoCheck").checked;
   auroraProjectBarVisible = $("#showAuroraProjectBarCheck").checked;
@@ -3547,20 +3543,8 @@ thinArchiveIcon?.addEventListener("touchstart", ev => {
     await setSetting("chat_hide_metadata", chatHideMetadata);
   }
 
-  try {
-    const r4 = await fetch("/api/settings/show_subbubble_token_count");
-    if(r4.ok){
-      const { value } = await r4.json();
-      showSubbubbleToken = !!value;
-    } else {
-      showSubbubbleToken = true;
-      await setSetting("show_subbubble_token_count", showSubbubbleToken);
-    }
-  } catch(e) {
-    console.error("Error loading show_subbubble_token_count:", e);
-    showSubbubbleToken = true;
-    await setSetting("show_subbubble_token_count", showSubbubbleToken);
-  }
+  // Always hide token counts for now
+  showSubbubbleToken = false;
 
   await loadFileList();
   setupFileSorting();
@@ -3573,7 +3557,8 @@ thinArchiveIcon?.addEventListener("touchstart", ev => {
   // Sync hidden chat settings checkboxes with loaded values before saving
   $("#hideMetadataCheck").checked = chatHideMetadata;
   $("#autoNamingCheck").checked = chatTabAutoNaming;
-  $("#subbubbleTokenCheck").checked = showSubbubbleToken;
+  const subbubbleTokenCheckEl2 = $("#subbubbleTokenCheck");
+  if(subbubbleTokenCheckEl2) subbubbleTokenCheckEl2.checked = showSubbubbleToken;
   $("#sterlingUrlCheck").checked = sterlingChatUrlVisible;
   $("#chatStreamingCheck").checked = chatStreaming;
   $("#showMarkdownTasksCheck").checked = markdownPanelVisible;
