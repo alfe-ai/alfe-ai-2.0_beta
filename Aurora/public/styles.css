@@ -789,6 +789,15 @@ body {
   margin-left: 4px;
 }
 
+/* Star icon style used in AI Favorites modal */
+.favorite-star {
+  cursor: pointer;
+  font-size: 1.2rem;
+  user-select: none;
+}
+.starred { color: gold; }
+.unstarred { color: #777; }
+
 /* Basic style for chat subroutine cards */
 .subroutine-card {
   background: #333;

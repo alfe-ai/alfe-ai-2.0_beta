@@ -4493,6 +4493,65 @@ document.getElementById("globalAiSettingsCancelBtn").addEventListener("click", (
 });
 
 // ----------------------------------------------------------------------
+// AI Favorites modal
+// ----------------------------------------------------------------------
+async function openAiFavoritesModal(){
+  const listEl = document.getElementById("aiFavoritesList");
+  if(listEl){
+    listEl.textContent = "Loading...";
+    try{
+      const resp = await fetch("/api/ai/models");
+      if(resp.ok){
+        const data = await resp.json();
+        const models = data.models || [];
+        listEl.innerHTML = "";
+        models.forEach(m => {
+          const row = document.createElement("div");
+          const star = document.createElement("span");
+          star.dataset.modelid = m.id;
+          star.className = m.favorite ? "favorite-star starred" : "favorite-star unstarred";
+          star.textContent = m.favorite ? "★" : "☆";
+          star.addEventListener("click", async () => {
+            const newFav = !star.classList.contains("starred");
+            try {
+              const r = await fetch("/api/ai/favorites", {
+                method: "POST",
+                headers: {"Content-Type":"application/json"},
+                body: JSON.stringify({modelId: m.id, favorite: newFav})
+              });
+              if(r.ok){
+                star.classList.toggle("starred", newFav);
+                star.classList.toggle("unstarred", !newFav);
+                star.textContent = newFav ? "★" : "☆";
+                m.favorite = newFav;
+              }
+            }catch(e){
+              console.error("Error toggling favorite:", e);
+            }
+          });
+          row.appendChild(star);
+          const label = document.createElement("span");
+          label.textContent = " " + m.id;
+          row.appendChild(label);
+          listEl.appendChild(row);
+        });
+      }else{
+        listEl.textContent = "Error";
+      }
+    }catch(e){
+      console.error("Error loading models:", e);
+      listEl.textContent = "Error";
+    }
+  }
+  showModal(document.getElementById("aiFavoritesModal"));
+}
+
+document.getElementById("aiFavoritesBtn").addEventListener("click", openAiFavoritesModal);
+document.getElementById("aiFavoritesCloseBtn").addEventListener("click", () => {
+  hideModal(document.getElementById("aiFavoritesModal"));
+});
+
+// ----------------------------------------------------------------------
 // Feature Flags modal
 // ----------------------------------------------------------------------
 async function loadFeatureFlags(){
