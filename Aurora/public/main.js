@@ -270,6 +270,13 @@ function openAccountModal(e){
       if(enabledMsg) enabledMsg.style.display = 'none';
       if(enableBtn) enableBtn.style.display = 'inline-block';
     }
+    const loopSection = document.getElementById('imageLoopSection');
+    const loopCheck = document.getElementById('accountImageLoopCheck');
+    if(loopSection && loopCheck){
+      const allowed = accountInfo.id === 1;
+      loopSection.style.display = allowed ? 'block' : 'none';
+      loopCheck.checked = imageLoopEnabled;
+    }
   }
   showModal(document.getElementById("accountModal"));
 }
@@ -1488,7 +1495,7 @@ async function selectTab(tabId){
   renderBody();
   setLoopUi(imageLoopEnabled);
   toggleImageUploadButton(imageUploadEnabled);
-  if(imageLoopEnabled){
+  if(imageLoopEnabled && accountInfo && accountInfo.id === 1){
     setTimeout(runImageLoop, 0);
   }
   updatePageTitle();
@@ -1874,6 +1881,18 @@ if(timezoneSaveBtn){
     } else {
       showToast(data?.error || 'Failed to save timezone');
     }
+  });
+}
+
+const accountImageLoopCheck = document.getElementById('accountImageLoopCheck');
+if(accountImageLoopCheck){
+  accountImageLoopCheck.addEventListener('change', () => {
+    imageLoopEnabled = accountImageLoopCheck.checked && accountInfo && accountInfo.id === 1;
+    setLoopUi(imageLoopEnabled);
+    if(imageLoopEnabled){
+      setTimeout(runImageLoop, 0);
+    }
+    accountImageLoopCheck.checked = imageLoopEnabled;
   });
 }
 
@@ -2634,7 +2653,7 @@ async function chatSettingsSaveFlow() {
   renderHeader();
   renderBody();
   setLoopUi(imageLoopEnabled);
-  if(imageLoopEnabled){
+  if(imageLoopEnabled && accountInfo && accountInfo.id === 1){
     setTimeout(runImageLoop, 0);
   }
 }
@@ -2786,7 +2805,7 @@ function toggleNewTabProjectField(visible){
   lbl.style.display = visible ? "" : "none";
 }
 function runImageLoop(){
-  if(!imageLoopEnabled) return;
+  if(!imageLoopEnabled || !accountInfo || accountInfo.id !== 1) return;
   if(chatInputEl) chatInputEl.value = imageLoopMessage;
   if(chatSendBtnEl) chatSendBtnEl.click();
 }
@@ -4871,7 +4890,7 @@ registerActionHook("generateImage", async ({response}) => {
       if(sidebarViewUploader && sidebarViewUploader.style.display !== "none"){
         await loadFileList();
       }
-      if(imageLoopEnabled){
+      if(imageLoopEnabled && accountInfo && accountInfo.id === 1){
         setTimeout(runImageLoop, 0);
       }
     } else {
