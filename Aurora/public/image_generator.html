@@ -52,12 +52,20 @@
     if(!prompt) return;
     resultDiv.textContent = 'Generating...';
     try {
+      const payload = { prompt, provider: providerSelect.value };
+      console.debug('Sending /api/image/generate', payload);
       const resp = await fetch('/api/image/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, provider: providerSelect.value })
+        body: JSON.stringify(payload)
       });
-      const data = await resp.json();
+      console.debug('/api/image/generate status', resp.status);
+      const raw = await resp.clone().text().catch(() => '');
+      console.debug('/api/image/generate body', raw);
+      const data = await resp.json().catch(e => {
+        console.error('JSON parse error', e);
+        return {};
+      });
       if(resp.ok && data.url){
         const safeAlt = prompt.replace(/"/g, '&quot;');
         resultDiv.innerHTML = `<img src="${data.url}" alt="${safeAlt}"/>`;

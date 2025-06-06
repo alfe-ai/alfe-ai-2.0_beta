@@ -877,8 +877,13 @@
       document.getElementById('chat').appendChild(aiEl);
       document.getElementById('chat').scrollTop=document.getElementById('chat').scrollHeight;
       try{
-        const resp=await fetch('/api/image/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:text, tabId:currentTabId, sessionId})});
-        const data=await resp.json();
+        const payload={prompt:text, tabId:currentTabId, sessionId};
+        console.debug('Sending /api/image/generate', payload);
+        const resp=await fetch('/api/image/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        console.debug('/api/image/generate status', resp.status);
+        const raw=await resp.clone().text().catch(()=>'' );
+        console.debug('/api/image/generate body', raw);
+        const data=await resp.json().catch(e=>{console.error('JSON parse error',e);return{}});
         if(resp.ok && data.url){
           aiEl.textContent='';
           const img=document.createElement('img');
