@@ -4715,28 +4715,28 @@ registerActionHook("afterSendLog", ({message, response}) => {
 // Automatically generate an image from the AI response
 registerActionHook("generateImage", async ({response}) => {
   try {
-    console.debug('[Hook generateImage] invoked with:', response);
+    console.log('[Hook generateImage] invoked with:', response);
     if(isImageGenerating){
-      console.debug('[Hook generateImage] skipping - already generating');
+      console.log('[Hook generateImage] skipping - already generating');
       return;
     }
     if(currentTabType !== 'design' || !tabGenerateImages){
-      console.debug('[Hook generateImage] skipping - not design tab or disabled');
+      console.log('[Hook generateImage] skipping - not design tab or disabled');
       return;
     }
     const prompt = (response || "").trim();
     if(!prompt){
-      console.debug('[Hook generateImage] skipping - empty prompt');
+      console.log('[Hook generateImage] skipping - empty prompt');
       return;
     }
     if(prompt === lastImagePrompt){
-      console.debug('[Hook generateImage] skipping - duplicate prompt');
+      console.log('[Hook generateImage] skipping - duplicate prompt');
       return;
     }
     // If the response already contains placeholder image links,
     // let the embedMockImages hook handle them to avoid duplicates
     if(/!\[[^\]]*\]\(https:\/\/alfe\.sh\/[^)]+\)/.test(prompt)){
-      console.debug('[Hook generateImage] skipping - contains placeholder');
+      console.log('[Hook generateImage] skipping - contains placeholder');
       return;
     }
     lastImagePrompt = prompt;
@@ -4744,7 +4744,7 @@ registerActionHook("generateImage", async ({response}) => {
     if(chatSendBtnEl) chatSendBtnEl.disabled = true;
     showImageGenerationIndicator();
     const payload = { prompt, tabId: currentTabId, provider: imageGenService, sessionId };
-    console.debug('[Hook generateImage] sending request to /api/image/generate', payload);
+    console.log('[Hook generateImage] sending request to /api/image/generate', payload);
     let r;
     try {
       r = await fetch('/api/image/generate', {
@@ -4760,12 +4760,12 @@ registerActionHook("generateImage", async ({response}) => {
       if(chatSendBtnEl) chatSendBtnEl.disabled = false;
       return;
     }
-    console.debug('[Hook generateImage] response status', r.status);
+    console.log('[Hook generateImage] response status', r.status);
     const rawText = await r.clone().text().catch(e => {
       console.error('[Hook generateImage] error reading response text:', e);
       return '';
     });
-    console.debug('[Hook generateImage] response body', rawText);
+    console.log('[Hook generateImage] response body', rawText);
     hideImageGenerationIndicator();
     isImageGenerating = false;
     lastImagePrompt = null;
