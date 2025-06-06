@@ -25,27 +25,32 @@ document.addEventListener('DOMContentLoaded', () => {
   fetch('/api/version')
     .then(r => r.ok ? r.json() : null)
     .then(data => {
+      const vSpan = document.getElementById('versionSpan');
+      if (!vSpan) return;
       if (data && data.version) {
-        const vSpan = document.getElementById('versionSpan');
-        if (vSpan) {
-          vSpan.textContent = data.version;
-          vSpan.addEventListener('click', () => {
-            fetch('/api/git-sha')
-              .then(r => r.ok ? r.json() : null)
-              .then(d => {
-                if (d && d.sha) {
-                  const msg = d.timestamp
-                    ? `Git SHA: ${d.sha} (${d.timestamp})`
-                    : `Git SHA: ${d.sha}`;
-                  showToast(msg, 3000);
-                }
-              })
-              .catch(err => console.error('Failed to fetch git sha', err));
-          });
-        }
+        vSpan.textContent = data.version;
+        vSpan.addEventListener('click', () => {
+          fetch('/api/git-sha')
+            .then(r => r.ok ? r.json() : null)
+            .then(d => {
+              if (d && d.sha) {
+                const msg = d.timestamp
+                  ? `Git SHA: ${d.sha} (${d.timestamp})`
+                  : `Git SHA: ${d.sha}`;
+                showToast(msg, 3000);
+              }
+            })
+            .catch(err => console.error('Failed to fetch git sha', err));
+        });
+      } else {
+        vSpan.style.display = 'none';
       }
     })
-    .catch(err => console.error('Failed to fetch version', err));
+    .catch(err => {
+      const vSpan = document.getElementById('versionSpan');
+      if (vSpan) vSpan.style.display = 'none';
+      console.error('Failed to fetch version', err);
+    });
 
   const signupEl = document.getElementById('signupBtn');
   if (signupEl) {
