@@ -203,6 +203,7 @@
     let upscaledPath = null;
     let nobgFile = null;
     let nobgPath = null;
+    let printifyBtn;
 
     function updateChoiceUI(){
       const choiceDiv = document.getElementById('printifyChoice');
@@ -234,8 +235,10 @@
         } else if(upscaledPath){
           normalRadio.checked = true;
         }
+        printifyBtn.hidden = false;
       } else {
         choiceDiv.style.display = 'none';
+        printifyBtn.hidden = true;
       }
     }
     async function checkUpscaled(){
@@ -278,7 +281,7 @@
     showOriginal();
 
     const upscaleBtn = document.getElementById('upscaleButton');
-    const printifyBtn = document.getElementById('printifyButton');
+    printifyBtn = document.getElementById('printifyButton');
     const terminalEl = document.getElementById('upscaleTerminal');
     const jobsListEl = document.getElementById('jobsList');
 
@@ -299,6 +302,8 @@
       }
       console.debug('Loaded Image page for file =>', file);
       if (file) {
+      upscaleBtn.hidden = false;
+      printifyBtn.hidden = true;
       upscaleBtn.addEventListener('click', async () => {
         console.debug('Submit to Upscale clicked with file =>', file);
         terminalEl.textContent = '';
