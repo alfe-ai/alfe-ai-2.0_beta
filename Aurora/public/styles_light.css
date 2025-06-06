@@ -326,6 +326,7 @@ body {
   gap: 8px; /* increased for better spacing */
   margin-bottom: 6px; /* increased for a bit more breathing room */
   font-size: 0.9rem;
+  position: relative;
 }
 
 /* Date header separating chat days */
@@ -381,7 +382,6 @@ body {
 .chat-bot {
   font-size: 0.95rem;
   position: relative;
-  top: 10px;
 }
 
 /* Thumbnail for user uploaded images */
