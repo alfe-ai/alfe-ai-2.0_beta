@@ -2138,21 +2138,23 @@ chatSendBtnEl.addEventListener("click", async () => {
   });
 
   // For each image desc, also add text subbubble
-  descsForThisSend.forEach(d => {
-    const descBubble = document.createElement("div");
-    descBubble.textContent = d;
-    descBubble.style.marginBottom = "8px";
-    descBubble.style.borderLeft = "2px solid #ccc";
-    descBubble.style.paddingLeft = "6px";
-    userDiv.appendChild(descBubble);
-  });
+    descsForThisSend.forEach(d => {
+      const descBubble = document.createElement("div");
+      descBubble.className = "user-subbubble";
+      descBubble.textContent = d;
+      descBubble.style.marginBottom = "8px";
+      descBubble.style.borderLeft = "2px solid #ccc";
+      descBubble.style.paddingLeft = "6px";
+      userDiv.appendChild(descBubble);
+    });
 
   // Then the user's typed text as last subbubble
-  if(userMessage){
-    const userBody = document.createElement("div");
-    userBody.textContent = userMessage;
-    userDiv.appendChild(userBody);
-  }
+    if(userMessage){
+      const userBody = document.createElement("div");
+      userBody.className = "user-subbubble";
+      userBody.textContent = userMessage;
+      userDiv.appendChild(userBody);
+    }
 
   seqDiv.appendChild(userDiv);
 
@@ -3729,6 +3731,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
             userDiv.appendChild(userHead);
 
             const userBody = document.createElement("div");
+            userBody.className = "user-subbubble";
             userBody.textContent = p.user_text;
             userDiv.appendChild(userBody);
           }
@@ -3905,6 +3908,7 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
       userDiv.appendChild(userHead);
 
       const userBody = document.createElement("div");
+      userBody.className = "user-subbubble";
       userBody.textContent = userText;
       userDiv.appendChild(userBody);
     }
