@@ -276,7 +276,7 @@ body {
 
 .bubble-delete-btn {
   position: absolute;
-  top: -16px;
+  top: 4px; /* align inside bubble */
   right: 4px;
 }
 
@@ -289,8 +289,8 @@ body {
 
 .bubble-copy-btn {
   position: absolute;
-  top: -16px;
-  right: 36px; /* increased for better spacing from delete button */
+  top: 4px; /* align inside bubble */
+  right: 36px; /* space from delete button */
   background: transparent;
   border: none;
   color: #4da3ff;
