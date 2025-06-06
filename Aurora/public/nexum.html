@@ -465,13 +465,28 @@
     archivedTabs.forEach(t => {
       const item = document.createElement('div');
       item.className = 'tab-item';
+
+      const info = document.createElement('div');
+      info.style.display = 'flex';
+      info.style.flexDirection = 'column';
+      info.style.flexGrow = '1';
+
       const label = document.createElement('span');
       label.textContent = t.name;
+
+      const date = document.createElement('span');
+      date.className = 'tab-date';
+      date.style.fontSize = '0.8rem';
+      date.style.opacity = '0.8';
+      date.textContent = `Created ${isoDate(t.created_at)} \u2022 Archived ${isoDate(t.archived_at)}`;
+
+      info.appendChild(label);
+      info.appendChild(date);
       const unarch = document.createElement('button');
       unarch.textContent = 'Unarchive';
       unarch.className = 'config-btn';
       unarch.addEventListener('click', () => toggleArchiveTab(t.id, false));
-      item.appendChild(label);
+      item.appendChild(info);
       item.appendChild(unarch);
       container.appendChild(item);
     });

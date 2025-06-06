@@ -1588,9 +1588,20 @@ function renderArchivedSidebarTabs(){
     icon.className = "tab-icon";
     icon.textContent = tabTypeIcons[tab.tab_type] || tabTypeIcons.chat;
 
+    const info = document.createElement("div");
+    info.style.display = "flex";
+    info.style.flexDirection = "column";
+    info.style.flexGrow = "1";
+
     const label = document.createElement("span");
     label.textContent = tab.name + (showProjectNameInTabs && tab.project_name ? ` (${tab.project_name})` : "");
-    label.style.flexGrow = "1";
+
+    const dateSpan = document.createElement("span");
+    dateSpan.className = "tab-date";
+    dateSpan.textContent = `Created ${isoDate(tab.created_at)} \u2022 Archived ${isoDate(tab.archived_at)}`;
+
+    info.appendChild(label);
+    info.appendChild(dateSpan);
 
     const unarchBtn = document.createElement("button");
     unarchBtn.textContent = "Unarchive";
@@ -1601,7 +1612,7 @@ function renderArchivedSidebarTabs(){
     });
 
     wrapper.appendChild(icon);
-    wrapper.appendChild(label);
+    wrapper.appendChild(info);
     wrapper.appendChild(unarchBtn);
     container.appendChild(wrapper);
   });
