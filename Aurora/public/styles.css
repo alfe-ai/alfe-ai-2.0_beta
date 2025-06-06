@@ -594,7 +594,7 @@ body {
 .sidebar-toggle-icon {
   position: absolute;
   top: 8px;
-  left: 100px;
+  left: 8px;
   width: 42px;
   height: 42px;
   cursor: pointer;
@@ -604,7 +604,7 @@ body {
 .sidebar-brand-text {
   position: absolute;
   top: 16px;
-  left: 8px;
+  left: 60px;
   font-size: 1rem;
   font-weight: bold;
   color: #fff;
@@ -651,7 +651,7 @@ body {
 #imageLimitInfo.session-limit {
   position: absolute;
   top: 32px;
-  left: 152px;
+  left: 60px;
   font-size: 0.75rem;
   color: #aaa;
   z-index: 1000;
@@ -660,7 +660,7 @@ body {
 #imageLimitCountdown.session-limit {
   position: absolute;
   top: 44px;
-  left: 152px;
+  left: 60px;
   font-size: 0.7rem;
   color: #aaa;
   z-index: 1000;
