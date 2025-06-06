@@ -4551,7 +4551,7 @@ async function openGlobalAiSettings(){
         sel.appendChild(new Option("(no favorites)", ""));
       } else {
         favs.forEach(m => {
-          sel.appendChild(new Option(`${m.id} (limit ${m.tokenLimit}, in ${m.inputCost}, out ${m.outputCost})`, m.id));
+          sel.appendChild(new Option(`${m.id} (limit ${m.tokenLimit})`, m.id));
         });
       }
       const curModel = await getSetting("ai_model");
