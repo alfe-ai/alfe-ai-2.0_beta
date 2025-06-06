@@ -80,31 +80,38 @@ export default class TaskDB {
     `);
 
     this.db.exec(`
-      CREATE TABLE IF NOT EXISTS chat_tabs (
-                                             id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                             name TEXT NOT NULL,
-                                             created_at TEXT NOT NULL,
-                                             archived INTEGER DEFAULT 0,
-                                             generate_images INTEGER DEFAULT 1,
-                                             nexum INTEGER DEFAULT 0,
-                                             project_name TEXT DEFAULT '',
-                                             repo_ssh_url TEXT DEFAULT '',
-                                             tab_type TEXT DEFAULT 'chat',
-                                             session_id TEXT DEFAULT '',
+        CREATE TABLE IF NOT EXISTS chat_tabs (
+                                               id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                               name TEXT NOT NULL,
+                                               created_at TEXT NOT NULL,
+                                               archived INTEGER DEFAULT 0,
+                                               archived_at TEXT,
+                                               generate_images INTEGER DEFAULT 1,
+                                               nexum INTEGER DEFAULT 0,
+                                               project_name TEXT DEFAULT '',
+                                               repo_ssh_url TEXT DEFAULT '',
+                                               tab_type TEXT DEFAULT 'chat',
+                                               session_id TEXT DEFAULT '',
                                              tab_uuid TEXT DEFAULT ''
       );
     `);
-    try {
-      this.db.exec('ALTER TABLE chat_tabs ADD COLUMN archived INTEGER DEFAULT 0;');
-      console.debug("[TaskDB Debug] Added chat_tabs.archived column");
-    } catch(e) {
-      //console.debug("[TaskDB Debug] chat_tabs.archived column exists, skipping.", e.message);
-    }
-    try {
-      this.db.exec('ALTER TABLE chat_tabs ADD COLUMN generate_images INTEGER DEFAULT 1;');
-      console.debug("[TaskDB Debug] Added chat_tabs.generate_images column");
-    } catch(e) {
-      //console.debug("[TaskDB Debug] generate_images column exists, skipping.", e.message);
+      try {
+        this.db.exec('ALTER TABLE chat_tabs ADD COLUMN archived INTEGER DEFAULT 0;');
+        console.debug("[TaskDB Debug] Added chat_tabs.archived column");
+      } catch(e) {
+        //console.debug("[TaskDB Debug] chat_tabs.archived column exists, skipping.", e.message);
+      }
+      try {
+        this.db.exec('ALTER TABLE chat_tabs ADD COLUMN archived_at TEXT;');
+        console.debug("[TaskDB Debug] Added chat_tabs.archived_at column");
+      } catch(e) {
+        //console.debug("[TaskDB Debug] chat_tabs.archived_at column exists, skipping.", e.message);
+      }
+      try {
+        this.db.exec('ALTER TABLE chat_tabs ADD COLUMN generate_images INTEGER DEFAULT 1;');
+        console.debug("[TaskDB Debug] Added chat_tabs.generate_images column");
+      } catch(e) {
+        //console.debug("[TaskDB Debug] generate_images column exists, skipping.", e.message);
     }
     try {
       this.db.exec('ALTER TABLE chat_tabs ADD COLUMN nexum INTEGER DEFAULT 0;');
@@ -747,7 +754,13 @@ export default class TaskDB {
   }
 
   setChatTabArchived(tabId, archived = 1) {
-    this.db.prepare("UPDATE chat_tabs SET archived=? WHERE id=?").run(archived ? 1 : 0, tabId);
+    if (archived) {
+      this.db.prepare("UPDATE chat_tabs SET archived=1, archived_at=? WHERE id=?")
+          .run(new Date().toISOString(), tabId);
+    } else {
+      this.db.prepare("UPDATE chat_tabs SET archived=0, archived_at=NULL WHERE id=?")
+          .run(tabId);
+    }
   }
 
   setChatTabGenerateImages(tabId, enabled = 1) {
