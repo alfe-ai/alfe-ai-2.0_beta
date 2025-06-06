@@ -1349,10 +1349,7 @@ app.get("/api/ai/models", async (req, res) => {
     ...deepseekModelData
   ].sort((a, b) => a.id.localeCompare(b.id));
 
-  const sessionId = getSessionIdFromRequest(req);
-  const account = sessionId ? db.getAccountBySession(sessionId) : null;
-  const favorites =
-      account && account.id === 1 ? db.getSetting("favorite_ai_models") || [] : [];
+  const favorites = db.getSetting("favorite_ai_models") || [];
   for (const m of combinedModels) {
     m.favorite = favorites.includes(m.id);
   }
@@ -2689,8 +2686,8 @@ app.post("/api/ai/favorites", (req, res) => {
   try {
     const sessionId = getSessionIdFromRequest(req);
     const account = sessionId ? db.getAccountBySession(sessionId) : null;
-    if (!account || account.id !== 1) {
-      return res.status(403).json({ error: "Forbidden" });
+    if (!account) {
+      return res.status(401).json({ error: "not logged in" });
     }
 
     const { modelId, favorite } = req.body;
