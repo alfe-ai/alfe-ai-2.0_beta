@@ -3607,8 +3607,11 @@ function initChatScrollLoading(){
 
   chatMessagesEl.addEventListener("scroll", async ()=>{
     if(chatMessagesEl.scrollTop < 50){
+      console.debug(`[ChatHistory Debug] scrollTop=${chatMessagesEl.scrollTop}, chatHasMore=${chatHasMore}, offset=${chatHistoryOffset}`);
       if(chatHasMore){
         await loadChatHistory(currentTabId, false);
+      } else {
+        console.debug('[ChatHistory Debug] No additional history to load');
       }
     }
   });
@@ -3620,6 +3623,7 @@ let lastChatDate = null;
 
 async function loadChatHistory(tabId = 1, reset=false) {
   const chatMessagesEl = document.getElementById("chatMessages");
+  console.debug(`[ChatHistory Debug] loadChatHistory(tabId=${tabId}, reset=${reset}, offset=${chatHistoryOffset})`);
   if(reset){
     chatMessagesEl.innerHTML = `
       <div id="chatPlaceholder" style="text-align:center;margin:1rem 0;">
@@ -3634,17 +3638,21 @@ async function loadChatHistory(tabId = 1, reset=false) {
   const placeholderEl = document.getElementById("chatPlaceholder");
   if(reset && placeholderEl) placeholderEl.style.display = "";
   try {
+    console.debug(`[ChatHistory Debug] Fetching /api/chat/history?tabId=${tabId}&limit=10&offset=${chatHistoryOffset}`);
     const resp = await fetch(`/api/chat/history?tabId=${tabId}&limit=10&offset=${chatHistoryOffset}&sessionId=${encodeURIComponent(sessionId)}`);
+    console.debug(`[ChatHistory Debug] Response status: ${resp.status}`);
     if(!resp.ok){
       console.error("Error loading chat history from server");
       return;
     }
     const data = await resp.json();
     const pairs = data.pairs || [];
+    console.debug(`[ChatHistory Debug] Received ${pairs.length} pairs`);
     if(pairs.length<10){
       chatHasMore = false;
     }
     chatHistoryOffset += pairs.length;
+    console.debug(`[ChatHistory Debug] new offset=${chatHistoryOffset}, chatHasMore=${chatHasMore}`);
 
     if(reset){
       for (const p of pairs) {
