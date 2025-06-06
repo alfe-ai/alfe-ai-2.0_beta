@@ -597,11 +597,25 @@ body {
 .sidebar-toggle-icon {
   position: absolute;
   top: 8px;
-  left: 8px;
+  left: 100px;
   width: 42px;
   height: 42px;
   cursor: pointer;
   z-index: 1000;
+}
+
+.sidebar-brand-text {
+  position: absolute;
+  top: 16px;
+  left: 8px;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #000;
+  z-index: 1000;
+}
+
+.app.sidebar-collapsed #sidebarBrandText {
+  display: none;
 }
 
 .close-sidebar-icon {
@@ -629,7 +643,7 @@ body {
   display: none;
   position: absolute;
   top: 16px;
-  left: 60px;
+  left: 152px;
   font-size: 0.8rem;
   color: #aaa;
   z-index: 1000;
@@ -640,7 +654,7 @@ body {
 #imageLimitInfo.session-limit {
   position: absolute;
   top: 32px;
-  left: 60px;
+  left: 152px;
   font-size: 0.75rem;
   color: #aaa;
   z-index: 1000;
@@ -649,7 +663,7 @@ body {
 #imageLimitCountdown.session-limit {
   position: absolute;
   top: 44px;
-  left: 60px;
+  left: 152px;
   font-size: 0.7rem;
   color: #aaa;
   z-index: 1000;
