@@ -332,9 +332,10 @@
         const choice = document.querySelector('input[name="printifyVariant"]:checked');
         const variant = choice ? choice.value : (nobgFile ? 'nobg' : 'normal');
         const targetFile = variant === 'nobg' ? nobgFile : upscaledFile;
-        console.debug('Submit to Printify clicked with file =>', targetFile);
+        const targetPath = variant === 'nobg' ? nobgPath : upscaledPath;
+        console.debug('Submit to Printify clicked with file =>', targetPath);
         terminalEl.textContent = '';
-        if(!targetFile){
+        if(!targetFile && !targetPath){
           terminalEl.textContent = 'Upscaled 4096 image not available.';
           console.debug('Printify aborted => upscaled image missing');
           return;
@@ -344,7 +345,7 @@
           const res = await fetch('/api/printify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ file: targetFile })
+            body: JSON.stringify({ file: targetPath || targetFile })
           });
           console.debug('Received response =>', res.status);
           const data = await res.json().catch(() => ({}));

@@ -98,7 +98,9 @@ export default class PrintifyJobQueue {
     job.status = 'running';
     this._saveJobs();
 
-    let filePath = path.join(this.uploadsDir, job.file);
+    let filePath = path.isAbsolute(job.file)
+      ? job.file
+      : path.join(this.uploadsDir, job.file);
     let script = '';
     if (job.type === 'upscale') {
       script = this.upscaleScript;
@@ -106,27 +108,30 @@ export default class PrintifyJobQueue {
       script = this.printifyScript;
       const ext = path.extname(filePath);
       const base = path.basename(filePath, ext);
+      const searchDir = path.isAbsolute(job.file)
+        ? path.dirname(filePath)
+        : this.uploadsDir;
       const normalCandidates = [
-        ...(job.dbId ? [path.join(this.uploadsDir, `${job.dbId}_upscale${ext}`)] : []),
-        path.join(this.uploadsDir, `${base}_4096${ext}`),
-        path.join(this.uploadsDir, `${base}-4096${ext}`),
-        path.join(this.uploadsDir, `${base}_upscaled${ext}`),
-        path.join(this.uploadsDir, `${base}-upscaled${ext}`)
+        ...(job.dbId ? [path.join(searchDir, `${job.dbId}_upscale${ext}`)] : []),
+        path.join(searchDir, `${base}_4096${ext}`),
+        path.join(searchDir, `${base}-4096${ext}`),
+        path.join(searchDir, `${base}_upscaled${ext}`),
+        path.join(searchDir, `${base}-upscaled${ext}`)
       ];
       const nobgCandidates = [
-        ...(job.dbId ? [path.join(this.uploadsDir, `${job.dbId}_nobg${ext}`)] : []),
-        path.join(this.uploadsDir, `${base}_4096_nobg${ext}`),
-        path.join(this.uploadsDir, `${base}-4096-nobg${ext}`),
-        path.join(this.uploadsDir, `${base}_upscaled_nobg${ext}`),
-        path.join(this.uploadsDir, `${base}-upscaled-nobg${ext}`),
-        path.join(this.uploadsDir, `${base}_4096_no_bg${ext}`),
-        path.join(this.uploadsDir, `${base}-4096-no_bg${ext}`),
-        path.join(this.uploadsDir, `${base}_4096-no-bg${ext}`),
-        path.join(this.uploadsDir, `${base}-4096-no-bg${ext}`),
-        path.join(this.uploadsDir, `${base}_upscaled_no_bg${ext}`),
-        path.join(this.uploadsDir, `${base}-upscaled-no_bg${ext}`),
-        path.join(this.uploadsDir, `${base}_upscaled-no-bg${ext}`),
-        path.join(this.uploadsDir, `${base}-upscaled-no-bg${ext}`)
+        ...(job.dbId ? [path.join(searchDir, `${job.dbId}_nobg${ext}`)] : []),
+        path.join(searchDir, `${base}_4096_nobg${ext}`),
+        path.join(searchDir, `${base}-4096-nobg${ext}`),
+        path.join(searchDir, `${base}_upscaled_nobg${ext}`),
+        path.join(searchDir, `${base}-upscaled-nobg${ext}`),
+        path.join(searchDir, `${base}_4096_no_bg${ext}`),
+        path.join(searchDir, `${base}-4096-no_bg${ext}`),
+        path.join(searchDir, `${base}_4096-no-bg${ext}`),
+        path.join(searchDir, `${base}-4096-no-bg${ext}`),
+        path.join(searchDir, `${base}_upscaled_no_bg${ext}`),
+        path.join(searchDir, `${base}-upscaled-no_bg${ext}`),
+        path.join(searchDir, `${base}_upscaled-no-bg${ext}`),
+        path.join(searchDir, `${base}-upscaled-no-bg${ext}`)
       ];
 
       const findFirst = (cands) => {
