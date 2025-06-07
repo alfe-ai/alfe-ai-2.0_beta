@@ -1967,7 +1967,9 @@ app.post("/api/upscale", async (req, res) => {
       "[Server Debug] /api/upscale => using scriptCwd =>",
       scriptCwd
     );
-    const filePath = path.join(uploadsDir, file);
+    const filePath = path.isAbsolute(file)
+      ? file
+      : path.join(uploadsDir, file);
     console.debug("[Server Debug] /api/upscale => resolved filePath =>", filePath);
 
     if (!fs.existsSync(filePath)) {
@@ -2073,7 +2075,9 @@ app.post("/api/printify", async (req, res) => {
       "[Server Debug] /api/printify => using scriptCwd =>",
       scriptCwd
     );
-    const filePath = path.join(uploadsDir, file);
+    const filePath = path.isAbsolute(file)
+      ? file
+      : path.join(uploadsDir, file);
     console.debug("[Server Debug] /api/printify => resolved filePath =>", filePath);
 
     if (!fs.existsSync(filePath)) {
