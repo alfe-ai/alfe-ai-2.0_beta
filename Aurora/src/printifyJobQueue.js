@@ -180,7 +180,8 @@ export default class PrintifyJobQueue {
       job.status = jmJob.status;
       job.resultPath = jmJob.resultPath;
       if (job.type === 'upscale') {
-        const m = jmJob.log.match(/Final output saved to:\s*(.+)/i);
+        const matches = [...jmJob.log.matchAll(/Final output saved to:\s*(.+)/gi)];
+        const m = matches[matches.length - 1];
         if (m) {
           job.resultPath = m[1].trim();
           if (this.db) {

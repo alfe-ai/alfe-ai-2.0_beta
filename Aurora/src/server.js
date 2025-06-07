@@ -1989,7 +1989,8 @@ app.post("/api/upscale", async (req, res) => {
 
     const job = jobManager.createJob(scriptPath, [filePath], { cwd: scriptCwd, file });
     jobManager.addDoneListener(job, () => {
-      const m = job.log.match(/Final output saved to:\s*(.+)/i);
+      const matches = [...job.log.matchAll(/Final output saved to:\s*(.+)/gi)];
+      const m = matches[matches.length - 1];
       if (m) {
         job.resultPath = m[1].trim();
         console.debug("[Server Debug] Recorded resultPath =>", job.resultPath);
@@ -2025,7 +2026,7 @@ app.post("/api/upscale", async (req, res) => {
             // ----- Copy RIBT output for final upscale -----
             const upscaleName = `${dbId || base}_upscale${ext}`;
             const upscaleDest = path.join(uploadsDir, upscaleName);
-            const ribtCopySrc = '/home/syl/git/LogisticaRIBT/output.png';
+            const ribtCopySrc = ribtOutput;
             if (fs.existsSync(ribtCopySrc)) {
               fs.copyFileSync(ribtCopySrc, upscaleDest);
               job.resultPath = upscaleDest;
