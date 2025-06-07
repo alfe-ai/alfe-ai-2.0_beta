@@ -1622,6 +1622,7 @@ app.post("/api/chat/tabs/new", (req, res) => {
     const repo = req.body.repo || '';
     const type = req.body.type || 'chat';
     const sessionId = req.body.sessionId || '';
+    const defaultModel = db.getSetting('ai_model') || 'deepseek/deepseek-chat';
 
     const autoNaming = db.getSetting("chat_tab_auto_naming");
     const projectName = db.getSetting("sterling_project") || "";
@@ -1629,7 +1630,7 @@ app.post("/api/chat/tabs/new", (req, res) => {
       name = `${projectName}: ${name}`;
     }
 
-    const { id: tabId, uuid } = db.createChatTab(name, nexum, project, repo, type, sessionId);
+    const { id: tabId, uuid } = db.createChatTab(name, nexum, project, repo, type, sessionId, defaultModel);
     res.json({ success: true, id: tabId, uuid });
     createInitialTabMessage(tabId, type, sessionId).catch(e =>
       console.error('[Server Debug] Initial message error:', e.message));
@@ -1711,6 +1712,25 @@ app.post("/api/chat/tabs/config", (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error("[TaskQueue] POST /api/chat/tabs/config error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/api/chat/tabs/model", (req, res) => {
+  console.debug("[Server Debug] POST /api/chat/tabs/model =>", req.body);
+  try {
+    const { tabId, model = '', sessionId = '' } = req.body;
+    if (!tabId || !model) {
+      return res.status(400).json({ error: "Missing tabId or model" });
+    }
+    const tab = db.getChatTab(tabId, sessionId || null);
+    if (!tab) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    db.setChatTabModel(tabId, model);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[TaskQueue] POST /api/chat/tabs/model error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });

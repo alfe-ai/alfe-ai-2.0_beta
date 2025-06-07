@@ -92,7 +92,8 @@ export default class TaskDB {
                                                repo_ssh_url TEXT DEFAULT '',
                                                tab_type TEXT DEFAULT 'chat',
                                                session_id TEXT DEFAULT '',
-                                             tab_uuid TEXT DEFAULT ''
+                                               ai_model TEXT DEFAULT '',
+                                               tab_uuid TEXT DEFAULT ''
       );
     `);
       try {
@@ -107,11 +108,17 @@ export default class TaskDB {
       } catch(e) {
         //console.debug("[TaskDB Debug] chat_tabs.archived_at column exists, skipping.", e.message);
       }
-      try {
-        this.db.exec('ALTER TABLE chat_tabs ADD COLUMN generate_images INTEGER DEFAULT 1;');
-        console.debug("[TaskDB Debug] Added chat_tabs.generate_images column");
-      } catch(e) {
-        //console.debug("[TaskDB Debug] generate_images column exists, skipping.", e.message);
+    try {
+      this.db.exec('ALTER TABLE chat_tabs ADD COLUMN generate_images INTEGER DEFAULT 1;');
+      console.debug("[TaskDB Debug] Added chat_tabs.generate_images column");
+    } catch(e) {
+      //console.debug("[TaskDB Debug] generate_images column exists, skipping.", e.message);
+    }
+    try {
+      this.db.exec('ALTER TABLE chat_tabs ADD COLUMN ai_model TEXT DEFAULT "";');
+      console.debug("[TaskDB Debug] Added chat_tabs.ai_model column");
+    } catch(e) {
+      //console.debug("[TaskDB Debug] chat_tabs.ai_model column exists, skipping.", e.message);
     }
     try {
       this.db.exec('ALTER TABLE chat_tabs ADD COLUMN nexum INTEGER DEFAULT 0;');
@@ -710,13 +717,13 @@ export default class TaskDB {
         .get(id);
   }
 
-  createChatTab(name, nexum = 0, project = '', repo = '', type = 'chat', sessionId = '') {
+  createChatTab(name, nexum = 0, project = '', repo = '', type = 'chat', sessionId = '', model = '') {
     const ts = new Date().toISOString();
     const genImages = type === 'design' ? 1 : 0;
     const uuid = randomUUID().replace(/-/g, '').slice(0, 12);
     const { lastInsertRowid } = this.db.prepare(`
-      INSERT INTO chat_tabs (name, created_at, generate_images, nexum, project_name, repo_ssh_url, tab_type, session_id, tab_uuid)
-      VALUES (@name, @created_at, @generate_images, @nexum, @project_name, @repo_ssh_url, @tab_type, @session_id, @uuid)
+      INSERT INTO chat_tabs (name, created_at, generate_images, nexum, project_name, repo_ssh_url, tab_type, session_id, ai_model, tab_uuid)
+      VALUES (@name, @created_at, @generate_images, @nexum, @project_name, @repo_ssh_url, @tab_type, @session_id, @ai_model, @uuid)
     `).run({
       name,
       created_at: ts,
@@ -726,6 +733,7 @@ export default class TaskDB {
       repo_ssh_url: repo,
       tab_type: type,
       session_id: sessionId,
+      ai_model: model,
       uuid
     });
     return { id: lastInsertRowid, uuid };
@@ -797,6 +805,18 @@ export default class TaskDB {
           .get(tabId, sessionId);
     }
     return this.db.prepare("SELECT * FROM chat_tabs WHERE id=?").get(tabId);
+  }
+
+  setChatTabModel(tabId, model = '') {
+    this.db.prepare("UPDATE chat_tabs SET ai_model=? WHERE id=?")
+        .run(model, tabId);
+  }
+
+  getChatTabModel(tabId) {
+    const row = this.db
+        .prepare("SELECT ai_model FROM chat_tabs WHERE id=?")
+        .get(tabId);
+    return row ? row.ai_model : '';
   }
 
   getChatTabByUuid(uuid) {

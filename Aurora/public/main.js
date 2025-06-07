@@ -285,7 +285,9 @@ function openAccountModal(e){
       autoScrollCheck.checked = chatAutoScroll;
     }
   }
-  showModal(document.getElementById("accountModal"));
+  loadAccountAiSettings().then(() => {
+    showModal(document.getElementById("accountModal"));
+  });
 }
 
 function updateAccountButton(info){
@@ -1923,6 +1925,44 @@ if(accountImageLoopCheck){
   });
 }
 
+async function loadAccountAiSettings(){
+  const svcSel = document.getElementById('accountAiServiceSelect');
+  const modelSel = document.getElementById('accountAiModelSelect');
+  try{
+    if(modelSel){
+      modelSel.innerHTML = '<option>Loading...</option>';
+      const r = await fetch('/api/ai/models');
+      if(r.ok){
+        const data = await r.json();
+        modelSel.innerHTML = '';
+        (data.models||[]).forEach(m=>{
+          modelSel.appendChild(new Option(m.id,m.id));
+        });
+      } else {
+        modelSel.innerHTML = '<option>Error</option>';
+      }
+    }
+    const service = await getSetting('ai_service');
+    if(svcSel) svcSel.value = service || 'openrouter';
+    const model = await getSetting('ai_model');
+    if(modelSel && model) modelSel.value = model;
+  }catch(e){
+    console.error('Error loading AI settings', e);
+  }
+}
+
+const accountAiSaveBtn = document.getElementById('accountAiSaveBtn');
+if(accountAiSaveBtn){
+  accountAiSaveBtn.addEventListener('click', async () => {
+    const svc = document.getElementById('accountAiServiceSelect').value;
+    const model = document.getElementById('accountAiModelSelect').value;
+    await setSettings({ ai_service: svc, ai_model: model });
+    modelName = model || 'unknown';
+    document.getElementById('modelHud').textContent = `Model: ${modelName}`;
+    showToast('AI settings saved');
+  });
+}
+
 const accountAutoScrollCheck = document.getElementById('accountAutoScrollCheck');
 if(accountAutoScrollCheck){
   accountAutoScrollCheck.addEventListener('change', async () => {
@@ -2488,12 +2528,12 @@ async function openChatSettings(){
       const modelData = await modelListResp.json();
       window.allAiModels = modelData.models || [];
 
-      const aiModelSelect = $("#aiModelSelect");
+      const aiModelSelect = $("#tabAiModelSelect");
 
       function updateAiModelSelect() {
         aiModelSelect.innerHTML = "";
         const filterFav = $("#favoritesOnlyModelCheck").checked;
-        const providerFilterSel = $("#aiModelProviderSelect");
+        const providerFilterSel = $("#tabAiModelProviderSelect");
         let selectedProvider = providerFilterSel ? providerFilterSel.value : "";
 
         let filtered = window.allAiModels.slice();
@@ -2519,14 +2559,15 @@ async function openChatSettings(){
         updateAiModelSelect();
       });
 
-      const providerSel = $("#aiModelProviderSelect");
+      const providerSel = $("#tabAiModelProviderSelect");
       if (providerSel) {
         providerSel.addEventListener("change", () => {
           updateAiModelSelect();
         });
       }
 
-      const currentModel = await getSetting("ai_model");
+      const currentTab = chatTabs.find(t => t.id === currentTabId);
+      const currentModel = currentTab ? currentTab.ai_model : modelName;
       if(currentModel) aiModelSelect.value = currentModel;
     }
   } catch(e){
@@ -2572,19 +2613,19 @@ if(betaContinue){
 }
 
 // React when AI service changes
-$("#aiServiceSelect").addEventListener("change", async ()=>{
+$("#tabAiServiceSelect").addEventListener("change", async ()=>{
   try {
     const modelListResp = await fetch("/api/ai/models");
     if(modelListResp.ok){
       const modelData = modelListResp.json();
       window.allAiModels = (await modelData).models || [];
 
-      const aiModelSelect = $("#aiModelSelect");
+      const aiModelSelect = $("#tabAiModelSelect");
 
       function updateAiModelSelect() {
         aiModelSelect.innerHTML = "";
         const filterFav = $("#favoritesOnlyModelCheck").checked;
-        const providerFilterSel = $("#aiModelProviderSelect");
+        const providerFilterSel = $("#tabAiModelProviderSelect");
         let selectedProvider = providerFilterSel ? providerFilterSel.value : "";
 
         let filtered = window.allAiModels.slice();
@@ -2605,7 +2646,8 @@ $("#aiServiceSelect").addEventListener("change", async ()=>{
       }
       updateAiModelSelect();
 
-      const currentModel = await getSetting("ai_model");
+      const currentTab = chatTabs.find(t => t.id === currentTabId);
+      const currentModel = currentTab ? currentTab.ai_model : modelName;
       if(currentModel) aiModelSelect.value = currentModel;
     }
   } catch(e){
@@ -2637,8 +2679,8 @@ async function chatSettingsSaveFlow() {
   imageLoopMessage = $("#imageLoopMessageInput").value.trim() || imageLoopMessage;
 
   imageGenService = $("#imageServiceSelect").value;
-  const serviceSel = $("#aiServiceSelect").value;
-  const modelSel = $("#aiModelSelect").value;
+  const serviceSel = $("#tabAiServiceSelect").value;
+  const modelSel = $("#tabAiModelSelect").value;
 
   await setSettings({
     chat_hide_metadata: chatHideMetadata,
@@ -2661,19 +2703,13 @@ async function chatSettingsSaveFlow() {
   });
 
   if (modelSel.trim()) {
-    await setSetting("ai_model", modelSel.trim());
-  }
-
-  const updatedModelResp = await fetch("/api/model");
-  console.debug("[Client Debug] /api/model => status:", updatedModelResp.status);
-  if(updatedModelResp.ok){
-    const updatedModelData = await updatedModelResp.json();
-    console.debug("[Client Debug] /api/model data =>", updatedModelData);
-    modelName = updatedModelData.model || "unknown";
-    const { provider: autoProvider } = parseProviderModel(modelName);
-    console.log("[OBTAINED PROVIDER] => (global model removed in UI, fallback only)");
-    console.log("[OBTAINED PROVIDER] =>", autoProvider);
-    $("#modelHud").textContent = `Model: ${modelName}`;
+    await fetch('/api/chat/tabs/model', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tabId: currentTabId, model: modelSel.trim(), sessionId })
+    });
+    const t = chatTabs.find(t=>t.id===currentTabId);
+    if(t) t.ai_model = modelSel.trim();
   }
 
   hideModal($("#chatSettingsModal"));
@@ -4577,11 +4613,7 @@ async function saveGlobalAiSettings(){
   hideModal(document.getElementById("globalAiSettingsModal"));
 }
 
-document.getElementById("globalAiSettingsBtn").addEventListener("click", openGlobalAiSettings);
-document.getElementById("globalAiSettingsSaveBtn").addEventListener("click", saveGlobalAiSettings);
-document.getElementById("globalAiSettingsCancelBtn").addEventListener("click", () => {
-  hideModal(document.getElementById("globalAiSettingsModal"));
-});
+document.getElementById("globalAiSettingsBtn").addEventListener("click", openAccountModal);
 
 // ----------------------------------------------------------------------
 // AI Favorites modal
