@@ -947,6 +947,22 @@ app.post("/api/account/timezone", (req, res) => {
   res.json({ success: true });
 });
 
+app.post("/api/account/password", (req, res) => {
+  const sessionId = getSessionIdFromRequest(req);
+  const account = sessionId ? db.getAccountBySession(sessionId) : null;
+  if (!account) return res.status(401).json({ error: "not logged in" });
+  const { currentPassword, newPassword } = req.body || {};
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: "current and new password required" });
+  }
+  if (!verifyPassword(currentPassword, account.password_hash)) {
+    return res.status(400).json({ error: "incorrect password" });
+  }
+  const hash = hashPassword(newPassword);
+  db.setAccountPassword(account.id, hash);
+  res.json({ success: true });
+});
+
 app.post("/api/logout", (req, res) => {
   console.debug("[Server Debug] POST /api/logout");
   try {

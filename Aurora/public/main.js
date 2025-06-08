@@ -1973,6 +1973,48 @@ if(timezoneSaveBtn){
   });
 }
 
+const showChangePasswordBtn = document.getElementById('showChangePasswordBtn');
+const passwordForm = document.getElementById('passwordForm');
+if(showChangePasswordBtn && passwordForm){
+  showChangePasswordBtn.addEventListener('click', () => {
+    passwordForm.style.display = 'block';
+    showChangePasswordBtn.style.display = 'none';
+  });
+}
+
+const changePasswordBtn = document.getElementById('changePasswordBtn');
+if(changePasswordBtn){
+  changePasswordBtn.addEventListener('click', async () => {
+    const current = document.getElementById('currentPassword').value;
+    const pw = document.getElementById('newPassword').value;
+    const confirm = document.getElementById('confirmPassword').value;
+    if(!current || !pw){
+      showToast('All fields required');
+      return;
+    }
+    if(pw !== confirm){
+      showToast('Passwords do not match');
+      return;
+    }
+    const resp = await fetch('/api/account/password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ currentPassword: current, newPassword: pw })
+    });
+    const data = await resp.json().catch(() => null);
+    if(resp.ok && data && data.success){
+      showToast('Password updated');
+      passwordForm.style.display = 'none';
+      showChangePasswordBtn.style.display = 'inline-block';
+      document.getElementById('currentPassword').value = '';
+      document.getElementById('newPassword').value = '';
+      document.getElementById('confirmPassword').value = '';
+    } else {
+      showToast(data?.error || 'Failed to update password');
+    }
+  });
+}
+
 const accountImageLoopCheck = document.getElementById('accountImageLoopCheck');
 if(accountImageLoopCheck){
   accountImageLoopCheck.addEventListener('change', () => {
