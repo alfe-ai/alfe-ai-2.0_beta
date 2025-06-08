@@ -168,6 +168,10 @@ const app = express();
 app.use(bodyParser.json());
 const jobManager = new JobManager();
 
+// Printify configuration
+const printifyToken = process.env.PRINTIFY_TOKEN || "";
+const shopId = 18663958; // Default shop ID used when none is provided
+
 /**
  * Returns a configured OpenAI client, depending on "ai_service" setting.
  * Added checks to help diagnose missing or invalid API keys.
