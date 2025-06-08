@@ -13,13 +13,16 @@
     h1 { margin-top:0; }
     h2 { margin-top:0; }
     .grid {
-      display:flex;
-      flex-wrap:wrap;
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      justify-items:center;
       gap:10px;
     }
     .grid-item {
       position:relative;
       overflow:hidden;
+      width:100%;
+      text-align:center;
     }
     .grid-item img {
       max-width:320px;
