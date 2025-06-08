@@ -30,6 +30,7 @@
       transform:scale(1.05);
     }
     a { color:#0ff; text-decoration:none; }
+    #sentinel { height:1px; }
     #loadingIndicator {
       display:none;
       position:fixed;
@@ -47,6 +48,7 @@
 <body>
   <h1>Portfolio</h1>
   <div id="grid" class="grid"></div>
+  <div id="sentinel"></div>
   <div id="loadingIndicator">Loading...</div>
   <script src="/session.js"></script>
   <script>
@@ -70,10 +72,18 @@
 
         let currentIndex = 0;
         const batchSize = 12;
+        const sentinel = document.getElementById('sentinel');
+        let loading = false;
+        let observer;
 
         function renderNext(){
+          if(loading) return;
           const slice = allImages.slice(currentIndex, currentIndex + batchSize);
-          if(slice.length === 0) return;
+          if(slice.length === 0){
+            observer.disconnect();
+            return;
+          }
+          loading = true;
           showLoader();
           let loaded = 0;
           slice.forEach(f => {
@@ -89,6 +99,10 @@
               loaded++;
               if(loaded === slice.length){
                 hideLoader();
+                loading = false;
+                if(currentIndex >= allImages.length){
+                  observer.disconnect();
+                }
               }
             };
             link.appendChild(img);
@@ -98,13 +112,14 @@
           currentIndex += slice.length;
         }
 
-        renderNext();
-
-        window.addEventListener('scroll', () => {
-          if(window.innerHeight + window.scrollY >= document.body.offsetHeight - 100){
+        observer = new IntersectionObserver(entries => {
+          if(entries.some(e => e.isIntersecting)){
             renderNext();
           }
-        });
+        }, { rootMargin: '100px' });
+
+        observer.observe(sentinel);
+        renderNext();
 
       } catch(err){
         console.error('Failed to load portfolio images', err);
