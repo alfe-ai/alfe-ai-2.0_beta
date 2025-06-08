@@ -169,8 +169,11 @@ app.use(bodyParser.json());
 const jobManager = new JobManager();
 
 // Printify configuration
-const printifyToken = process.env.PRINTIFY_TOKEN || "";
-const shopId = 18663958; // Default shop ID used when none is provided
+// Support both legacy PRINTIFY_TOKEN and the newer PRINTIFY_API_TOKEN env vars
+const printifyToken =
+  process.env.PRINTIFY_API_TOKEN || process.env.PRINTIFY_TOKEN || "";
+// Allow overriding the default shop ID via PRINTIFY_SHOP_ID
+const shopId = process.env.PRINTIFY_SHOP_ID || 18663958;
 
 /**
  * Returns a configured OpenAI client, depending on "ai_service" setting.
