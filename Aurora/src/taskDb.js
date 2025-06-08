@@ -316,6 +316,19 @@ export default class TaskDB {
       // column exists
     }
 
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS orders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_number TEXT UNIQUE,
+        source TEXT DEFAULT '',
+        amount REAL DEFAULT 0,
+        fees REAL DEFAULT 0,
+        shipping REAL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        metadata TEXT DEFAULT ''
+      );
+    `);
+
     console.debug("[TaskDB Debug] Finished DB schema init.");
   }
 
@@ -1103,6 +1116,36 @@ export default class TaskDB {
       }
     }
     this.db.prepare('DELETE FROM image_sessions WHERE session_id=?').run(sourceId);
+  }
+
+  createOrder(orderNumber, source = '', amount = 0, fees = 0, shipping = 0, metadata = {}) {
+    const timestamp = new Date().toISOString();
+    const metaStr = JSON.stringify(metadata);
+    const { lastInsertRowid } = this.db.prepare(`
+      INSERT INTO orders (
+        order_number, source, amount, fees, shipping,
+        created_at, metadata
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(order_number) DO UPDATE SET
+        source=excluded.source,
+        amount=excluded.amount,
+        fees=excluded.fees,
+        shipping=excluded.shipping,
+        metadata=excluded.metadata
+    `).run(orderNumber, source, amount, fees, shipping, timestamp, metaStr);
+    return lastInsertRowid;
+  }
+
+  listOrders() {
+    return this.db.prepare('SELECT * FROM orders ORDER BY created_at DESC').all();
+  }
+
+  getOrderByNumber(orderNumber) {
+    return this.db.prepare('SELECT * FROM orders WHERE order_number=?').get(orderNumber);
+  }
+
+  getOrderById(id) {
+    return this.db.prepare('SELECT * FROM orders WHERE id=?').get(id);
   }
 }
 
