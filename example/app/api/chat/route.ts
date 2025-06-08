@@ -1,5 +1,32 @@
 import { NextRequest } from 'next/server';
 
+function processLines(lines: string[], controller: ReadableStreamDefaultController): boolean {
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    if (trimmed === '[DONE]') {
+      controller.enqueue(new TextEncoder().encode(`data: [DONE]\n\n`));
+      return true;
+    }
+    controller.enqueue(new TextEncoder().encode(`data: ${trimmed}\n\n`));
+  }
+  return false;
+}
+
+async function pumpChunks(reader: ReadableStreamDefaultReader<Uint8Array>, controller: ReadableStreamDefaultController) {
+  const decoder = new TextDecoder('utf-8');
+  let done = false;
+  while (!done) {
+    const { value, done: streamDone } = await reader.read();
+    done = streamDone;
+    if (value) {
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n');
+      if (processLines(lines, controller)) break;
+    }
+  }
+}
+
 /**
  * Example Next.js Edge API route demonstrating streaming responses from OpenAI
  * without "[Error occurred]" interruptions.
@@ -52,32 +79,11 @@ export async function POST(req: NextRequest) {
   // 4. Create a readable stream to transform OpenAI chunks to SSE format
   const readableStream = new ReadableStream({
     async start(controller) {
-      // Use reader to read the response body
       const reader = openRouterResponse.body.getReader();
-      const decoder = new TextDecoder('utf-8');
-      let done = false;
 
       try {
-        while (!done) {
-          const { value, done: streamDone } = await reader.read();
-          done = streamDone;
-          if (value) {
-            const chunk = decoder.decode(value, { stream: true });
-            const lines = chunk.split('\n');
-            for (const line of lines) {
-              const trimmed = line.trim();
-              if (!trimmed) continue;
-              if (trimmed === '[DONE]') {
-                // End of stream; signal SSE client to stop
-                controller.enqueue(new TextEncoder().encode(`data: [DONE]\n\n`));
-                break;
-              }
-              // SSE data chunk
-              controller.enqueue(new TextEncoder().encode(`data: ${trimmed}\n\n`));
-            }
-          }
-        }
-      } catch (err) {
+        await pumpChunks(reader, controller);
+      } catch {
         controller.enqueue(new TextEncoder().encode(`data: [Error reading stream]\n\n`));
       } finally {
         controller.close();
