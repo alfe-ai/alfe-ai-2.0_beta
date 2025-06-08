@@ -281,13 +281,22 @@ async function updatePrintifyProduct(productId, variants) {
     }
 
     // Verify variants structure
-    if (!Array.isArray(variants) || !variants.every(v => v.id && v.price)) {
+    if (
+      !Array.isArray(variants) ||
+      !variants.every(v => v.id && v.price !== undefined)
+    ) {
       throw new Error('Invalid variants format');
     }
 
+    const formattedVariants = variants.map(v => ({
+      id: v.id,
+      price: Math.round(Number(v.price)),
+      inventory_quantity: v.inventory_quantity
+    }));
+
     const response = await axios.put(
       `https://api.printify.com/v1/shops/${shopId}/products/${productId}/variants.json`,
-      { variants },
+      { variants: formattedVariants },
       {
         headers: {
           Authorization: `Bearer ${printifyToken}`,
