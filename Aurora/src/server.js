@@ -261,6 +261,24 @@ function verifyPassword(password, stored) {
   return h === hash;
 }
 
+async function updatePrintifyProduct(productId) {
+  const token = process.env.PRINTIFY_API_TOKEN;
+  const shopId = process.env.PRINTIFY_SHOP_ID;
+  if (!token || !shopId) {
+    throw new Error('Printify API credentials missing');
+  }
+  const headers = { Authorization: `Bearer ${token}` };
+  const prodUrl = `https://api.printify.com/v1/shops/${shopId}/products/${productId}.json`;
+  const prodResp = await axios.get(prodUrl, { headers });
+  const product = prodResp.data || {};
+  const variants = (product.variants || []).map(v => ({
+    id: v.id,
+    price: 19.44,
+    quantity: 20,
+  }));
+  await axios.put(prodUrl, { variants }, { headers });
+}
+
 async function deriveImageTitle(prompt, client = null) {
   if (!prompt) return '';
 
@@ -2089,7 +2107,7 @@ app.post("/api/upscale", async (req, res) => {
 // Trigger the Printify submission script for a given file.
 app.post("/api/printify", async (req, res) => {
   try {
-    const { file } = req.body || {};
+    const { file, productId } = req.body || {};
     console.debug("[Server Debug] /api/printify called with file =>", file);
     if (!file) {
       console.debug("[Server Debug] /api/printify => missing 'file' in request body");
@@ -2166,22 +2184,47 @@ app.post("/api/printify", async (req, res) => {
     };
     jobManager.addListener(job, logListener);
 
-    jobManager.addDoneListener(job, () => {
+    jobManager.addDoneListener(job, async () => {
       jobManager.removeListener(job, logListener);
       if (killTimer) {
         clearTimeout(killTimer);
       }
       try {
         const url = `/uploads/${file}`;
-        db.setImageStatus(url, 'Ebay Shipping Updated');
+        if (productId) {
+          await updatePrintifyProduct(productId);
+        }
+        db.setImageStatus(url, 'Printify API Updates');
       } catch (e) {
-        console.error('[Server Debug] Failed to set status after printify job =>', e);
+        console.error('[Server Debug] Failed to run Printify API update =>', e);
       }
     });
 
     res.json({ jobId: job.id });
   } catch (err) {
     console.error("Error in /api/printify:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/api/printify/updateProduct", async (req, res) => {
+  try {
+    const { productId, file } = req.body || {};
+    if (!productId) {
+      return res.status(400).json({ error: "Missing productId" });
+    }
+    await updatePrintifyProduct(productId);
+    if (file) {
+      try {
+        const url = path.isAbsolute(file) ? `/uploads/${path.basename(file)}` : `/uploads/${file}`;
+        db.setImageStatus(url, "Printify API Updates");
+      } catch (e) {
+        console.error("[Server Debug] Failed to set status after printify API update =>", e);
+      }
+    }
+    res.json({ updated: true });
+  } catch (err) {
+    console.error("Error in /api/printify/updateProduct:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });

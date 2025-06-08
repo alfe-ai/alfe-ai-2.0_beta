@@ -3191,6 +3191,7 @@ document.addEventListener("click", async ev => {
     "Background Removed",
     "Border Added",
     "Printify Step",
+    "Printify API Updates",
     "Ebay Shipping Updated",
     "Done"
   ].forEach(v => {

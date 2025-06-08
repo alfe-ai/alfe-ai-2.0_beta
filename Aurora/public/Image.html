@@ -58,9 +58,10 @@
       { name: 'Generated' },
       { name: 'Border Added', disabled: true },
       { name: 'Upscaled', disabled: true },
-      // { name: 'Printify Step' },
-      // { name: 'Ebay Shipping Updated' },
-      // { name: 'Done' }
+      { name: 'Printify Puppet', disabled: true },
+      { name: 'Printify API Updates', disabled: true },
+      { name: 'Ebay Shipping Updated', disabled: true },
+      { name: 'Done', disabled: true }
     ];
 
     const stageList = document.getElementById('stageList');
@@ -81,9 +82,10 @@
       'Upscaled',
       'Background Removed',
       'Border Added',
-      //'Printify Step',
-      //'Ebay Shipping Updated',
-      //'Done'
+      'Printify Step',
+      'Printify API Updates',
+      'Ebay Shipping Updated',
+      'Done'
     ];
 
     async function loadStatus(){
@@ -103,9 +105,13 @@
       try{
         const current = await loadStatus();
         if(statusSelect.value !== current) statusSelect.value = current;
-        if(current === 'Ebay Shipping Updated'){
+        if(current === 'Printify API Updates'){
           if(stageItems[3]) stageItems[3].classList.add('completed');
           if(stageItems[4]) stageItems[4].classList.add('current');
+        } else if(current === 'Ebay Shipping Updated'){
+          if(stageItems[3]) stageItems[3].classList.add('completed');
+          if(stageItems[4]) stageItems[4].classList.add('completed');
+          if(stageItems[5]) stageItems[5].classList.add('current');
         } else if(current === 'Done'){
           if(stageItems[3]) stageItems[3].classList.add('completed');
           if(stageItems[4]) stageItems[4].classList.add('completed');
