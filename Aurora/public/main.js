@@ -341,6 +341,8 @@ function updateAccountButton(info){
     togglePortfolioMenu(false);
   }
 }
+}
+
 
 function showToast(msg, duration=1500){
   const el = document.getElementById("toast");
@@ -3339,6 +3341,7 @@ const sidebarViewUploader = document.getElementById("sidebarViewUploader");
 const sidebarViewChatTabs = document.getElementById("sidebarViewChatTabs");
 const sidebarViewActivityIframe = document.getElementById("sidebarViewActivityIframe");
 const sidebarViewArchiveTabs = document.getElementById("sidebarViewArchiveTabs");
+const sidebarViewPrintifyProducts = document.getElementById("sidebarViewPrintifyProducts");
 const fileTreeContainer = document.getElementById("fileTreeContainer");
 
 function showTasksPanel(){
@@ -3348,6 +3351,7 @@ function showTasksPanel(){
   sidebarViewChatTabs.style.display = "none";
   sidebarViewArchiveTabs.style.display = "none";
   sidebarViewActivityIframe.style.display = "none";
+  sidebarViewPrintifyProducts.style.display = "none";
   $("#navTasksBtn").classList.add("active");
   $("#navUploaderBtn").classList.remove("active");
   $("#navFileTreeBtn").classList.remove("active");
@@ -3365,6 +3369,7 @@ function showUploaderPanel(){
   sidebarViewArchiveTabs.style.display = "none";
   sidebarViewActivityIframe.style.display = "none";
   $("#navTasksBtn").classList.remove("active");
+  sidebarViewPrintifyProducts.style.display = "none";
   $("#navUploaderBtn").classList.add("active");
   $("#navFileTreeBtn").classList.remove("active");
   $("#navChatTabsBtn").classList.remove("active");
@@ -3380,6 +3385,7 @@ function showFileTreePanel(){
   sidebarViewChatTabs.style.display = "none";
   sidebarViewArchiveTabs.style.display = "none";
   sidebarViewActivityIframe.style.display = "none";
+  sidebarViewPrintifyProducts.style.display = "none";
   $("#navTasksBtn").classList.remove("active");
   $("#navUploaderBtn").classList.remove("active");
   $("#navFileTreeBtn").classList.add("active");
@@ -3399,6 +3405,7 @@ function showChatTabsPanel(){
   sidebarViewArchiveTabs.style.display = "none";
   $("#navTasksBtn").classList.remove("active");
   $("#navUploaderBtn").classList.remove("active");
+  sidebarViewPrintifyProducts.style.display = "none";
   $("#navFileTreeBtn").classList.remove("active");
   $("#navChatTabsBtn").classList.add("active");
   $("#navArchiveTabsBtn").classList.remove("active");
@@ -3414,6 +3421,7 @@ function showArchiveTabsPanel(){
   sidebarViewChatTabs.style.display = "none";
   sidebarViewActivityIframe.style.display = "none";
   sidebarViewArchiveTabs.style.display = "";
+  sidebarViewPrintifyProducts.style.display = "none";
   $("#navTasksBtn").classList.remove("active");
   $("#navUploaderBtn").classList.remove("active");
   $("#navFileTreeBtn").classList.remove("active");
@@ -3431,6 +3439,7 @@ function showActivityIframePanel(){
   sidebarViewChatTabs.style.display = "none";
   sidebarViewArchiveTabs.style.display = "none";
   sidebarViewActivityIframe.style.display = "";
+  sidebarViewPrintifyProducts.style.display = "none";
   $("#navTasksBtn").classList.remove("active");
   $("#navUploaderBtn").classList.remove("active");
   $("#navFileTreeBtn").classList.remove("active");
@@ -3438,6 +3447,25 @@ function showActivityIframePanel(){
   $("#navArchiveTabsBtn").classList.remove("active");
   $("#navActivityIframeBtn").classList.add("active");
   setSetting("last_sidebar_view", "activity");
+}
+
+function showPrintifyProductsPanel(){
+  sidebarViewTasks.style.display = "none";
+  sidebarViewUploader.style.display = "none";
+  sidebarViewFileTree.style.display = "none";
+  sidebarViewChatTabs.style.display = "none";
+  sidebarViewArchiveTabs.style.display = "none";
+  sidebarViewActivityIframe.style.display = "none";
+  sidebarViewPrintifyProducts.style.display = "";
+  $("#navTasksBtn").classList.remove("active");
+  $("#navUploaderBtn").classList.remove("active");
+  $("#navFileTreeBtn").classList.remove("active");
+  $("#navChatTabsBtn").classList.remove("active");
+  $("#navArchiveTabsBtn").classList.remove("active");
+  $("#navActivityIframeBtn").classList.remove("active");
+  $("#navPrintifyProductsBtn").classList.add("active");
+  setSetting("last_sidebar_view", "printify");
+  loadPrintifyProducts();
 }
 
 /**
@@ -3547,6 +3575,28 @@ async function loadFileTree(){
   }
 }
 
+async function loadPrintifyProducts(){
+  const tbl = document.querySelector("#printifyProductsTable tbody");
+  if(!tbl) return;
+  tbl.innerHTML = '<tr><td colspan="2">Loading...</td></tr>';
+  try {
+    const res = await fetch('/api/printify/products');
+    if(!res.ok) throw new Error('Failed to fetch');
+    const data = await res.json();
+    const products = data.data || data.products || [];
+    tbl.innerHTML = '';
+    for(const p of products){
+      const tr = document.createElement('tr');
+      const id = p.id || p.product_id || '';
+      const title = p.title || p.name || '';
+      tr.innerHTML = `<td>${id}</td><td>${title}</td>`;
+      tbl.appendChild(tr);
+    }
+  } catch(err){
+    tbl.innerHTML = `<tr><td colspan="2">Error: ${err.message}</td></tr>`;
+  }
+}
+
 const btnTasks = document.getElementById("navTasksBtn");
 const btnUploader = document.getElementById("navUploaderBtn");
 const btnChatTabs = document.getElementById("navChatTabsBtn");
@@ -3557,6 +3607,9 @@ const btnImageGenerator = document.getElementById("navImageGeneratorBtn");
 const btnPortfolio = document.getElementById("navPortfolioBtn");
 const btnJobs = document.getElementById("navJobsBtn");
 const btnPipelineQueue = document.getElementById("navPipelineQueueBtn");
+const btnPrintifyProducts = document.getElementById("navPrintifyProductsBtn");
+const btnPrintifyProductsIcon = document.getElementById("navPrintifyProductsIcon");
+const refreshPrintifyProductsBtn = document.getElementById("refreshPrintifyProductsBtn");
 const btnNexumChat = document.getElementById("navNexumChatBtn");
 const btnNexumTabs = document.getElementById("navNexumTabsBtn");
 // Icon buttons for collapsed sidebar
@@ -3600,6 +3653,8 @@ btnPipelineQueue?.addEventListener("click", () => {
 });
 btnNexumChat?.addEventListener("click", () => { window.location.href = btnNexumChat.dataset.url; });
 btnNexumTabs?.addEventListener("click", () => { window.location.href = btnNexumTabs.dataset.url; });
+btnPrintifyProducts?.addEventListener("click", showPrintifyProductsPanel);
+refreshPrintifyProductsBtn?.addEventListener("click", loadPrintifyProducts);
 
 // Icon button actions (expand sidebar then open panel or link)
 async function openPanelWithSidebar(fn){
@@ -3621,6 +3676,7 @@ btnPortfolioIcon?.addEventListener("click", () => {
 });
 btnJobsIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); const url = btnJobs.dataset.url; window.open(url, "_blank"); });
 btnPipelineQueueIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); const url = btnPipelineQueue.dataset.url; window.open(url, "_blank"); });
+btnPrintifyProductsIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); showPrintifyProductsPanel(); });
 btnNexumChatIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); window.location.href = btnNexumChat.dataset.url; });
 btnNexumTabsIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); window.location.href = btnNexumTabs.dataset.url; });
 // Thin sidebar icon actions
@@ -3819,6 +3875,7 @@ thinArchiveIcon?.addEventListener("touchstart", ev => {
     case "chatTabs": showChatTabsPanel(); break;
     case "archiveTabs": showArchiveTabsPanel(); break;
     case "activity": showActivityIframePanel(); break;
+    case "printify": showPrintifyProductsPanel(); break;
     default: showUploaderPanel(); break;
   }
 
