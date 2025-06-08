@@ -326,6 +326,7 @@ function updateAccountButton(info){
     if(favBtn){
       favBtn.style.display = info.id === 1 ? "inline-block" : "none";
     }
+    togglePortfolioMenu(info.id === 1);
   } else {
     accountInfo = null;
     btn.textContent = "Sign Up / Login";
@@ -333,6 +334,7 @@ function updateAccountButton(info){
     if(favBtn){
       favBtn.style.display = "none";
     }
+    togglePortfolioMenu(false);
   }
 }
 
@@ -2942,6 +2944,16 @@ function toggleJobsMenu(visible){
   btn.hidden = !visible;
   const li = btn.closest('li');
   if(li) li.style.display = visible ? "" : "none";
+}
+function togglePortfolioMenu(visible){
+  const btn = document.getElementById("navPortfolioBtn");
+  if(btn){
+    btn.hidden = !visible;
+    const li = btn.closest('li');
+    if(li) li.style.display = visible ? "" : "none";
+  }
+  const icon = document.getElementById("navPortfolioIcon");
+  if(icon) icon.style.display = visible ? "" : "none";
 }
 function toggleNewTabProjectField(visible){
   const lbl = document.getElementById("newTabProjectLabel");
