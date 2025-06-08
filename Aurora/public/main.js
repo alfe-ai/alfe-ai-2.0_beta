@@ -4605,6 +4605,12 @@ async function openGlobalAiSettings(){
   } catch(e){
     console.error("Error opening global AI settings:", e);
   } finally {
+    const saveBtn = document.getElementById("globalAiSettingsSaveBtn");
+    if(saveBtn){
+      const allowed = accountInfo && accountInfo.id === 1;
+      saveBtn.disabled = !allowed;
+      saveBtn.title = allowed ? "" : "Restricted";
+    }
     hidePageLoader();
     showModal(document.getElementById("globalAiSettingsModal"));
   }
