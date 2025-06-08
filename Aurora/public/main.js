@@ -3037,6 +3037,18 @@ function renderFileList(){
     const tdStatus = document.createElement("td");
     tdStatus.textContent = f.status || "";
     tdStatus.className = "img-status-cell";
+    const tdPortfolio = document.createElement("td");
+    const portCheck = document.createElement("input");
+    portCheck.type = "checkbox";
+    portCheck.checked = !!f.portfolio;
+    portCheck.addEventListener("change", async () => {
+      await fetch('/api/upload/portfolio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: f.name, portfolio: portCheck.checked })
+      });
+    });
+    tdPortfolio.appendChild(portCheck);
     const tdSize = document.createElement("td");
     tdSize.textContent = Math.round(f.size / 1024) + " KB";
     const tdMtime = document.createElement("td");
@@ -3069,6 +3081,7 @@ function renderFileList(){
     tr.appendChild(tdTitle);
     tr.appendChild(tdSource);
     tr.appendChild(tdStatus);
+    tr.appendChild(tdPortfolio);
     tr.appendChild(tdSize);
     tr.appendChild(tdMtime);
     tr.appendChild(tdAction);
