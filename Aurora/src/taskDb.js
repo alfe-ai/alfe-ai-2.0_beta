@@ -168,7 +168,8 @@ export default class TaskDB {
                                               image_status TEXT DEFAULT '',
                                               session_id TEXT DEFAULT '',
                                               image_uuid TEXT DEFAULT '',
-                                              publish_portfolio INTEGER DEFAULT 0
+                                              publish_portfolio INTEGER DEFAULT 0,
+                                              category_tags TEXT DEFAULT ''
       );
     `);
 
@@ -249,6 +250,12 @@ export default class TaskDB {
       console.debug("[TaskDB Debug] Added chat_pairs.publish_portfolio column");
     } catch(e) {
       //console.debug("[TaskDB Debug] chat_pairs.publish_portfolio column exists, skipping.", e.message);
+    }
+    try {
+      this.db.exec('ALTER TABLE chat_pairs ADD COLUMN category_tags TEXT DEFAULT "";');
+      console.debug("[TaskDB Debug] Added chat_pairs.category_tags column");
+    } catch(e) {
+      //console.debug("[TaskDB Debug] chat_pairs.category_tags column exists, skipping.", e.message);
     }
 
     this.db.exec(`
@@ -675,16 +682,16 @@ export default class TaskDB {
     });
   }
 
-  createImagePair(url, altText = '', chatTabId = 1, title = '', status = 'Generated', sessionId = '', ipAddress = '', model = '', publish = 0) {
+  createImagePair(url, altText = '', chatTabId = 1, title = '', status = 'Generated', sessionId = '', ipAddress = '', model = '', publish = 0, categoryTags = '') {
     const ts = new Date().toISOString();
     const uuid = randomUUID().split('-')[0];
     const { lastInsertRowid } = this.db.prepare(`
       INSERT INTO chat_pairs (
         user_text, ai_text, model, timestamp, ai_timestamp,
         chat_tab_id, system_context, token_info,
-        image_url, image_alt, image_title, image_status, session_id, ip_address, image_uuid, publish_portfolio
-      ) VALUES ('', '', @model, @ts, @ts, @chat_tab_id, '', NULL, @url, @alt, @title, @status, @session_id, @ip_address, @uuid, @publish)
-    `).run({ ts, chat_tab_id: chatTabId, url, alt: altText, title, status, session_id: sessionId, ip_address: ipAddress, uuid, model, publish: publish ? 1 : 0 });
+        image_url, image_alt, image_title, image_status, session_id, ip_address, image_uuid, publish_portfolio, category_tags
+      ) VALUES ('', '', @model, @ts, @ts, @chat_tab_id, '', NULL, @url, @alt, @title, @status, @session_id, @ip_address, @uuid, @publish, @category_tags)
+    `).run({ ts, chat_tab_id: chatTabId, url, alt: altText, title, status, session_id: sessionId, ip_address: ipAddress, uuid, model, publish: publish ? 1 : 0, category_tags: Array.isArray(categoryTags) ? categoryTags.join(',') : categoryTags });
     return lastInsertRowid;
   }
 
@@ -1015,7 +1022,7 @@ export default class TaskDB {
     const stmt = this.db.prepare("UPDATE chat_pairs SET image_status=? WHERE image_url=?");
     const info = stmt.run(status, url);
     if(info.changes === 0){
-      this.createImagePair(url, '', 1, '', status, '', '', '', 0);
+      this.createImagePair(url, '', 1, '', status, '', '', '', 0, '');
     }
   }
 
@@ -1023,8 +1030,22 @@ export default class TaskDB {
     const stmt = this.db.prepare("UPDATE chat_pairs SET publish_portfolio=? WHERE image_url=?");
     const info = stmt.run(flag ? 1 : 0, url);
     if(info.changes === 0){
-      this.createImagePair(url, '', 1, '', '', '', '', '', flag ? 1 : 0);
+      this.createImagePair(url, '', 1, '', '', '', '', '', flag ? 1 : 0, '');
     }
+  }
+
+  setImageCategoryTags(url, tags = []) {
+    const tagStr = Array.isArray(tags) ? tags.join(',') : tags;
+    const stmt = this.db.prepare("UPDATE chat_pairs SET category_tags=? WHERE image_url=?");
+    const info = stmt.run(tagStr, url);
+    if(info.changes === 0){
+      this.createImagePair(url, '', 1, '', '', '', '', '', 0, tagStr);
+    }
+  }
+
+  getImageCategoryTags(url) {
+    const row = this.db.prepare("SELECT category_tags FROM chat_pairs WHERE image_url=? ORDER BY id DESC LIMIT 1").get(url);
+    return row ? row.category_tags || '' : '';
   }
 
   isGeneratedImage(url) {

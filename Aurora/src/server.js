@@ -1905,7 +1905,8 @@ app.get("/api/upload/list", (req, res) => {
       const source = db.isGeneratedImage(`/uploads/${name}`) ? 'Generated' : 'Uploaded';
       const status = db.getImageStatusForUrl(`/uploads/${name}`) || (source === 'Generated' ? 'Generated' : 'Uploaded');
       const portfolio = db.getImagePortfolioForUrl(`/uploads/${name}`) ? 1 : 0;
-      files.push({ id, uuid, name, size, mtime, title, source, status, portfolio });
+      const tags = db.getImageCategoryTags(`/uploads/${name}`);
+      files.push({ id, uuid, name, size, mtime, title, source, status, portfolio, tags });
     }
     res.json(files);
   } catch (err) {
@@ -1977,6 +1978,21 @@ app.post("/api/upload/portfolio", (req, res) => {
     res.json({ success: true });
   } catch(err){
     console.error("[Server Debug] /api/upload/portfolio error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/api/upload/tags", (req, res) => {
+  try {
+    const { name, tags } = req.body || {};
+    if(!name){
+      return res.status(400).json({ error: "Missing name" });
+    }
+    const url = `/uploads/${name}`;
+    db.setImageCategoryTags(url, tags || "");
+    res.json({ success: true });
+  } catch(err){
+    console.error("[Server Debug] /api/upload/tags error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -2402,11 +2418,11 @@ app.get("/api/upscale/result", (req, res) => {
 // Generate an image using OpenAI's image API.
 app.post("/api/image/generate", async (req, res) => {
   try {
-    const { prompt, n, size, model, provider, tabId, sessionId } = req.body || {};
+    const { prompt, n, size, model, provider, tabId, sessionId, categoryTags } = req.body || {};
     const ipAddress = (req.headers["x-forwarded-for"] || req.ip || "").split(",")[0].trim();
     console.debug(
       "[Server Debug] /api/image/generate =>",
-      JSON.stringify({ prompt, n, size, model, provider, tabId, sessionId })
+      JSON.stringify({ prompt, n, size, model, provider, tabId, sessionId, categoryTags })
     );
     const account = sessionId ? db.getAccountBySession(sessionId) : null;
     if (!prompt) {
@@ -2480,7 +2496,7 @@ app.post("/api/image/generate", async (req, res) => {
       const tab = parseInt(tabId, 10) || 1;
       const imageTitle = await deriveImageTitle(prompt);
       const modelId = model ? `stable-diffusion/${model}` : 'stable-diffusion';
-      db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated', sessionId, ipAddress, modelId, 1);
+      db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated', sessionId, ipAddress, modelId, 1, categoryTags || '');
       return res.json({ success: true, url: localUrl, title: imageTitle });
     }
 
@@ -2572,7 +2588,7 @@ app.post("/api/image/generate", async (req, res) => {
     const tab = parseInt(tabId, 10) || 1;
     const imageTitle = await deriveImageTitle(prompt, openaiClient);
     const modelId = `openai/${modelName}`;
-    db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated', sessionId, ipAddress, modelId, 1);
+    db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated', sessionId, ipAddress, modelId, 1, categoryTags || '');
 
     res.json({ success: true, url: localUrl, title: imageTitle });
   } catch (err) {
