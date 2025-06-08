@@ -80,6 +80,10 @@
         const sentinel = document.getElementById('sentinel');
         let loading = false;
         let observer;
+        function sentinelInView(){
+          const rect = sentinel.getBoundingClientRect();
+          return rect.top <= (window.innerHeight + 100);
+        }
 
         function renderNext(){
           if(loading) return;
@@ -107,6 +111,9 @@
                 loading = false;
                 if(currentIndex >= allImages.length){
                   observer.disconnect();
+                } else if(sentinelInView()){
+                  // if user hasn't scrolled and sentinel is still visible
+                  renderNext();
                 }
               }
             };
