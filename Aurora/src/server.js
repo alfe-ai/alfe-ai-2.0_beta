@@ -315,8 +315,11 @@ app.use('/api/printify/updateProduct', (req, res, next) => {
   if (!req.body.productId?.match(/^[0-9a-f]{24}$/i)) {
     return res.status(400).json({ error: 'Invalid product ID format' });
   }
-  if (!Array.isArray(req.body.variants)) {
-    return res.status(400).json({ error: 'Variants must be an array' });
+  if (
+    req.body.variants !== undefined &&
+    !Array.isArray(req.body.variants)
+  ) {
+    return res.status(400).json({ error: 'Variants must be an array if provided' });
   }
   next();
 });
@@ -2171,7 +2174,7 @@ app.post("/api/upscale", async (req, res) => {
 // Trigger the Printify submission script for a given file.
 app.post("/api/printify", async (req, res) => {
   try {
-    const { file, productId } = req.body || {};
+    const { file, productId, variants } = req.body || {};
     console.debug("[Server Debug] /api/printify called with file =>", file);
     if (!file) {
       console.debug("[Server Debug] /api/printify => missing 'file' in request body");
@@ -2255,8 +2258,8 @@ app.post("/api/printify", async (req, res) => {
       }
       try {
         const url = `/uploads/${file}`;
-        if (productId) {
-          await updatePrintifyProduct(productId);
+        if (productId && Array.isArray(variants)) {
+          await updatePrintifyProduct(productId, variants);
         }
         db.setImageStatus(url, 'Printify API Updates');
       } catch (e) {
@@ -2273,11 +2276,16 @@ app.post("/api/printify", async (req, res) => {
 
 app.post("/api/printify/updateProduct", async (req, res) => {
   try {
-    const { productId, file } = req.body || {};
+    const { productId, variants, file } = req.body || {};
     if (!productId) {
       return res.status(400).json({ error: "Missing productId" });
     }
-    await updatePrintifyProduct(productId);
+    if (variants && !Array.isArray(variants)) {
+      return res.status(400).json({ error: "Variants must be an array" });
+    }
+    if (Array.isArray(variants)) {
+      await updatePrintifyProduct(productId, variants);
+    }
     if (file) {
       try {
         const url = path.isAbsolute(file) ? `/uploads/${path.basename(file)}` : `/uploads/${file}`;
