@@ -7,6 +7,7 @@
 </head>
 <body style="padding:1rem;">
   <h2>Image Design Pipeline</h2>
+  <p><button id="backToAuroraBtn">&larr; Back to Aurora</button></p>
   <div id="errorMessage" style="color:red;margin-bottom:0.5rem;"></div>
   <ul id="stageList"></ul>
   <div id="imageTabs" style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
@@ -52,6 +53,9 @@
 
     const params = new URLSearchParams(window.location.search);
     let file = params.get('file');
+    document.getElementById('backToAuroraBtn').addEventListener('click', () => {
+      window.location.href = '/';
+    });
     const idParam = params.get('id');
     const errorEl = document.getElementById('errorMessage');
     const stageParam = parseInt(params.get('stage'));
