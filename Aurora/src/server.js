@@ -869,7 +869,8 @@ app.post("/api/login", (req, res) => {
       return res.status(400).json({ error: "invalid credentials" });
     }
 
-    if (account.totp_secret) {
+    const disable2fa = process.env.DISABLE_2FA === 'true' || process.env.DISABLE_2FA === '1';
+    if (account.totp_secret && !disable2fa) {
       if (!token) {
         return res.status(400).json({ error: "totp required" });
       }
