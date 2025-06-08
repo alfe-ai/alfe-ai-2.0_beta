@@ -30,13 +30,33 @@
       transform:scale(1.05);
     }
     a { color:#0ff; text-decoration:none; }
+    #loadingIndicator {
+      display:none;
+      position:fixed;
+      bottom:10px;
+      left:50%;
+      transform:translateX(-50%);
+      background:rgba(0,255,255,0.8);
+      color:#000;
+      padding:0.5rem 1rem;
+      border-radius:4px;
+      z-index:1000;
+    }
   </style>
 </head>
 <body>
   <h1>Portfolio</h1>
   <div id="grid" class="grid"></div>
+  <div id="loadingIndicator">Loading...</div>
   <script src="/session.js"></script>
   <script>
+    function showLoader(){
+      document.getElementById('loadingIndicator').style.display = 'block';
+    }
+    function hideLoader(){
+      document.getElementById('loadingIndicator').style.display = 'none';
+    }
+
     async function loadPortfolio(){
       try {
         const resp = await fetch('/api/upload/list');
@@ -53,6 +73,9 @@
 
         function renderNext(){
           const slice = allImages.slice(currentIndex, currentIndex + batchSize);
+          if(slice.length === 0) return;
+          showLoader();
+          let loaded = 0;
           slice.forEach(f => {
             const wrap = document.createElement('div');
             wrap.className = 'grid-item';
@@ -62,6 +85,12 @@
             const img = document.createElement('img');
             img.src = `/uploads/${encodeURIComponent(f.name)}`;
             img.alt = f.title || f.name;
+            img.onload = img.onerror = () => {
+              loaded++;
+              if(loaded === slice.length){
+                hideLoader();
+              }
+            };
             link.appendChild(img);
             wrap.appendChild(link);
             grid.appendChild(wrap);
