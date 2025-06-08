@@ -18,6 +18,7 @@
   <div id="resolutionDisplay" style="margin-top:0.5rem;"></div>
   <div id="statusControl" style="margin-top:0.5rem;"></div>
   <div id="portfolioControl" style="margin-top:0.5rem;"></div>
+  <div id="productIdDisplay" style="margin-top:0.5rem;">Printify Product ID: <span id="productIdSpan"></span></div>
   <h3>Jobs for this Image</h3>
   <table id="jobsTable" style="width:100%;border-collapse:collapse;">
     <thead>
@@ -142,6 +143,29 @@
         if(portfolioCheck && portfolioCheck.checked !== current) portfolioCheck.checked = current;
       }catch(e){
         console.error('Failed to check portfolio =>', e);
+      }
+    }
+
+    async function loadProductId(){
+      try{
+        const res = await fetch('/api/upload/list?sessionId=' + encodeURIComponent(sessionId));
+        const list = await res.json();
+        const item = list.find(f => f.name === file);
+        return item ? (item.productId || '') : '';
+      }catch(err){
+        console.error('Failed to load product ID =>', err);
+        return '';
+      }
+    }
+
+    async function checkProductId(){
+      if(!file) return;
+      try{
+        const current = await loadProductId();
+        const span = document.getElementById('productIdSpan');
+        if(span) span.textContent = current || '(none)';
+      }catch(e){
+        console.error('Failed to check product ID =>', e);
       }
     }
 
@@ -423,6 +447,7 @@
           if(res.ok && data.updated){
             terminalEl.textContent = 'Printify product updated.';
             await checkStatus();
+            await checkProductId();
           } else {
             terminalEl.textContent = data.error || 'Printify API update failed.';
           }
@@ -490,6 +515,8 @@
       setInterval(checkStatus, 5000);
       checkPortfolio();
       setInterval(checkPortfolio, 5000);
+      checkProductId();
+      setInterval(checkProductId, 5000);
     } else {
       upscaleBtn.disabled = true;
       printifyBtn.disabled = true;

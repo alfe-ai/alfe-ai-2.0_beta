@@ -1905,7 +1905,8 @@ app.get("/api/upload/list", (req, res) => {
       const source = db.isGeneratedImage(`/uploads/${name}`) ? 'Generated' : 'Uploaded';
       const status = db.getImageStatusForUrl(`/uploads/${name}`) || (source === 'Generated' ? 'Generated' : 'Uploaded');
       const portfolio = db.getImagePortfolioForUrl(`/uploads/${name}`) ? 1 : 0;
-      files.push({ id, uuid, name, size, mtime, title, source, status, portfolio });
+      const productId = db.getPrintifyProductIdForUrl(`/uploads/${name}`);
+      files.push({ id, uuid, name, size, mtime, title, source, status, portfolio, productId });
     }
     res.json(files);
   } catch (err) {
@@ -2213,9 +2214,10 @@ app.post("/api/printify", async (req, res) => {
         clearTimeout(killTimer);
       }
       try {
-        const url = `/uploads/${file}`;
+        const url = path.isAbsolute(file) ? `/uploads/${path.basename(file)}` : `/uploads/${file}`;
         if (productId) {
           await updatePrintifyProduct(productId);
+          db.setPrintifyProductId(url, productId);
         }
         db.setImageStatus(url, 'Printify API Updates');
       } catch (e) {
@@ -2241,6 +2243,7 @@ app.post("/api/printify/updateProduct", async (req, res) => {
       try {
         const url = path.isAbsolute(file) ? `/uploads/${path.basename(file)}` : `/uploads/${file}`;
         db.setImageStatus(url, "Printify API Updates");
+        db.setPrintifyProductId(url, productId);
       } catch (e) {
         console.error("[Server Debug] Failed to set status after printify API update =>", e);
       }
