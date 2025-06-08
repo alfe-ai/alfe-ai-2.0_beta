@@ -458,7 +458,7 @@ if (whitelistIp) {
         .trim() || req.connection.remoteAddress;
 
     const isImage = /\.(png|jpe?g|gif|webp|svg|ico)$/i.test(req.path);
-    const allowedPaths = ["/portfolio.html"];
+    const allowedPaths = ["/portfolio.html", "/api/upload/list"];
     if (isImage || req.path.startsWith("/uploads") || allowedPaths.includes(req.path)) {
       return next();
     }
