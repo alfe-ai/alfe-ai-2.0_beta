@@ -1863,7 +1863,8 @@ app.get("/api/upload/list", (req, res) => {
       const uuid = db.getImageUuidForUrl(`/uploads/${name}`);
       const source = db.isGeneratedImage(`/uploads/${name}`) ? 'Generated' : 'Uploaded';
       const status = db.getImageStatusForUrl(`/uploads/${name}`) || (source === 'Generated' ? 'Generated' : 'Uploaded');
-      files.push({ id, uuid, name, size, mtime, title, source, status });
+      const portfolio = db.getImagePortfolioForUrl(`/uploads/${name}`);
+      files.push({ id, uuid, name, size, mtime, title, source, status, portfolio });
     }
     res.json(files);
   } catch (err) {
@@ -2315,11 +2316,11 @@ app.get("/api/upscale/result", (req, res) => {
 // Generate an image using OpenAI's image API.
 app.post("/api/image/generate", async (req, res) => {
   try {
-    const { prompt, n, size, model, provider, tabId, sessionId } = req.body || {};
+    const { prompt, n, size, model, provider, tabId, sessionId, portfolio = 1 } = req.body || {};
     const ipAddress = (req.headers["x-forwarded-for"] || req.ip || "").split(",")[0].trim();
     console.debug(
       "[Server Debug] /api/image/generate =>",
-      JSON.stringify({ prompt, n, size, model, provider, tabId, sessionId })
+      JSON.stringify({ prompt, n, size, model, provider, tabId, sessionId, portfolio })
     );
     const account = sessionId ? db.getAccountBySession(sessionId) : null;
     if (!prompt) {
@@ -2393,7 +2394,7 @@ app.post("/api/image/generate", async (req, res) => {
       const tab = parseInt(tabId, 10) || 1;
       const imageTitle = await deriveImageTitle(prompt);
       const modelId = model ? `stable-diffusion/${model}` : 'stable-diffusion';
-      db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated', sessionId, ipAddress, modelId);
+      db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated', sessionId, ipAddress, modelId, portfolio ? 1 : 0);
       return res.json({ success: true, url: localUrl, title: imageTitle });
     }
 
@@ -2485,7 +2486,7 @@ app.post("/api/image/generate", async (req, res) => {
     const tab = parseInt(tabId, 10) || 1;
     const imageTitle = await deriveImageTitle(prompt, openaiClient);
     const modelId = `openai/${modelName}`;
-    db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated', sessionId, ipAddress, modelId);
+    db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated', sessionId, ipAddress, modelId, portfolio ? 1 : 0);
 
     res.json({ success: true, url: localUrl, title: imageTitle });
   } catch (err) {
