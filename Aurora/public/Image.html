@@ -420,7 +420,7 @@
         if(priceStr === null) return;
         const qtyStr = prompt('Enter inventory quantity for all variants:', '20');
         if(qtyStr === null) return;
-        const price = parseFloat(priceStr) || 0;
+        const price = Math.round((parseFloat(priceStr) || 0) * 100);
         const quantity = parseInt(qtyStr, 10) || 0;
         terminalEl.textContent = '';
         try {
