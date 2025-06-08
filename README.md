@@ -31,6 +31,10 @@ You can quickly obtain free certificates from Let's Encrypt by running the
 `setup_certbot.sh` script. It installs Certbot and generates the key and
 certificate files for the domain you specify.
 
+After obtaining the certificates, run `setup_ssl_permissions.sh <domain> [user]`
+to grant the specified user (default: `admin`) read access to the key and
+certificate so Aurora can run without root privileges.
+
 ### Listening on port 443 without root
 
 The Aurora server reads its port from the `AURORA_PORT` environment variable

@@ -38,7 +38,8 @@ npm start
 | `WHITELIST_IP` | (Optional) Only allow UI access from this IP |
 
 Run `../setup_certbot.sh <domain> <email>` to quickly generate these files with
-Let's Encrypt.
+Let's Encrypt. After generation, execute `../setup_ssl_permissions.sh <domain> [user]`
+so the specified user can access the key and certificate without root.
 
 ### Obtaining API Keys
 1. **GitHub Token**:  
