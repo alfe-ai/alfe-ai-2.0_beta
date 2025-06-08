@@ -236,6 +236,10 @@ function showSignupForm(){
   const signup = document.getElementById('signupForm');
   if(login) login.style.display = 'none';
   if(signup) signup.style.display = 'block';
+  const loginTab = document.getElementById('loginTab');
+  const signupTab = document.getElementById('signupTab');
+  if(loginTab) loginTab.classList.remove('active');
+  if(signupTab) signupTab.classList.add('active');
 }
 
 function showLoginForm(){
@@ -243,6 +247,10 @@ function showLoginForm(){
   const signup = document.getElementById('signupForm');
   if(signup) signup.style.display = 'none';
   if(login) login.style.display = 'block';
+  const loginTab = document.getElementById('loginTab');
+  const signupTab = document.getElementById('signupTab');
+  if(signupTab) signupTab.classList.remove('active');
+  if(loginTab) loginTab.classList.add('active');
 }
 
 function openSignupModal(e){
@@ -312,7 +320,7 @@ function updateAccountButton(info){
     }
   } else {
     accountInfo = null;
-    btn.textContent = "Sign Up/Login";
+    btn.textContent = "Sign Up / Login";
     btn.addEventListener("click", openLoginModal);
     if(favBtn){
       favBtn.style.display = "none";
@@ -1766,8 +1774,13 @@ if (signupSubmitBtn) {
   signupSubmitBtn.addEventListener("click", async () => {
     const email = document.getElementById("signupEmail").value.trim();
     const password = document.getElementById("signupPassword").value;
+    const confirm = document.getElementById("signupConfirm")?.value;
     if(!email || !password){
       showToast("Email and password required");
+      return;
+    }
+    if(confirm !== undefined && password !== confirm){
+      showToast("Passwords do not match");
       return;
     }
     try {
@@ -1806,6 +1819,16 @@ if (showSignupBtn) {
 const showLoginBtn = document.getElementById("showLoginBtn");
 if (showLoginBtn) {
   showLoginBtn.addEventListener("click", showLoginForm);
+}
+
+const loginTabBtn = document.getElementById("loginTab");
+if (loginTabBtn) {
+  loginTabBtn.addEventListener("click", showLoginForm);
+}
+
+const signupTabBtn = document.getElementById("signupTab");
+if (signupTabBtn) {
+  signupTabBtn.addEventListener("click", showSignupForm);
 }
 
 const loginSubmitBtn = document.getElementById("loginSubmitBtn");
