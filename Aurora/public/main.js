@@ -3574,7 +3574,10 @@ btnArchiveTabs.addEventListener("click", showArchiveTabsPanel);
 btnActivityIframe.addEventListener("click", showActivityIframePanel);
 btnAiModels?.addEventListener("click", () => { window.location.href = btnAiModels.dataset.url; });
 btnImageGenerator?.addEventListener("click", () => { window.location.href = btnImageGenerator.dataset.url; });
-btnPortfolio?.addEventListener("click", () => { window.location.href = btnPortfolio.dataset.url; });
+btnPortfolio?.addEventListener("click", () => {
+  const url = btnPortfolio.dataset.url;
+  window.open(url, "_blank");
+});
 btnJobs?.addEventListener("click", () => {
   const url = btnJobs.dataset.url;
   window.open(url, "_blank");
@@ -3599,7 +3602,11 @@ btnFileTreeIcon?.addEventListener("click", () => openPanelWithSidebar(showFileTr
 btnActivityIframeIcon?.addEventListener("click", () => openPanelWithSidebar(showActivityIframePanel));
 btnAiModelsIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); window.location.href = btnAiModels.dataset.url; });
 btnImageGeneratorIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); window.location.href = btnImageGenerator.dataset.url; });
-btnPortfolioIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); window.location.href = btnPortfolio.dataset.url; });
+btnPortfolioIcon?.addEventListener("click", () => {
+  if(!sidebarVisible) toggleSidebar();
+  const url = btnPortfolio.dataset.url;
+  window.open(url, "_blank");
+});
 btnJobsIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); const url = btnJobs.dataset.url; window.open(url, "_blank"); });
 btnPipelineQueueIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); const url = btnPipelineQueue.dataset.url; window.open(url, "_blank"); });
 btnNexumChatIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); window.location.href = btnNexumChat.dataset.url; });
