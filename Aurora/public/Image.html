@@ -412,12 +412,27 @@
       printifyApiBtn.addEventListener('click', async () => {
         const productId = prompt('Enter Printify Product ID:');
         if(!productId) return;
+        const priceStr = prompt('Enter new price for all variants:', '19.44');
+        if(priceStr === null) return;
+        const qtyStr = prompt('Enter inventory quantity for all variants:', '20');
+        if(qtyStr === null) return;
+        const price = parseFloat(priceStr) || 0;
+        const quantity = parseInt(qtyStr, 10) || 0;
         terminalEl.textContent = '';
         try {
+          const vRes = await fetch(`/api/printify/product/${encodeURIComponent(productId)}`);
+          const vData = await vRes.json();
+          if(!vRes.ok){
+            terminalEl.textContent = vData.error || 'Failed to load product.';
+            return;
+          }
+          const variants = Array.isArray(vData.variants)
+            ? vData.variants.map(v => ({ id: v.id, price, inventory_quantity: quantity }))
+            : [];
           const res = await fetch('/api/printify/updateProduct', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ productId, file: upscaledPath || upscaledFile || file })
+            body: JSON.stringify({ productId, variants, file: upscaledPath || upscaledFile || file })
           });
           const data = await res.json().catch(() => ({}));
           if(res.ok && data.updated){
