@@ -74,7 +74,6 @@ async function main() {
         } …`
     );
 
-    //const issues = client.fetchOpenIssues(label?.trim() || undefined);
     const issues = null;
 
     const resolvedIssues = Array.isArray(issues) ? issues : [];
@@ -96,10 +95,6 @@ async function main() {
     resolvedIssues.forEach((issue) => queue.enqueue(issue));
 
     console.log(`[TaskQueue] ${queue.size()} task(s) in queue.`);
-    // Intentionally omit printing the full issue list to keep logs concise
-
-    // Debug: show DB snapshot (can be removed)
-    // console.debug("[TaskQueue] Current DB state:", db.dump());
   } catch (err) {
     console.error("Fatal:", err.message);
     process.exit(1);
@@ -168,7 +163,6 @@ const jobManager = new JobManager();
 
 /**
  * Returns a configured OpenAI client, depending on "ai_service" setting.
- * Added checks to help diagnose missing or invalid API keys.
  */
 function getOpenAiClient() {
   let service = db.getSetting("ai_service") || "openrouter";
@@ -177,16 +171,12 @@ function getOpenAiClient() {
 
   console.debug("[Server Debug] Creating OpenAI client with service =", service);
 
-  // Removed forced override for deepseek models.
-
   if (service === "openrouter") {
     if (!openRouterKey) {
       throw new Error(
           "Missing OPENROUTER_API_KEY environment variable, please set it before using OpenRouter."
       );
     }
-    // Use openrouter.ai with app name and referer
-    console.debug("[Server Debug] Using openrouter.ai with provided OPENROUTER_API_KEY.");
     return new OpenAI({
       apiKey: openRouterKey,
       baseURL: "https://openrouter.ai/api/v1",
@@ -201,8 +191,6 @@ function getOpenAiClient() {
           "Missing OPENAI_API_KEY environment variable, please set it before using OpenAI."
       );
     }
-    // Default to openai
-    console.debug("[Server Debug] Using openai with provided OPENAI_API_KEY.");
     return new OpenAI({
       apiKey: openAiKey
     });
@@ -216,7 +204,6 @@ function parseProviderModel(model) {
   } else if (model.startsWith("openrouter/")) {
     return { provider: "openrouter", shortModel: model.replace(/^openrouter\//, "") };
   } else if (model.startsWith("deepseek/")) {
-    // Changed to treat deepseek/ as openrouter
     return { provider: "openrouter", shortModel: model.replace(/^deepseek\//, "") };
   }
   return { provider: "Unknown", shortModel: model };
@@ -275,7 +262,7 @@ async function updatePrintifyProduct(productId) {
     id: v.id,
     price: 19.44,
   }));
-  const variantsUrl = `https://api.printify.com/v1/shops/${shopId}/products/${productId}/variants.json`;
+  const variantsUrl = `https://api.printify.com/v1/shops/${shopId}/products/${productId}.json`;
   await axios.put(variantsUrl, { variants }, { headers });
 }
 
@@ -384,12 +371,12 @@ async function deriveTabTitle(message, client = null) {
 
 async function generateInitialGreeting(type, client = null) {
   const openAiClient = getOpenAiClient();
-  const storedModel = db.getSetting('ai_model') || 'deepseek/deepseek-chat';
+  const storedModel = db.getSetting("ai_model") || "deepseek/deepseek-chat";
   function stripModelPrefix(m) {
-    if (!m) return 'deepseek/deepseek-chat';
-    if (m.startsWith('openai/')) return m.substring('openai/'.length);
-    if (m.startsWith('openrouter/')) return m.substring('openrouter/'.length);
-    if (m.startsWith('deepseek/')) return m.substring('deepseek/'.length);
+    if (!m) return "deepseek/deepseek-chat";
+    if (m.startsWith("openai/")) return m.substring("openai/".length);
+    if (m.startsWith("openrouter/")) return m.substring("openrouter/".length);
+    if (m.startsWith("deepseek/")) return m.substring("deepseek/".length);
     return m;
   }
   const modelForOpenAI = stripModelPrefix(storedModel);
@@ -426,7 +413,7 @@ async function generateInitialGreeting(type, client = null) {
 async function createInitialTabMessage(tabId, type, sessionId = '') {
   const greeting = await generateInitialGreeting(type);
   const pairId = db.createChatPair('', tabId, '', sessionId);
-  const defaultModel = db.getSetting('ai_model') || 'deepseek/deepseek-chat';
+  const defaultModel = db.getSetting("ai_model") || 'deepseek/deepseek-chat';
   db.finalizeChatPair(pairId, greeting, defaultModel, new Date().toISOString(), null);
 }
 
@@ -579,7 +566,7 @@ app.get("/api/projectBranches", (req, res) => {
 app.post("/api/projectBranches", (req, res) => {
   console.debug("[Server Debug] POST /api/projectBranches called.");
   try {
-    const { data } = req.body; // expects { project, base_branch }
+    const { data } = req.body;
     if (!Array.isArray(data)) {
       console.debug("[Server Debug] Provided data is not an array =>", data);
       return res.status(400).json({ error: "Must provide an array of branch data." });
@@ -1011,11 +998,6 @@ app.post("/api/logout", (req, res) => {
     const sessionId = getSessionIdFromRequest(req);
     if (sessionId) {
       const account = db.getAccountBySession(sessionId);
-      // Preserve the account's session to allow chats to be restored on
-      // next login. Removing the session ID here prevents the user from
-      // recovering previous conversations after logging back in.
-      // The client clears its cookies, effectively logging out without
-      // deleting the stored session.
       if (account) console.debug("[Server Debug] Keeping session", sessionId, "for account", account.id);
     }
     res.json({ success: true });
@@ -1105,11 +1087,6 @@ app.get("/api/activity", (req, res) => {
   }
 });
 
-/*
-  We combine both OpenAI and OpenRouter models (if available),
-  prefixing IDs with "openai/" or "openrouter/",
-  plus a static set of DeepSeek models for demonstration.
-*/
 app.get("/api/ai/models", async (req, res) => {
   console.debug("[Server Debug] GET /api/ai/models called.");
 
@@ -1208,7 +1185,6 @@ app.get("/api/ai/models", async (req, res) => {
     const openAiKey = process.env.OPENAI_API_KEY || "";
     const openRouterKey = process.env.OPENROUTER_API_KEY || "";
 
-    // If we have OpenAI key, fetch from OpenAI
     if (openAiKey) {
       try {
         console.debug("[Server Debug] Fetching OpenAI model list...");
@@ -1234,7 +1210,6 @@ app.get("/api/ai/models", async (req, res) => {
       }
     }
 
-    // If we have OpenRouter key, fetch from OpenRouter
     if (openRouterKey) {
       try {
         console.debug("[Server Debug] Fetching OpenRouter model list...");
@@ -1981,7 +1956,6 @@ app.post("/api/upload/portfolio", (req, res) => {
   }
 });
 
-// Upload images, run script to get description, return it as JSON.
 app.post("/api/chat/image", upload.single("imageFile"), async (req, res) => {
   try {
     if(!req.file){
@@ -2009,8 +1983,6 @@ app.post("/api/chat/image", upload.single("imageFile"), async (req, res) => {
   }
 });
 
-// Trigger the Leonardo upscaler script for a given uploaded file and stream
-// the script output back to the client.
 app.post("/api/upscale", async (req, res) => {
   try {
     const { file, dbId: providedDbId } = req.body || {};
@@ -2076,7 +2048,7 @@ app.post("/api/upscale", async (req, res) => {
 
         const dbId = providedDbId || db.getImageIdForUrl(originalUrl);
 
-        // ----- Run RIBT background removal on the upscaled result -----
+        // RIBT background removal step
         const ribtScript =
           process.env.RIBT_SCRIPT_PATH ||
           '/mnt/part5/dot_fayra/Whimsical/git/LogisticaRIBT/run.sh';
@@ -2099,7 +2071,6 @@ app.post("/api/upscale", async (req, res) => {
             console.debug('[Server Debug] Copied RIBT output to =>', dest);
             db.setUpscaledImage(`${originalUrl}-nobg`, dest);
 
-            // ----- Copy RIBT output for final upscale -----
             const upscaleName = `${dbId || base}_upscale${ext}`;
             const upscaleDest = path.join(uploadsDir, upscaleName);
             const ribtCopySrc = ribtOutput;
@@ -2127,7 +2098,6 @@ app.post("/api/upscale", async (req, res) => {
   }
 });
 
-// Trigger the Printify submission script for a given file.
 app.post("/api/printify", async (req, res) => {
   try {
     const { file, productId } = req.body || {};
@@ -2172,17 +2142,14 @@ app.post("/api/printify", async (req, res) => {
     const job = jobManager.createJob(scriptPath, [filePath], { cwd: scriptCwd, file });
     console.debug("[Server Debug] /api/printify => job started", job.id);
 
-    // Detect the "All steps completed" message and kill the job 15s later.
     const doneRegex = /All steps completed/i;
     let killTimer = null;
     const logListener = (chunk) => {
       if (doneRegex.test(chunk) && job.child && !killTimer) {
-        // Wait 15 seconds before killing, replicating a shorter browser hold time
         killTimer = setTimeout(() => {
           if (job.child) {
             try {
-              job.child.kill(); // send SIGTERM first
-              // Force kill after 5s if the process doesn't exit
+              job.child.kill();
               setTimeout(() => {
                 if (job.child && !job.child.killed) {
                   try {
@@ -2191,7 +2158,6 @@ app.post("/api/printify", async (req, res) => {
                     console.error('[Server Debug] SIGKILL failed =>', err);
                   }
                 }
-                // Fallback: mark job finished if still running
                 setTimeout(() => {
                   if (job.status === 'running') {
                     jobManager.forceFinishJob(job.id);
@@ -2314,7 +2280,6 @@ app.delete("/api/pipelineQueue/:id", (req, res) => {
   res.json({ removed: true });
 });
 
-// Check if an upscaled version of a file exists.
 app.get("/api/upscale/result", (req, res) => {
   try {
     const file = req.query.file;
@@ -2323,7 +2288,6 @@ app.get("/api/upscale/result", (req, res) => {
     const ext = path.extname(file);
     const base = path.basename(file, ext);
     const candidates = [
-      // DB-based naming for final upscale
       ...(function() {
         const id = db.getImageIdForUrl(`/uploads/${file}`);
         return id ? [path.join(uploadsDir, `${id}_upscale${ext}`)] : [];
@@ -2334,17 +2298,14 @@ app.get("/api/upscale/result", (req, res) => {
       path.join(uploadsDir, `${base}-upscaled${ext}`),
     ];
     const nobgCandidates = [
-      // DB-based naming
       ...(function() {
         const id = db.getImageIdForUrl(`/uploads/${file}`);
         return id ? [path.join(uploadsDir, `${id}_nobg${ext}`)] : [];
       })(),
-      // Common naming patterns
       path.join(uploadsDir, `${base}_4096_nobg${ext}`),
       path.join(uploadsDir, `${base}-4096-nobg${ext}`),
       path.join(uploadsDir, `${base}_upscaled_nobg${ext}`),
       path.join(uploadsDir, `${base}-upscaled-nobg${ext}`),
-      // Alternate "no_bg"/"no-bg" variants
       path.join(uploadsDir, `${base}_4096_no_bg${ext}`),
       path.join(uploadsDir, `${base}-4096-no_bg${ext}`),
       path.join(uploadsDir, `${base}_4096-no-bg${ext}`),
@@ -2399,7 +2360,6 @@ app.get("/api/upscale/result", (req, res) => {
   }
 });
 
-// Generate an image using OpenAI's image API.
 app.post("/api/image/generate", async (req, res) => {
   try {
     const { prompt, n, size, model, provider, tabId, sessionId } = req.body || {};
@@ -2491,7 +2451,6 @@ app.post("/api/image/generate", async (req, res) => {
         .json({ error: "OPENAI_API_KEY environment variable not configured" });
     }
 
-    // Always use ChatGPT/DALL-E for image generation
     const openaiClient = new OpenAI({ apiKey: openAiKey });
 
     let modelName = (model || "dall-e-3").toLowerCase();
@@ -2501,9 +2460,9 @@ app.post("/api/image/generate", async (req, res) => {
     }
 
     if (modelName === "dall-e-3") {
-      countParsed = 1; // API restriction
+      countParsed = 1;
     } else {
-      countParsed = Math.min(countParsed, 4); // limit for dall-e-2
+      countParsed = Math.min(countParsed, 4);
     }
 
     console.debug(
@@ -2521,7 +2480,6 @@ app.post("/api/image/generate", async (req, res) => {
         response_format: "url"
       });
     } catch (err) {
-      // If DALLE-3 request fails due to user error, try DALLE-2 as a fallback
       if (
         modelName === "dall-e-3" &&
         err?.type === "image_generation_user_error"
@@ -2534,7 +2492,6 @@ app.post("/api/image/generate", async (req, res) => {
             size: "1024x1024",
             response_format: "url"
           });
-          // indicate fallback
           modelName = "dall-e-2";
         } catch (err2) {
           throw err2;
@@ -2550,7 +2507,6 @@ app.post("/api/image/generate", async (req, res) => {
       return res.status(502).json({ error: "Received empty response from AI service" });
     }
 
-    // Download the generated image and save locally
     let localUrl = first;
     try {
       const resp = await axios.get(first, { responseType: "arraybuffer" });
@@ -2590,13 +2546,11 @@ app.post("/api/image/generate", async (req, res) => {
   }
 });
 
-// Verbose logging for Image page
 app.get("/Image.html", (req, res) => {
   console.debug("[Server Debug] GET /Image.html =>", JSON.stringify(req.query));
   res.sendFile(path.join(__dirname, "../public/Image.html"));
 });
 
-// Default landing page
 app.get("/", (req, res) => {
   const sessionId = getSessionIdFromRequest(req);
   try {
@@ -2639,12 +2593,10 @@ app.get("/beta", (req, res) => {
   res.redirect("/");
 });
 
-// Serve aurora UI for per-tab URLs
 app.get("/chat/:tabUuid", (req, res) => {
   console.debug(`[Server Debug] GET /chat/${req.params.tabUuid} => Serving aurora.html`);
   res.sendFile(path.join(__dirname, "../public/aurora.html"));
 });
-
 
 app.get("/test_projects", (req, res) => {
   console.debug("[Server Debug] GET /test_projects => Serving test_projects.html");
@@ -2790,7 +2742,6 @@ app.post("/api/projects/rename", (req, res) => {
   }
 });
 
-// New route to toggle favorites
 app.post("/api/ai/favorites", (req, res) => {
   try {
     const sessionId = getSessionIdFromRequest(req);
@@ -2972,7 +2923,6 @@ const PORT =
 const keyPath = process.env.HTTPS_KEY_PATH;
 const certPath = process.env.HTTPS_CERT_PATH;
 
-// print keyPath certpath
 console.log('keyPath: ', keyPath);
 console.log('certPath: ', certPath);
 
