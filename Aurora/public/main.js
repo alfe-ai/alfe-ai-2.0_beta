@@ -3630,6 +3630,7 @@ const btnNexumTabsIcon = document.getElementById("navNexumTabsIcon");
 const thinChatIcon = document.getElementById("thinIconChats");
 const thinImagesIcon = document.getElementById("thinIconImages");
 const thinArchiveIcon = document.getElementById("thinIconArchived");
+const thinPrintifyIcon = document.getElementById("thinIconPrintify");
 
 btnTasks.addEventListener("click", showTasksPanel);
 btnUploader.addEventListener("click", showUploaderPanel);
@@ -3695,6 +3696,11 @@ thinArchiveIcon?.addEventListener("click", ev => {
   ev.stopPropagation();
   openPanelWithSidebar(showArchiveTabsPanel);
 });
+thinPrintifyIcon?.addEventListener("click", ev => {
+  ev.preventDefault();
+  ev.stopPropagation();
+  openPanelWithSidebar(showPrintifyProductsPanel);
+});
 // Ensure taps on mobile trigger the same actions
 thinChatIcon?.addEventListener("touchstart", ev => {
   ev.preventDefault();
@@ -3710,6 +3716,11 @@ thinArchiveIcon?.addEventListener("touchstart", ev => {
   ev.preventDefault();
   ev.stopPropagation();
   openPanelWithSidebar(showArchiveTabsPanel);
+});
+thinPrintifyIcon?.addEventListener("touchstart", ev => {
+  ev.preventDefault();
+  ev.stopPropagation();
+  openPanelWithSidebar(showPrintifyProductsPanel);
 });
 
 (async function init(){
