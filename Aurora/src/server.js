@@ -448,6 +448,29 @@ app.options("*", cors({
 
 app.use(bodyParser.json());
 
+// Restrict access by IP when WHITELIST_IP is set
+const whitelistIp = process.env.whitelist_ip || process.env.WHITELIST_IP;
+if (whitelistIp) {
+  app.use((req, res, next) => {
+    const requestIp =
+      (req.headers["x-forwarded-for"] || "")
+        .split(",")[0]
+        .trim() || req.connection.remoteAddress;
+
+    const isImage = /\.(png|jpe?g|gif|webp|svg|ico)$/i.test(req.path);
+    const allowedPaths = ["/portfolio.html"];
+    if (isImage || req.path.startsWith("/uploads") || allowedPaths.includes(req.path)) {
+      return next();
+    }
+
+    if (requestIp === whitelistIp || requestIp === `::ffff:${whitelistIp}`) {
+      return next();
+    }
+
+    res.status(403).send("Forbidden");
+  });
+}
+
 // Determine uploads directory
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const uploadsDir = path.join(__dirname, "../uploads");
