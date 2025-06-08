@@ -4210,8 +4210,6 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
 
   seqDiv.appendChild(botDiv);
 
-  chatHideMetadata = true; // FORCE TRUE FOR REL
-
   if(!chatHideMetadata){
     const metaContainer = document.createElement("div");
     metaContainer.style.fontSize = "0.8rem";
