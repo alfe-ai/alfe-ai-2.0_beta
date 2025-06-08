@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Portfolio</title>
+  <style>
+    body {
+      background:#1e1e1e;
+      color:#ddd;
+      font-family:sans-serif;
+      padding:1rem;
+    }
+    h1 { margin-top:0; }
+    .grid {
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+    }
+    .grid-item {
+      position:relative;
+      overflow:hidden;
+    }
+    .grid-item img {
+      max-width:400px;
+      width:100%;
+      border:1px solid #444;
+      transition:transform 0.2s;
+    }
+    .grid-item:hover img {
+      transform:scale(1.05);
+    }
+    a { color:#0ff; text-decoration:none; }
+  </style>
+</head>
+<body>
+  <h1>Portfolio</h1>
+  <div id="grid" class="grid"></div>
+  <script src="/session.js"></script>
+  <script>
+    async function loadPortfolio(){
+      try {
+        const resp = await fetch('/api/upload/list');
+        const data = await resp.json();
+        const grid = document.getElementById('grid');
+        grid.innerHTML = '';
+        data.filter(f => f.portfolio).forEach(f => {
+          const wrap = document.createElement('div');
+          wrap.className = 'grid-item';
+          const link = document.createElement('a');
+          link.href = `/Image.html?file=${encodeURIComponent(f.name)}`;
+          link.target = '_blank';
+          const img = document.createElement('img');
+          img.src = `/uploads/${encodeURIComponent(f.name)}`;
+          img.alt = f.title || f.name;
+          link.appendChild(img);
+          wrap.appendChild(link);
+          grid.appendChild(wrap);
+        });
+      } catch(err){
+        console.error('Failed to load portfolio images', err);
+      }
+    }
+    loadPortfolio();
+  </script>
+</body>
+</html>
