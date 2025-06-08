@@ -346,11 +346,36 @@ app.get('/api/printify/product/:id', async (req, res) => {
 
 // List products for the configured shop
 app.get('/api/printify/products', async (req, res) => {
-  const page = req.query.page || 1;
-  const limit = req.query.limit || 10;
+  const page = parseInt(req.query.page || '1', 10);
+  const limit = parseInt(req.query.limit || '10', 10);
+  const fetchAll = req.query.all === 'true' || req.query.all === '1';
+
   try {
-    const url =
-      `https://api.printify.com/v1/shops/${shopId}/products.json?page=${page}&limit=${limit}`;
+    if (fetchAll) {
+      let currentPage = page;
+      let results = [];
+      while (true) {
+        const url = `https://api.printify.com/v1/shops/${shopId}/products.json?page=${currentPage}&limit=${limit}`;
+        const response = await axios.get(url, {
+          headers: { Authorization: `Bearer ${printifyToken}` }
+        });
+        const products = Array.isArray(response.data?.data)
+          ? response.data.data
+          : Array.isArray(response.data?.products)
+          ? response.data.products
+          : Array.isArray(response.data)
+          ? response.data
+          : [];
+
+        results = results.concat(products);
+
+        if (!products.length || products.length < limit) break;
+        currentPage += 1;
+      }
+      return res.json({ data: results });
+    }
+
+    const url = `https://api.printify.com/v1/shops/${shopId}/products.json?page=${page}&limit=${limit}`;
     const response = await axios.get(url, {
       headers: { Authorization: `Bearer ${printifyToken}` }
     });
