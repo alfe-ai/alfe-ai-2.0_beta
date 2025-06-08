@@ -44,7 +44,7 @@
   <div style="margin-top:0.5rem;">
     <button id="upscaleButton" hidden>Submit to Upscale</button>
     <button id="printifyButton" hidden>Submit to Printify</button>
-    <button id="printifyApiButton" hidden>Submit Printify API Updates</button>
+    <button id="printifyApiButton">Submit Printify API Updates</button>
   </div>
   <pre id="upscaleTerminal" style="background:#000;color:#0f0;padding:0.5rem;margin-top:0.5rem;height:200px;overflow:auto;font-family:monospace;"></pre>
   <script src="/session.js"></script>
@@ -109,17 +109,14 @@
         if(current === 'Printify API Updates'){
           if(stageItems[3]) stageItems[3].classList.add('completed');
           if(stageItems[4]) stageItems[4].classList.add('current');
-          printifyApiBtn.hidden = true;
         } else if(current === 'Ebay Shipping Updated'){
           if(stageItems[3]) stageItems[3].classList.add('completed');
           if(stageItems[4]) stageItems[4].classList.add('completed');
           if(stageItems[5]) stageItems[5].classList.add('current');
-          printifyApiBtn.hidden = true;
         } else if(current === 'Done'){
           if(stageItems[3]) stageItems[3].classList.add('completed');
           if(stageItems[4]) stageItems[4].classList.add('completed');
           if(stageItems[5]) stageItems[5].classList.add('completed');
-          printifyApiBtn.hidden = true;
         }
       }catch(e){
         console.error('Failed to check status =>', e);
@@ -354,7 +351,7 @@
       if (file) {
       upscaleBtn.hidden = false;
       printifyBtn.hidden = true;
-      printifyApiBtn.hidden = true;
+      printifyApiBtn.hidden = false;
       upscaleBtn.addEventListener('click', async () => {
         console.debug('Submit to Upscale clicked with file =>', file);
         terminalEl.textContent = '';
@@ -479,7 +476,6 @@
               stageItems[3].classList.add('completed');
               if(stageItems[4]) stageItems[4].classList.add('current');
             }
-            printifyApiBtn.hidden = false;
             checkStatus();
           }
         } catch(err){
