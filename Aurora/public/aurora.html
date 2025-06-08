@@ -682,6 +682,21 @@
       </div>
       <p id="totpEnabledMsg" style="display:none;">2FA Enabled</p>
     </div>
+    <div id="passwordSection" style="margin-top:10px;">
+      <button id="showChangePasswordBtn">Change Password</button>
+      <div id="passwordForm" style="display:none; margin-top:10px;">
+        <label>Current Password:<br/>
+          <input type="password" id="currentPassword" style="width:100%;" />
+        </label>
+        <label style="margin-top:8px;">New Password:<br/>
+          <input type="password" id="newPassword" style="width:100%;" />
+        </label>
+        <label style="margin-top:8px;">Confirm New Password:<br/>
+          <input type="password" id="confirmPassword" style="width:100%;" />
+        </label>
+        <button id="changePasswordBtn" style="margin-top:8px;">Save</button>
+      </div>
+    </div>
     <div class="modal-buttons">
       <button id="accountLogoutBtn">Logout</button>
       <button id="accountCloseBtn">Close</button>
