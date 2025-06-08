@@ -1055,6 +1055,10 @@ export default class TaskDB {
     this.db.prepare('UPDATE accounts SET timezone=? WHERE id=?').run(timezone, id);
   }
 
+  setAccountPassword(id, passwordHash) {
+    this.db.prepare('UPDATE accounts SET password_hash=? WHERE id=?').run(passwordHash, id);
+  }
+
   getAccountBySession(sessionId) {
     return this.db.prepare('SELECT * FROM accounts WHERE session_id=?').get(sessionId);
   }
