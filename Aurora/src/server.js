@@ -3016,10 +3016,11 @@ if (keyPath && certPath && fs.existsSync(keyPath) && fs.existsSync(certPath)) {
     cert: fs.readFileSync(certPath)
   };
   https.createServer(options, app).listen(PORT, () => {
-    console.log(`[TaskQueue] HTTPS server running on port ${PORT}`);
+    console.log(`[TaskQueue] HTTPS server running on port 3000`);
   });
 } else {
   app.listen(PORT, () => {
     console.log(`[TaskQueue] Web server is running on port ${PORT} (verbose='true')`);
   });
 }
+

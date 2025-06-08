@@ -66,22 +66,16 @@ async function main() {
 
     // ------------------------------------------------------------------
     // 1. Synchronise local DB
-    // ------------------------------------------------------------------
     resolvedIssues.forEach((iss) => db.upsertIssue(iss, repositorySlug));
 
     // Closed issue detection
     const openIds = resolvedIssues.map((i) => i.id);
     db.markClosedExcept(openIds);
 
-    // ------------------------------------------------------------------
-    // 2. Populate in-memory queue (only open issues)
+    // 2. Populate in-memory queue
     resolvedIssues.forEach((issue) => queue.enqueue(issue));
 
     console.log(`[TaskQueue] ${queue.size()} task(s) in queue.`);
-    // Intentionally omit printing the full issue list to keep logs concise
-
-    // Debug: show DB snapshot (can be removed)
-    // console.debug("[TaskQueue] Current DB state:", db.dump());
   } catch (err) {
     console.error("Fatal:", err.message);
     process.exit(1);
@@ -89,5 +83,6 @@ async function main() {
 }
 
 main();
+
 
 

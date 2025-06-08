@@ -649,7 +649,7 @@ export default class TaskDB {
         NULL, '', '', @session_id
       )
     `).run({
-      user_text: userText,
+      user_text,
       timestamp,
       chat_tab_id: chatTabId,
       system_context: systemContext,
@@ -1105,5 +1105,6 @@ export default class TaskDB {
     this.db.prepare('DELETE FROM image_sessions WHERE session_id=?').run(sourceId);
   }
 }
+
 
 

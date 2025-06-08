@@ -208,13 +208,7 @@
       <div id="startSocialLinks" style="margin-top:0.5rem; text-align:center;">
         <a href="/about.html" target="_blank">About</a> |
         <a href="https://github.com/alfe-ai/alfe-ai-2.0_beta">GitHub</a> |
-        <a href="https://bsky.app/profile/alfeai.bsky.social">Bluesky</a><!-- | -->
-        <!--<a href="https://mastodon.social/@alfeai">Mastodon</a>--><!-- | -->
-        <!-- <a href="https://www.reddit.com/">Reddit</a> | -->
-        <!-- <a href="https://www.linkedin.com/">LinkedIn</a> | -->
-        <!-- <a href="https://x.com/">X (Twitter)</a> -->
-        <!-- Discord -->
-        <!-- Matrix -->
+        <a href="https://bsky.app/profile/alfeai.bsky.social">Bluesky</a>
       </div>
     </div>
   </div>
@@ -300,8 +294,6 @@
       span.className = 'splash-word';
       span.textContent = splashPhrases[splashIdx % splashPhrases.length];
       splashIdx++;
-      // Ensure scrolling text appears below the "Your" label
-      // "Your" is positioned at 70% vertically, so start a bit lower
       span.style.top = (75 + Math.random()*20) + 'vh';
       container.appendChild(span);
       span.addEventListener('animationend', () => span.remove());
@@ -439,10 +431,8 @@
     dlg.style.display = noTabs ? 'flex' : 'none';
     if(noTabs){
       startSplash();
-      // start suggestions disabled
     } else {
       stopSplash();
-      // start suggestions disabled
     }
     const chatPanel = document.getElementById('chatPanel');
     if(chatPanel) chatPanel.style.display = noTabs ? 'none' : '';
@@ -616,9 +606,9 @@
 
     async function loadHistory(){
       try{
-        const res = await fetch(`/api/chat/history?tabId=${currentTabId}&limit=20&offset=0`);
-        if(!res.ok) return;
-        const data = await res.json();
+        const resp = await fetch(`/api/chat/history?tabId=${currentTabId}&limit=20&offset=0`);
+        if(!resp.ok) return;
+        const data = await resp.json();
         const chatDiv = document.getElementById('chat');
         chatDiv.innerHTML = '';
         (data.pairs || []).reverse().forEach(p => {
@@ -902,7 +892,6 @@
       }
     }
     document.addEventListener('DOMContentLoaded', () => {
-      // Display the generated session ID in the About overlay
       const sessEl = document.getElementById('sessionIdText');
       if(sessEl) sessEl.textContent = sessionId;
       fetch('/api/settings/show_session_id')
@@ -1108,7 +1097,7 @@
           }
         }
         renderTabs();
-        renderSuggestions(false, 'suggestions', 'prompt'); // show/hide after history loads
+        renderSuggestions(false, 'suggestions', 'prompt');
         applyTabView();
       }
       init();
@@ -1140,3 +1129,4 @@
   </div>
 </body>
 </html>
+

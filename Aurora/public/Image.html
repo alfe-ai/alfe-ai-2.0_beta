@@ -410,8 +410,8 @@
           }
         } catch (err) {
           console.error('Printify request error =>', err);
-        terminalEl.textContent = 'Printify request failed.';
-      }
+          terminalEl.textContent = 'Printify request failed.';
+        }
       });
       printifyApiBtn.addEventListener('click', async () => {
         const productId = prompt('Enter Printify Product ID:');
@@ -523,3 +523,4 @@
   </script>
 </body>
 </html>
+
