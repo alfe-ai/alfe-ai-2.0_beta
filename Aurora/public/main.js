@@ -300,6 +300,10 @@ function openSettingsModal(e){
   if(autoScrollCheck){
     autoScrollCheck.checked = chatAutoScroll;
   }
+  const metaCheck = document.getElementById('accountShowMetadataCheck');
+  if(metaCheck){
+    metaCheck.checked = !chatHideMetadata;
+  }
   showModal(document.getElementById("settingsModal"));
 }
 
@@ -2037,6 +2041,14 @@ if(accountAutoScrollCheck){
       setTimeout(scrollChatToBottom, 0);
     }
     await setSetting('chat_auto_scroll', chatAutoScroll);
+  });
+}
+
+const accountShowMetadataCheck = document.getElementById('accountShowMetadataCheck');
+if(accountShowMetadataCheck){
+  accountShowMetadataCheck.addEventListener('change', async () => {
+    chatHideMetadata = !accountShowMetadataCheck.checked;
+    await setSetting('chat_hide_metadata', chatHideMetadata);
   });
 }
 
