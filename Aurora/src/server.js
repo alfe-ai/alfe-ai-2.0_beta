@@ -261,23 +261,64 @@ function verifyPassword(password, stored) {
   return h === hash;
 }
 
-async function updatePrintifyProduct(productId) {
-  const token = process.env.PRINTIFY_API_TOKEN;
-  const shopId = process.env.PRINTIFY_SHOP_ID;
-  if (!token || !shopId) {
-    throw new Error('Printify API credentials missing');
+// In server.js, update the updatePrintifyProduct function:
+
+async function updatePrintifyProduct(productId, variants) {
+  try {
+    // Validate product existence first
+    const validateRes = await axios.get(
+        `https://api.printify.com/v1/shops/${shopId}/products/${productId}`,
+        { headers: { Authorization: `Bearer ${printifyToken}` } }
+    );
+
+    if (!validateRes.data || validateRes.status !== 200) {
+      throw new Error('Product not found or access denied');
+    }
+
+    // Verify variants structure
+    if (!Array.isArray(variants) || !variants.every(v => v.id && v.price)) {
+      throw new Error('Invalid variants format');
+    }
+
+    const response = await axios.put(
+        `https://api.printify.com/v1/shops/${shopId}/products/${productId}/variants`,
+        { variants },
+        {
+          headers: {
+            Authorization: `Bearer ${printifyToken}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 10000
+        }
+    );
+
+    return response.data;
+  } catch (error) {
+    const errorDetails = {
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+      config: {
+        url: error.config?.url,
+        method: error.config?.method
+      }
+    };
+    console.error('Printify API Error:', JSON.stringify(errorDetails, null, 2));
+    throw new Error(`Printify update failed: ${errorDetails.data?.error || error.message}`);
   }
-  const headers = { Authorization: `Bearer ${token}` };
-  const prodUrl = `https://api.printify.com/v1/shops/${shopId}/products/${productId}.json`;
-  const prodResp = await axios.get(prodUrl, { headers });
-  const product = prodResp.data || {};
-  const variants = (product.variants || []).map(v => ({
-    id: v.id,
-    price: 19.44,
-  }));
-  const variantsUrl = `https://api.printify.com/v1/shops/${shopId}/products/${productId}/variants.json`;
-  await axios.put(variantsUrl, { variants }, { headers });
 }
+
+// Add parameter validation middleware before API handlers:
+app.use('/api/printify/updateProduct', (req, res, next) => {
+  if (!req.body.productId?.match(/^[0-9a-f]{24}$/i)) {
+    return res.status(400).json({ error: 'Invalid product ID format' });
+  }
+  if (!Array.isArray(req.body.variants)) {
+    return res.status(400).json({ error: 'Variants must be an array' });
+  }
+  next();
+});
+
 
 async function deriveImageTitle(prompt, client = null) {
   if (!prompt) return '';
