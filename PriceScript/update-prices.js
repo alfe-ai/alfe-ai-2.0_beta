@@ -6,6 +6,7 @@ const PRINTIFY_API_BASE = 'https://api.printify.com/v1';
 const STORE_ID = '18663958';
 const PRODUCT_ID = '6845ab1e4b7ca2acc50b19fb';
 const NEW_PRICE = 19.44;
+const PRICE_CENTS = Math.round(NEW_PRICE * 100); // Printify expects integer prices in cents
 const API_TOKEN = process.env.PRINTIFY_API_TOKEN;  // set this in your shell
 
 if (!API_TOKEN) {
@@ -24,7 +25,7 @@ async function updateProductVariantsPrice() {
     // 2. Build updated variants array
     const updatedVariants = product.variants.map(variant => ({
       id: variant.id,
-      price: NEW_PRICE
+      price: PRICE_CENTS
     }));
 
     // 3. Send update request
