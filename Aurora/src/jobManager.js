@@ -111,4 +111,3 @@ export default class JobManager {
     this._notifyDone(job);
   }
 }
-

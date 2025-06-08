@@ -25,4 +25,3 @@ function getSessionId(){
   return id;
 }
 const sessionId = getSessionId();
-

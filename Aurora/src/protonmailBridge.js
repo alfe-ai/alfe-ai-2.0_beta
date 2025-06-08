@@ -50,4 +50,3 @@ export function createProtonMailTransport({ host, port, secure, user, pass }) {
  * .catch(err => console.error('Error:', err));
  */
 
-
