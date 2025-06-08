@@ -305,7 +305,7 @@ function openSettingsModal(e){
 
 function openContactModal(e){
   if(e) e.preventDefault();
-  const email = "alfe" + "@" + "lochner." + "tech";
+  const email = "alfe" + "@" + "alfe." + "sh";
   const span = document.getElementById("contactEmail");
   if(span) span.textContent = email;
   showModal(document.getElementById("contactModal"));
