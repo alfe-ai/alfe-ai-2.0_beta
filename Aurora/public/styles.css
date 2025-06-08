@@ -406,8 +406,8 @@ body {
 
 /* Thumbnail images in the secure uploader table */
 .table-thumb {
-  max-width: 40px;
-  max-height: 40px;
+  max-width: 52px;
+  max-height: 52px;
   border: 1px solid #555;
 }
 
