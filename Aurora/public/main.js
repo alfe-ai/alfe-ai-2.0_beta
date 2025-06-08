@@ -321,7 +321,7 @@ function updateAccountButton(info){
   } else {
     accountInfo = null;
     btn.textContent = "Sign Up / Login";
-    btn.addEventListener("click", openLoginModal);
+  btn.addEventListener("click", openSignupModal);
     if(favBtn){
       favBtn.style.display = "none";
     }
@@ -1767,7 +1767,7 @@ if (subscribeCloseBtn) {
 
 const signupBtn = document.getElementById("signupBtn");
 if (signupBtn) {
-  signupBtn.addEventListener("click", openLoginModal);
+  signupBtn.addEventListener("click", openSignupModal);
 }
 const signupSubmitBtn = document.getElementById("signupSubmitBtn");
 if (signupSubmitBtn) {
