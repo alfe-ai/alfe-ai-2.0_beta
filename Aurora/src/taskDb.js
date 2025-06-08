@@ -167,7 +167,8 @@ export default class TaskDB {
                                               image_title TEXT DEFAULT '',
                                               image_status TEXT DEFAULT '',
                                               session_id TEXT DEFAULT '',
-                                              image_uuid TEXT DEFAULT ''
+                                              image_uuid TEXT DEFAULT '',
+                                              portfolio INTEGER DEFAULT 1
       );
     `);
 
@@ -242,6 +243,12 @@ export default class TaskDB {
       console.debug("[TaskDB Debug] Added chat_pairs.image_uuid column");
     } catch(e) {
       //console.debug("[TaskDB Debug] chat_pairs.image_uuid column exists, skipping.", e.message);
+    }
+    try {
+      this.db.exec(`ALTER TABLE chat_pairs ADD COLUMN portfolio INTEGER DEFAULT 1;`);
+      console.debug("[TaskDB Debug] Added chat_pairs.portfolio column");
+    } catch(e) {
+      //console.debug("[TaskDB Debug] chat_pairs.portfolio column exists, skipping.", e.message);
     }
 
     this.db.exec(`
@@ -668,16 +675,16 @@ export default class TaskDB {
     });
   }
 
-  createImagePair(url, altText = '', chatTabId = 1, title = '', status = 'Generated', sessionId = '', ipAddress = '', model = '') {
+  createImagePair(url, altText = '', chatTabId = 1, title = '', status = 'Generated', sessionId = '', ipAddress = '', model = '', portfolio = 1) {
     const ts = new Date().toISOString();
     const uuid = randomUUID().split('-')[0];
     const { lastInsertRowid } = this.db.prepare(`
       INSERT INTO chat_pairs (
         user_text, ai_text, model, timestamp, ai_timestamp,
         chat_tab_id, system_context, token_info,
-        image_url, image_alt, image_title, image_status, session_id, ip_address, image_uuid
-      ) VALUES ('', '', @model, @ts, @ts, @chat_tab_id, '', NULL, @url, @alt, @title, @status, @session_id, @ip_address, @uuid)
-    `).run({ ts, chat_tab_id: chatTabId, url, alt: altText, title, status, session_id: sessionId, ip_address: ipAddress, uuid, model });
+        image_url, image_alt, image_title, image_status, session_id, ip_address, image_uuid, portfolio
+      ) VALUES ('', '', @model, @ts, @ts, @chat_tab_id, '', NULL, @url, @alt, @title, @status, @session_id, @ip_address, @uuid, @portfolio)
+    `).run({ ts, chat_tab_id: chatTabId, url, alt: altText, title, status, session_id: sessionId, ip_address: ipAddress, uuid, model, portfolio });
     return lastInsertRowid;
   }
 
@@ -928,6 +935,21 @@ export default class TaskDB {
     return row.image_uuid;
   }
 
+  getImagePortfolioForUrl(url) {
+    const row = this.db
+        .prepare("SELECT portfolio FROM chat_pairs WHERE image_url=? ORDER BY id DESC LIMIT 1")
+        .get(url);
+    return row ? !!row.portfolio : false;
+  }
+
+  setImagePortfolio(url, portfolio = 1) {
+    const stmt = this.db.prepare("UPDATE chat_pairs SET portfolio=? WHERE image_url=?");
+    const info = stmt.run(portfolio ? 1 : 0, url);
+    if(info.changes === 0){
+      this.createImagePair(url, '', 1, '', 'Generated', '', '', '', portfolio ? 1 : 0);
+    }
+  }
+
   getImageSessionForUrl(url) {
     const row = this.db
         .prepare("SELECT session_id FROM chat_pairs WHERE image_url=? ORDER BY id DESC LIMIT 1")
@@ -1001,7 +1023,7 @@ export default class TaskDB {
     const stmt = this.db.prepare("UPDATE chat_pairs SET image_status=? WHERE image_url=?");
     const info = stmt.run(status, url);
     if(info.changes === 0){
-      this.createImagePair(url, '', 1, '', status, '', '', '');
+      this.createImagePair(url, '', 1, '', status, '', '', '', 0);
     }
   }
 
