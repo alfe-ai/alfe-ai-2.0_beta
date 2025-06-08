@@ -26,7 +26,7 @@ Enter same passphrase again:
 Your identification has been saved in /home/user/.ssh/id_rsa_test2
 Your public key has been saved in /home/user/.ssh/id_rsa_test2.pub
 The key fingerprint is:
-SHA256:6Xvf751uKnYhF4JNPzgwcns/l7svVDWMWlkFKqaY1r4 t03012025@alfe.sh
+SHA256:6Xvf751uKnYhF4JNPzgwcns/l7svVDWMWlkFKqaY1r4 alfe@alfe.sh
 The key's randomart image is:
 +---[RSA 4096]----+
 |              *oo|
@@ -40,7 +40,7 @@ The key's randomart image is:
 |        E...+.=BB|
 +----[SHA256]-----+
 user@t03012025:~/git$ cat /home/user/.ssh/id_rsa_test2.pub
-ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQD3iRx+BSrGFVvO7oYjElBvybBg2bRyCZqPkES4CVAyqwvSqJIMtYE/xvWAcYPTJMXTt660bkr/7hF+N8QolxIw24NBEaF1mem8IffVibgQwiOdU3Y4p8rUDgIWWv1r6Kmx2mHhUt65Q+ePIILebS4iwK2Nor5gBF1x7oLUkwVy8rbXG1H/ov1cNeMqnOT1mAQtLUCZyGfICiR0wxcH1cuVCDnhhrRRCcESoF5ulOAiHtk3fZS69g+Mi3PKsDfV7Zi5vGk+du3O6mc+s9QgBpxk8Zbo/1anXay2N0qfZwgDZAqoydfXkZswOUS3J0hA1HI9b8kyQbJoIcr7w8AkDsV/Xk4Xo1GiLRG4Q4BM1IqbC3P/E4nJtnkKabcTjhN18qKcBwZUMms9RWSz4L4tZ0LOriDZCc1U4se+zMc4tTvmXa8mYQPeNR4uMwRgGjVCMJ88bBg4KjGyzVhNnU7cbSJMcBRngoicWDNN/X0DxybEqK2yq0qXe2so1XmTq/TyFigXWFUMacyUphnsYNWKx0s3KzcwyPIVjC3E1IxyS0fEjoxKN0iA9vopf+Bn7dJpGUH0DbftBPCwesLkuMhkIB9Tzluz06cwidSU/GXqoiMC/NEd4+GkjywLYvpov5BaxmGzid4+9ojHTbn0p+XIgzEPHD/qOxbpQrmdeWaWcxwuiQ== t03012025@alfe.sh
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQD3iRx+BSrGFVvO7oYjElBvybBg2bRyCZqPkES4CVAyqwvSqJIMtYE/xvWAcYPTJMXTt660bkr/7hF+N8QolxIw24NBEaF1mem8IffVibgQwiOdU3Y4p8rUDgIWWv1r6Kmx2mHhUt65Q+ePIILebS4iwK2Nor5gBF1x7oLUkwVy8rbXG1H/ov1cNeMqnOT1mAQtLUCZyGfICiR0wxcH1cuVCDnhhrRRCcESoF5ulOAiHtk3fZS69g+Mi3PKsDfV7Zi5vGk+du3O6mc+s9QgBpxk8Zbo/1anXay2N0qfZwgDZAqoydfXkZswOUS3J0hA1HI9b8kyQbJoIcr7w8AkDsV/Xk4Xo1GiLRG4Q4BM1IqbC3P/E4nJtnkKabcTjhN18qKcBwZUMms9RWSz4L4tZ0LOriDZCc1U4se+zMc4tTvmXa8mYQPeNR4uMwRgGjVCMJ88bBg4KjGyzVhNnU7cbSJMcBRngoicWDNN/X0DxybEqK2yq0qXe2so1XmTq/TyFigXWFUMacyUphnsYNWKx0s3KzcwyPIVjC3E1IxyS0fEjoxKN0iA9vopf+Bn7dJpGUH0DbftBPCwesLkuMhkIB9Tzluz06cwidSU/GXqoiMC/NEd4+GkjywLYvpov5BaxmGzid4+9ojHTbn0p+XIgzEPHD/qOxbpQrmdeWaWcxwuiQ== alfe@alfe.sh
 user@t03012025:~/git$ 
 ```
 
