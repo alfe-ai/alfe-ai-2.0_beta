@@ -5019,7 +5019,7 @@ registerActionHook("generateImage", async ({response}) => {
     isImageGenerating = true;
     if(chatSendBtnEl) chatSendBtnEl.disabled = true;
     showImageGenerationIndicator();
-    const payload = { prompt, tabId: currentTabId, provider: imageGenService, sessionId, portfolio: 1 };
+    const payload = { prompt, tabId: currentTabId, provider: imageGenService, sessionId };
     console.log('[Hook generateImage] sending request to /api/image/generate', payload);
     let r;
     try {
@@ -5092,7 +5092,7 @@ registerActionHook("embedMockImages", async ({response}) => {
       const r = await fetch('/api/image/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: alt, tabId: currentTabId, provider: imageGenService, sessionId, portfolio: 1 })
+        body: JSON.stringify({ prompt: alt, tabId: currentTabId, provider: imageGenService, sessionId })
       });
       const data = await r.json();
       if(r.ok && data.url){

@@ -38,14 +38,12 @@
     <option value="openai">OpenAI</option>
     <option value="stable-diffusion">Stable Diffusion</option>
   </select>
-  <label style="margin-left:4px;"><input type="checkbox" id="portfolioCheck" checked/> Portfolio</label>
   <button id="generateBtn">Generate</button>
   <div id="result"></div>
 
 <script>
   const promptInput = document.getElementById('promptInput');
   const providerSelect = document.getElementById('providerSelect');
-  const portfolioCheck = document.getElementById('portfolioCheck');
   const generateBtn = document.getElementById('generateBtn');
   const resultDiv = document.getElementById('result');
 
@@ -54,7 +52,7 @@
     if(!prompt) return;
     resultDiv.textContent = 'Generating...';
     try {
-      const payload = { prompt, provider: providerSelect.value, portfolio: portfolioCheck.checked ? 1 : 0 };
+      const payload = { prompt, provider: providerSelect.value };
       console.debug('Sending /api/image/generate', payload);
       const resp = await fetch('/api/image/generate', {
         method: 'POST',

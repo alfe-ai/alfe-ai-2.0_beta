@@ -879,7 +879,7 @@
       document.getElementById('chat').appendChild(aiEl);
       document.getElementById('chat').scrollTop=document.getElementById('chat').scrollHeight;
       try{
-        const payload={prompt:text, tabId:currentTabId, sessionId, portfolio:1};
+        const payload={prompt:text, tabId:currentTabId, sessionId};
         console.debug('Sending /api/image/generate', payload);
         const resp=await fetch('/api/image/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
         console.debug('/api/image/generate status', resp.status);
