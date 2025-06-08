@@ -164,6 +164,8 @@ if (db.getSetting("show_session_id") === undefined) {
 }
 
 const app = express();
+// Body parser must come before any routes that access req.body
+app.use(bodyParser.json());
 const jobManager = new JobManager();
 
 /**
@@ -486,8 +488,6 @@ app.options("*", cors({
 }), (req, res) => {
   res.sendStatus(200);
 });
-
-app.use(bodyParser.json());
 
 // Restrict access by IP when WHITELIST_IP is set
 const whitelistIp = process.env.whitelist_ip || process.env.WHITELIST_IP;
