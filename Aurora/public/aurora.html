@@ -48,6 +48,7 @@
         <li><button id="navJobsBtn" class="tree-button" data-url="/jobs.html" data-target="_blank" hidden>Jobs</button></li>
         <li><button id="navPipelineQueueBtn" class="tree-button" data-url="/pipeline_queue.html" data-target="_blank">Queue</button></li>
         <li><button id="navActivityIframeBtn" class="tree-button">Activity IFrame</button></li>
+        <li><button id="navPrintifyProductsBtn" class="tree-button">Printify Products</button></li>
         <li><button id="navNexumChatBtn" class="tree-button" data-url="/nexum.html">Nexum Chat</button></li>
         <li><button id="navNexumTabsBtn" class="tree-button" data-url="/nexum_tabs.html">Nexum Tabs</button></li>
       </ul>
@@ -65,6 +66,7 @@
       <button id="navJobsIcon" class="icon-btn" title="Jobs">💼</button>
       <button id="navPipelineQueueIcon" class="icon-btn" title="Queue">📄</button>
       <button id="navActivityIframeIcon" class="icon-btn" title="Activity">🌐</button>
+        <button id="navPrintifyProductsIcon" class="icon-btn" title="Printify Products">🛍️</button>
       <button id="navNexumChatIcon" class="icon-btn" title="Nexum Chat">✨</button>
       <button id="navNexumTabsIcon" class="icon-btn" title="Nexum Tabs">🗂️</button>
     </nav>
@@ -156,6 +158,20 @@
       <h2>Activity IFrame</h2>
       <iframe src="/activity" style="width:100%; height:800px; border:none;"></iframe>
     </div>
+    <!-- Printify Products panel -->
+    <div id="sidebarViewPrintifyProducts" style="display:none;">
+      <h2>Printify Products</h2>
+      <button id="refreshPrintifyProductsBtn">Refresh</button>
+      <div style="margin-top:0.5rem;">
+        <button id="prevPrintifyPageBtn">&lt;</button>
+        <span id="printifyPageDisplay">1</span>
+        <button id="nextPrintifyPageBtn">&gt;</button>
+      </div>
+      <table id="printifyProductsTable" class="file-table">
+        <thead><tr><th>ID</th><th>Title</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
   </aside>
 
   <div id="divider" class="divider"></div>
@@ -187,6 +203,7 @@
     <button id="thinIconChats" class="thin-icon" title="Chats">💬</button>
     <button id="thinIconImages" class="thin-icon" title="Images">🖼️</button>
     <button id="thinIconArchived" class="thin-icon" title="Archived">&#128452;</button>
+    <button id="thinIconPrintify" class="thin-icon" title="Printify Products">🛍️</button>
   </div>
 
   <main class="chat-panel">
@@ -722,6 +739,9 @@
     </div>
     <div id="autoScrollSection" style="margin-top:10px;">
       <label><input type="checkbox" id="accountAutoScrollCheck"/> Keep chat pinned to bottom</label>
+    </div>
+    <div id="chatMetadataSection" style="margin-top:10px;">
+      <label><input type="checkbox" id="accountShowMetadataCheck"/> Show chat pair metadata</label>
     </div>
     <div class="modal-buttons">
       <button id="settingsCloseBtn">Close</button>

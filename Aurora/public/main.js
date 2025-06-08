@@ -104,6 +104,7 @@ let showArchivedTabs = false;
 let topChatTabsBarVisible = false; // visibility of the top chat tabs bar
 let viewTabsBarVisible = false; // visibility of the top Chat/Tasks bar
 let showProjectNameInTabs = false; // append project name to chat tab titles
+let printifyPage = 1; // current Printify product page
 let showDependenciesColumn = false;
 let tabGenerateImages = false; // per-tab auto image toggle (design tabs only)
 let imageLoopEnabled = false; // automatic image generation loop mode
@@ -300,6 +301,10 @@ function openSettingsModal(e){
   if(autoScrollCheck){
     autoScrollCheck.checked = chatAutoScroll;
   }
+  const metaCheck = document.getElementById('accountShowMetadataCheck');
+  if(metaCheck){
+    metaCheck.checked = !chatHideMetadata;
+  }
   showModal(document.getElementById("settingsModal"));
 }
 
@@ -337,6 +342,7 @@ function updateAccountButton(info){
     togglePortfolioMenu(false);
   }
 }
+
 
 function showToast(msg, duration=1500){
   const el = document.getElementById("toast");
@@ -2040,6 +2046,14 @@ if(accountAutoScrollCheck){
   });
 }
 
+const accountShowMetadataCheck = document.getElementById('accountShowMetadataCheck');
+if(accountShowMetadataCheck){
+  accountShowMetadataCheck.addEventListener('change', async () => {
+    chatHideMetadata = !accountShowMetadataCheck.checked;
+    await setSetting('chat_hide_metadata', chatHideMetadata);
+  });
+}
+
 document.getElementById("viewTabChat")?.addEventListener("click", () => updateView('chat'));
 document.getElementById("viewTabTasks")?.addEventListener("click", () => updateView('tasks'));
 document.getElementById("viewTabArchive")?.addEventListener("click", () => updateView('archive'));
@@ -3327,6 +3341,7 @@ const sidebarViewUploader = document.getElementById("sidebarViewUploader");
 const sidebarViewChatTabs = document.getElementById("sidebarViewChatTabs");
 const sidebarViewActivityIframe = document.getElementById("sidebarViewActivityIframe");
 const sidebarViewArchiveTabs = document.getElementById("sidebarViewArchiveTabs");
+const sidebarViewPrintifyProducts = document.getElementById("sidebarViewPrintifyProducts");
 const fileTreeContainer = document.getElementById("fileTreeContainer");
 
 function showTasksPanel(){
@@ -3336,6 +3351,7 @@ function showTasksPanel(){
   sidebarViewChatTabs.style.display = "none";
   sidebarViewArchiveTabs.style.display = "none";
   sidebarViewActivityIframe.style.display = "none";
+  sidebarViewPrintifyProducts.style.display = "none";
   $("#navTasksBtn").classList.add("active");
   $("#navUploaderBtn").classList.remove("active");
   $("#navFileTreeBtn").classList.remove("active");
@@ -3353,6 +3369,7 @@ function showUploaderPanel(){
   sidebarViewArchiveTabs.style.display = "none";
   sidebarViewActivityIframe.style.display = "none";
   $("#navTasksBtn").classList.remove("active");
+  sidebarViewPrintifyProducts.style.display = "none";
   $("#navUploaderBtn").classList.add("active");
   $("#navFileTreeBtn").classList.remove("active");
   $("#navChatTabsBtn").classList.remove("active");
@@ -3368,6 +3385,7 @@ function showFileTreePanel(){
   sidebarViewChatTabs.style.display = "none";
   sidebarViewArchiveTabs.style.display = "none";
   sidebarViewActivityIframe.style.display = "none";
+  sidebarViewPrintifyProducts.style.display = "none";
   $("#navTasksBtn").classList.remove("active");
   $("#navUploaderBtn").classList.remove("active");
   $("#navFileTreeBtn").classList.add("active");
@@ -3387,6 +3405,7 @@ function showChatTabsPanel(){
   sidebarViewArchiveTabs.style.display = "none";
   $("#navTasksBtn").classList.remove("active");
   $("#navUploaderBtn").classList.remove("active");
+  sidebarViewPrintifyProducts.style.display = "none";
   $("#navFileTreeBtn").classList.remove("active");
   $("#navChatTabsBtn").classList.add("active");
   $("#navArchiveTabsBtn").classList.remove("active");
@@ -3402,6 +3421,7 @@ function showArchiveTabsPanel(){
   sidebarViewChatTabs.style.display = "none";
   sidebarViewActivityIframe.style.display = "none";
   sidebarViewArchiveTabs.style.display = "";
+  sidebarViewPrintifyProducts.style.display = "none";
   $("#navTasksBtn").classList.remove("active");
   $("#navUploaderBtn").classList.remove("active");
   $("#navFileTreeBtn").classList.remove("active");
@@ -3419,6 +3439,7 @@ function showActivityIframePanel(){
   sidebarViewChatTabs.style.display = "none";
   sidebarViewArchiveTabs.style.display = "none";
   sidebarViewActivityIframe.style.display = "";
+  sidebarViewPrintifyProducts.style.display = "none";
   $("#navTasksBtn").classList.remove("active");
   $("#navUploaderBtn").classList.remove("active");
   $("#navFileTreeBtn").classList.remove("active");
@@ -3426,6 +3447,26 @@ function showActivityIframePanel(){
   $("#navArchiveTabsBtn").classList.remove("active");
   $("#navActivityIframeBtn").classList.add("active");
   setSetting("last_sidebar_view", "activity");
+}
+
+function showPrintifyProductsPanel(){
+  sidebarViewTasks.style.display = "none";
+  sidebarViewUploader.style.display = "none";
+  sidebarViewFileTree.style.display = "none";
+  sidebarViewChatTabs.style.display = "none";
+  sidebarViewArchiveTabs.style.display = "none";
+  sidebarViewActivityIframe.style.display = "none";
+  sidebarViewPrintifyProducts.style.display = "";
+  $("#navTasksBtn").classList.remove("active");
+  $("#navUploaderBtn").classList.remove("active");
+  $("#navFileTreeBtn").classList.remove("active");
+  $("#navChatTabsBtn").classList.remove("active");
+  $("#navArchiveTabsBtn").classList.remove("active");
+  $("#navActivityIframeBtn").classList.remove("active");
+  $("#navPrintifyProductsBtn").classList.add("active");
+  setSetting("last_sidebar_view", "printify");
+  printifyPage = 1;
+  loadPrintifyProducts();
 }
 
 /**
@@ -3535,6 +3576,34 @@ async function loadFileTree(){
   }
 }
 
+async function loadPrintifyProducts(){
+  const tbl = document.querySelector("#printifyProductsTable tbody");
+  if(!tbl) return;
+  tbl.innerHTML = '<tr><td colspan="2">Loading...</td></tr>';
+  try {
+    updatePrintifyPageDisplay();
+    const res = await fetch(`/api/printify/products?page=${printifyPage}&limit=10`);
+    if(!res.ok) throw new Error('Failed to fetch');
+    const data = await res.json();
+    const products = data.data || data.products || data || [];
+    tbl.innerHTML = '';
+    for(const p of products){
+      const tr = document.createElement('tr');
+      const id = p.id || p.product_id || '';
+      const title = p.title || p.name || '';
+      tr.innerHTML = `<td>${id}</td><td>${title}</td>`;
+      tbl.appendChild(tr);
+    }
+  } catch(err){
+    tbl.innerHTML = `<tr><td colspan="2">Error: ${err.message}</td></tr>`;
+  }
+}
+
+function updatePrintifyPageDisplay(){
+  const el = document.getElementById("printifyPageDisplay");
+  if(el) el.textContent = String(printifyPage);
+}
+
 const btnTasks = document.getElementById("navTasksBtn");
 const btnUploader = document.getElementById("navUploaderBtn");
 const btnChatTabs = document.getElementById("navChatTabsBtn");
@@ -3545,6 +3614,11 @@ const btnImageGenerator = document.getElementById("navImageGeneratorBtn");
 const btnPortfolio = document.getElementById("navPortfolioBtn");
 const btnJobs = document.getElementById("navJobsBtn");
 const btnPipelineQueue = document.getElementById("navPipelineQueueBtn");
+const btnPrintifyProducts = document.getElementById("navPrintifyProductsBtn");
+const btnPrintifyProductsIcon = document.getElementById("navPrintifyProductsIcon");
+const refreshPrintifyProductsBtn = document.getElementById("refreshPrintifyProductsBtn");
+const prevPrintifyPageBtn = document.getElementById("prevPrintifyPageBtn");
+const nextPrintifyPageBtn = document.getElementById("nextPrintifyPageBtn");
 const btnNexumChat = document.getElementById("navNexumChatBtn");
 const btnNexumTabs = document.getElementById("navNexumTabsBtn");
 // Icon buttons for collapsed sidebar
@@ -3565,6 +3639,7 @@ const btnNexumTabsIcon = document.getElementById("navNexumTabsIcon");
 const thinChatIcon = document.getElementById("thinIconChats");
 const thinImagesIcon = document.getElementById("thinIconImages");
 const thinArchiveIcon = document.getElementById("thinIconArchived");
+const thinPrintifyIcon = document.getElementById("thinIconPrintify");
 
 btnTasks.addEventListener("click", showTasksPanel);
 btnUploader.addEventListener("click", showUploaderPanel);
@@ -3574,7 +3649,10 @@ btnArchiveTabs.addEventListener("click", showArchiveTabsPanel);
 btnActivityIframe.addEventListener("click", showActivityIframePanel);
 btnAiModels?.addEventListener("click", () => { window.location.href = btnAiModels.dataset.url; });
 btnImageGenerator?.addEventListener("click", () => { window.location.href = btnImageGenerator.dataset.url; });
-btnPortfolio?.addEventListener("click", () => { window.location.href = btnPortfolio.dataset.url; });
+btnPortfolio?.addEventListener("click", () => {
+  const url = btnPortfolio.dataset.url;
+  window.open(url, "_blank");
+});
 btnJobs?.addEventListener("click", () => {
   const url = btnJobs.dataset.url;
   window.open(url, "_blank");
@@ -3585,6 +3663,18 @@ btnPipelineQueue?.addEventListener("click", () => {
 });
 btnNexumChat?.addEventListener("click", () => { window.location.href = btnNexumChat.dataset.url; });
 btnNexumTabs?.addEventListener("click", () => { window.location.href = btnNexumTabs.dataset.url; });
+btnPrintifyProducts?.addEventListener("click", showPrintifyProductsPanel);
+refreshPrintifyProductsBtn?.addEventListener("click", loadPrintifyProducts);
+prevPrintifyPageBtn?.addEventListener("click", () => {
+  if(printifyPage > 1){
+    printifyPage -= 1;
+    loadPrintifyProducts();
+  }
+});
+nextPrintifyPageBtn?.addEventListener("click", () => {
+  printifyPage += 1;
+  loadPrintifyProducts();
+});
 
 // Icon button actions (expand sidebar then open panel or link)
 async function openPanelWithSidebar(fn){
@@ -3599,9 +3689,14 @@ btnFileTreeIcon?.addEventListener("click", () => openPanelWithSidebar(showFileTr
 btnActivityIframeIcon?.addEventListener("click", () => openPanelWithSidebar(showActivityIframePanel));
 btnAiModelsIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); window.location.href = btnAiModels.dataset.url; });
 btnImageGeneratorIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); window.location.href = btnImageGenerator.dataset.url; });
-btnPortfolioIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); window.location.href = btnPortfolio.dataset.url; });
+btnPortfolioIcon?.addEventListener("click", () => {
+  if(!sidebarVisible) toggleSidebar();
+  const url = btnPortfolio.dataset.url;
+  window.open(url, "_blank");
+});
 btnJobsIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); const url = btnJobs.dataset.url; window.open(url, "_blank"); });
 btnPipelineQueueIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); const url = btnPipelineQueue.dataset.url; window.open(url, "_blank"); });
+btnPrintifyProductsIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); showPrintifyProductsPanel(); });
 btnNexumChatIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); window.location.href = btnNexumChat.dataset.url; });
 btnNexumTabsIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); window.location.href = btnNexumTabs.dataset.url; });
 // Thin sidebar icon actions
@@ -3620,6 +3715,11 @@ thinArchiveIcon?.addEventListener("click", ev => {
   ev.stopPropagation();
   openPanelWithSidebar(showArchiveTabsPanel);
 });
+thinPrintifyIcon?.addEventListener("click", ev => {
+  ev.preventDefault();
+  ev.stopPropagation();
+  openPanelWithSidebar(showPrintifyProductsPanel);
+});
 // Ensure taps on mobile trigger the same actions
 thinChatIcon?.addEventListener("touchstart", ev => {
   ev.preventDefault();
@@ -3635,6 +3735,11 @@ thinArchiveIcon?.addEventListener("touchstart", ev => {
   ev.preventDefault();
   ev.stopPropagation();
   openPanelWithSidebar(showArchiveTabsPanel);
+});
+thinPrintifyIcon?.addEventListener("touchstart", ev => {
+  ev.preventDefault();
+  ev.stopPropagation();
+  openPanelWithSidebar(showPrintifyProductsPanel);
 });
 
 (async function init(){
@@ -3800,6 +3905,7 @@ thinArchiveIcon?.addEventListener("touchstart", ev => {
     case "chatTabs": showChatTabsPanel(); break;
     case "archiveTabs": showArchiveTabsPanel(); break;
     case "activity": showActivityIframePanel(); break;
+    case "printify": showPrintifyProductsPanel(); break;
     default: showUploaderPanel(); break;
   }
 
@@ -4209,8 +4315,6 @@ function addChatMessage(pairId, userText, userTs, aiText, aiTs, model, systemCon
   }
 
   seqDiv.appendChild(botDiv);
-
-  chatHideMetadata = true; // FORCE TRUE FOR REL
 
   if(!chatHideMetadata){
     const metaContainer = document.createElement("div");

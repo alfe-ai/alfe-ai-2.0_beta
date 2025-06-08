@@ -7,6 +7,7 @@
 </head>
 <body style="padding:1rem;">
   <h2>Image Design Pipeline</h2>
+  <p><button id="backToAuroraBtn">&larr; Back to Aurora</button></p>
   <div id="errorMessage" style="color:red;margin-bottom:0.5rem;"></div>
   <ul id="stageList"></ul>
   <div id="imageTabs" style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
@@ -52,6 +53,9 @@
 
     const params = new URLSearchParams(window.location.search);
     let file = params.get('file');
+    document.getElementById('backToAuroraBtn').addEventListener('click', () => {
+      window.location.href = '/';
+    });
     const idParam = params.get('id');
     const errorEl = document.getElementById('errorMessage');
     const stageParam = parseInt(params.get('stage'));
@@ -412,12 +416,27 @@
       printifyApiBtn.addEventListener('click', async () => {
         const productId = prompt('Enter Printify Product ID:');
         if(!productId) return;
+        const priceStr = prompt('Enter new price for all variants:', '19.44');
+        if(priceStr === null) return;
+        const qtyStr = prompt('Enter inventory quantity for all variants:', '20');
+        if(qtyStr === null) return;
+        const price = Math.round((parseFloat(priceStr) || 0) * 100);
+        const quantity = parseInt(qtyStr, 10) || 0;
         terminalEl.textContent = '';
         try {
+          const vRes = await fetch(`/api/printify/product/${encodeURIComponent(productId)}`);
+          const vData = await vRes.json();
+          if(!vRes.ok){
+            terminalEl.textContent = vData.error || 'Failed to load product.';
+            return;
+          }
+          const variants = Array.isArray(vData.variants)
+            ? vData.variants.map(v => ({ id: v.id, price, inventory_quantity: quantity }))
+            : [];
           const res = await fetch('/api/printify/updateProduct', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ productId, file: upscaledPath || upscaledFile || file })
+            body: JSON.stringify({ productId, variants, file: upscaledPath || upscaledFile || file })
           });
           const data = await res.json().catch(() => ({}));
           if(res.ok && data.updated){

@@ -68,20 +68,39 @@
       border-radius:4px;
       z-index:1000;
     }
+    #imageCounter {
+      position:fixed;
+      top:10px;
+      right:10px;
+      color:#0ff;
+      background:rgba(0,0,0,0.5);
+      padding:0.25rem 0.5rem;
+      border-radius:4px;
+      font-size:1.3rem;
+      z-index:1000;
+    }
   </style>
 </head>
 <body>
+  <a href="/about_confused.html" style="position:absolute; top:8px; left:8px; font-size:0.8rem; color:#0ff;">About</a>
   <h1>Confused Art - Powered by <a href="https://alfe.sh" target="_blank">Alfe AI</a></h1>
   <a
     href="https://www.ebay.com/sch/11450/i.html?_dkr=1&iconV2Request=true&_blrs=recall_filtering&_ssn=confused_apparel&_oac=1&_sop=10"
     target="_blank"
     class="shop-btn"
   >Shop</a>
+  <div id="imageCounter">0 / 0</div>
   <div id="grid" class="grid"></div>
   <div id="sentinel"></div>
   <div id="loadingIndicator">Loading...</div>
   <script src="/session.js"></script>
   <script>
+    const counterEl = document.getElementById('imageCounter');
+    let loadedCount = 0;
+    let totalCount = 0;
+    function updateCounter(){
+      counterEl.textContent = `${loadedCount} / ${totalCount}`;
+    }
     function showLoader(){
       document.getElementById('loadingIndicator').style.display = 'block';
     }
@@ -99,6 +118,9 @@
         const allImages = data
           .filter(f => f.portfolio)
           .sort(() => Math.random() - 0.5);
+        totalCount = allImages.length;
+        loadedCount = 0;
+        updateCounter();
 
         let currentIndex = 0;
         const batchSize = 12;
@@ -131,6 +153,8 @@
             img.alt = f.title || f.name;
             img.onload = img.onerror = () => {
               loaded++;
+              loadedCount++;
+              updateCounter();
               if(loaded === slice.length){
                 hideLoader();
                 loading = false;
@@ -156,6 +180,15 @@
         }, { rootMargin: '100px' });
 
         observer.observe(sentinel);
+
+        function onScroll(){
+          if(!loading && sentinelInView()){
+            renderNext();
+          }
+        }
+        window.addEventListener('scroll', onScroll);
+        window.addEventListener('resize', onScroll);
+
         renderNext();
 
       } catch(err){

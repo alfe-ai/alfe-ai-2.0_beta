@@ -69,9 +69,9 @@ async function main() {
 
     const label = process.env.GITHUB_LABEL;
     console.log(
-        `[TaskQueue] Fetching tasks from GitHub ${
-            label ? `(label='${label}')` : "(all open issues)"
-        } …`
+      `[TaskQueue] Fetching tasks from GitHub ${
+        label ? `(label='${label}')` : "(all open issues)"
+      } …`
     );
 
     //const issues = client.fetchOpenIssues(label?.trim() || undefined);
@@ -82,17 +82,17 @@ async function main() {
     // Build full repository slug once
     const repositorySlug = `${client.owner}/${client.repo}`;
 
-      // ------------------------------------------------------------------
-      // 1. Synchronise local DB
-      // ------------------------------------------------------------------
+    // ------------------------------------------------------------------
+    // 1. Synchronise local DB
+    // ------------------------------------------------------------------
     resolvedIssues.forEach((iss) => db.upsertIssue(iss, repositorySlug));
 
-      // Closed issue detection
+    // Closed issue detection
     const openIds = resolvedIssues.map((i) => i.id);
     db.markClosedExcept(openIds);
 
-      // ------------------------------------------------------------------
-      // 2. Populate in-memory queue (only open issues)
+    // ------------------------------------------------------------------
+    // 2. Populate in-memory queue (only open issues)
     resolvedIssues.forEach((issue) => queue.enqueue(issue));
 
     console.log(`[TaskQueue] ${queue.size()} task(s) in queue.`);
@@ -164,7 +164,16 @@ if (db.getSetting("show_session_id") === undefined) {
 }
 
 const app = express();
+// Body parser must come before any routes that access req.body
+app.use(bodyParser.json());
 const jobManager = new JobManager();
+
+// Printify configuration
+// Support both legacy PRINTIFY_TOKEN and the newer PRINTIFY_API_TOKEN env vars
+const printifyToken =
+  process.env.PRINTIFY_API_TOKEN || process.env.PRINTIFY_TOKEN || "";
+// Allow overriding the default shop ID via PRINTIFY_SHOP_ID
+const shopId = process.env.PRINTIFY_SHOP_ID || 18663958;
 
 /**
  * Returns a configured OpenAI client, depending on "ai_service" setting.
@@ -177,12 +186,10 @@ function getOpenAiClient() {
 
   console.debug("[Server Debug] Creating OpenAI client with service =", service);
 
-  // Removed forced override for deepseek models.
-
   if (service === "openrouter") {
     if (!openRouterKey) {
       throw new Error(
-          "Missing OPENROUTER_API_KEY environment variable, please set it before using OpenRouter."
+        "Missing OPENROUTER_API_KEY environment variable, please set it before using OpenRouter."
       );
     }
     // Use openrouter.ai with app name and referer
@@ -198,7 +205,7 @@ function getOpenAiClient() {
   } else {
     if (!openAiKey) {
       throw new Error(
-          "Missing OPENAI_API_KEY environment variable, please set it before using OpenAI."
+        "Missing OPENAI_API_KEY environment variable, please set it before using OpenAI."
       );
     }
     // Default to openai
@@ -216,7 +223,6 @@ function parseProviderModel(model) {
   } else if (model.startsWith("openrouter/")) {
     return { provider: "openrouter", shortModel: model.replace(/^openrouter\//, "") };
   } else if (model.startsWith("deepseek/")) {
-    // Changed to treat deepseek/ as openrouter
     return { provider: "openrouter", shortModel: model.replace(/^deepseek\//, "") };
   }
   return { provider: "Unknown", shortModel: model };
@@ -261,14 +267,13 @@ function verifyPassword(password, stored) {
   return h === hash;
 }
 
-// In server.js, update the updatePrintifyProduct function:
-
+// Updated to include ".json" suffix
 async function updatePrintifyProduct(productId, variants) {
   try {
     // Validate product existence first
     const validateRes = await axios.get(
-        `https://api.printify.com/v1/shops/${shopId}/products/${productId}`,
-        { headers: { Authorization: `Bearer ${printifyToken}` } }
+      `https://api.printify.com/v1/shops/${shopId}/products/${productId}.json`,
+      { headers: { Authorization: `Bearer ${printifyToken}` } }
     );
 
     if (!validateRes.data || validateRes.status !== 200) {
@@ -276,20 +281,29 @@ async function updatePrintifyProduct(productId, variants) {
     }
 
     // Verify variants structure
-    if (!Array.isArray(variants) || !variants.every(v => v.id && v.price)) {
+    if (
+      !Array.isArray(variants) ||
+      !variants.every(v => v.id && v.price !== undefined)
+    ) {
       throw new Error('Invalid variants format');
     }
 
+    const formattedVariants = variants.map(v => ({
+      id: v.id,
+      price: Math.round(Number(v.price)),
+      inventory_quantity: v.inventory_quantity
+    }));
+
     const response = await axios.put(
-        `https://api.printify.com/v1/shops/${shopId}/products/${productId}/variants`,
-        { variants },
-        {
-          headers: {
-            Authorization: `Bearer ${printifyToken}`,
-            'Content-Type': 'application/json'
-          },
-          timeout: 10000
-        }
+      `https://api.printify.com/v1/shops/${shopId}/products/${productId}/variants.json`,
+      { variants: formattedVariants },
+      {
+        headers: {
+          Authorization: `Bearer ${printifyToken}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000
+      }
     );
 
     return response.data;
@@ -307,18 +321,81 @@ async function updatePrintifyProduct(productId, variants) {
     throw new Error(`Printify update failed: ${errorDetails.data?.error || error.message}`);
   }
 }
- 
-// Add parameter validation middleware before API handlers:
+
 app.use('/api/printify/updateProduct', (req, res, next) => {
   if (!req.body.productId?.match(/^[0-9a-f]{24}$/i)) {
     return res.status(400).json({ error: 'Invalid product ID format' });
   }
-  if (!Array.isArray(req.body.variants)) {
-    return res.status(400).json({ error: 'Variants must be an array' });
+  if (
+    req.body.variants !== undefined &&
+    !Array.isArray(req.body.variants)
+  ) {
+    return res.status(400).json({ error: 'Variants must be an array if provided' });
   }
   next();
 });
 
+// Updated to include ".json" suffix in the GET request
+app.get('/api/printify/product/:id', async (req, res) => {
+  const productId = req.params.id;
+  try {
+    const response = await axios.get(
+      `https://api.printify.com/v1/shops/${shopId}/products/${productId}.json`,
+      { headers: { Authorization: `Bearer ${printifyToken}` } }
+    );
+    res.json(response.data);
+  } catch (err) {
+    console.error('Error in /api/printify/product:', err);
+    if (err.response?.status === 404) {
+      return res.status(404).json({ error: "Printify product not found" });
+    }
+    res.status(500).json({ error: 'Failed to load product' });
+  }
+});
+
+// List products for the configured shop
+app.get('/api/printify/products', async (req, res) => {
+  const page = parseInt(req.query.page || '1', 10);
+  const limit = parseInt(req.query.limit || '10', 10);
+  const fetchAll = req.query.all === 'true' || req.query.all === '1';
+
+  try {
+    if (fetchAll) {
+      let currentPage = page;
+      let results = [];
+      while (true) {
+        const url = `https://api.printify.com/v1/shops/${shopId}/products.json?page=${currentPage}&limit=${limit}`;
+        const response = await axios.get(url, {
+          headers: { Authorization: `Bearer ${printifyToken}` }
+        });
+        const products = Array.isArray(response.data?.data)
+          ? response.data.data
+          : Array.isArray(response.data?.products)
+          ? response.data.products
+          : Array.isArray(response.data)
+          ? response.data
+          : [];
+
+        results = results.concat(products);
+
+        if (!products.length || products.length < limit) break;
+        currentPage += 1;
+      }
+      return res.json({ data: results });
+    }
+
+    const url = `https://api.printify.com/v1/shops/${shopId}/products.json?page=${page}&limit=${limit}`;
+    const response = await axios.get(url, {
+      headers: { Authorization: `Bearer ${printifyToken}` }
+    });
+    res.json(response.data);
+  } catch (err) {
+    console.error('Error in /api/printify/products:', err);
+    const status = err.response?.status || 500;
+    const msg = err.response?.data?.error || 'Failed to load product list';
+    res.status(status).json({ error: msg });
+  }
+});
 
 async function deriveImageTitle(prompt, client = null) {
   if (!prompt) return '';
@@ -425,7 +502,7 @@ async function deriveTabTitle(message, client = null) {
 
 async function generateInitialGreeting(type, client = null) {
   const openAiClient = getOpenAiClient();
-  const storedModel = db.getSetting('ai_model') || 'deepseek/deepseek-chat';
+  const storedModel = db.getSetting("ai_model") || 'deepseek/deepseek-chat';
   function stripModelPrefix(m) {
     if (!m) return 'deepseek/deepseek-chat';
     if (m.startsWith('openai/')) return m.substring('openai/'.length);
@@ -439,7 +516,7 @@ async function generateInitialGreeting(type, client = null) {
   if (type === 'design') {
     prompt += 'Invite the user to share what they would like to create.';
   } else {
-    prompt += 'Invite the user to share what they would like to discuss.';
+    prompt += 'Invite the user to share what they would like to talk about.';
   }
 
   if (openAiClient) {
@@ -460,14 +537,14 @@ async function generateInitialGreeting(type, client = null) {
   }
 
   return type === 'design'
-      ? 'Hello! I am Alfe, your AI assistant. What would you like to design today?'
-      : 'Hello! I am Alfe, your AI assistant. What would you like to talk about?';
+    ? 'Hello! I am Alfe, your AI assistant. What would you like to design today?'
+    : 'Hello! I am Alfe, your AI assistant. What would you like to talk about?';
 }
 
 async function createInitialTabMessage(tabId, type, sessionId = '') {
   const greeting = await generateInitialGreeting(type);
   const pairId = db.createChatPair('', tabId, '', sessionId);
-  const defaultModel = db.getSetting('ai_model') || 'deepseek/deepseek-chat';
+  const defaultModel = db.getSetting("ai_model") || 'deepseek/deepseek-chat';
   db.finalizeChatPair(pairId, greeting, defaultModel, new Date().toISOString(), null);
 }
 
@@ -486,8 +563,6 @@ app.options("*", cors({
 }), (req, res) => {
   res.sendStatus(200);
 });
-
-app.use(bodyParser.json());
 
 // Restrict access by IP when WHITELIST_IP is set
 const whitelistIp = process.env.whitelist_ip || process.env.WHITELIST_IP;
@@ -569,8 +644,8 @@ app.get("/api/tasks", (req, res) => {
   console.debug("[Server Debug] GET /api/tasks called.");
   try {
     const includeHidden =
-        req.query.includeHidden === "1" ||
-        req.query.includeHidden === "true";
+      req.query.includeHidden === "1" ||
+      req.query.includeHidden === "true";
     console.debug("[Server Debug] includeHidden =", includeHidden);
     const tasks = db.listTasks(includeHidden);
     console.debug("[Server Debug] Found tasks =>", tasks.length);
@@ -744,8 +819,8 @@ app.post("/api/tasks/priority", (req, res) => {
     db.setPriority(id, priority);
 
     db.logActivity(
-        "Set priority",
-        JSON.stringify({ id, from: oldPriority, to: priority })
+      "Set priority",
+      JSON.stringify({ id, from: oldPriority, to: priority })
     );
 
     res.json({ success: true });
@@ -820,8 +895,8 @@ app.post("/api/tasks/new", async (req, res) => {
     const newIssue = await gh.createIssue(title, body || "");
     db.upsertIssue(newIssue, `${gh.owner}/${gh.repo}`);
     db.logActivity(
-        "New task",
-        JSON.stringify({ title, body, project: project || null })
+      "New task",
+      JSON.stringify({ title, body, project: project || null })
     );
 
     const defaultProject = db.getSetting("default_project");
@@ -1052,11 +1127,6 @@ app.post("/api/logout", (req, res) => {
     const sessionId = getSessionIdFromRequest(req);
     if (sessionId) {
       const account = db.getAccountBySession(sessionId);
-      // Preserve the account's session to allow chats to be restored on
-      // next login. Removing the session ID here prevents the user from
-      // recovering previous conversations after logging back in.
-      // The client clears its cookies, effectively logging out without
-      // deleting the stored session.
       if (account) console.debug("[Server Debug] Keeping session", sessionId, "for account", account.id);
     }
     res.json({ success: true });
@@ -1146,11 +1216,6 @@ app.get("/api/activity", (req, res) => {
   }
 });
 
-/*
-  We combine both OpenAI and OpenRouter models (if available),
-  prefixing IDs with "openai/" or "openrouter/",
-  plus a static set of DeepSeek models for demonstration.
-*/
 app.get("/api/ai/models", async (req, res) => {
   console.debug("[Server Debug] GET /api/ai/models called.");
 
@@ -1260,8 +1325,8 @@ app.get("/api/ai/models", async (req, res) => {
           const combinedId = "openai/" + id;
           const limit = knownTokenLimits[combinedId] || "N/A";
           const cInfo = knownCosts[combinedId]
-              ? knownCosts[combinedId]
-              : { input: "N/A", output: "N/A" };
+            ? knownCosts[combinedId]
+            : { input: "N/A", output: "N/A" };
           return {
             id: combinedId,
             provider: "openai",
@@ -1611,7 +1676,7 @@ app.post("/api/chat", async (req, res) => {
     const finalAssistantTokens = countTokens(encoder, assistantMessage);
 
     const total =
-        systemTokens + historyTokens + inputTokens + prevAssistantTokens + finalAssistantTokens;
+      systemTokens + historyTokens + inputTokens + prevAssistantTokens + finalAssistantTokens;
 
     const tokenInfo = {
       systemTokens,
@@ -1694,7 +1759,7 @@ app.get("/api/chat/tabs", (req, res) => {
   const showArchivedParam = req.query.showArchived;
   const sessionId = req.query.sessionId || "";
   console.debug(
-      `[Server Debug] GET /api/chat/tabs => listing tabs (nexum=${nexumParam}, showArchived=${showArchivedParam}, sessionId=${sessionId})`
+    `[Server Debug] GET /api/chat/tabs => listing tabs (nexum=${nexumParam}, showArchived=${showArchivedParam}, sessionId=${sessionId})`
   );
   try {
     let tabs;
@@ -2022,7 +2087,6 @@ app.post("/api/upload/portfolio", (req, res) => {
   }
 });
 
-// Upload images, run script to get description, return it as JSON.
 app.post("/api/chat/image", upload.single("imageFile"), async (req, res) => {
   try {
     if(!req.file){
@@ -2050,8 +2114,6 @@ app.post("/api/chat/image", upload.single("imageFile"), async (req, res) => {
   }
 });
 
-// Trigger the Leonardo upscaler script for a given uploaded file and stream
-// the script output back to the client.
 app.post("/api/upscale", async (req, res) => {
   try {
     const { file, dbId: providedDbId } = req.body || {};
@@ -2117,7 +2179,7 @@ app.post("/api/upscale", async (req, res) => {
 
         const dbId = providedDbId || db.getImageIdForUrl(originalUrl);
 
-        // ----- Run RIBT background removal on the upscaled result -----
+        // RIBT step
         const ribtScript =
           process.env.RIBT_SCRIPT_PATH ||
           '/mnt/part5/dot_fayra/Whimsical/git/LogisticaRIBT/run.sh';
@@ -2140,7 +2202,7 @@ app.post("/api/upscale", async (req, res) => {
             console.debug('[Server Debug] Copied RIBT output to =>', dest);
             db.setUpscaledImage(`${originalUrl}-nobg`, dest);
 
-            // ----- Copy RIBT output for final upscale -----
+            // Copy final
             const upscaleName = `${dbId || base}_upscale${ext}`;
             const upscaleDest = path.join(uploadsDir, upscaleName);
             const ribtCopySrc = ribtOutput;
@@ -2168,10 +2230,9 @@ app.post("/api/upscale", async (req, res) => {
   }
 });
 
-// Trigger the Printify submission script for a given file.
 app.post("/api/printify", async (req, res) => {
   try {
-    const { file, productId } = req.body || {};
+    const { file, productId, variants } = req.body || {};
     console.debug("[Server Debug] /api/printify called with file =>", file);
     if (!file) {
       console.debug("[Server Debug] /api/printify => missing 'file' in request body");
@@ -2213,17 +2274,14 @@ app.post("/api/printify", async (req, res) => {
     const job = jobManager.createJob(scriptPath, [filePath], { cwd: scriptCwd, file });
     console.debug("[Server Debug] /api/printify => job started", job.id);
 
-    // Detect the "All steps completed" message and kill the job 15s later.
     const doneRegex = /All steps completed/i;
     let killTimer = null;
     const logListener = (chunk) => {
       if (doneRegex.test(chunk) && job.child && !killTimer) {
-        // Wait 15 seconds before killing, replicating a shorter browser hold time
         killTimer = setTimeout(() => {
           if (job.child) {
             try {
-              job.child.kill(); // send SIGTERM first
-              // Force kill after 5s if the process doesn't exit
+              job.child.kill();
               setTimeout(() => {
                 if (job.child && !job.child.killed) {
                   try {
@@ -2232,7 +2290,6 @@ app.post("/api/printify", async (req, res) => {
                     console.error('[Server Debug] SIGKILL failed =>', err);
                   }
                 }
-                // Fallback: mark job finished if still running
                 setTimeout(() => {
                   if (job.status === 'running') {
                     jobManager.forceFinishJob(job.id);
@@ -2255,8 +2312,8 @@ app.post("/api/printify", async (req, res) => {
       }
       try {
         const url = `/uploads/${file}`;
-        if (productId) {
-          await updatePrintifyProduct(productId);
+        if (productId && Array.isArray(variants)) {
+          await updatePrintifyProduct(productId, variants);
         }
         db.setImageStatus(url, 'Printify API Updates');
       } catch (e) {
@@ -2273,11 +2330,16 @@ app.post("/api/printify", async (req, res) => {
 
 app.post("/api/printify/updateProduct", async (req, res) => {
   try {
-    const { productId, file } = req.body || {};
+    const { productId, variants, file } = req.body || {};
     if (!productId) {
       return res.status(400).json({ error: "Missing productId" });
     }
-    await updatePrintifyProduct(productId);
+    if (variants && !Array.isArray(variants)) {
+      return res.status(400).json({ error: "Variants must be an array" });
+    }
+    if (Array.isArray(variants)) {
+      await updatePrintifyProduct(productId, variants);
+    }
     if (file) {
       try {
         const url = path.isAbsolute(file) ? `/uploads/${path.basename(file)}` : `/uploads/${file}`;
@@ -2355,7 +2417,6 @@ app.delete("/api/pipelineQueue/:id", (req, res) => {
   res.json({ removed: true });
 });
 
-// Check if an upscaled version of a file exists.
 app.get("/api/upscale/result", (req, res) => {
   try {
     const file = req.query.file;
@@ -2364,7 +2425,6 @@ app.get("/api/upscale/result", (req, res) => {
     const ext = path.extname(file);
     const base = path.basename(file, ext);
     const candidates = [
-      // DB-based naming for final upscale
       ...(function() {
         const id = db.getImageIdForUrl(`/uploads/${file}`);
         return id ? [path.join(uploadsDir, `${id}_upscale${ext}`)] : [];
@@ -2375,17 +2435,14 @@ app.get("/api/upscale/result", (req, res) => {
       path.join(uploadsDir, `${base}-upscaled${ext}`),
     ];
     const nobgCandidates = [
-      // DB-based naming
       ...(function() {
         const id = db.getImageIdForUrl(`/uploads/${file}`);
         return id ? [path.join(uploadsDir, `${id}_nobg${ext}`)] : [];
       })(),
-      // Common naming patterns
       path.join(uploadsDir, `${base}_4096_nobg${ext}`),
       path.join(uploadsDir, `${base}-4096-nobg${ext}`),
       path.join(uploadsDir, `${base}_upscaled_nobg${ext}`),
       path.join(uploadsDir, `${base}-upscaled-nobg${ext}`),
-      // Alternate "no_bg"/"no-bg" variants
       path.join(uploadsDir, `${base}_4096_no_bg${ext}`),
       path.join(uploadsDir, `${base}-4096-no_bg${ext}`),
       path.join(uploadsDir, `${base}_4096-no-bg${ext}`),
@@ -2440,7 +2497,6 @@ app.get("/api/upscale/result", (req, res) => {
   }
 });
 
-// Generate an image using OpenAI's image API.
 app.post("/api/image/generate", async (req, res) => {
   try {
     const { prompt, n, size, model, provider, tabId, sessionId } = req.body || {};
@@ -2532,7 +2588,6 @@ app.post("/api/image/generate", async (req, res) => {
         .json({ error: "OPENAI_API_KEY environment variable not configured" });
     }
 
-    // Always use ChatGPT/DALL-E for image generation
     const openaiClient = new OpenAI({ apiKey: openAiKey });
 
     let modelName = (model || "dall-e-3").toLowerCase();
@@ -2542,9 +2597,9 @@ app.post("/api/image/generate", async (req, res) => {
     }
 
     if (modelName === "dall-e-3") {
-      countParsed = 1; // API restriction
+      countParsed = 1;
     } else {
-      countParsed = Math.min(countParsed, 4); // limit for dall-e-2
+      countParsed = Math.min(countParsed, 4);
     }
 
     console.debug(
@@ -2562,7 +2617,6 @@ app.post("/api/image/generate", async (req, res) => {
         response_format: "url"
       });
     } catch (err) {
-      // If DALLE-3 request fails due to user error, try DALLE-2 as a fallback
       if (
         modelName === "dall-e-3" &&
         err?.type === "image_generation_user_error"
@@ -2575,7 +2629,6 @@ app.post("/api/image/generate", async (req, res) => {
             size: "1024x1024",
             response_format: "url"
           });
-          // indicate fallback
           modelName = "dall-e-2";
         } catch (err2) {
           throw err2;
@@ -2591,7 +2644,6 @@ app.post("/api/image/generate", async (req, res) => {
       return res.status(502).json({ error: "Received empty response from AI service" });
     }
 
-    // Download the generated image and save locally
     let localUrl = first;
     try {
       const resp = await axios.get(first, { responseType: "arraybuffer" });
@@ -2631,7 +2683,6 @@ app.post("/api/image/generate", async (req, res) => {
   }
 });
 
-// Verbose logging for Image page
 app.get("/Image.html", (req, res) => {
   console.debug("[Server Debug] GET /Image.html =>", JSON.stringify(req.query));
   res.sendFile(path.join(__dirname, "../public/Image.html"));
@@ -2680,12 +2731,10 @@ app.get("/beta", (req, res) => {
   res.redirect("/");
 });
 
-// Serve aurora UI for per-tab URLs
 app.get("/chat/:tabUuid", (req, res) => {
   console.debug(`[Server Debug] GET /chat/${req.params.tabUuid} => Serving aurora.html`);
   res.sendFile(path.join(__dirname, "../public/aurora.html"));
 });
-
 
 app.get("/test_projects", (req, res) => {
   console.debug("[Server Debug] GET /test_projects => Serving test_projects.html");
@@ -2786,11 +2835,11 @@ app.post("/api/createSterlingChat", async (req, res) => {
 
     try {
       const changeBranchResp = await axios.post(
-          `${baseURL}/changeBranchOfChat/${encodeURIComponent(projectName)}/${createChatResponse.data.newChatNumber}`,
-          {
-            createNew: false,
-            branchName: sterlingBranch
-          }
+        `${baseURL}/changeBranchOfChat/${encodeURIComponent(projectName)}/${createChatResponse.data.newChatNumber}`,
+        {
+          createNew: false,
+          branchName: sterlingBranch
+        }
       );
       console.log('Response from /changeBranchOfChat:', changeBranchResp.data);
     } catch (branchErr) {
@@ -2831,7 +2880,6 @@ app.post("/api/projects/rename", (req, res) => {
   }
 });
 
-// New route to toggle favorites
 app.post("/api/ai/favorites", (req, res) => {
   try {
     const sessionId = getSessionIdFromRequest(req);
@@ -3005,7 +3053,6 @@ app.post("/api/markdown", (req, res) => {
   }
 });
 
-
 const PORT =
   process.env.AURORA_PORT ||
   process.env.PORT ||
@@ -3013,7 +3060,6 @@ const PORT =
 const keyPath = process.env.HTTPS_KEY_PATH;
 const certPath = process.env.HTTPS_CERT_PATH;
 
-// print keyPath certpath
 console.log('keyPath: ', keyPath);
 console.log('certPath: ', certPath);
 
