@@ -1105,6 +1105,39 @@ app.get("/api/activity", (req, res) => {
   }
 });
 
+app.get("/api/orders", (req, res) => {
+  console.debug("[Server Debug] GET /api/orders called.");
+  try {
+    const orders = db.listOrders();
+    res.json(orders);
+  } catch (err) {
+    console.error("[TaskQueue] GET /api/orders failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/api/orders", (req, res) => {
+  console.debug("[Server Debug] POST /api/orders =>", req.body);
+  try {
+    const { orderId, source, amount, fees, shipping, metadata } = req.body || {};
+    if (!orderId) {
+      return res.status(400).json({ error: "orderId required" });
+    }
+    const id = db.createOrder(
+      orderId,
+      source || '',
+      parseFloat(amount) || 0,
+      parseFloat(fees) || 0,
+      parseFloat(shipping) || 0,
+      metadata || {}
+    );
+    res.json({ success: true, id });
+  } catch (err) {
+    console.error("[TaskQueue] POST /api/orders failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 /*
   We combine both OpenAI and OpenRouter models (if available),
   prefixing IDs with "openai/" or "openrouter/",
