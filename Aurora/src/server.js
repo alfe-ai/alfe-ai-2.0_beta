@@ -450,7 +450,7 @@ const printifyQueue = new PrintifyJobQueue(jobManager, {
     "/mnt/part5/dot_fayra/Whimsical/git/PrintifyPuppet-PuppetCore-Sterling/LeonardoUpscalePuppet/loop.sh",
   printifyScript:
     process.env.PRINTIFY_SCRIPT_PATH ||
-    "/mnt/part5/dot_fayra/Whimsical/git/PrintifyPuppet-PuppetCore-Sterling/PrintifyPuppet/run.sh",
+    "/home/admin/Puppets/PrintifyPuppet/run.sh",
   db,
 });
 
@@ -2098,7 +2098,7 @@ app.post("/api/printify", async (req, res) => {
 
     const scriptPath =
       process.env.PRINTIFY_SCRIPT_PATH ||
-      "/mnt/part5/dot_fayra/Whimsical/git/PrintifyPuppet-PuppetCore-Sterling/PrintifyPuppet/run.sh";
+      "/home/admin/Puppets/PrintifyPuppet/run.sh";
     console.debug(
       "[Server Debug] /api/printify => using scriptPath =>",
       scriptPath
