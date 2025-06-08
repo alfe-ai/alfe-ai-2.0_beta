@@ -341,6 +341,9 @@ app.get('/api/printify/product/:id', async (req, res) => {
     res.json(response.data);
   } catch (err) {
     console.error('Error in /api/printify/product:', err);
+    if (err.response?.status === 404) {
+      return res.status(404).json({ error: "Printify product not found" });
+    }
     res.status(500).json({ error: 'Failed to load product' });
   }
 });
@@ -493,7 +496,7 @@ async function generateInitialGreeting(type, client = null) {
 async function createInitialTabMessage(tabId, type, sessionId = '') {
   const greeting = await generateInitialGreeting(type);
   const pairId = db.createChatPair('', tabId, '', sessionId);
-  const defaultModel = db.getSetting('ai_model') || 'deepseek/deepseek-chat';
+  const defaultModel = db.getSetting("ai_model") || 'deepseek/deepseek-chat';
   db.finalizeChatPair(pairId, greeting, defaultModel, new Date().toISOString(), null);
 }
 
