@@ -307,7 +307,7 @@ async function updatePrintifyProduct(productId, variants) {
     throw new Error(`Printify update failed: ${errorDetails.data?.error || error.message}`);
   }
 }
-
+ 
 // Add parameter validation middleware before API handlers:
 app.use('/api/printify/updateProduct', (req, res, next) => {
   if (!req.body.productId?.match(/^[0-9a-f]{24}$/i)) {
