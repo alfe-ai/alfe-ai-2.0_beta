@@ -1,6 +1,6 @@
 # Alfe AI Cloud Platform MVP Released!
 
-The first public beta of the Alfe AI cloud platform is now live at [https://alfe.sh](https://alfe.sh). We are proud to release this MVP as a fully **open-source** AI suite, inviting contributions from the community.
+The first public beta of the Alfe AI cloud platform is now live at [https://alfe.sh](https://alfe.sh). Alfe AI is an **open-source** AI suite which includes image design, software development, and more. Alfe AI is developed with a privacy-first philosophy.
 
 ## What's Included
 
