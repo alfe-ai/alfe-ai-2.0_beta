@@ -38,8 +38,24 @@
     .grid-item:hover img {
       transform:scale(1.05);
     }
+<<<<<<< HEAD
     a { color:#4da3ff; text-decoration:none; }
     a:hover { text-decoration:underline; }
+=======
+    a { color:#0ff; text-decoration:none; }
+    .shop-btn {
+      display:inline-block;
+      margin-bottom:1rem;
+      padding:6px 12px;
+      background:#333;
+      color:#0ff;
+      border:1px solid #444;
+      border-radius:4px;
+    }
+    .shop-btn:hover {
+      background:#444;
+    }
+>>>>>>> origin/codex/add-shop-link-button-to-portfolio-page
     #sentinel { height:1px; }
     #loadingIndicator {
       display:none;
@@ -58,6 +74,11 @@
 <body>
   <h1>Confused Art - Powered by <a href="https://alfe.sh">Alfe AI</a></h1>
   <h2>Portfolio</h2>
+  <a
+    href="https://www.ebay.com/sch/11450/i.html?_dkr=1&iconV2Request=true&_blrs=recall_filtering&_ssn=confused_apparel&_oac=1&_sop=10"
+    target="_blank"
+    class="shop-btn"
+  >Shop</a>
   <div id="grid" class="grid"></div>
   <div id="sentinel"></div>
   <div id="loadingIndicator">Loading...</div>
