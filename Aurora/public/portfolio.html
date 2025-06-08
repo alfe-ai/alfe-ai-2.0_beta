@@ -180,6 +180,15 @@
         }, { rootMargin: '100px' });
 
         observer.observe(sentinel);
+
+        function onScroll(){
+          if(!loading && sentinelInView()){
+            renderNext();
+          }
+        }
+        window.addEventListener('scroll', onScroll);
+        window.addEventListener('resize', onScroll);
+
         renderNext();
 
       } catch(err){
