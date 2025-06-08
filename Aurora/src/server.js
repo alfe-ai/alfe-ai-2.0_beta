@@ -2119,8 +2119,13 @@ app.post("/api/printify", async (req, res) => {
     }
 
     if (!fs.existsSync(scriptPath)) {
-      console.debug("[Server Debug] /api/printify => script not found:", scriptPath);
-      return res.status(500).json({ error: "Printify script missing" });
+      console.debug(
+        "[Server Debug] /api/printify => script not found:",
+        scriptPath
+      );
+      return res
+        .status(500)
+        .json({ error: `Printify script missing at ${scriptPath}` });
     }
 
     const job = jobManager.createJob(scriptPath, [filePath], { cwd: scriptCwd, file });
