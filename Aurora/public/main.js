@@ -341,7 +341,6 @@ function updateAccountButton(info){
     togglePortfolioMenu(false);
   }
 }
-}
 
 
 function showToast(msg, duration=1500){
