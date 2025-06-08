@@ -104,6 +104,7 @@ let showArchivedTabs = false;
 let topChatTabsBarVisible = false; // visibility of the top chat tabs bar
 let viewTabsBarVisible = false; // visibility of the top Chat/Tasks bar
 let showProjectNameInTabs = false; // append project name to chat tab titles
+let printifyPage = 1; // current Printify product page
 let showDependenciesColumn = false;
 let tabGenerateImages = false; // per-tab auto image toggle (design tabs only)
 let imageLoopEnabled = false; // automatic image generation loop mode
@@ -3464,6 +3465,7 @@ function showPrintifyProductsPanel(){
   $("#navActivityIframeBtn").classList.remove("active");
   $("#navPrintifyProductsBtn").classList.add("active");
   setSetting("last_sidebar_view", "printify");
+  printifyPage = 1;
   loadPrintifyProducts();
 }
 
@@ -3579,10 +3581,11 @@ async function loadPrintifyProducts(){
   if(!tbl) return;
   tbl.innerHTML = '<tr><td colspan="2">Loading...</td></tr>';
   try {
-    const res = await fetch('/api/printify/products?all=true&limit=100');
+    updatePrintifyPageDisplay();
+    const res = await fetch(`/api/printify/products?page=${printifyPage}&limit=10`);
     if(!res.ok) throw new Error('Failed to fetch');
     const data = await res.json();
-    const products = data.data || data.products || [];
+    const products = data.data || data.products || data || [];
     tbl.innerHTML = '';
     for(const p of products){
       const tr = document.createElement('tr');
@@ -3594,6 +3597,11 @@ async function loadPrintifyProducts(){
   } catch(err){
     tbl.innerHTML = `<tr><td colspan="2">Error: ${err.message}</td></tr>`;
   }
+}
+
+function updatePrintifyPageDisplay(){
+  const el = document.getElementById("printifyPageDisplay");
+  if(el) el.textContent = String(printifyPage);
 }
 
 const btnTasks = document.getElementById("navTasksBtn");
@@ -3609,6 +3617,8 @@ const btnPipelineQueue = document.getElementById("navPipelineQueueBtn");
 const btnPrintifyProducts = document.getElementById("navPrintifyProductsBtn");
 const btnPrintifyProductsIcon = document.getElementById("navPrintifyProductsIcon");
 const refreshPrintifyProductsBtn = document.getElementById("refreshPrintifyProductsBtn");
+const prevPrintifyPageBtn = document.getElementById("prevPrintifyPageBtn");
+const nextPrintifyPageBtn = document.getElementById("nextPrintifyPageBtn");
 const btnNexumChat = document.getElementById("navNexumChatBtn");
 const btnNexumTabs = document.getElementById("navNexumTabsBtn");
 // Icon buttons for collapsed sidebar
@@ -3655,6 +3665,16 @@ btnNexumChat?.addEventListener("click", () => { window.location.href = btnNexumC
 btnNexumTabs?.addEventListener("click", () => { window.location.href = btnNexumTabs.dataset.url; });
 btnPrintifyProducts?.addEventListener("click", showPrintifyProductsPanel);
 refreshPrintifyProductsBtn?.addEventListener("click", loadPrintifyProducts);
+prevPrintifyPageBtn?.addEventListener("click", () => {
+  if(printifyPage > 1){
+    printifyPage -= 1;
+    loadPrintifyProducts();
+  }
+});
+nextPrintifyPageBtn?.addEventListener("click", () => {
+  printifyPage += 1;
+  loadPrintifyProducts();
+});
 
 // Icon button actions (expand sidebar then open panel or link)
 async function openPanelWithSidebar(fn){
