@@ -44,6 +44,7 @@
   <div style="margin-top:0.5rem;">
     <button id="upscaleButton" hidden>Submit to Upscale</button>
     <button id="printifyButton" hidden>Submit to Printify</button>
+    <button id="printifyApiButton" hidden>Submit Printify API Updates</button>
   </div>
   <pre id="upscaleTerminal" style="background:#000;color:#0f0;padding:0.5rem;margin-top:0.5rem;height:200px;overflow:auto;font-family:monospace;"></pre>
   <script src="/session.js"></script>
@@ -108,14 +109,17 @@
         if(current === 'Printify API Updates'){
           if(stageItems[3]) stageItems[3].classList.add('completed');
           if(stageItems[4]) stageItems[4].classList.add('current');
+          printifyApiBtn.hidden = true;
         } else if(current === 'Ebay Shipping Updated'){
           if(stageItems[3]) stageItems[3].classList.add('completed');
           if(stageItems[4]) stageItems[4].classList.add('completed');
           if(stageItems[5]) stageItems[5].classList.add('current');
+          printifyApiBtn.hidden = true;
         } else if(current === 'Done'){
           if(stageItems[3]) stageItems[3].classList.add('completed');
           if(stageItems[4]) stageItems[4].classList.add('completed');
           if(stageItems[5]) stageItems[5].classList.add('completed');
+          printifyApiBtn.hidden = true;
         }
       }catch(e){
         console.error('Failed to check status =>', e);
@@ -327,6 +331,7 @@
 
     const upscaleBtn = document.getElementById('upscaleButton');
     printifyBtn = document.getElementById('printifyButton');
+    const printifyApiBtn = document.getElementById('printifyApiButton');
     const terminalEl = document.getElementById('upscaleTerminal');
     const jobsListEl = document.getElementById('jobsList');
 
@@ -349,6 +354,7 @@
       if (file) {
       upscaleBtn.hidden = false;
       printifyBtn.hidden = true;
+      printifyApiBtn.hidden = true;
       upscaleBtn.addEventListener('click', async () => {
         console.debug('Submit to Upscale clicked with file =>', file);
         terminalEl.textContent = '';
@@ -403,7 +409,29 @@
           }
         } catch (err) {
           console.error('Printify request error =>', err);
-          terminalEl.textContent = 'Printify request failed.';
+        terminalEl.textContent = 'Printify request failed.';
+      }
+      });
+      printifyApiBtn.addEventListener('click', async () => {
+        const productId = prompt('Enter Printify Product ID:');
+        if(!productId) return;
+        terminalEl.textContent = '';
+        try {
+          const res = await fetch('/api/printify/updateProduct', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId, file: upscaledPath || upscaledFile || file })
+          });
+          const data = await res.json().catch(() => ({}));
+          if(res.ok && data.updated){
+            terminalEl.textContent = 'Printify product updated.';
+            await checkStatus();
+          } else {
+            terminalEl.textContent = data.error || 'Printify API update failed.';
+          }
+        } catch(err){
+          console.error('Printify API update error =>', err);
+          terminalEl.textContent = 'Printify API update failed.';
         }
       });
       async function loadJobs(){
@@ -451,6 +479,7 @@
               stageItems[3].classList.add('completed');
               if(stageItems[4]) stageItems[4].classList.add('current');
             }
+            printifyApiBtn.hidden = false;
             checkStatus();
           }
         } catch(err){
@@ -468,6 +497,7 @@
     } else {
       upscaleBtn.disabled = true;
       printifyBtn.disabled = true;
+      printifyApiBtn.disabled = true;
       console.debug('No file parameter found => Upscale disabled');
       if(!errorEl.textContent){
         errorEl.textContent = 'No file specified.';
