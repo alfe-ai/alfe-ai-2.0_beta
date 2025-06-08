@@ -68,6 +68,17 @@
       border-radius:4px;
       z-index:1000;
     }
+    #imageCounter {
+      position:fixed;
+      top:10px;
+      right:10px;
+      color:#0ff;
+      background:rgba(0,0,0,0.5);
+      padding:0.25rem 0.5rem;
+      border-radius:4px;
+      font-size:0.9rem;
+      z-index:1000;
+    }
   </style>
 </head>
 <body>
@@ -77,11 +88,18 @@
     target="_blank"
     class="shop-btn"
   >Shop</a>
+  <div id="imageCounter">0 / 0</div>
   <div id="grid" class="grid"></div>
   <div id="sentinel"></div>
   <div id="loadingIndicator">Loading...</div>
   <script src="/session.js"></script>
   <script>
+    const counterEl = document.getElementById('imageCounter');
+    let loadedCount = 0;
+    let totalCount = 0;
+    function updateCounter(){
+      counterEl.textContent = `${loadedCount} / ${totalCount}`;
+    }
     function showLoader(){
       document.getElementById('loadingIndicator').style.display = 'block';
     }
@@ -99,6 +117,9 @@
         const allImages = data
           .filter(f => f.portfolio)
           .sort(() => Math.random() - 0.5);
+        totalCount = allImages.length;
+        loadedCount = 0;
+        updateCounter();
 
         let currentIndex = 0;
         const batchSize = 12;
@@ -131,6 +152,8 @@
             img.alt = f.title || f.name;
             img.onload = img.onerror = () => {
               loaded++;
+              loadedCount++;
+              updateCounter();
               if(loaded === slice.length){
                 hideLoader();
                 loading = false;
