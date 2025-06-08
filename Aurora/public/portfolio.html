@@ -124,7 +124,7 @@
             const wrap = document.createElement('div');
             wrap.className = 'grid-item';
             const link = document.createElement('a');
-            link.href = `/Image.html?file=${encodeURIComponent(f.name)}`;
+            link.href = `/uploads/${encodeURIComponent(f.name)}`;
             link.target = '_blank';
             const img = document.createElement('img');
             img.src = `/uploads/${encodeURIComponent(f.name)}`;
