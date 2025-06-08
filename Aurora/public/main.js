@@ -3579,7 +3579,7 @@ async function loadPrintifyProducts(){
   if(!tbl) return;
   tbl.innerHTML = '<tr><td colspan="2">Loading...</td></tr>';
   try {
-    const res = await fetch('/api/printify/products');
+    const res = await fetch('/api/printify/products?all=true&limit=100');
     if(!res.ok) throw new Error('Failed to fetch');
     const data = await res.json();
     const products = data.data || data.products || [];
