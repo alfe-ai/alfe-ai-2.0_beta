@@ -1,0 +1,13 @@
+commit fe588360c5579708296c01774da46ce282d6233e
+Author: Lochner <lochner@lochner.tech>
+Date:   Sun Jun 8 17:56:20 2025 -0500
+
+            new file:   .gitignore
+
+diff --git a/PriceScript/.gitignore b/PriceScript/.gitignore
+new file mode 100644
+index 0000000..3c3629e
+--- /dev/null
++++ b/PriceScript/.gitignore
+@@ -0,0 +1 @@
++node_modules
