@@ -274,9 +274,9 @@ async function updatePrintifyProduct(productId) {
   const variants = (product.variants || []).map(v => ({
     id: v.id,
     price: 19.44,
-    quantity: 20,
   }));
-  await axios.put(prodUrl, { variants }, { headers });
+  const variantsUrl = `https://api.printify.com/v1/shops/${shopId}/products/${productId}/variants.json`;
+  await axios.put(variantsUrl, { variants }, { headers });
 }
 
 async function deriveImageTitle(prompt, client = null) {
