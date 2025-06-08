@@ -344,6 +344,25 @@ app.get('/api/printify/product/:id', async (req, res) => {
   }
 });
 
+// List products for the configured shop
+app.get('/api/printify/products', async (req, res) => {
+  const page = req.query.page || 1;
+  const limit = req.query.limit || 10;
+  try {
+    const url =
+      `https://api.printify.com/v1/shops/${shopId}/products.json?page=${page}&limit=${limit}`;
+    const response = await axios.get(url, {
+      headers: { Authorization: `Bearer ${printifyToken}` }
+    });
+    res.json(response.data);
+  } catch (err) {
+    console.error('Error in /api/printify/products:', err);
+    const status = err.response?.status || 500;
+    const msg = err.response?.data?.error || 'Failed to load product list';
+    res.status(status).json({ error: msg });
+  }
+});
+
 async function deriveImageTitle(prompt, client = null) {
   if (!prompt) return '';
 
