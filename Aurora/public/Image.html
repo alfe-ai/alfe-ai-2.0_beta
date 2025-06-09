@@ -117,13 +117,15 @@
         if(statusText){
           const m = current.match(/Printify URL:\s*(\S+)/i);
           if(m){
+            printifyUrl = m[1];
             const link = document.createElement('a');
-            link.href = m[1];
-            link.textContent = m[1];
+            link.href = printifyUrl;
+            link.textContent = printifyUrl;
             link.target = '_blank';
             statusText.innerHTML = '';
             statusText.appendChild(link);
           } else {
+            printifyUrl = null;
             statusText.textContent = current;
           }
         }
@@ -282,6 +284,7 @@
     let printifyBtn;
     let printifyPriceBtn;
     let setProductUrlBtn;
+    let printifyUrl = null;
 
     function updateChoiceUI(){
       const choiceDiv = document.getElementById('printifyChoice');
@@ -463,7 +466,10 @@
             const res = await fetch('/api/printifyPrice', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ file: targetPath || targetFile })
+              body: JSON.stringify({
+                file: targetPath || targetFile,
+                url: printifyUrl || undefined
+              })
             });
             const data = await res.json().catch(() => ({}));
             if(res.ok && data.jobId){
