@@ -9,7 +9,7 @@
   <h2>Jobs</h2>
   <button id="stopBtn" style="display:none;margin-bottom:0.5rem;">Stop Job</button>
   <ul id="jobsList"></ul>
-  <pre id="terminal" style="background:#000;color:#0f0;padding:0.5rem;margin-top:0.5rem;height:200px;overflow:auto;font-family:monospace;resize:vertical;"></pre>
+  <pre id="terminal" style="background:#000;color:#0f0;padding:0.5rem;margin-top:0.5rem;height:80vh;overflow:auto;font-family:monospace;resize:vertical;"></pre>
 <script>
 async function loadJobs() {
   const res = await fetch('/api/jobs');
