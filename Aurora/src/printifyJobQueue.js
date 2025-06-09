@@ -195,6 +195,12 @@ export default class PrintifyJobQueue {
             this.db.setImageStatus(originalUrl, 'Upscaled');
           }
         }
+      } else if (job.type === 'printify') {
+        const matches = [...jmJob.log.matchAll(/Product URL:\s*(https?:\S+)/i)];
+        const m = matches[matches.length - 1];
+        if (m) {
+          job.resultPath = m[1].trim();
+        }
       }
       this.current = null;
       this._saveJobs();
