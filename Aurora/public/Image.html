@@ -113,6 +113,19 @@
       try{
         const current = await loadStatus();
         if(statusSelect.value !== current) statusSelect.value = current;
+        if(statusText){
+          const m = current.match(/Printify URL:\s*(\S+)/i);
+          if(m){
+            const link = document.createElement('a');
+            link.href = m[1];
+            link.textContent = m[1];
+            link.target = '_blank';
+            statusText.innerHTML = '';
+            statusText.appendChild(link);
+          } else {
+            statusText.textContent = current;
+          }
+        }
         if(current === 'Printify Price Puppet'){
           if(stageItems[3]) stageItems[3].classList.add('completed');
           if(stageItems[4]) stageItems[4].classList.add('current');
@@ -163,8 +176,11 @@
     const resEl = document.getElementById('resolutionDisplay');
     const statusDiv = document.getElementById('statusControl');
     const statusSelect = document.createElement('select');
+    const statusText = document.createElement('span');
+    statusText.style.marginLeft = '0.5rem';
     statusDiv.textContent = 'Status: ';
     statusDiv.appendChild(statusSelect);
+    statusDiv.appendChild(statusText);
     statusSelect.disabled = !file;
     (async () => {
       const current = file ? await loadStatus() : '';
