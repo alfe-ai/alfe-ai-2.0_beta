@@ -2334,13 +2334,18 @@ app.post("/api/printify", async (req, res) => {
 
 app.post("/api/printifyPrice", async (req, res) => {
   try {
-    const { file } = req.body || {};
-    console.debug("[Server Debug] /api/printifyPrice called with file =>", file);
-    if (!file) {
+    const { file, url } = req.body || {};
+    console.debug(
+      "[Server Debug] /api/printifyPrice called with file =>",
+      file,
+      "url =>",
+      url
+    );
+    if (!file && !url) {
       console.debug(
-        "[Server Debug] /api/printifyPrice => missing 'file' in request body"
+        "[Server Debug] /api/printifyPrice => missing url and file"
       );
-      return res.status(400).json({ error: "Missing file" });
+      return res.status(400).json({ error: "Missing Printify URL" });
     }
 
     const scriptPath =
@@ -2355,20 +2360,23 @@ app.post("/api/printifyPrice", async (req, res) => {
       "[Server Debug] /api/printifyPrice => using scriptCwd =>",
       scriptCwd
     );
-    const filePath = path.isAbsolute(file)
-      ? file
-      : path.join(uploadsDir, file);
-    console.debug(
-      "[Server Debug] /api/printifyPrice => resolved filePath =>",
-      filePath
-    );
-
-    if (!fs.existsSync(filePath)) {
+    let filePath = null;
+    if (file) {
+      filePath = path.isAbsolute(file)
+        ? file
+        : path.join(uploadsDir, file);
       console.debug(
-        "[Server Debug] /api/printifyPrice => file does not exist:",
+        "[Server Debug] /api/printifyPrice => resolved filePath =>",
         filePath
       );
-      return res.status(400).json({ error: "File not found" });
+
+      if (!fs.existsSync(filePath)) {
+        console.debug(
+          "[Server Debug] /api/printifyPrice => file does not exist:",
+          filePath
+        );
+        return res.status(400).json({ error: "File not found" });
+      }
     }
 
     if (!fs.existsSync(scriptPath)) {
@@ -2381,26 +2389,38 @@ app.post("/api/printifyPrice", async (req, res) => {
         .json({ error: `Printify script missing at ${scriptPath}` });
     }
 
-    const status = db.getImageStatusForUrl(`/uploads/${file}`);
-    const url = extractPrintifyUrl(status || "");
-    const args = [filePath];
-    if (url) args.push(url);
+    let productUrl = url || null;
+    if (!productUrl && file) {
+      const status = db.getImageStatusForUrl(`/uploads/${file}`);
+      productUrl = extractPrintifyUrl(status || "");
+    }
+    if (!productUrl) {
+      console.debug(
+        "[Server Debug] /api/printifyPrice => missing product URL for:",
+        file
+      );
+      return res.status(400).json({ error: "Missing Printify URL" });
+    }
+    const args = [productUrl];
 
     const job = jobManager.createJob(scriptPath, args, {
       cwd: scriptCwd,
       file,
     });
+    job.productUrl = productUrl;
     console.debug("[Server Debug] /api/printifyPrice => job started", job.id);
 
     jobManager.addDoneListener(job, async () => {
-      try {
-        const url = `/uploads/${file}`;
-        db.setImageStatus(url, "Printify API Updates");
-      } catch (e) {
-        console.error(
-          '[Server Debug] Failed to set status after price puppet =>',
-          e
-        );
+      if (file) {
+        try {
+          const url = `/uploads/${file}`;
+          db.setImageStatus(url, "Printify API Updates");
+        } catch (e) {
+          console.error(
+            '[Server Debug] Failed to set status after price puppet =>',
+            e
+          );
+        }
       }
     });
 

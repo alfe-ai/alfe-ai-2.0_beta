@@ -183,14 +183,24 @@ export default class PrintifyJobQueue {
     }
 
     const cwd = path.dirname(script);
-    const args = [filePath];
+    const args = [];
     if (job.type === 'printifyPrice') {
       let url = job.productUrl || null;
       if (!url && this.db) {
         const status = this.db.getImageStatusForUrl(`/uploads/${job.file}`);
         url = extractPrintifyUrl(status || '');
       }
-      if (url) args.push(url);
+      if (url) {
+        args.push(url);
+      } else {
+        job.status = 'error';
+        this.current = null;
+        this._saveJobs();
+        this._processNext();
+        return;
+      }
+    } else {
+      args.push(filePath);
     }
     const jmJob = this.jobManager.createJob(script, args, { cwd, file: job.file });
     job.jobId = jmJob.id;
