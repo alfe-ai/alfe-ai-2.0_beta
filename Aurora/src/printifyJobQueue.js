@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { extractProductUrl } from './printifyUtils.js';
+import { extractProductUrl, extractPrintifyUrl } from './printifyUtils.js';
 
 export default class PrintifyJobQueue {
   constructor(jobManager, options = {}) {
@@ -183,7 +183,16 @@ export default class PrintifyJobQueue {
     }
 
     const cwd = path.dirname(script);
-    const jmJob = this.jobManager.createJob(script, [filePath], { cwd, file: job.file });
+    const args = [filePath];
+    if (job.type === 'printifyPrice') {
+      let url = job.productUrl || null;
+      if (!url && this.db) {
+        const status = this.db.getImageStatusForUrl(`/uploads/${job.file}`);
+        url = extractPrintifyUrl(status || '');
+      }
+      if (url) args.push(url);
+    }
+    const jmJob = this.jobManager.createJob(script, args, { cwd, file: job.file });
     job.jobId = jmJob.id;
     this.jobManager.addDoneListener(jmJob, () => {
       job.status = jmJob.status;
