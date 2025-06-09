@@ -120,6 +120,7 @@ import os from "os";
 import child_process from "child_process";
 import JobManager from "./jobManager.js";
 import PrintifyJobQueue from "./printifyJobQueue.js";
+import { extractPrintifyUrl } from "./printifyUtils.js";
 
 const db = new TaskDB();
 console.debug("[Server Debug] Checking or setting default 'ai_model' in DB...");
@@ -2380,7 +2381,12 @@ app.post("/api/printifyPrice", async (req, res) => {
         .json({ error: `Printify script missing at ${scriptPath}` });
     }
 
-    const job = jobManager.createJob(scriptPath, [filePath], {
+    const status = db.getImageStatusForUrl(`/uploads/${file}`);
+    const url = extractPrintifyUrl(status || "");
+    const args = [filePath];
+    if (url) args.push(url);
+
+    const job = jobManager.createJob(scriptPath, args, {
       cwd: scriptCwd,
       file,
     });
