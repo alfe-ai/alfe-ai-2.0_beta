@@ -42,6 +42,7 @@
         <li><button id="navArchiveTabsBtn" class="tree-button">Archived</button></li>
         <li><button id="navTasksBtn" class="tree-button active">Tasks</button></li>
         <li><button id="navFileTreeBtn" class="tree-button">File Tree</button></li>
+        <li><button id="navFileCabinetBtn" class="tree-button">File Cabinet</button></li>
         <li><button id="navAiModelsBtn" class="tree-button" data-url="/ai_models">AI Models</button></li>
         <li><button id="navImageGeneratorBtn" class="tree-button" data-url="/image_generator">Image Generator</button></li>
         <li><button id="navPortfolioBtn" class="tree-button" data-url="/portfolio.html" hidden>Portfolio</button></li>
@@ -60,6 +61,7 @@
       <button id="navArchiveTabsIcon" class="icon-btn" title="Archived">&#128452;</button>
       <button id="navTasksIcon" class="icon-btn" title="Tasks">✅</button>
       <button id="navFileTreeIcon" class="icon-btn" title="File Tree">📁</button>
+      <button id="navFileCabinetIcon" class="icon-btn" title="File Cabinet">🗄️</button>
       <button id="navAiModelsIcon" class="icon-btn" title="AI Models">🤖</button>
       <button id="navImageGeneratorIcon" class="icon-btn" title="Image Generator">🎨</button>
       <button id="navPortfolioIcon" class="icon-btn" title="Portfolio" hidden>🖼️</button>
@@ -139,6 +141,14 @@
       <div id="fileTreeContainer" style="margin-top:1rem; max-height:60vh; overflow:auto;"></div>
     </div>
 
+    <!-- Virtual File Cabinet panel -->
+    <div id="sidebarViewFileCabinet" style="display:none;">
+      <h2>Virtual File Cabinet</h2>
+      <div id="fileCabinetContainer" style="margin-top:1rem; max-height:60vh; overflow:auto;">
+        <!-- Contents will be populated dynamically -->
+      </div>
+    </div>
+
     <!-- New Chat Tabs view panel -->
     <div id="sidebarViewChatTabs" style="display:none;">
 <!--      <h2>Chat Tabs</h2>-->
@@ -203,6 +213,7 @@
     <button id="thinIconChats" class="thin-icon" title="Chats">💬</button>
     <button id="thinIconImages" class="thin-icon" title="Images">🖼️</button>
     <button id="thinIconArchived" class="thin-icon" title="Archived">&#128452;</button>
+    <button id="thinIconCabinet" class="thin-icon" title="File Cabinet">🗄️</button>
     <button id="thinIconPrintify" class="thin-icon" title="Printify Products">🛍️</button>
   </div>
 

@@ -3363,7 +3363,9 @@ $("#projectsSaveBtn").addEventListener("click", saveProjectBranches);
 $("#projectsCancelBtn").addEventListener("click", ()=>hideModal($("#projectsModal")));
 
 const navFileTreeBtn = document.getElementById("navFileTreeBtn");
+const navFileCabinetBtn = document.getElementById("navFileCabinetBtn");
 const sidebarViewFileTree = document.getElementById("sidebarViewFileTree");
+const sidebarViewFileCabinet = document.getElementById("sidebarViewFileCabinet");
 const sidebarViewTasks = document.getElementById("sidebarViewTasks");
 const sidebarViewUploader = document.getElementById("sidebarViewUploader");
 const sidebarViewChatTabs = document.getElementById("sidebarViewChatTabs");
@@ -3371,6 +3373,7 @@ const sidebarViewActivityIframe = document.getElementById("sidebarViewActivityIf
 const sidebarViewArchiveTabs = document.getElementById("sidebarViewArchiveTabs");
 const sidebarViewPrintifyProducts = document.getElementById("sidebarViewPrintifyProducts");
 const fileTreeContainer = document.getElementById("fileTreeContainer");
+const fileCabinetContainer = document.getElementById("fileCabinetContainer");
 
 function showTasksPanel(){
   sidebarViewTasks.style.display = "";
@@ -3410,6 +3413,7 @@ function showFileTreePanel(){
   sidebarViewTasks.style.display = "none";
   sidebarViewUploader.style.display = "none";
   sidebarViewFileTree.style.display = "";
+  sidebarViewFileCabinet.style.display = "none";
   sidebarViewChatTabs.style.display = "none";
   sidebarViewArchiveTabs.style.display = "none";
   sidebarViewActivityIframe.style.display = "none";
@@ -3417,11 +3421,32 @@ function showFileTreePanel(){
   $("#navTasksBtn").classList.remove("active");
   $("#navUploaderBtn").classList.remove("active");
   $("#navFileTreeBtn").classList.add("active");
+  $("#navFileCabinetBtn").classList.remove("active");
   $("#navChatTabsBtn").classList.remove("active");
   $("#navArchiveTabsBtn").classList.remove("active");
   $("#navActivityIframeBtn").classList.remove("active");
   setSetting("last_sidebar_view", "fileTree");
   loadFileTree();
+}
+
+function showFileCabinetPanel(){
+  sidebarViewTasks.style.display = "none";
+  sidebarViewUploader.style.display = "none";
+  sidebarViewFileTree.style.display = "none";
+  sidebarViewFileCabinet.style.display = "";
+  sidebarViewChatTabs.style.display = "none";
+  sidebarViewArchiveTabs.style.display = "none";
+  sidebarViewActivityIframe.style.display = "none";
+  sidebarViewPrintifyProducts.style.display = "none";
+  $("#navTasksBtn").classList.remove("active");
+  $("#navUploaderBtn").classList.remove("active");
+  $("#navFileTreeBtn").classList.remove("active");
+  $("#navFileCabinetBtn").classList.add("active");
+  $("#navChatTabsBtn").classList.remove("active");
+  $("#navArchiveTabsBtn").classList.remove("active");
+  $("#navActivityIframeBtn").classList.remove("active");
+  setSetting("last_sidebar_view", "fileCabinet");
+  loadFileCabinet();
 }
 
 function showChatTabsPanel(){
@@ -3604,6 +3629,30 @@ async function loadFileTree(){
   }
 }
 
+async function loadFileCabinet(){
+  if(!fileCabinetContainer) return;
+  fileCabinetContainer.textContent = "Loading cabinet...";
+  try {
+    const res = await fetch('/api/cabinet');
+    if(!res.ok) throw new Error('Failed to fetch');
+    const data = await res.json();
+    fileCabinetContainer.innerHTML = '';
+    if(Array.isArray(data.items)){
+      const ul = document.createElement('ul');
+      data.items.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = item.name || item;
+        ul.appendChild(li);
+      });
+      fileCabinetContainer.appendChild(ul);
+    } else {
+      fileCabinetContainer.textContent = 'No cabinet data';
+    }
+  } catch(err){
+    fileCabinetContainer.textContent = 'Error: ' + err.message;
+  }
+}
+
 async function loadPrintifyProducts(){
   const tbl = document.querySelector("#printifyProductsTable tbody");
   if(!tbl) return;
@@ -3644,6 +3693,7 @@ const btnJobs = document.getElementById("navJobsBtn");
 const btnPipelineQueue = document.getElementById("navPipelineQueueBtn");
 const btnPrintifyProducts = document.getElementById("navPrintifyProductsBtn");
 const btnPrintifyProductsIcon = document.getElementById("navPrintifyProductsIcon");
+const btnFileCabinet = document.getElementById("navFileCabinetBtn");
 const refreshPrintifyProductsBtn = document.getElementById("refreshPrintifyProductsBtn");
 const prevPrintifyPageBtn = document.getElementById("prevPrintifyPageBtn");
 const nextPrintifyPageBtn = document.getElementById("nextPrintifyPageBtn");
@@ -3655,6 +3705,7 @@ const btnUploaderIcon = document.getElementById("navUploaderIcon");
 const btnChatTabsIcon = document.getElementById("navChatTabsIcon");
 const btnArchiveTabsIcon = document.getElementById("navArchiveTabsIcon");
 const btnFileTreeIcon = document.getElementById("navFileTreeIcon");
+const btnFileCabinetIcon = document.getElementById("navFileCabinetIcon");
 const btnAiModelsIcon = document.getElementById("navAiModelsIcon");
 const btnImageGeneratorIcon = document.getElementById("navImageGeneratorIcon");
 const btnPortfolioIcon = document.getElementById("navPortfolioIcon");
@@ -3667,6 +3718,7 @@ const btnNexumTabsIcon = document.getElementById("navNexumTabsIcon");
 const thinChatIcon = document.getElementById("thinIconChats");
 const thinImagesIcon = document.getElementById("thinIconImages");
 const thinArchiveIcon = document.getElementById("thinIconArchived");
+const thinCabinetIcon = document.getElementById("thinIconCabinet");
 const thinPrintifyIcon = document.getElementById("thinIconPrintify");
 
 btnTasks.addEventListener("click", showTasksPanel);
@@ -3692,6 +3744,7 @@ btnPipelineQueue?.addEventListener("click", () => {
 btnNexumChat?.addEventListener("click", () => { window.location.href = btnNexumChat.dataset.url; });
 btnNexumTabs?.addEventListener("click", () => { window.location.href = btnNexumTabs.dataset.url; });
 btnPrintifyProducts?.addEventListener("click", showPrintifyProductsPanel);
+btnFileCabinet?.addEventListener("click", showFileCabinetPanel);
 refreshPrintifyProductsBtn?.addEventListener("click", loadPrintifyProducts);
 prevPrintifyPageBtn?.addEventListener("click", () => {
   if(printifyPage > 1){
@@ -3714,6 +3767,7 @@ btnUploaderIcon?.addEventListener("click", () => openPanelWithSidebar(showUpload
 btnChatTabsIcon?.addEventListener("click", () => openPanelWithSidebar(showChatTabsPanel));
 btnArchiveTabsIcon?.addEventListener("click", () => openPanelWithSidebar(showArchiveTabsPanel));
 btnFileTreeIcon?.addEventListener("click", () => openPanelWithSidebar(showFileTreePanel));
+btnFileCabinetIcon?.addEventListener("click", () => openPanelWithSidebar(showFileCabinetPanel));
 btnActivityIframeIcon?.addEventListener("click", () => openPanelWithSidebar(showActivityIframePanel));
 btnAiModelsIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); window.location.href = btnAiModels.dataset.url; });
 btnImageGeneratorIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); window.location.href = btnImageGenerator.dataset.url; });
@@ -3743,6 +3797,11 @@ thinArchiveIcon?.addEventListener("click", ev => {
   ev.stopPropagation();
   openPanelWithSidebar(showArchiveTabsPanel);
 });
+thinCabinetIcon?.addEventListener("click", ev => {
+  ev.preventDefault();
+  ev.stopPropagation();
+  openPanelWithSidebar(showFileCabinetPanel);
+});
 thinPrintifyIcon?.addEventListener("click", ev => {
   ev.preventDefault();
   ev.stopPropagation();
@@ -3763,6 +3822,11 @@ thinArchiveIcon?.addEventListener("touchstart", ev => {
   ev.preventDefault();
   ev.stopPropagation();
   openPanelWithSidebar(showArchiveTabsPanel);
+});
+thinCabinetIcon?.addEventListener("touchstart", ev => {
+  ev.preventDefault();
+  ev.stopPropagation();
+  openPanelWithSidebar(showFileCabinetPanel);
 });
 thinPrintifyIcon?.addEventListener("touchstart", ev => {
   ev.preventDefault();
@@ -3930,6 +3994,7 @@ thinPrintifyIcon?.addEventListener("touchstart", ev => {
   switch(lastView){
     case "uploader": showUploaderPanel(); break;
     case "fileTree": showFileTreePanel(); break;
+    case "fileCabinet": showFileCabinetPanel(); break;
     case "chatTabs": showChatTabsPanel(); break;
     case "archiveTabs": showArchiveTabsPanel(); break;
     case "activity": showActivityIframePanel(); break;
