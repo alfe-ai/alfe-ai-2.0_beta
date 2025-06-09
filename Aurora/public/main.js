@@ -3061,7 +3061,16 @@ function renderFileList(){
     const tdSource = document.createElement("td");
     tdSource.textContent = f.source || "";
     const tdStatus = document.createElement("td");
-    tdStatus.textContent = f.status || "";
+    const urlMatch = (f.status || "").match(/Printify URL:\s*(\S+)/i);
+    if(urlMatch){
+      const link = document.createElement("a");
+      link.href = urlMatch[1];
+      link.textContent = urlMatch[1];
+      link.target = "_blank";
+      tdStatus.appendChild(link);
+    } else {
+      tdStatus.textContent = f.status || "";
+    }
     tdStatus.className = "img-status-cell";
     const tdPortfolio = document.createElement("td");
     const portCheck = document.createElement("input");
@@ -3101,6 +3110,25 @@ function renderFileList(){
       document.body.removeChild(a);
     });
     tdAction.appendChild(dlBtn);
+    const urlBtn = document.createElement("button");
+    urlBtn.textContent = "Set URL";
+    urlBtn.addEventListener("click", async () => {
+      const current = urlMatch ? urlMatch[1] : "";
+      const url = prompt("Enter Printify Product URL:", current);
+      if(!url) return;
+      try{
+        await fetch('/api/upload/status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: f.name, status: `Printify URL: ${url}` })
+        });
+        await loadFileList();
+      }catch(err){
+        console.error('Failed to set Printify URL =>', err);
+        alert('Failed to set Printify URL');
+      }
+    });
+    tdAction.appendChild(urlBtn);
     tr.appendChild(tdIndex);
     tr.appendChild(tdThumb);
     tr.appendChild(tdName);

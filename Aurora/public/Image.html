@@ -46,6 +46,7 @@
     <button id="upscaleButton" hidden>Submit to Upscale</button>
     <button id="printifyButton" hidden>Submit to Printify</button>
     <button id="printifyPriceButton" hidden>Submit Price Update</button>
+    <button id="setProductUrlButton" hidden>Set Product URL</button>
     <button id="printifyApiButton">Submit Printify API Updates</button>
   </div>
   <pre id="upscaleTerminal" style="background:#000;color:#0f0;padding:0.5rem;margin-top:0.5rem;height:200px;overflow:auto;font-family:monospace;"></pre>
@@ -280,6 +281,7 @@
     let nobgPath = null;
     let printifyBtn;
     let printifyPriceBtn;
+    let setProductUrlBtn;
 
     function updateChoiceUI(){
       const choiceDiv = document.getElementById('printifyChoice');
@@ -361,6 +363,7 @@
     const upscaleBtn = document.getElementById('upscaleButton');
     printifyBtn = document.getElementById('printifyButton');
     printifyPriceBtn = document.getElementById('printifyPriceButton');
+    setProductUrlBtn = document.getElementById('setProductUrlButton');
     const printifyApiBtn = document.getElementById('printifyApiButton');
     const terminalEl = document.getElementById('upscaleTerminal');
     const jobsListEl = document.getElementById('jobsList');
@@ -385,6 +388,7 @@
       upscaleBtn.hidden = false;
       printifyBtn.hidden = true;
       if(printifyPriceBtn) printifyPriceBtn.hidden = true;
+      if(setProductUrlBtn) setProductUrlBtn.hidden = false;
       printifyApiBtn.hidden = false;
       upscaleBtn.addEventListener('click', async () => {
         console.debug('Submit to Upscale clicked with file =>', file);
@@ -471,6 +475,23 @@
           } catch(err){
             console.error('Printify Price request error =>', err);
             terminalEl.textContent = 'Printify Price request failed.';
+          }
+        });
+      }
+      if(setProductUrlBtn){
+        setProductUrlBtn.addEventListener('click', async () => {
+          const url = prompt('Enter Printify Product URL:');
+          if(!url) return;
+          try{
+            await fetch('/api/upload/status', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: file, status: `Printify URL: ${url}` })
+            });
+            await checkStatus();
+          }catch(err){
+            console.error('Failed to set Printify URL =>', err);
+            alert('Failed to set Printify URL');
           }
         });
       }
@@ -574,6 +595,7 @@
       upscaleBtn.disabled = true;
       printifyBtn.disabled = true;
       if(printifyPriceBtn) printifyPriceBtn.disabled = true;
+      if(setProductUrlBtn) setProductUrlBtn.disabled = true;
       printifyApiBtn.disabled = true;
       console.debug('No file parameter found => Upscale disabled');
       if(!errorEl.textContent){
