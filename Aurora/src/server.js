@@ -3156,6 +3156,18 @@ app.post("/api/markdown", (req, res) => {
   }
 });
 
+// Simple placeholder endpoint for virtual file cabinet
+app.get('/api/cabinet', (req, res) => {
+  try {
+    const data = db.getSetting('file_cabinet_items');
+    const items = Array.isArray(data) ? data : [];
+    res.json({ items });
+  } catch (err) {
+    console.error('Error in /api/cabinet:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 const PORT =
   process.env.AURORA_PORT ||
   process.env.PORT ||
