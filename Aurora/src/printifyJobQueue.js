@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { extractProductUrl } from './printifyUtils.js';
 
 export default class PrintifyJobQueue {
   constructor(jobManager, options = {}) {
@@ -52,6 +53,7 @@ export default class PrintifyJobQueue {
       status: 'queued',
       jobId: null,
       resultPath: null,
+      productUrl: null,
       dbId,
       variant
     };
@@ -69,6 +71,7 @@ export default class PrintifyJobQueue {
       status: j.status,
       jobId: j.jobId,
       resultPath: j.resultPath || null,
+      productUrl: j.productUrl || null,
       dbId: j.dbId || null,
       variant: j.variant || null
     }));
@@ -193,6 +196,16 @@ export default class PrintifyJobQueue {
             const originalUrl = `/uploads/${job.file}`;
             this.db.setUpscaledImage(originalUrl, job.resultPath);
             this.db.setImageStatus(originalUrl, 'Upscaled');
+          }
+        }
+      } else if (job.type === 'printify') {
+        const url = extractProductUrl(jmJob.log);
+        if (url) {
+          job.productUrl = url;
+          jmJob.productUrl = url;
+          if (this.db) {
+            const originalUrl = `/uploads/${job.file}`;
+            this.db.setImageStatus(originalUrl, `Printify URL: ${url}`);
           }
         }
       }
