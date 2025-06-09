@@ -10,6 +10,7 @@ export default class PrintifyJobQueue {
     this.uploadsDir = options.uploadsDir || '';
     this.upscaleScript = options.upscaleScript || '';
     this.printifyScript = options.printifyScript || '';
+    this.printifyPriceScript = options.printifyPriceScript || '';
     this.db = options.db || null;
     this.persistencePath = options.persistencePath || null;
 
@@ -107,8 +108,8 @@ export default class PrintifyJobQueue {
     let script = '';
     if (job.type === 'upscale') {
       script = this.upscaleScript;
-    } else if (job.type === 'printify') {
-      script = this.printifyScript;
+    } else if (job.type === 'printify' || job.type === 'printifyPrice') {
+      script = job.type === 'printify' ? this.printifyScript : this.printifyPriceScript;
       const ext = path.extname(filePath);
       const base = path.basename(filePath, ext);
       const searchDir = path.isAbsolute(job.file)

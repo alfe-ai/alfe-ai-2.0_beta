@@ -608,6 +608,9 @@ const printifyQueue = new PrintifyJobQueue(jobManager, {
   printifyScript:
     process.env.PRINTIFY_SCRIPT_PATH ||
     "/home/admin/Puppets/PrintifyPuppet/run.sh",
+  printifyPriceScript:
+    process.env.PRINTIFY_PRICE_SCRIPT_PATH ||
+    "/home/admin/Puppets/PrintifyPricePuppet/run.sh",
   db,
 });
 
@@ -2315,7 +2318,7 @@ app.post("/api/printify", async (req, res) => {
         if (productId && Array.isArray(variants)) {
           await updatePrintifyProduct(productId, variants);
         }
-        db.setImageStatus(url, 'Printify API Updates');
+        db.setImageStatus(url, 'Printify Price Puppet');
       } catch (e) {
         console.error('[Server Debug] Failed to run Printify API update =>', e);
       }
@@ -2324,6 +2327,80 @@ app.post("/api/printify", async (req, res) => {
     res.json({ jobId: job.id });
   } catch (err) {
     console.error("Error in /api/printify:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/api/printifyPrice", async (req, res) => {
+  try {
+    const { file } = req.body || {};
+    console.debug("[Server Debug] /api/printifyPrice called with file =>", file);
+    if (!file) {
+      console.debug(
+        "[Server Debug] /api/printifyPrice => missing 'file' in request body"
+      );
+      return res.status(400).json({ error: "Missing file" });
+    }
+
+    const scriptPath =
+      process.env.PRINTIFY_PRICE_SCRIPT_PATH ||
+      "/home/admin/Puppets/PrintifyPricePuppet/run.sh";
+    console.debug(
+      "[Server Debug] /api/printifyPrice => using scriptPath =>",
+      scriptPath
+    );
+    const scriptCwd = path.dirname(scriptPath);
+    console.debug(
+      "[Server Debug] /api/printifyPrice => using scriptCwd =>",
+      scriptCwd
+    );
+    const filePath = path.isAbsolute(file)
+      ? file
+      : path.join(uploadsDir, file);
+    console.debug(
+      "[Server Debug] /api/printifyPrice => resolved filePath =>",
+      filePath
+    );
+
+    if (!fs.existsSync(filePath)) {
+      console.debug(
+        "[Server Debug] /api/printifyPrice => file does not exist:",
+        filePath
+      );
+      return res.status(400).json({ error: "File not found" });
+    }
+
+    if (!fs.existsSync(scriptPath)) {
+      console.debug(
+        "[Server Debug] /api/printifyPrice => script not found:",
+        scriptPath
+      );
+      return res
+        .status(500)
+        .json({ error: `Printify script missing at ${scriptPath}` });
+    }
+
+    const job = jobManager.createJob(scriptPath, [filePath], {
+      cwd: scriptCwd,
+      file,
+    });
+    console.debug("[Server Debug] /api/printifyPrice => job started", job.id);
+
+    jobManager.addDoneListener(job, async () => {
+      try {
+        const url = `/uploads/${file}`;
+        db.setImageStatus(url, "Printify API Updates");
+      } catch (e) {
+        console.error(
+          '[Server Debug] Failed to set status after price puppet =>',
+          e
+        );
+      }
+    });
+
+    res.json({ jobId: job.id });
+  } catch (err) {
+    console.error("Error in /api/printifyPrice:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
