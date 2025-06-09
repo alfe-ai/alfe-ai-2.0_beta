@@ -45,6 +45,7 @@
   <div style="margin-top:0.5rem;">
     <button id="upscaleButton" hidden>Submit to Upscale</button>
     <button id="printifyButton" hidden>Submit to Printify</button>
+    <button id="printifyPriceButton" hidden>Submit Price Update</button>
     <button id="printifyApiButton">Submit Printify API Updates</button>
   </div>
   <pre id="upscaleTerminal" style="background:#000;color:#0f0;padding:0.5rem;margin-top:0.5rem;height:200px;overflow:auto;font-family:monospace;"></pre>
@@ -64,6 +65,7 @@
       { name: 'Border Added', disabled: true },
       { name: 'Upscaled', disabled: true },
       { name: 'Printify Puppet', disabled: true },
+      { name: 'Printify Price Puppet', disabled: true },
       { name: 'Printify API Updates', disabled: true },
       { name: 'Ebay Shipping Updated', disabled: true },
       { name: 'Done', disabled: true }
@@ -88,6 +90,7 @@
       'Background Removed',
       'Border Added',
       'Printify Step',
+      'Printify Price Puppet',
       'Printify API Updates',
       'Ebay Shipping Updated',
       'Done'
@@ -110,17 +113,23 @@
       try{
         const current = await loadStatus();
         if(statusSelect.value !== current) statusSelect.value = current;
-        if(current === 'Printify API Updates'){
+        if(current === 'Printify Price Puppet'){
           if(stageItems[3]) stageItems[3].classList.add('completed');
           if(stageItems[4]) stageItems[4].classList.add('current');
-        } else if(current === 'Ebay Shipping Updated'){
+        } else if(current === 'Printify API Updates'){
           if(stageItems[3]) stageItems[3].classList.add('completed');
           if(stageItems[4]) stageItems[4].classList.add('completed');
           if(stageItems[5]) stageItems[5].classList.add('current');
+        } else if(current === 'Ebay Shipping Updated'){
+          if(stageItems[3]) stageItems[3].classList.add('completed');
+          if(stageItems[4]) stageItems[4].classList.add('completed');
+          if(stageItems[5]) stageItems[5].classList.add('completed');
+          if(stageItems[6]) stageItems[6].classList.add('current');
         } else if(current === 'Done'){
           if(stageItems[3]) stageItems[3].classList.add('completed');
           if(stageItems[4]) stageItems[4].classList.add('completed');
           if(stageItems[5]) stageItems[5].classList.add('completed');
+          if(stageItems[6]) stageItems[6].classList.add('completed');
         }
       }catch(e){
         console.error('Failed to check status =>', e);
@@ -254,6 +263,7 @@
     let nobgFile = null;
     let nobgPath = null;
     let printifyBtn;
+    let printifyPriceBtn;
 
     function updateChoiceUI(){
       const choiceDiv = document.getElementById('printifyChoice');
@@ -286,9 +296,11 @@
           normalRadio.checked = true;
         }
         printifyBtn.hidden = false;
+        if(printifyPriceBtn) printifyPriceBtn.hidden = false;
       } else {
         choiceDiv.style.display = 'none';
         printifyBtn.hidden = true;
+        if(printifyPriceBtn) printifyPriceBtn.hidden = true;
       }
     }
     async function checkUpscaled(){
@@ -332,6 +344,7 @@
 
     const upscaleBtn = document.getElementById('upscaleButton');
     printifyBtn = document.getElementById('printifyButton');
+    printifyPriceBtn = document.getElementById('printifyPriceButton');
     const printifyApiBtn = document.getElementById('printifyApiButton');
     const terminalEl = document.getElementById('upscaleTerminal');
     const jobsListEl = document.getElementById('jobsList');
@@ -355,6 +368,7 @@
       if (file) {
       upscaleBtn.hidden = false;
       printifyBtn.hidden = true;
+      if(printifyPriceBtn) printifyPriceBtn.hidden = true;
       printifyApiBtn.hidden = false;
       upscaleBtn.addEventListener('click', async () => {
         console.debug('Submit to Upscale clicked with file =>', file);
@@ -413,6 +427,37 @@
         terminalEl.textContent = 'Printify request failed.';
       }
       });
+      if(printifyPriceBtn){
+        printifyPriceBtn.addEventListener('click', async () => {
+          const choice = document.querySelector('input[name="printifyVariant"]:checked');
+          const variant = choice ? choice.value : (nobgFile ? 'nobg' : 'normal');
+          const targetFile = variant === 'nobg' ? nobgFile : upscaledFile;
+          const targetPath = variant === 'nobg' ? nobgPath : upscaledPath;
+          console.debug('Submit to Printify Price Puppet clicked with file =>', targetPath);
+          terminalEl.textContent = '';
+          if(!targetFile && !targetPath){
+            terminalEl.textContent = 'Upscaled 4096 image not available.';
+            return;
+          }
+          try {
+            const res = await fetch('/api/printifyPrice', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ file: targetPath || targetFile })
+            });
+            const data = await res.json().catch(() => ({}));
+            if(res.ok && data.jobId){
+              window.open(`jobs.html?jobId=${data.jobId}`, '_blank');
+              terminalEl.textContent = `Job started with ID ${data.jobId}. Open the Jobs List to view progress.`;
+            } else {
+              terminalEl.textContent = data.error || 'Printify Price request failed.';
+            }
+          } catch(err){
+            console.error('Printify Price request error =>', err);
+            terminalEl.textContent = 'Printify Price request failed.';
+          }
+        });
+      }
       printifyApiBtn.addEventListener('click', async () => {
         const productId = prompt('Enter Printify Product ID:');
         if(!productId) return;
@@ -512,6 +557,7 @@
     } else {
       upscaleBtn.disabled = true;
       printifyBtn.disabled = true;
+      if(printifyPriceBtn) printifyPriceBtn.disabled = true;
       printifyApiBtn.disabled = true;
       console.debug('No file parameter found => Upscale disabled');
       if(!errorEl.textContent){

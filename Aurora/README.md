@@ -22,6 +22,7 @@ npm start
 | `OPENAI_MODEL`   | (Optional) Model ID for completions (default: deepseek/deepseek-chat)  |
 | `UPSCALE_SCRIPT_PATH` | (Optional) Path to the image upscale script. Defaults to the included loop.sh |
 | `PRINTIFY_SCRIPT_PATH` | (Optional) Path to the Printify submission script. Defaults to the included run.sh |
+| `PRINTIFY_PRICE_SCRIPT_PATH` | (Optional) Path to the Printify price update script. Defaults to `/home/admin/Puppets/PrintifyPricePuppet/run.sh` |
 | `PRINTIFY_API_TOKEN` | (Optional) API token for Printify REST API (legacy `PRINTIFY_TOKEN` also supported) |
 | `PRINTIFY_SHOP_ID` | (Optional) Shop ID for Printify API requests |
 | `STABLE_DIFFUSION_URL` | (Optional) Base URL for a self-hosted Stable Diffusion API |
