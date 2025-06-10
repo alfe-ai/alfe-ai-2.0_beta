@@ -758,8 +758,28 @@
   <span class="loading-spinner"></span>
 </div>
 <div id="toast" class="toast"></div>
+<div id="cookieBanner">
+  This site uses cookies to store your preferences.
+  <button id="cookieMoreInfoBtn">More Info</button>
+  <button id="cookieAcceptBtn">Accept</button>
+</div>
 <script src="/session.js"></script>
 <script src="/main.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const banner = document.getElementById('cookieBanner');
+    if(banner){
+      if(!localStorage.getItem('cookieAccepted')) banner.style.display = 'block';
+      document.getElementById('cookieAcceptBtn').addEventListener('click', () => {
+        localStorage.setItem('cookieAccepted', 'yes');
+        banner.style.display = 'none';
+      });
+      document.getElementById('cookieMoreInfoBtn').addEventListener('click', () => {
+        window.open('cookies.html', '_blank');
+      });
+    }
+  });
+</script>
 </body>
 </html>
 
