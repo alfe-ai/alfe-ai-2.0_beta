@@ -1147,7 +1147,7 @@ button:disabled {
   padding: 0.5rem 1rem;
   border-top: 1px solid var(--border);
   display: none;
-  z-index: 1000;
+  z-index: 1100;
   text-align: center;
 }
 
