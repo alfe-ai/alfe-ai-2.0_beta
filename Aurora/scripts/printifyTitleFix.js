@@ -27,7 +27,12 @@ async function main() {
     });
     console.log('Title:', data.title || '');
   } catch (err) {
-    console.error('Error:', err.response?.data || err.message);
+    const status = err.response?.status;
+    const msg = err.response?.data || err.message;
+    console.error(
+      `Failed to fetch product ${productId} (status: ${status ?? 'unknown'}):`,
+      msg
+    );
     process.exit(1);
   }
 }
