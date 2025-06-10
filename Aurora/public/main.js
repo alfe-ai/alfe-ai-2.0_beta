@@ -3061,11 +3061,10 @@ function renderFileList(){
     const tdSource = document.createElement("td");
     tdSource.textContent = f.source || "";
     const tdStatus = document.createElement("td");
-    const urlMatch = (f.status || "").match(/Printify URL:\s*(\S+)/i);
-    if(urlMatch){
+    if(f.productUrl){
       const link = document.createElement("a");
-      link.href = urlMatch[1];
-      link.textContent = urlMatch[1];
+      link.href = f.productUrl;
+      link.textContent = f.productUrl;
       link.target = "_blank";
       tdStatus.appendChild(link);
     } else {
@@ -3113,14 +3112,14 @@ function renderFileList(){
     const urlBtn = document.createElement("button");
     urlBtn.textContent = "Set URL";
     urlBtn.addEventListener("click", async () => {
-      const current = urlMatch ? urlMatch[1] : "";
+      const current = f.productUrl || "";
       const url = prompt("Enter Printify Product URL:", current);
       if(!url) return;
       try{
         await fetch('/api/upload/status', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: f.name, status: `Printify URL: ${url}` })
+          body: JSON.stringify({ name: f.name, productUrl: url })
         });
         await loadFileList();
       }catch(err){

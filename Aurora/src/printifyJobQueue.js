@@ -187,8 +187,11 @@ export default class PrintifyJobQueue {
     if (job.type === 'printifyPrice') {
       let url = job.productUrl || null;
       if (!url && this.db) {
-        const status = this.db.getImageStatusForUrl(`/uploads/${job.file}`);
-        url = extractPrintifyUrl(status || '');
+        url = this.db.getProductUrlForImage(`/uploads/${job.file}`);
+        if (!url) {
+          const status = this.db.getImageStatusForUrl(`/uploads/${job.file}`);
+          url = extractPrintifyUrl(status || '');
+        }
       }
       if (url) {
         args.push(url);
@@ -225,7 +228,7 @@ export default class PrintifyJobQueue {
           jmJob.productUrl = url;
           if (this.db) {
             const originalUrl = `/uploads/${job.file}`;
-            this.db.setImageStatus(originalUrl, `Printify URL: ${url}`);
+            this.db.setProductUrl(originalUrl, url);
           }
         }
       }
