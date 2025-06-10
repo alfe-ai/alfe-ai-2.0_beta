@@ -98,6 +98,8 @@ let projectInfoBarVisible = true; // visibility of the project/Sterling bar
 let auroraProjectBarVisible = true; // new flag to show/hide Aurora project controls
 let chatStreaming = true; // new toggle for streaming
 let enterSubmitsMessage = true; // new toggle for Enter key submit
+let chatQueueEnabled = false; // queue additional messages
+let messageQueue = [];
 let navMenuVisible = true; // visibility of the top navigation menu
 let navMenuLoading = true;  // hide nav menu while showing spinner on load
 let showArchivedTabs = false;
@@ -430,6 +432,31 @@ function appendChatElement(el){
   } else {
     chatMessagesEl.appendChild(el);
   }
+}
+
+function queueMessage(text){
+  if(!text) return;
+  messageQueue.push(text);
+  const cont = document.getElementById("chatQueueContainer");
+  if(cont){
+    const div = document.createElement("div");
+    div.className = "chat-queue-bubble";
+    div.textContent = text;
+    cont.appendChild(div);
+  }
+}
+
+function processNextQueueMessage(){
+  if(!chatQueueEnabled) return;
+  if(messageQueue.length === 0) return;
+  if(chatSendBtnEl.disabled) return;
+  const cont = document.getElementById("chatQueueContainer");
+  if(cont && cont.firstElementChild){
+    cont.removeChild(cont.firstElementChild);
+  }
+  const next = messageQueue.shift();
+  chatInputEl.value = next;
+  setTimeout(() => chatSendBtnEl.click(), 0);
 }
 
 async function updateImageLimitInfo(files){
@@ -2228,7 +2255,12 @@ chatInputEl.addEventListener("keydown", (e) => {
     e.preventDefault();
   } else if (enterSubmitsMessage && e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
-    chatSendBtnEl.click();
+    if(chatSendBtnEl.disabled && chatQueueEnabled){
+      queueMessage(chatInputEl.value.trim());
+      chatInputEl.value = "";
+    } else {
+      chatSendBtnEl.click();
+    }
   }
 });
 
@@ -2305,6 +2337,7 @@ chatSendBtnEl.addEventListener("click", async () => {
   } else if(!userMessage && descsForThisSend.length===0){
     if (favElement) favElement.href = defaultFavicon;
     chatSendBtnEl.disabled = false;
+    processNextQueueMessage();
     return;
   }
 
@@ -2473,6 +2506,7 @@ chatSendBtnEl.addEventListener("click", async () => {
     setTimeout(scrollChatToBottom, 0);
   }
   chatSendBtnEl.disabled = false;
+  processNextQueueMessage();
 });
 
 async function openChatSettings(){
@@ -2547,6 +2581,12 @@ async function openChatSettings(){
     await setSetting("enter_submits_message", enterSubmitsMessage);
   }
 
+  const rQueue = await fetch("/api/settings/chat_queue_enabled");
+  if(rQueue.ok){
+    const { value } = await rQueue.json();
+    chatQueueEnabled = value !== false;
+  }
+
   const r8 = await fetch("/api/settings/nav_menu_visible");
   if(r8.ok){
     const { value } = await r8.json();
@@ -2589,6 +2629,7 @@ async function openChatSettings(){
   $("#showDependenciesColumnCheck").checked = showDependenciesColumn;
   $("#showSubroutinePanelCheck").checked = subroutinePanelVisible;
   $("#enterSubmitCheck").checked = enterSubmitsMessage;
+  $("#chatQueueCheck").checked = chatQueueEnabled;
   $("#showNavMenuCheck").checked = navMenuVisible;
   $("#showTopChatTabsCheck").checked = topChatTabsBarVisible;
   $("#showViewTabsBarCheck").checked = viewTabsBarVisible;
@@ -2746,6 +2787,7 @@ async function chatSettingsSaveFlow() {
   showDependenciesColumn = $("#showDependenciesColumnCheck").checked;
   subroutinePanelVisible = $("#showSubroutinePanelCheck").checked;
   enterSubmitsMessage = $("#enterSubmitCheck").checked;
+  chatQueueEnabled = $("#chatQueueCheck").checked;
   navMenuVisible = $("#showNavMenuCheck").checked;
   topChatTabsBarVisible = $("#showTopChatTabsCheck").checked;
   viewTabsBarVisible = $("#showViewTabsBarCheck").checked;
@@ -2771,6 +2813,7 @@ async function chatSettingsSaveFlow() {
     markdown_panel_visible: markdownPanelVisible,
     subroutine_panel_visible: subroutinePanelVisible,
     enter_submits_message: enterSubmitsMessage,
+    chat_queue_enabled: chatQueueEnabled,
     nav_menu_visible: navMenuVisible,
     top_chat_tabs_bar_visible: topChatTabsBarVisible,
     view_tabs_bar_visible: viewTabsBarVisible,
@@ -5269,6 +5312,7 @@ registerActionHook("generateImage", async ({response}) => {
       isImageGenerating = false;
       lastImagePrompt = null;
       if(chatSendBtnEl) chatSendBtnEl.disabled = false;
+      processNextQueueMessage();
       return;
     }
     console.log('[Hook generateImage] response status', r.status);
@@ -5281,6 +5325,7 @@ registerActionHook("generateImage", async ({response}) => {
     isImageGenerating = false;
     lastImagePrompt = null;
     if(chatSendBtnEl) chatSendBtnEl.disabled = false;
+    processNextQueueMessage();
     const data = await r.json();
     if(r.ok && data.url){
       await loadChatHistory(currentTabId, true);
@@ -5299,6 +5344,7 @@ registerActionHook("generateImage", async ({response}) => {
     isImageGenerating = false;
     lastImagePrompt = null;
     if(chatSendBtnEl) chatSendBtnEl.disabled = false;
+    processNextQueueMessage();
     console.error('[Hook generateImage] failed:', err);
   }
 });

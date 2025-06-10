@@ -1136,4 +1136,26 @@ button:disabled {
   display: none !important;
 }
 
+/* Queued chat bubbles */
+.chat-queue-container {
+  position: absolute;
+  bottom: 60px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.chat-queue-bubble {
+  background: rgba(100, 100, 100, 0.5);
+  color: #ddd;
+  border-radius: 12px;
+  padding: 6px 10px;
+  max-width: 250px;
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
 
