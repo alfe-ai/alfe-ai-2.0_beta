@@ -2488,7 +2488,13 @@ app.post("/api/printifyTitleFix", async (req, res) => {
     if (!productUrl) {
       return res.status(400).json({ error: "Missing Printify URL" });
     }
-    const productId = productUrl.split("/").pop();
+    const productId = (() => {
+      try {
+        return new URL(productUrl).pathname.split("/").pop();
+      } catch {
+        return productUrl.split("/").pop().split("?")[0];
+      }
+    })();
 
     const scriptPath =
       process.env.PRINTIFY_TITLE_FIX_SCRIPT_PATH ||
