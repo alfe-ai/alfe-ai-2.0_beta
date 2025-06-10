@@ -6,6 +6,40 @@
   <title>Alfe AI</title>
   <link id="themeStylesheet" rel="stylesheet" href="/nexum.css" />
   <link id="favicon" rel="icon" type="image/x-icon" href="/alfe_favicon_64x64.ico" />
+  <style>
+    .loading-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      margin-left: 6px;
+      border: 2px solid currentColor;
+      border-radius: 50%;
+      border-right-color: transparent;
+      animation: loading-spin 0.75s linear infinite;
+    }
+
+    @keyframes loading-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .page-loader {
+      display: none;
+      position: fixed;
+      z-index: 10002;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-light);
+    }
+
+    .page-loader.show {
+      display: flex;
+    }
+  </style>
 </head>
 <body>
   <div class="app" style="display:none;">
@@ -260,6 +294,18 @@
         clearTimeout(splashTimer);
         splashTimer = null;
       }
+    }
+
+    function showPageLoader(color){
+      const loader = document.getElementById('pageLoader');
+      if(!loader) return;
+      loader.style.color = color || '';
+      loader.classList.add('show');
+    }
+
+    function hidePageLoader(){
+      const loader = document.getElementById('pageLoader');
+      if(loader) loader.classList.remove('show');
     }
 
     async function loadTheme(){
@@ -617,21 +663,26 @@
     async function createStartTab(type){
       const repoEl = document.getElementById('startRepoInput');
       const repo = repoEl ? repoEl.value.trim() : '';
+      showPageLoader(startInAurora ? 'cyan' : null);
       const body = { name:'New Tab', nexum: startInAurora ? 0 : 1, type, project:'', repo, sessionId };
-      const r = await fetch('/api/chat/tabs/new',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-      if(r.ok){
-        const data = await r.json();
-        document.getElementById('startDialog').style.display = 'none';
-        stopSplash();
-        if(startInAurora){
-          await fetch('/api/settings', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key:'last_chat_tab', value:data.id})});
-          location.href = '/aurora.html';
-          return;
+      try{
+        const r = await fetch('/api/chat/tabs/new',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+        if(r.ok){
+          const data = await r.json();
+          document.getElementById('startDialog').style.display = 'none';
+          stopSplash();
+          if(startInAurora){
+            await fetch('/api/settings', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({key:'last_chat_tab', value:data.id})});
+            location.href = '/aurora.html';
+            return;
+          }
+          await loadTabs();
+          currentTabId = data.id;
+          renderTabs();
+          applyTabView();
         }
-        await loadTabs();
-        currentTabId = data.id;
-        renderTabs();
-        applyTabView();
+      } finally {
+        if(!startInAurora) hidePageLoader();
       }
     }
     async function renameTab(tabId){
@@ -1090,5 +1141,6 @@
     <button id="cookieAcceptBtn">Accept</button>
     <button id="cookieMoreInfoBtn">More Info</button>
   </div>
+  <div id="pageLoader" class="page-loader"><span class="loading-spinner"></span></div>
 </body>
 </html>
