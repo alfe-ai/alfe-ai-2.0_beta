@@ -981,6 +981,42 @@ app.post("/api/settings/batch", (req, res) => {
   }
 });
 
+app.get("/api/nodes", (req, res) => {
+  console.debug("[Server Debug] GET /api/nodes called.");
+  try {
+    const nodes = db.getSetting("nodes") || [];
+    const host = os.hostname();
+    const ifaces = os.networkInterfaces();
+    const addresses = [];
+    Object.values(ifaces).forEach((arr) => {
+      arr.forEach((i) => {
+        if (i.family === "IPv4" && !i.internal) addresses.push(i.address);
+      });
+    });
+    res.json({ nodes, host, addresses });
+  } catch (err) {
+    console.error("[TaskQueue] GET /api/nodes failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/api/nodes", (req, res) => {
+  console.debug("[Server Debug] POST /api/nodes =>", req.body);
+  try {
+    const { hostname, ip } = req.body;
+    if (!hostname && !ip) {
+      return res.status(400).json({ error: "hostname or ip required" });
+    }
+    const nodes = db.getSetting("nodes") || [];
+    nodes.push({ hostname: hostname || "", ip: ip || "" });
+    db.setSetting("nodes", nodes);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[TaskQueue] POST /api/nodes failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.post("/api/feedback", (req, res) => {
   console.debug("[Server Debug] POST /api/feedback =>", req.body);
   try {
