@@ -305,7 +305,7 @@ function openSettingsModal(e){
 
 function openContactModal(e){
   if(e) e.preventDefault();
-  const email = "alfe" + "@" + "lochner." + "tech";
+  const email = "alfe" + "@" + "alfe." + "sh";
   const span = document.getElementById("contactEmail");
   if(span) span.textContent = email;
   showModal(document.getElementById("contactModal"));
@@ -326,6 +326,7 @@ function updateAccountButton(info){
     if(favBtn){
       favBtn.style.display = info.id === 1 ? "inline-block" : "none";
     }
+    togglePortfolioMenu(info.id === 1);
   } else {
     accountInfo = null;
     btn.textContent = "Sign Up / Login";
@@ -333,6 +334,7 @@ function updateAccountButton(info){
     if(favBtn){
       favBtn.style.display = "none";
     }
+    togglePortfolioMenu(false);
   }
 }
 
@@ -2943,6 +2945,16 @@ function toggleJobsMenu(visible){
   const li = btn.closest('li');
   if(li) li.style.display = visible ? "" : "none";
 }
+function togglePortfolioMenu(visible){
+  const btn = document.getElementById("navPortfolioBtn");
+  if(btn){
+    btn.hidden = !visible;
+    const li = btn.closest('li');
+    if(li) li.style.display = visible ? "" : "none";
+  }
+  const icon = document.getElementById("navPortfolioIcon");
+  if(icon) icon.style.display = visible ? "" : "none";
+}
 function toggleNewTabProjectField(visible){
   const lbl = document.getElementById("newTabProjectLabel");
   if(!lbl) return;
@@ -3037,6 +3049,18 @@ function renderFileList(){
     const tdStatus = document.createElement("td");
     tdStatus.textContent = f.status || "";
     tdStatus.className = "img-status-cell";
+    const tdPortfolio = document.createElement("td");
+    const portCheck = document.createElement("input");
+    portCheck.type = "checkbox";
+    portCheck.checked = !!f.portfolio;
+    portCheck.addEventListener("change", async () => {
+      await fetch('/api/upload/portfolio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: f.name, portfolio: portCheck.checked })
+      });
+    });
+    tdPortfolio.appendChild(portCheck);
     const tdSize = document.createElement("td");
     tdSize.textContent = Math.round(f.size / 1024) + " KB";
     const tdMtime = document.createElement("td");
@@ -3069,6 +3093,7 @@ function renderFileList(){
     tr.appendChild(tdTitle);
     tr.appendChild(tdSource);
     tr.appendChild(tdStatus);
+    tr.appendChild(tdPortfolio);
     tr.appendChild(tdSize);
     tr.appendChild(tdMtime);
     tr.appendChild(tdAction);
@@ -3516,6 +3541,7 @@ const btnArchiveTabs = document.getElementById("navArchiveTabsBtn");
 const btnActivityIframe = document.getElementById("navActivityIframeBtn");
 const btnAiModels = document.getElementById("navAiModelsBtn");
 const btnImageGenerator = document.getElementById("navImageGeneratorBtn");
+const btnPortfolio = document.getElementById("navPortfolioBtn");
 const btnJobs = document.getElementById("navJobsBtn");
 const btnPipelineQueue = document.getElementById("navPipelineQueueBtn");
 const btnNexumChat = document.getElementById("navNexumChatBtn");
@@ -3528,6 +3554,7 @@ const btnArchiveTabsIcon = document.getElementById("navArchiveTabsIcon");
 const btnFileTreeIcon = document.getElementById("navFileTreeIcon");
 const btnAiModelsIcon = document.getElementById("navAiModelsIcon");
 const btnImageGeneratorIcon = document.getElementById("navImageGeneratorIcon");
+const btnPortfolioIcon = document.getElementById("navPortfolioIcon");
 const btnJobsIcon = document.getElementById("navJobsIcon");
 const btnPipelineQueueIcon = document.getElementById("navPipelineQueueIcon");
 const btnActivityIframeIcon = document.getElementById("navActivityIframeIcon");
@@ -3546,6 +3573,7 @@ btnArchiveTabs.addEventListener("click", showArchiveTabsPanel);
 btnActivityIframe.addEventListener("click", showActivityIframePanel);
 btnAiModels?.addEventListener("click", () => { window.location.href = btnAiModels.dataset.url; });
 btnImageGenerator?.addEventListener("click", () => { window.location.href = btnImageGenerator.dataset.url; });
+btnPortfolio?.addEventListener("click", () => { window.location.href = btnPortfolio.dataset.url; });
 btnJobs?.addEventListener("click", () => {
   const url = btnJobs.dataset.url;
   window.open(url, "_blank");
@@ -3570,6 +3598,7 @@ btnFileTreeIcon?.addEventListener("click", () => openPanelWithSidebar(showFileTr
 btnActivityIframeIcon?.addEventListener("click", () => openPanelWithSidebar(showActivityIframePanel));
 btnAiModelsIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); window.location.href = btnAiModels.dataset.url; });
 btnImageGeneratorIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); window.location.href = btnImageGenerator.dataset.url; });
+btnPortfolioIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); window.location.href = btnPortfolio.dataset.url; });
 btnJobsIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); const url = btnJobs.dataset.url; window.open(url, "_blank"); });
 btnPipelineQueueIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); const url = btnPipelineQueue.dataset.url; window.open(url, "_blank"); });
 btnNexumChatIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); window.location.href = btnNexumChat.dataset.url; });
@@ -3973,6 +4002,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
           if(p.image_title) img.title = p.image_title;
           img.style.maxWidth = "min(100%, 400px)";
           img.style.height = "auto";
+          img.addEventListener('load', () => setTimeout(scrollChatToBottom, 1000));
           botDiv.appendChild(img);
         }
 

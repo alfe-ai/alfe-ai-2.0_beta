@@ -869,7 +869,8 @@ app.post("/api/login", (req, res) => {
       return res.status(400).json({ error: "invalid credentials" });
     }
 
-    if (account.totp_secret) {
+    const disable2fa = process.env.DISABLE_2FA === 'true' || process.env.DISABLE_2FA === '1';
+    if (account.totp_secret && !disable2fa) {
       if (!token) {
         return res.status(400).json({ error: "totp required" });
       }
@@ -1862,7 +1863,8 @@ app.get("/api/upload/list", (req, res) => {
       const uuid = db.getImageUuidForUrl(`/uploads/${name}`);
       const source = db.isGeneratedImage(`/uploads/${name}`) ? 'Generated' : 'Uploaded';
       const status = db.getImageStatusForUrl(`/uploads/${name}`) || (source === 'Generated' ? 'Generated' : 'Uploaded');
-      files.push({ id, uuid, name, size, mtime, title, source, status });
+      const portfolio = db.getImagePortfolioForUrl(`/uploads/${name}`) ? 1 : 0;
+      files.push({ id, uuid, name, size, mtime, title, source, status, portfolio });
     }
     res.json(files);
   } catch (err) {
@@ -1919,6 +1921,21 @@ app.post("/api/upload/status", (req, res) => {
     res.json({ success: true });
   } catch(err){
     console.error("[Server Debug] /api/upload/status error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/api/upload/portfolio", (req, res) => {
+  try {
+    const { name, portfolio } = req.body || {};
+    if(!name){
+      return res.status(400).json({ error: "Missing name" });
+    }
+    const url = `/uploads/${name}`;
+    db.setImagePortfolio(url, portfolio ? 1 : 0);
+    res.json({ success: true });
+  } catch(err){
+    console.error("[Server Debug] /api/upload/portfolio error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -2392,7 +2409,7 @@ app.post("/api/image/generate", async (req, res) => {
       const tab = parseInt(tabId, 10) || 1;
       const imageTitle = await deriveImageTitle(prompt);
       const modelId = model ? `stable-diffusion/${model}` : 'stable-diffusion';
-      db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated', sessionId, ipAddress, modelId);
+      db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated', sessionId, ipAddress, modelId, 0);
       return res.json({ success: true, url: localUrl, title: imageTitle });
     }
 
@@ -2484,7 +2501,7 @@ app.post("/api/image/generate", async (req, res) => {
     const tab = parseInt(tabId, 10) || 1;
     const imageTitle = await deriveImageTitle(prompt, openaiClient);
     const modelId = `openai/${modelName}`;
-    db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated', sessionId, ipAddress, modelId);
+    db.createImagePair(localUrl, prompt || '', tab, imageTitle, 'Generated', sessionId, ipAddress, modelId, 0);
 
     res.json({ success: true, url: localUrl, title: imageTitle });
   } catch (err) {

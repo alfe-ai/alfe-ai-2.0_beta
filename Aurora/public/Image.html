@@ -17,6 +17,7 @@
   <div id="fileContainer"></div>
   <div id="resolutionDisplay" style="margin-top:0.5rem;"></div>
   <div id="statusControl" style="margin-top:0.5rem;"></div>
+  <div id="portfolioControl" style="margin-top:0.5rem;"></div>
   <h3>Jobs for this Image</h3>
   <table id="jobsTable" style="width:100%;border-collapse:collapse;">
     <thead>
@@ -115,6 +116,28 @@
       }
     }
 
+    async function loadPortfolio(){
+      try{
+        const res = await fetch('/api/upload/list?sessionId=' + encodeURIComponent(sessionId));
+        const list = await res.json();
+        const item = list.find(f => f.name === file);
+        return item ? !!item.portfolio : false;
+      }catch(err){
+        console.error('Failed to load portfolio =>', err);
+        return false;
+      }
+    }
+
+    async function checkPortfolio(){
+      if(!file) return;
+      try{
+        const current = await loadPortfolio();
+        if(portfolioCheck && portfolioCheck.checked !== current) portfolioCheck.checked = current;
+      }catch(e){
+        console.error('Failed to check portfolio =>', e);
+      }
+    }
+
 
     const container = document.getElementById('fileContainer');
     const resEl = document.getElementById('resolutionDisplay');
@@ -141,6 +164,22 @@
         body: JSON.stringify({ name: file, status: statusSelect.value })
       });
       await checkStatus();
+    });
+
+    const portfolioDiv = document.getElementById('portfolioControl');
+    portfolioDiv.innerHTML = '<label><input type="checkbox" id="portfolioCheck"/> Publish to portfolio</label>';
+    const portfolioCheck = document.getElementById('portfolioCheck');
+    portfolioCheck.disabled = !file;
+    (async () => {
+      portfolioCheck.checked = file ? await loadPortfolio() : false;
+    })();
+    portfolioCheck.addEventListener('change', async () => {
+      if(!file) return;
+      await fetch('/api/upload/portfolio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: file, portfolio: portfolioCheck.checked })
+      });
     });
     const origImg = document.createElement('img');
     const upscaledImg = document.createElement('img');
@@ -418,6 +457,8 @@
       setInterval(checkUpscaled, 5000);
       checkStatus();
       setInterval(checkStatus, 5000);
+      checkPortfolio();
+      setInterval(checkPortfolio, 5000);
     } else {
       upscaleBtn.disabled = true;
       printifyBtn.disabled = true;

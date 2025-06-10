@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Confused Art - Powered by Alfe AI</title>
+  <style>
+    body {
+      background:#1e1e1e;
+      color:#ddd;
+      font-family:sans-serif;
+      padding:1rem;
+    }
+    h1 { margin-top:0; }
+    h2 { margin-top:0; }
+    .grid {
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      justify-items:center;
+      gap:10px;
+    }
+    .grid-item {
+      position:relative;
+      overflow:hidden;
+      width:100%;
+      text-align:center;
+    }
+    .grid-item img {
+      max-width:320px;
+      width:100%;
+      border:1px solid #444;
+      transition:transform 0.2s;
+    }
+    .grid-item:hover img {
+      transform:scale(1.05);
+    }
+    a { color:#0ff; text-decoration:none; }
+    #sentinel { height:1px; }
+    #loadingIndicator {
+      display:none;
+      position:fixed;
+      bottom:10px;
+      left:50%;
+      transform:translateX(-50%);
+      background:rgba(0,255,255,0.8);
+      color:#000;
+      padding:0.5rem 1rem;
+      border-radius:4px;
+      z-index:1000;
+    }
+  </style>
+</head>
+<body>
+  <h1>Confused Art - Powered by Alfe AI</h1>
+  <h2>Portfolio</h2>
+  <div id="grid" class="grid"></div>
+  <div id="sentinel"></div>
+  <div id="loadingIndicator">Loading...</div>
+  <script src="/session.js"></script>
+  <script>
+    function showLoader(){
+      document.getElementById('loadingIndicator').style.display = 'block';
+    }
+    function hideLoader(){
+      document.getElementById('loadingIndicator').style.display = 'none';
+    }
+
+    async function loadPortfolio(){
+      try {
+        const resp = await fetch('/api/upload/list');
+        const data = await resp.json();
+        const grid = document.getElementById('grid');
+        grid.innerHTML = '';
+
+        const allImages = data
+          .filter(f => f.portfolio)
+          .sort(() => Math.random() - 0.5);
+
+        let currentIndex = 0;
+        const batchSize = 12;
+        const sentinel = document.getElementById('sentinel');
+        let loading = false;
+        let observer;
+        function sentinelInView(){
+          const rect = sentinel.getBoundingClientRect();
+          return rect.top <= (window.innerHeight + 100);
+        }
+
+        function renderNext(){
+          if(loading) return;
+          const slice = allImages.slice(currentIndex, currentIndex + batchSize);
+          if(slice.length === 0){
+            observer.disconnect();
+            return;
+          }
+          loading = true;
+          showLoader();
+          let loaded = 0;
+          slice.forEach(f => {
+            const wrap = document.createElement('div');
+            wrap.className = 'grid-item';
+            const link = document.createElement('a');
+            link.href = `/Image.html?file=${encodeURIComponent(f.name)}`;
+            link.target = '_blank';
+            const img = document.createElement('img');
+            img.src = `/uploads/${encodeURIComponent(f.name)}`;
+            img.alt = f.title || f.name;
+            img.onload = img.onerror = () => {
+              loaded++;
+              if(loaded === slice.length){
+                hideLoader();
+                loading = false;
+                if(currentIndex >= allImages.length){
+                  observer.disconnect();
+                } else if(sentinelInView()){
+                  // if user hasn't scrolled and sentinel is still visible
+                  renderNext();
+                }
+              }
+            };
+            link.appendChild(img);
+            wrap.appendChild(link);
+            grid.appendChild(wrap);
+          });
+          currentIndex += slice.length;
+        }
+
+        observer = new IntersectionObserver(entries => {
+          if(entries.some(e => e.isIntersecting)){
+            renderNext();
+          }
+        }, { rootMargin: '100px' });
+
+        observer.observe(sentinel);
+        renderNext();
+
+      } catch(err){
+        console.error('Failed to load portfolio images', err);
+      }
+    }
+    loadPortfolio();
+  </script>
+</body>
+</html>

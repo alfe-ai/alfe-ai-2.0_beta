@@ -44,6 +44,7 @@
         <li><button id="navFileTreeBtn" class="tree-button">File Tree</button></li>
         <li><button id="navAiModelsBtn" class="tree-button" data-url="/ai_models">AI Models</button></li>
         <li><button id="navImageGeneratorBtn" class="tree-button" data-url="/image_generator">Image Generator</button></li>
+        <li><button id="navPortfolioBtn" class="tree-button" data-url="/portfolio.html" hidden>Portfolio</button></li>
         <li><button id="navJobsBtn" class="tree-button" data-url="/jobs.html" data-target="_blank" hidden>Jobs</button></li>
         <li><button id="navPipelineQueueBtn" class="tree-button" data-url="/pipeline_queue.html" data-target="_blank">Queue</button></li>
         <li><button id="navActivityIframeBtn" class="tree-button">Activity IFrame</button></li>
@@ -60,6 +61,7 @@
       <button id="navFileTreeIcon" class="icon-btn" title="File Tree">📁</button>
       <button id="navAiModelsIcon" class="icon-btn" title="AI Models">🤖</button>
       <button id="navImageGeneratorIcon" class="icon-btn" title="Image Generator">🎨</button>
+      <button id="navPortfolioIcon" class="icon-btn" title="Portfolio" hidden>🖼️</button>
       <button id="navJobsIcon" class="icon-btn" title="Jobs">💼</button>
       <button id="navPipelineQueueIcon" class="icon-btn" title="Queue">📄</button>
       <button id="navActivityIframeIcon" class="icon-btn" title="Activity">🌐</button>
@@ -118,6 +120,7 @@
             <th data-col="title">Title</th>
             <th data-col="source">Source</th>
             <th data-col="status">Status</th>
+            <th data-col="portfolio">Portfolio</th>
             <th data-col="size">Size (KB)</th>
             <th data-col="mtime">Last Modified</th>
             <th>Action</th>
@@ -755,8 +758,28 @@
   <span class="loading-spinner"></span>
 </div>
 <div id="toast" class="toast"></div>
+<div id="cookieBanner">
+  This site uses cookies to store your preferences.
+  <button id="cookieMoreInfoBtn">More Info</button>
+  <button id="cookieAcceptBtn">Accept</button>
+</div>
 <script src="/session.js"></script>
 <script src="/main.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const banner = document.getElementById('cookieBanner');
+    if(banner){
+      if(!localStorage.getItem('cookieAccepted')) banner.style.display = 'block';
+      document.getElementById('cookieAcceptBtn').addEventListener('click', () => {
+        localStorage.setItem('cookieAccepted', 'yes');
+        banner.style.display = 'none';
+      });
+      document.getElementById('cookieMoreInfoBtn').addEventListener('click', () => {
+        window.open('/cookies.html', '_blank');
+      });
+    }
+  });
+</script>
 </body>
 </html>
 
