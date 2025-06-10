@@ -283,14 +283,30 @@
       "AI Hokusai",
       "AI Banksy",
       "AI Escher",
-      "AI Drone Photographer",
       "AI Fashion Designer",
       "AI Industrial Designer",
       "AI UX Researcher",
-      "AI Motion Designer",
+      "AI Illustrator",
+      "AI Watercolor Artist",
+      "AI Sculptor",
+      "AI Street Artist",
+      "AI Mixed Media Artist",
+      "AI Comic Artist",
+      "AI Printmaker",
+      "AI Pixel Artist",
+      "AI Concept Illustrator",
+      "AI Art Director",
+      "AI 3D Modeler",
+      "AI Pastel Artist",
       "Beta Rollout"
     ];
-    splashPhrases.sort(() => Math.random() - 0.5);
+    function shuffle(arr){
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
+    shuffle(splashPhrases);
     let splashIdx = 0;
     let splashTimer = null;
     // default feature flags / state vars
