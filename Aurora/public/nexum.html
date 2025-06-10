@@ -173,6 +173,45 @@
     </div>
     <div class="modal-content">
       <h3>Get Started</h3>
+      <div>
+        <div id="startTypeButtons">
+          <button data-type="chat" class="start-type-btn">
+            <div class="icon">💬</div>
+            <div>Chat</div>
+          </button>
+          <button data-type="code" class="start-type-btn">
+            <div class="icon">💻</div>
+            <div>Code</div>
+          </button>
+          <button data-type="design" class="start-type-btn">
+            <div class="icon">🎨</div>
+            <div>Design</div>
+          </button>
+          <button data-type="task" class="start-type-btn">
+            <div class="icon">📋</div>
+            <div>Project</div>
+          </button>
+        </div>
+        <div id="startRepoSection" style="margin-top:8px; display:none;">
+          <label>Git Repo SSH URL:<br/>
+            <input type="text" id="startRepoInput" style="width:100%;" />
+          </label>
+          <div style="font-size:0.9rem; margin-top:4px;">
+            note: We will update to do setup with GitHub connector/other external connectors/self host git/ AND THE URL SPECIFICATION FOR MANUAL REMOTE WILL ALSO BE AN OPTION AT THIS STEP, BUT AT THIS POINT, IT IS THE ONLY OPTION
+          </div>
+        </div>
+      </div>
+      <div id="startSocialLinks" style="margin-top:0.5rem; text-align:center;">
+        <a href="/about.html" target="_blank">About</a> |
+        <a href="https://github.com/alfe-ai/alfe-ai-2.0_beta">GitHub</a> |
+        <a href="https://bsky.app/profile/alfeai.bsky.social">Bluesky</a><!-- | -->
+        <!--<a href="https://mastodon.social/@alfeai">Mastodon</a>--><!-- | -->
+        <!-- <a href="https://www.reddit.com/">Reddit</a> | -->
+        <!-- <a href="https://www.linkedin.com/">LinkedIn</a> | -->
+        <!-- <a href="https://x.com/">X (Twitter)</a> -->
+        <!-- Discord -->
+        <!-- Matrix -->
+      </div>
     </div>
   </div>
   <script>
@@ -1042,5 +1081,10 @@
 
     document.addEventListener('DOMContentLoaded', startSplash);
   </script>
+  <div id="cookieBanner">
+    This site uses session cookies for the functionality of this application such as chat history, preferences, and files.
+    <button id="cookieAcceptBtn">Accept</button>
+    <button id="cookieMoreInfoBtn">More Info</button>
+  </div>
 </body>
 </html>
