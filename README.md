@@ -11,7 +11,7 @@ The software development component is coming soon, and is available now as a Pre
 Alfe AI beta-2.30+ (Image Design): https://github.com/alfe-ai/alfe-ai-2.0_beta
 Alfe AI beta-0.4x+ (Software Development): https://github.com/alfe-ai/Sterling
 
-## Marketing Overview
+## Overview
 
 For a concise overview of the platform's selling points and features, see
 [MARKETING_AD_COPY.md](MARKETING_AD_COPY.md).
