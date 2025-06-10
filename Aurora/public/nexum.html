@@ -1161,6 +1161,17 @@
         else sb.style.display = 'none';
       });
 
+    });
+
+    document.addEventListener('DOMContentLoaded', startSplash);
+  </script>
+  <div id="cookieBanner">
+    This site uses cookies to store your preferences.
+    <button id="cookieMoreInfoBtn">More Info</button>
+    <button id="cookieAcceptBtn">Accept</button>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
       const banner = document.getElementById('cookieBanner');
       if(banner){
         if(!localStorage.getItem('cookieAccepted')) banner.style.display = 'block';
@@ -1173,14 +1184,7 @@
         });
       }
     });
-
-    document.addEventListener('DOMContentLoaded', startSplash);
   </script>
-  <div id="cookieBanner">
-    This site uses cookies to store your preferences.
-    <button id="cookieMoreInfoBtn">More Info</button>
-    <button id="cookieAcceptBtn">Accept</button>
-  </div>
   <div id="pageLoader" class="page-loader"><span class="loading-spinner"></span></div>
 </body>
 </html>
