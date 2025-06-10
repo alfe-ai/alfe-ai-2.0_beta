@@ -235,6 +235,9 @@
     ];
     let splashIdx = 0;
     let splashTimer = null;
+    // default feature flags / state vars
+    let enableStartAdvanced = false;
+    let startInAurora = true;
     function spawnSplashWord(){
       const container = document.getElementById('splashAnim');
       if(!container) return;
