@@ -45,6 +45,7 @@
   <div style="margin-top:0.5rem;">
     <button id="upscaleButton" hidden>Submit to Upscale</button>
     <button id="printifyButton" hidden>Submit to Printify</button>
+    <button id="printifyTitleFixButton" hidden>Title Fix</button>
     <button id="printifyPriceButton" hidden>Submit Price Update</button>
     <button id="setProductUrlButton" hidden>Set Product URL</button>
     <button id="printifyApiButton">Submit Printify API Updates</button>
@@ -66,6 +67,7 @@
       { name: 'Border Added', disabled: true },
       { name: 'Upscaled', disabled: true },
       { name: 'Printify Puppet', disabled: true },
+      { name: 'Printify API Title Fix', disabled: true },
       { name: 'Printify Price Puppet', disabled: true },
       { name: 'Printify API Updates', disabled: true },
       { name: 'Ebay Shipping Updated', disabled: true },
@@ -91,6 +93,7 @@
       'Background Removed',
       'Border Added',
       'Printify Step',
+      'Printify API Title Fix',
       'Printify Price Puppet',
       'Printify API Updates',
       'Ebay Shipping Updated',
@@ -123,29 +126,37 @@
             link.textContent = printifyUrl;
             link.target = '_blank';
             statusText.innerHTML = '';
-            statusText.appendChild(link);
-          } else {
-            printifyUrl = null;
-            statusText.textContent = current;
-          }
+          statusText.appendChild(link);
+        } else {
+          printifyUrl = null;
+          statusText.textContent = current;
         }
-        if(current === 'Printify Price Puppet'){
+        if(printifyTitleFixBtn) printifyTitleFixBtn.hidden = !printifyUrl;
+      }
+      if(current === 'Printify API Title Fix'){
           if(stageItems[3]) stageItems[3].classList.add('completed');
           if(stageItems[4]) stageItems[4].classList.add('current');
-        } else if(current === 'Printify API Updates'){
+        } else if(current === 'Printify Price Puppet'){
           if(stageItems[3]) stageItems[3].classList.add('completed');
           if(stageItems[4]) stageItems[4].classList.add('completed');
           if(stageItems[5]) stageItems[5].classList.add('current');
-        } else if(current === 'Ebay Shipping Updated'){
+        } else if(current === 'Printify API Updates'){
           if(stageItems[3]) stageItems[3].classList.add('completed');
           if(stageItems[4]) stageItems[4].classList.add('completed');
           if(stageItems[5]) stageItems[5].classList.add('completed');
           if(stageItems[6]) stageItems[6].classList.add('current');
+        } else if(current === 'Ebay Shipping Updated'){
+          if(stageItems[3]) stageItems[3].classList.add('completed');
+          if(stageItems[4]) stageItems[4].classList.add('completed');
+          if(stageItems[5]) stageItems[5].classList.add('completed');
+          if(stageItems[6]) stageItems[6].classList.add('completed');
+          if(stageItems[7]) stageItems[7].classList.add('current');
         } else if(current === 'Done'){
           if(stageItems[3]) stageItems[3].classList.add('completed');
           if(stageItems[4]) stageItems[4].classList.add('completed');
           if(stageItems[5]) stageItems[5].classList.add('completed');
           if(stageItems[6]) stageItems[6].classList.add('completed');
+          if(stageItems[7]) stageItems[7].classList.add('completed');
         }
       }catch(e){
         console.error('Failed to check status =>', e);
@@ -282,6 +293,7 @@
     let nobgFile = null;
     let nobgPath = null;
     let printifyBtn;
+    let printifyTitleFixBtn;
     let printifyPriceBtn;
     let setProductUrlBtn;
     let printifyUrl = null;
@@ -365,6 +377,7 @@
 
     const upscaleBtn = document.getElementById('upscaleButton');
     printifyBtn = document.getElementById('printifyButton');
+    printifyTitleFixBtn = document.getElementById('printifyTitleFixButton');
     printifyPriceBtn = document.getElementById('printifyPriceButton');
     setProductUrlBtn = document.getElementById('setProductUrlButton');
     const printifyApiBtn = document.getElementById('printifyApiButton');
@@ -390,6 +403,7 @@
       if (file) {
       upscaleBtn.hidden = false;
       printifyBtn.hidden = true;
+      if(printifyTitleFixBtn) printifyTitleFixBtn.hidden = true;
       if(printifyPriceBtn) printifyPriceBtn.hidden = true;
       if(setProductUrlBtn) setProductUrlBtn.hidden = false;
       printifyApiBtn.hidden = false;
@@ -450,6 +464,32 @@
         terminalEl.textContent = 'Printify request failed.';
       }
       });
+      if(printifyTitleFixBtn){
+        printifyTitleFixBtn.addEventListener('click', async () => {
+          if(!printifyUrl){
+            terminalEl.textContent = 'No Printify URL found.';
+            return;
+          }
+          terminalEl.textContent = '';
+          try {
+            const res = await fetch('/api/printifyTitleFix', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ file })
+            });
+            const data = await res.json().catch(() => ({}));
+            if(res.ok && data.jobId){
+              window.open(`jobs.html?jobId=${data.jobId}`, '_blank');
+              terminalEl.textContent = `Job started with ID ${data.jobId}. Open the Jobs List to view progress.`;
+            } else {
+              terminalEl.textContent = data.error || 'Title Fix request failed.';
+            }
+          } catch(err){
+            console.error('Title Fix request error =>', err);
+            terminalEl.textContent = 'Title Fix request failed.';
+          }
+        });
+      }
       if(printifyPriceBtn){
         printifyPriceBtn.addEventListener('click', async () => {
           const choice = document.querySelector('input[name="printifyVariant"]:checked');
@@ -600,6 +640,7 @@
     } else {
       upscaleBtn.disabled = true;
       printifyBtn.disabled = true;
+      if(printifyTitleFixBtn) printifyTitleFixBtn.disabled = true;
       if(printifyPriceBtn) printifyPriceBtn.disabled = true;
       if(setProductUrlBtn) setProductUrlBtn.disabled = true;
       printifyApiBtn.disabled = true;

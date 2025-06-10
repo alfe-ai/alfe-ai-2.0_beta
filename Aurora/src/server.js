@@ -2472,6 +2472,59 @@ app.post("/api/printifyPrice", async (req, res) => {
   }
 });
 
+app.post("/api/printifyTitleFix", async (req, res) => {
+  try {
+    const { file } = req.body || {};
+    console.debug(
+      "[Server Debug] /api/printifyTitleFix called with file =>",
+      file
+    );
+    if (!file) {
+      return res.status(400).json({ error: "Missing file" });
+    }
+
+    const status = db.getImageStatusForUrl(`/uploads/${file}`);
+    const productUrl = extractPrintifyUrl(status || "");
+    if (!productUrl) {
+      return res.status(400).json({ error: "Missing Printify URL" });
+    }
+    const productId = productUrl.split("/").pop();
+
+    const scriptPath =
+      process.env.PRINTIFY_TITLE_FIX_SCRIPT_PATH ||
+      path.join(__dirname, "../scripts/printifyTitleFix.js");
+    const scriptCwd = path.dirname(scriptPath);
+    if (!fs.existsSync(scriptPath)) {
+      return res
+        .status(500)
+        .json({ error: `Printify script missing at ${scriptPath}` });
+    }
+
+    const job = jobManager.createJob("node", [scriptPath, productId], {
+      cwd: scriptCwd,
+      file,
+    });
+    console.debug("[Server Debug] /api/printifyTitleFix => job started", job.id);
+
+    jobManager.addDoneListener(job, () => {
+      try {
+        const url = `/uploads/${file}`;
+        db.setImageStatus(url, "Printify API Title Fix");
+      } catch (e) {
+        console.error(
+          "[Server Debug] Failed to set status after title fix =>",
+          e
+        );
+      }
+    });
+
+    res.json({ jobId: job.id });
+  } catch (err) {
+    console.error("Error in /api/printifyTitleFix:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.post("/api/printify/updateProduct", async (req, res) => {
   try {
     const { productId, variants, file } = req.body || {};
