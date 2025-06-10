@@ -446,9 +446,9 @@
       stopSplash();
     }
     const chatPanel = document.getElementById('chatPanel');
-    if(chatPanel) chatPanel.style.display = noTabs ? 'none' : '';
+    if(chatPanel) chatPanel.style.display = showDialog ? 'none' : '';
     const taskPanel = document.getElementById('taskListPanel');
-    if(taskPanel) taskPanel.style.display = noTabs ? 'none' : (currentView === 'tasks' ? '' : 'none');
+    if(taskPanel) taskPanel.style.display = showDialog ? 'none' : (currentView === 'tasks' ? '' : 'none');
   }
 
   async function loadArchivedTabs(){
