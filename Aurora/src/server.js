@@ -159,6 +159,11 @@ if (!db.getSetting("image_gen_service")) {
   db.setSetting("image_gen_service", "openai");
 }
 
+console.debug("[Server Debug] Checking or setting default 'image_upload_enabled' in DB...");
+if (db.getSetting("image_upload_enabled") === undefined) {
+  db.setSetting("image_upload_enabled", true);
+}
+
 console.debug("[Server Debug] Checking or setting default 'show_session_id' in DB...");
 if (db.getSetting("show_session_id") === undefined) {
   db.setSetting("show_session_id", false);
