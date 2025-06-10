@@ -2056,7 +2056,8 @@ app.get("/api/upload/list", (req, res) => {
       const source = db.isGeneratedImage(`/uploads/${name}`) ? 'Generated' : 'Uploaded';
       const status = db.getImageStatusForUrl(`/uploads/${name}`) || (source === 'Generated' ? 'Generated' : 'Uploaded');
       const portfolio = db.getImagePortfolioForUrl(`/uploads/${name}`) ? 1 : 0;
-      files.push({ id, uuid, name, size, mtime, title, source, status, portfolio });
+      const productUrl = db.getProductUrlForImage(`/uploads/${name}`);
+      files.push({ id, uuid, name, size, mtime, title, source, status, portfolio, productUrl });
     }
     res.json(files);
   } catch (err) {
@@ -2104,12 +2105,17 @@ app.get("/api/upload/byId", (req, res) => {
 
 app.post("/api/upload/status", (req, res) => {
   try {
-    const { name, status } = req.body || {};
+    const { name, status, productUrl } = req.body || {};
     if(!name){
       return res.status(400).json({ error: "Missing name" });
     }
     const url = `/uploads/${name}`;
-    db.setImageStatus(url, status || "");
+    if(status !== undefined){
+      db.setImageStatus(url, status || "");
+    }
+    if(productUrl !== undefined){
+      db.setProductUrl(url, productUrl || "");
+    }
     res.json({ success: true });
   } catch(err){
     console.error("[Server Debug] /api/upload/status error:", err);
@@ -2432,8 +2438,11 @@ app.post("/api/printifyPrice", async (req, res) => {
 
     let productUrl = url || null;
     if (!productUrl && file) {
-      const status = db.getImageStatusForUrl(`/uploads/${file}`);
-      productUrl = extractPrintifyUrl(status || "");
+      productUrl = db.getProductUrlForImage(`/uploads/${file}`);
+      if (!productUrl) {
+        const status = db.getImageStatusForUrl(`/uploads/${file}`);
+        productUrl = extractPrintifyUrl(status || "");
+      }
     }
     if (!productUrl) {
       console.debug(
@@ -2483,8 +2492,11 @@ app.post("/api/printifyTitleFix", async (req, res) => {
       return res.status(400).json({ error: "Missing file" });
     }
 
-    const status = db.getImageStatusForUrl(`/uploads/${file}`);
-    const productUrl = extractPrintifyUrl(status || "");
+    let productUrl = db.getProductUrlForImage(`/uploads/${file}`);
+    if (!productUrl) {
+      const status = db.getImageStatusForUrl(`/uploads/${file}`);
+      productUrl = extractPrintifyUrl(status || "");
+    }
     if (!productUrl) {
       return res.status(400).json({ error: "Missing Printify URL" });
     }
