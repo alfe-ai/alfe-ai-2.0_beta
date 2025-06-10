@@ -66,6 +66,7 @@
         <label style="display:block;margin-top:0.25rem;"><input type="checkbox" id="flagShowArchived"> Show Archived Chats</label>
         <label style="display:block;margin-top:0.25rem;"><input type="checkbox" id="flagShowFeedback"> Show Feedback Button</label>
         <label style="display:block;margin-top:0.25rem;"><input type="checkbox" id="flagAuroraStart"> Use Aurora for New Chat</label>
+        <label style="display:block;margin-top:0.25rem;"><input type="checkbox" id="flagSplashAlways"> Always Show Splash</label>
       </div>
       <div style="margin-top:0.5rem;">
         <label>Color:
@@ -249,6 +250,7 @@
     let showArchived = false;
     let showFeedbackButton = true;
     let startInAurora = true;
+    let alwaysShowSplash = true;
     // Feature flag to enable advanced start options (Code, Design, Project)
     const enableStartAdvanced = false;
     // Maintain a history of user-entered prompts
@@ -436,13 +438,12 @@
     const dlg = document.getElementById('startDialog');
     if(!dlg) return;
     const noTabs = tabs.length === 0;
-    dlg.style.display = noTabs ? 'flex' : 'none';
-    if(noTabs){
+    const showDialog = alwaysShowSplash || noTabs;
+    dlg.style.display = showDialog ? 'flex' : 'none';
+    if(showDialog){
       startSplash();
-      // start suggestions disabled
     } else {
       stopSplash();
-      // start suggestions disabled
     }
     const chatPanel = document.getElementById('chatPanel');
     if(chatPanel) chatPanel.style.display = noTabs ? 'none' : '';
@@ -992,6 +993,7 @@
       showArchived = localStorage.getItem('flagShowArchived') === 'true';
       showFeedbackButton = localStorage.getItem('flagShowFeedback') !== 'false';
       startInAurora = localStorage.getItem('flagAuroraStart') !== 'false';
+      alwaysShowSplash = localStorage.getItem('flagSplashAlways') !== 'false';
       const cbDeps = document.getElementById('flagShowDependencies');
       if(cbDeps) cbDeps.checked = showDependencies;
       const cbArch = document.getElementById('flagShowArchived');
@@ -1000,6 +1002,8 @@
       if(cbFeedback) cbFeedback.checked = showFeedbackButton;
       const cbAurora = document.getElementById('flagAuroraStart');
       if(cbAurora) cbAurora.checked = startInAurora;
+      const cbSplash = document.getElementById('flagSplashAlways');
+      if(cbSplash) cbSplash.checked = alwaysShowSplash;
       const feedbackBtn = document.getElementById('feedbackBtn');
       if(feedbackBtn) feedbackBtn.style.display = showFeedbackButton ? '' : 'none';
       if(currentView === 'tasks'){
@@ -1027,6 +1031,12 @@
     document.getElementById('flagAuroraStart').addEventListener('change', e => {
       localStorage.setItem('flagAuroraStart', e.target.checked);
       applyFeatureFlags();
+    });
+
+    document.getElementById('flagSplashAlways').addEventListener('change', e => {
+      localStorage.setItem('flagSplashAlways', e.target.checked);
+      applyFeatureFlags();
+      renderTabs();
     });
 
     document.getElementById('themeColorSelect').addEventListener('change', async e => {
