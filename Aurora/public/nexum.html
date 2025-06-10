@@ -1162,10 +1162,10 @@
       });
 
       const banner = document.getElementById('cookieBanner');
-      if (banner) {
-        // Always show banner; hide only for the current session when accepted
-        banner.style.display = 'block';
+      if(banner){
+        if(!localStorage.getItem('cookieAccepted')) banner.style.display = 'block';
         document.getElementById('cookieAcceptBtn').addEventListener('click', () => {
+          localStorage.setItem('cookieAccepted', 'yes');
           banner.style.display = 'none';
         });
         document.getElementById('cookieMoreInfoBtn').addEventListener('click', () => {
@@ -1177,9 +1177,9 @@
     document.addEventListener('DOMContentLoaded', startSplash);
   </script>
   <div id="cookieBanner">
-    This site uses session cookies for the functionality of this application such as chat history, preferences, and files.
-    <button id="cookieAcceptBtn">Accept</button>
+    This site uses cookies to store your preferences.
     <button id="cookieMoreInfoBtn">More Info</button>
+    <button id="cookieAcceptBtn">Accept</button>
   </div>
   <div id="pageLoader" class="page-loader"><span class="loading-spinner"></span></div>
 </body>
