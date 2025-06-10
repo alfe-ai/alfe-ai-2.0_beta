@@ -4202,6 +4202,7 @@ async function loadChatHistory(tabId = 1, reset=false) {
           if(p.image_title) img.title = p.image_title;
           img.style.maxWidth = "min(100%, 400px)";
           img.style.height = "auto";
+          img.addEventListener('load', () => setTimeout(scrollChatToBottom, 1000));
           botDiv.appendChild(img);
         }
 
