@@ -1162,10 +1162,10 @@
       });
 
       const banner = document.getElementById('cookieBanner');
-      if(banner){
-        if(!localStorage.getItem('cookieAccepted')) banner.style.display = 'block';
+      if (banner) {
+        // Always show banner; hide only for the current session when accepted
+        banner.style.display = 'block';
         document.getElementById('cookieAcceptBtn').addEventListener('click', () => {
-          localStorage.setItem('cookieAccepted', 'yes');
           banner.style.display = 'none';
         });
         document.getElementById('cookieMoreInfoBtn').addEventListener('click', () => {
