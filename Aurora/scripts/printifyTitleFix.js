@@ -25,12 +25,31 @@ async function main() {
     const { data } = await axios.get(url, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    console.log('Title:', data.title || '');
+
+    const currentTitle = data.title || '';
+    console.log('Title:', currentTitle);
+
+    const cleanedTitle = currentTitle.replace(/,?\s*\[\.\.\.\]\s*$/, '').trim();
+    if (cleanedTitle !== currentTitle) {
+      await axios.put(
+        url,
+        { title: cleanedTitle },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      console.log('Updated Title:', cleanedTitle);
+    } else {
+      console.log('No trailing pattern detected; nothing to update.');
+    }
   } catch (err) {
     const status = err.response?.status;
     const msg = err.response?.data || err.message;
     console.error(
-      `Failed to fetch product ${productId} (status: ${status ?? 'unknown'}):`,
+      `Failed to update product ${productId} (status: ${status ?? 'unknown'}):`,
       msg
     );
     process.exit(1);
