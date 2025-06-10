@@ -3691,6 +3691,7 @@ const btnImageGenerator = document.getElementById("navImageGeneratorBtn");
 const btnPortfolio = document.getElementById("navPortfolioBtn");
 const btnJobs = document.getElementById("navJobsBtn");
 const btnPipelineQueue = document.getElementById("navPipelineQueueBtn");
+const btnNodes = document.getElementById("navNodesBtn");
 const btnPrintifyProducts = document.getElementById("navPrintifyProductsBtn");
 const btnPrintifyProductsIcon = document.getElementById("navPrintifyProductsIcon");
 const btnFileCabinet = document.getElementById("navFileCabinetBtn");
@@ -3711,6 +3712,7 @@ const btnImageGeneratorIcon = document.getElementById("navImageGeneratorIcon");
 const btnPortfolioIcon = document.getElementById("navPortfolioIcon");
 const btnJobsIcon = document.getElementById("navJobsIcon");
 const btnPipelineQueueIcon = document.getElementById("navPipelineQueueIcon");
+const btnNodesIcon = document.getElementById("navNodesIcon");
 const btnActivityIframeIcon = document.getElementById("navActivityIframeIcon");
 const btnNexumChatIcon = document.getElementById("navNexumChatIcon");
 const btnNexumTabsIcon = document.getElementById("navNexumTabsIcon");
@@ -3740,6 +3742,11 @@ btnJobs?.addEventListener("click", () => {
 btnPipelineQueue?.addEventListener("click", () => {
   const url = btnPipelineQueue.dataset.url;
   window.open(url, "_blank");
+});
+btnNodes?.addEventListener("click", () => {
+  const url = btnNodes.dataset.url;
+  const target = btnNodes.dataset.target || "_self";
+  window.open(url, target);
 });
 btnNexumChat?.addEventListener("click", () => { window.location.href = btnNexumChat.dataset.url; });
 btnNexumTabs?.addEventListener("click", () => { window.location.href = btnNexumTabs.dataset.url; });
@@ -3778,6 +3785,7 @@ btnPortfolioIcon?.addEventListener("click", () => {
 });
 btnJobsIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); const url = btnJobs.dataset.url; window.open(url, "_blank"); });
 btnPipelineQueueIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); const url = btnPipelineQueue.dataset.url; window.open(url, "_blank"); });
+btnNodesIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); const url = btnNodes.dataset.url; const target = btnNodes.dataset.target || "_self"; window.open(url, target); });
 btnPrintifyProductsIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); showPrintifyProductsPanel(); });
 btnNexumChatIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); window.location.href = btnNexumChat.dataset.url; });
 btnNexumTabsIcon?.addEventListener("click", () => { if(!sidebarVisible) toggleSidebar(); window.location.href = btnNexumTabs.dataset.url; });
