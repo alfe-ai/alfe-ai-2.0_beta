@@ -334,7 +334,7 @@ button:hover {
   left: 100%;
   white-space: nowrap;
   font-size: 1.5rem;
-  animation: splash-race 4s linear forwards;
+  animation: splash-race 5s linear forwards;
 }
 
 @keyframes splash-race {
